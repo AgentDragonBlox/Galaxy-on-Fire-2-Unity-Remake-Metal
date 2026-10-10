@@ -304,6 +304,10 @@ namespace GoF2Remake.EditorTools
                     if (ms != null)
                     {
                         mat.SetTexture("_MetallicGlossMap", ms);
+                        // GoF2/Hull: the original's reflection and rim (BumpRimCubeShader), on the ships, stations and objects,
+                        // not the station interiors (hangar and bar rooms) or the sky props.
+                        bool interior = nrmRel.Contains("/hangars/") || nrmRel.Contains("/bars/") || nrmRel.Contains("/skyboxes/");
+                        if (urp && !interior) { mat.shader = Shader.Find("GoF2/Hull") ?? mat.shader; mat.SetShaderPassEnabled("MotionVectors", false); }   // as Lit's material setup
                         if (urp) { mat.EnableKeyword("_METALLICSPECGLOSSMAP"); mat.SetFloat("_Smoothness", 0.8f); }
                         else { mat.EnableKeyword("_METALLICGLOSSMAP"); mat.SetFloat("_GlossMapScale", 0.8f); }
                     }

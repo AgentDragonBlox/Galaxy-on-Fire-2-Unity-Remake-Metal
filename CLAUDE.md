@@ -46,7 +46,8 @@ Assets/
   Shaders/           Shader Graphs (URP Unlit): GoF2/Unlit, Additive, AlphaBlend, AlphaTest; _Glow > 1 = HDR for bloom.
                      Hand-written HLSL where Shader Graph can't: GoF2/SpaceSky (skybox), Backdrop (far-plane quads), SpaceDust,
                      Cloak and ShieldBubble (screen refraction: they switch the camera's opaque texture on, `OpaqueTexture`),
-                     HangarShadow (the hangar ships' contact shadows, projected from the camera depth texture)
+                     HangarShadow (the hangar ships' contact shadows, projected from the camera depth texture), Hull (URP Lit + the
+                     original's hull reflection and rim, see "Space scene")
   UI/                UI Toolkit: GoF2Theme.tss + GoF2Common.uss (tokens, control styles), GoF2InputGlyphs.uss (hint rows,
                      keycaps, Xbox buttons), GoF2PanelSettings, fonts: Serpentine ICG Light (the original's interface typeface, font 1111's bitmap glyphs; the default and, with the asset's faux bold, `.gof-semibold`) falling back to Inter (OFL) for Cyrillic and Latin Extended-A, MainMenu/ (UXML, USS, cut images,
                      menu post-processing profile), Flight/ (HUD), Station/ (station menu), StarMap/ (star map overlay)
@@ -160,9 +161,24 @@ The game stores every object as several meshes (hull, `_lights_add`, `_emissive`
 - **Stable layout:** the original's RNG is `java.util.Random` (`JavaRandom`), seeded per station: jumpgates and sky rotation `2 * station` (separate sequences), sun/planets `300 * station`, asteroid count/centre `station`. `OrbitLayout` reproduces the research tables exactly. Everything the original randomises per visit uses `UnityEngine.Random`.
 - **Rotations:** game `setRotation(x, y, z)` = Rx*Ry*Rz; `OrbitLayout.RotationToUnity` mirrors it and undoes the import's 180 deg yaw, so game (0, pi, 0) (stations, gates) = identity and an undocking player faces Unity -Z.
 - **Sky:** stars `systemIndex % 3` + nebula `system textureIndex`, rotated per station (`_SkyRotation`); it is `RenderSettings.skybox`, so it also gives ambient light (`SkyReflection.Update` = DynamicGI.UpdateEnvironment wherever the sky is set). The
-  environment reflection (URP Lit hulls) is the default one a player falls back to: the realtime sky probe `SkyReflection`
-  used to make never rendered (both quality levels have Realtime Reflection Probes off) and was removed. Don't add a
-  realtime probe without turning realtime probes on (rendered, the space sky reflects black).
+  environment reflection is the system's reflection cubemap, as the original binds it (`MGame::OnInitialize` /
+  `ModMainMenu::OnInitialize`: `TextureCreate(0x2efe + textureIndex)`, the alien orbit 0x2f08, `ChangeCubeTexture`):
+  `Resources/GoF2Reflections/cubemap_skybox_000..018` (glossy convolution) as Unity's custom environment reflection
+  (`SkyReflection.SetSystem`, from `OrbitBuilder.SetupSky` and `StationLevel`'s lighting: a station keeps its system's, the
+  original never binds its hangar cubemaps 0x2ef4..0x2ef7; a mod system its template's). No realtime probe (both quality
+  levels have them off).
+- **Hull reflection** (`GoF2/Hull` = `Assets/Shaders/Hull.shader`, a copy of URP 17.7's Lit.shader with one change:
+  ForwardLit's fragment is `HullForwardPass.hlsl`'s, URP's own plus the original's `BumpRimCubeShader` terms from the
+  fragment source in libgof2hdaa.so: + cubemap(reflect) x clamp(smoothstep(0.6, 1, 1 - N.V), spec^2, 2 spec + rim) +
+  rim x spec^2 x rimColor, spec = the specular map, `_MetallicGlossMap`'s alpha; sampled with the GPU's mip choice; x (1 -
+  metallic)): the ships, stations, turrets and objects with a specular map (165 materials, `AssetImport`), not the hangar /
+  bar rooms or the sky props (plain URP Lit, the original's have no cube reflection); globals `_GoF2HullReflection` (1) and
+  `_GoF2HullRimColor` (3 x `DAT_00258d34[sysTex]`, the sun colour table but systems 11 / 15, `StarSystem::initLight`).
+  URP Lit alone reflected ~4 % (a dielectric): the hulls had none of the original's shine. The mods' material templates
+  (`ModAssetsBuilder`) use it too; a mod's hangar / bar goes back to Lit (`ModMaterials.PlainLit`). Measured: no frame-time
+  difference (a 4K frame filled with hull, on, off and plain Lit within ±0.1 ms). When URP is updated, copy its Lit.shader
+  again and redo the two marked lines. Anything that picks hull renderers by shader name accepts "GoF2/Hull" (the cloaks,
+  the star map).
 - **Sun/planets:** quads 1000 m from the camera, drawn at the far plane (`GoF2/Backdrop`; with the sky layers drawn by
   `BackdropPass` right after the skybox, LightMode `GoF2Backdrop`, so they are in the opaque texture the cloak and the shield
   bubble refract: in URP's transparent pass the cloak showed black over a planet); the sun at the texture's own brightness (additive, like the original), only its near-white core lifted into HDR (×1.6, `_CoreGlow`) under the remake's bloom; sun swells + streak near the screen centre (the supernova system, system 27 before 0x9e: the sun keeps game +x as its up and its size, and a sn_sun_011 glow of 0.3 × the sun + the swell rolls with the camera and makes the streak; `StarSystem::render` with +0xc); planets mirrored so their lit rim faces the sun. Mission 0 (the prologue and the main menu's backdrop after `Status::resetGame`) halves the orbit planet unless a texture size rule replaces it; no camera zoom on the orbit planet in the planet ring orbits and the alien orbit; the alien orbit has its sun straight ahead and `planet_void_big` at yaw 5.2347 (60 deg to the right), unseeded size; K'ontrr (system 20) swaps 58's and 62's planet textures like the original (textures by the stations' file order, roles by the system's list).
@@ -202,7 +218,7 @@ Research: `Reference/research/starmap_travel.md` (+ `Reference/tools/starmap/sta
 
 - **Star map** (`StarMap`): one fullscreen map for the station's Map button, the jumpgate and the Khador Drive. Its own 3D scene on layer 31 with its own camera (the level's cameras and lights are switched off while open, flat ambient, no fog) plus the `UI/StarMap` overlay on a higher panel sort order; the owner pauses its game.
   - Galaxy view: additive sun sprites of the visible systems (`Session.SystemVisible`, from `initiallyVisible`; hidden systems aren't drawn), faint route lines and the pulse toward the gate neighbours (not with a drive); tap selects (sound 103), the camera glides it to the centre, a second tap zooms in (2184.5 ms sine ease, 106): the current system or a gate neighbour, any visible system with a Khador Drive, else 420. Drag pans with inertia and spring limits (not while a system is being centred: `StarMap::update`'s centring overwrites the spring, so Skor Terpa past the limit can be reached; remake: the limits take in every visible sun, `StarMap.PanMin` / `PanMax`: Loma, Talidor, Ginoya, Skor Terpa, Skavac and Me'enkk lie past the original's box, and once centred the spring dragged them back off the centre, up to ~280 px, so a second tap missed them). Remake: the full-map overview, one zoom level further out fitting every visible sun (the Full map / Close up button, Q, the controller's X, the mouse wheel, a pinch; Esc leaves it first): no panning there, a tap or Enter on a system zooms back in centred on it; the zoom in / out of it takes the galaxy <-> system zoom's 2184.5 ms with its sine ease (`StarMap.OverviewMs`; it was 650 ms, over long before its Map_Zoom_In / Out sound, 2.68 / 2.32 s).
-  - System view: the planets on their orbits (`java.util.Random(system * 1000)`, same layout every visit), drag turns it (pitch +-45 deg), tap selects a planet (104), release turns it to the front (105), a second tap confirms: 419 on the current station, 579 / 582 / 581 on energy cells with a drive, else "Destination: X / Travel to this station?" (574 + 421).
+  - System view: the planets on their orbits (`java.util.Random(system * 1000)`, same layout every visit), lit from the sun's position like `StarMap::initStarSystem`'s light (`LightSetLightPosition`, a fixed-function point light without falloff: `Resources/GoF2StarMap/MapPlanet.shader`, ambient 0.2 + diffuse toward the global `_StarMapSunPos`; the remake had a directional light that lit every planet from one side), drag turns it (pitch +-45 deg), tap selects a planet (104), release turns it to the front (105), a second tap confirms: 419 on the current station, 579 / 582 / 581 on energy cells with a drive, else "Destination: X / Travel to this station?" (574 + 421).
   - Overlay: rings, names (selected orange), race and security lines, "Tech level", visited tick (`Session.VisitedStations`, set on docking), gate icon, "you are here" pulse, system block with the race logo, "Energy cells needed: N / M" (578), Key legend (400).
   - Input: touch / mouse drag and tap; keyboard arrows select, WASD move / turn, Enter zoom in / confirm, K key, Esc back; controller D-pad, left stick, A, Y key, B back.
 - **Station Map button** (177; keyboard M, controller Y; refused with an overloaded hold, 204): station mode (jump mode with a drive). Picking a station leaves at once (`StarMap::depart`): the launch sequence, then the autopilot to the programmed station, or for another system with a drive the Khador charge.

@@ -148,7 +148,9 @@ namespace GoF2Remake.EditorTools
         static Material Lit(string name, bool cutout, bool transparent, bool detail)
         {
             string path = $"{Dir}/{name}.mat";
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            // GoF2/Hull: URP Lit + the original's hull reflection and rim (mod ships and stations shine like the game's;
+            // ModMaterials.PlainLit puts a mod's hangar or bar back on URP Lit).
+            var shader = Shader.Find("GoF2/Hull") ?? Shader.Find("Universal Render Pipeline/Lit");
             var m = AssetDatabase.LoadAssetAtPath<Material>(path);
             bool create = m == null;
             if (create) m = new Material(shader) { name = name };
@@ -157,6 +159,7 @@ namespace GoF2Remake.EditorTools
             m.SetTexture("_BumpMap", Tex("ModFlatNormal"));
             m.SetTexture("_MetallicGlossMap", Tex("ModWhite"));
             m.SetTexture("_EmissionMap", Tex("ModWhite"));
+            m.SetShaderPassEnabled("MotionVectors", false);   // as URP Lit's material setup (no precomputed velocity)
             m.EnableKeyword("_NORMALMAP");
             m.EnableKeyword("_METALLICSPECGLOSSMAP");
             m.EnableKeyword("_EMISSION");

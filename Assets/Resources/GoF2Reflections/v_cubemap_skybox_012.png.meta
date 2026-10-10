@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 38b49274baaa0394ebf3965e9cdcc86f
+guid: 1b8382c518c95704ea1f3ee9aff130d1
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -28,7 +28,7 @@ TextureImporter:
   ignoreMipmapLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
-  cubemapConvolution: 0
+  cubemapConvolution: 1
   seamlessCubemap: 0
   textureFormat: 1
   maxTextureSize: 2048

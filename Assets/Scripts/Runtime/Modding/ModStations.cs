@@ -198,6 +198,7 @@ namespace GoF2Remake.Modding
                 var room = ModInteriors.Build(d, scene);
                 if (room != null)
                 {
+                    ModMaterials.PlainLit(room);   // a room: no hull reflection (the game's hangars and bars have none)
                     room.transform.SetParent(holder.transform, false);
                     Debug.Log($"Mods: {d.mod.Id}: {(d.hangar ? "hangar" : "bar")} \"{d.id}\" built from {d.model}");
                 }

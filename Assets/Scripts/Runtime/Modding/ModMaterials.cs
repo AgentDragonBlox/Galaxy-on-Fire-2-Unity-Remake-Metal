@@ -467,6 +467,17 @@ namespace GoF2Remake.Modding
 
         static Material mrBlit;
 
+        /// <summary>A mod's hangar or bar: its materials (copies of the GoF2/Hull templates) back on URP Lit, like the game's
+        /// rooms, which don't have the original's hull reflection.</summary>
+        public static void PlainLit(GameObject room)
+        {
+            var lit = Shader.Find("Universal Render Pipeline/Lit");
+            if (lit == null || room == null) return;
+            foreach (var r in room.GetComponentsInChildren<Renderer>(true))
+                foreach (var m in r.sharedMaterials)
+                    if (m != null && m.shader != null && m.shader.name == "GoF2/Hull") { int q = m.renderQueue; m.shader = lit; m.renderQueue = q; }
+        }
+
         /// <summary>Material for renderers without one.</summary>
         public static Material Default()
         {

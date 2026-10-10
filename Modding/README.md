@@ -354,6 +354,11 @@ A list of entries, like items.json: `"id"` adds a ship, `"override"` changes one
 | `dealer` | Optional. The ordinary ship dealers may stock it: `{ "chance": 2, "systemRace": -1, "minTechLevel": 0 }`, `chance` % (decimals allowed) each time a station's dealer list is made, at stations of `systemRace` systems (-1 = any) with at least that tech level. Not the special yards (Kothar, Quineros, Thynome...). |
 | `available` | Optional. A [condition](#conditions) that must hold before it is sold anywhere (dealers and lounges). |
 
+Ship and station materials get the original game's hull shine: the system's reflection and a rim light, stronger where
+the surface is smoother (the smoothness / alpha of the metallic map), like the game's own ships; metal parts reflect
+through the normal lighting instead. A custom hangar or bar (interiors.json) has none, like the game's rooms. A mod system
+reflects its template system's sky.
+
 The model's own materials (base colour, metallic-roughness with its metallic / roughness factors, normal map, emission,
 transparency) are used as they are. glTF
 from Blender works: File > Export > glTF 2.0, format glTF Binary (.glb), +Y up. Projects made in Unity can use the

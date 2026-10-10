@@ -74,7 +74,7 @@ namespace GoF2Remake.Flight
             {
                 if (r is ParticleSystemRenderer) continue;
                 var mats = r.sharedMaterials;
-                bool lit = mats.Length > 0 && mats[0] != null && mats[0].shader != null && mats[0].shader.name.Contains("Lit");
+                bool lit = mats.Length > 0 && mats[0] != null && mats[0].shader != null && (mats[0].shader.name.Contains("Lit") || mats[0].shader.name == "GoF2/Hull");   // the hull (GoF2/Hull: URP Lit + the original's reflection)
                 if (!lit) { glow.Add(r, model); continue; }
                 if (shader == null) continue;
                 var cloak = new Material[mats.Length];

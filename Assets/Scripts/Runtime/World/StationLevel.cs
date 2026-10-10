@@ -679,6 +679,7 @@ namespace GoF2Remake.World
 
         void ApplyHangarLighting()
         {
+            SkyReflection.SetSystem(Layout);   // the hulls' reflection: the station's system's cubemap
             if (keyLight != null)
             {
                 keyLight.transform.rotation = Quaternion.LookRotation(-OrbitLayout.DirToUnity(StationTables.HangarTowardLight).normalized);
@@ -697,6 +698,7 @@ namespace GoF2Remake.World
 
         void ApplyLoungeLighting()
         {
+            SkyReflection.SetSystem(Layout);
             OrbitBuilder.SetupLights(Layout, keyLight, null, sunIntensityAt2);
             RenderSettings.ambientMode = AmbientMode.Skybox;
             DynamicGI.UpdateEnvironment();
