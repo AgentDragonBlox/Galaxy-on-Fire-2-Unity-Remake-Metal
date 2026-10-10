@@ -110,7 +110,7 @@ namespace GoF2Remake.Data
         public static int HangarShadows { get => Mathf.Clamp(Mathf.RoundToInt(Get("hangarShadows", HangarShadowsAll)), 0, 2); set => Set("hangarShadows", Mathf.Clamp(value, 0, 2)); }
         public const int HangarShadowsOff = 0, HangarShadowsPlayer = 1, HangarShadowsAll = 2;
         /// <summary>Remake: the hangar view's depth of field on the player's ship (StationLevel); off by default on phones.</summary>
-        public static bool HangarDepthOfField { get => GetBool("hangarDof", !Application.isMobilePlatform); set => SetBool("hangarDof", value); }
+        public static bool HangarDepthOfField { get => GetBool("hangarDof", false); set => SetBool("hangarDof", value); }   // off by default (2026-10)
 
         /// <summary>Remake: NPC ships fly with the player's engine system (the *_engine_glow_add mesh and the exhaust
         /// particles) instead of the original's *_engine_add mesh; from the next spawn.</summary>
