@@ -331,7 +331,7 @@ namespace GoF2Remake.World
                 traffic = new HangarTraffic(Lane, ParkedSlotCount, ParkedMaxCount,
                                             parkedShips, db, NewParkedShip, ParkedPosition,
                                             (ship, pos, rot) => SpawnShip(ship, pos, rot, hangarRoot, "Visiting ship"),
-                                            npcTraffic, Settings.HangarFlights);
+                                            npcTraffic, Settings.HangarFlights, FitParkingYaw);
             if (traffic != null && GoF2Remake.Multiplayer.NetGame.Active)
             {
                 traffic.KeepOneFree = true;          // a pad for another player docking
@@ -401,12 +401,16 @@ namespace GoF2Remake.World
                 while (taken[slot] && ++tries < 100) slot = Random.Range(0, slotCount);
                 if (taken[slot]) break;
                 taken[slot] = true;
-                float yaw = Random.Range(0, 300) / 100f;
+                float yaw = FitParkingYaw(slot, ship, Random.Range(0, 300) / 100f);
                 var rot = OrbitLayout.RotationToUnity(new Vector3(0f, yaw, 0f));
                 var parked = SpawnShip(ship, ParkedPosition(slot, ship, rot), rot, hangarRoot, $"Parked ship {n}");
                 if (parked != null) parkedShips.Add(new HangarTraffic.Parked { go = parked, slot = slot, ship = ship, yaw = yaw });
             }
         }
+
+        /// <summary>A heading that fits the pad (StationTables.FitParkingYaw); a custom hangar's as it is.</summary>
+        float FitParkingYaw(int slot, int ship, float gameYaw) =>
+            customHangar != null ? gameYaw : StationTables.FitParkingYaw(HangarIndex, slot, ship, gameYaw);
 
         int NewParkedShip() => Layout.stationIndex == 100 ? StationTables.DeepScienceShips[Random.Range(0, 3)] : RandomParkedShip();
 

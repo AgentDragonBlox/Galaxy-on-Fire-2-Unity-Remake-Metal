@@ -57,6 +57,18 @@ namespace GoF2Remake.World
             var slots = hangar >= 0 && hangar < ParkedSlots.Length ? ParkedSlots[hangar] : null;
             float floor = slot >= 0 && slots != null && slot < slots.Length ? slots[slot].y : 0f;
             float y = (floor + ShipY(ship)) * OrbitLayout.MetersPerUnit;
+            var l = Lift(hangar, slot, ship);
+            if (l == null) return y;
+            if (slot < 0) return y + Mathf.Max(l);
+            float bin = Mathf.Repeat(rotation.eulerAngles.y, 360f) / 360f * l.Length;
+            int near = Mathf.RoundToInt(bin);
+            if (Mathf.Abs(bin - near) < 0.02f) return y + l[near % l.Length];   // a measured heading (FitParkingYaw)
+            int a = Mathf.FloorToInt(bin) % l.Length, b = (a + 1) % l.Length;   // else the two around it
+            return y + Mathf.Max(l[a], l[b]);
+        }
+
+        static float[] Lift(int hangar, int slot, int ship)
+        {
             if (lifts == null)
             {
                 lifts = new Dictionary<(int, int, int), float[]>();
@@ -64,11 +76,39 @@ namespace GoF2Remake.World
                 var file = ta != null ? JsonUtility.FromJson<HangarLiftFile>(ta.text) : null;
                 if (file?.entries != null) foreach (var e in file.entries) lifts[(e.hangar, e.slot, e.ship)] = e.lift;
             }
-            if (!lifts.TryGetValue((hangar, slot, ship), out var l) || l == null || l.Length == 0) return y;
-            if (slot < 0) return y + Mathf.Max(l);
-            float bin = Mathf.Repeat(rotation.eulerAngles.y, 360f) / 360f * l.Length;   // the two bins around the heading
-            int a = Mathf.FloorToInt(bin) % l.Length, b = (a + 1) % l.Length;
-            return y + Mathf.Max(l[a], l[b]);
+            return lifts.TryGetValue((hangar, slot, ship), out var l) && l != null && l.Length > 0 ? l : null;
+        }
+
+        static bool HasLift(int hangar, int slot, int ship) => Lift(hangar, slot, ship) != null;
+
+        /// <summary>Remake: the parking yaw (game radians) for 'ship' on 'slot'. Where the hull is lifted off the pad
+        /// (hangar_heights.json) it is turned to the nearest heading the lift was measured at (every 15 deg: in between, a
+        /// long hull swept up to 2 m into what the two measured headings cleared), and when that heading needs more than 1 m
+        /// above the least lift there, to the nearest one that doesn't: a long hull on a Midorian pedestal reaches over the
+        /// 22 m structures beside it at some headings, and lifted clear of them it hung 10 m in the air (the Rhino); turned a
+        /// little it fits at the pedestal's height. Elsewhere the original's random yaw.</summary>
+        public static float FitParkingYaw(int hangar, int slot, int ship, float gameYaw)
+        {
+            if (slot < 0 || !HasLift(hangar, slot, ship)) return gameYaw;
+            const float Step = Mathf.PI / 12f, Slack = 1f;
+            float UnityYaw(float yaw) => OrbitLayout.RotationToUnity(new Vector3(0f, yaw, 0f)).eulerAngles.y;
+            float Height(float yaw) => PadPivotY(hangar, slot, ship, OrbitLayout.RotationToUnity(new Vector3(0f, yaw, 0f)));
+            // Onto a measured heading (the game yaw may turn either way in Unity's).
+            float u = UnityYaw(gameYaw), off = Mathf.DeltaAngle(u, Mathf.Round(u / 15f) * 15f) * Mathf.Deg2Rad;
+            float snapped = gameYaw + off;
+            float su = UnityYaw(snapped);
+            if (Mathf.Abs(Mathf.DeltaAngle(su, Mathf.Round(su / 15f) * 15f)) > 0.1f) snapped = gameYaw - off;
+            gameYaw = snapped;
+            float least = float.PositiveInfinity;
+            for (int k = 0; k < LiftBins; k++) least = Mathf.Min(least, Height(gameYaw + k * Step));
+            if (Height(gameYaw) <= least + Slack) return gameYaw;
+            for (int k = 1; k <= LiftBins / 2; k++)
+                foreach (int sign in new[] { 1, -1 })
+                {
+                    float yaw = gameYaw + sign * k * Step;
+                    if (Height(yaw) <= least + Slack) return yaw;
+                }
+            return gameYaw;
         }
 
         /// <summary>ModStation::OnInitialize state 0x3c: turntable start, +0xe0 = 270 px (Nivelian -200) / 120 px per rad.</summary>

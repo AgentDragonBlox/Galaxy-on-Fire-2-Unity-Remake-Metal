@@ -113,6 +113,7 @@ namespace GoF2Remake.World
         readonly List<Parked> parked;
         readonly Database db;
         readonly Func<int> randomShip;
+        readonly Func<int, int, float, float> fitYaw;                 // (slot, ship, game yaw) -> a yaw that fits the pad
         readonly Func<int, int, Quaternion, Vector3> padPosition;     // (slot, ship, parked rotation) -> the ship's parked pivot
         readonly Func<int, Vector3, Quaternion, GameObject> spawn;     // (ship, position, rotation) -> the ship
 
@@ -131,8 +132,9 @@ namespace GoF2Remake.World
         /// <param name="flights">Ships fly in and out (the lane and the option); else guests just appear and go.</param>
         public HangarTraffic(StationTables.HangarLane lane, int slotCount, int max, List<Parked> parked, Database db,
                              Func<int> randomShip, Func<int, int, Quaternion, Vector3> padPosition, Func<int, Vector3, Quaternion, GameObject> spawn,
-                             bool npcTraffic = true, bool flights = true)
+                             bool npcTraffic = true, bool flights = true, Func<int, int, float, float> fitYaw = null)
         {
+            this.fitYaw = fitYaw ?? ((slot, ship, yaw) => yaw);
             this.npcTraffic = npcTraffic;
             this.flights = flights && lane != null;
             this.lane = lane;
@@ -261,13 +263,13 @@ namespace GoF2Remake.World
             return -1;
         }
 
-        static Quaternion ParkedYaw() => OrbitLayout.RotationToUnity(new Vector3(0f, Random.Range(0, 300) / 100f, 0f));
+        Quaternion ParkedYaw(int slot, int ship) => OrbitLayout.RotationToUnity(new Vector3(0f, fitYaw(slot, ship, Random.Range(0, 300) / 100f), 0f));
 
         void ParkGuest(long id, int ship)
         {
             int slot = FreeSlot();
             if (slot < 0) return;
-            var rot = ParkedYaw();
+            var rot = ParkedYaw(slot, ship);
             var go = spawn(ship, padPosition(slot, ship, rot), rot);
             if (go != null) parked.Add(new Parked { go = go, slot = slot, ship = ship, guest = id });
         }
@@ -280,7 +282,7 @@ namespace GoF2Remake.World
             if (go == null) return;
             flying = new Parked { go = go, slot = slot, ship = ship, guest = id };
             var engine = HangarFlight.AddEngine(go, false, db, ship, out float volume);
-            var rot = ParkedYaw();
+            var rot = ParkedYaw(slot, ship);
             flight = HangarFlight.Arrival(go.transform, lane, padPosition(slot, ship, rot), rot, engine, volume);
         }
 
@@ -292,7 +294,7 @@ namespace GoF2Remake.World
             if (free.Count == 0) return;
             int slot = free[Random.Range(0, free.Count)], ship = randomShip();
             // Parked at a random yaw like the ships already there (Level::createScene: nextInt(300) / 100 rad).
-            float yaw = Random.Range(0, 300) / 100f;
+            float yaw = fitYaw(slot, ship, Random.Range(0, 300) / 100f);   // remake: one the pad fits (StationTables.FitParkingYaw)
             int key = KeyBase > 0 ? KeyBase + nextKey++ : slot;   // multiplayer: an id no other game's NPC ship has
             if (!StartNpcLanding(slot, ship, yaw, key)) return;
             NpcLanding?.Invoke(key, ship, yaw);   // multiplayer: the same landing for the others here
