@@ -102,7 +102,9 @@ namespace GoF2Remake.UI
         Transform wormhole;
         Vector3 wormholeScale = Vector3.one;
         GameObject systemRoot;
-        Light sunLight;
+        static Shader planetShader;
+        static readonly Dictionary<Material, Material> planetMaterials = new Dictionary<Material, Material>();
+        static readonly int SunPosId = Shader.PropertyToID("_StarMapSunPos");
         readonly List<GalaxyMap.Planet> planets = new List<GalaxyMap.Planet>();
         readonly List<Transform> planetObjects = new List<Transform>(), orbitObjects = new List<Transform>();
         readonly List<Vector3> planetScales = new List<Vector3>();
@@ -364,7 +366,6 @@ namespace GoF2Remake.UI
         // ---- 3D --------------------------------------------------------------------------------------------
 
         static Vector3 U(Vector3 game) => new Vector3(game.x, game.y, -game.z) * M;
-        static Vector3 OrbitLayoutDir(Vector3 game) => new Vector3(game.x, game.y, -game.z);
 
         /// <summary>A game rotation (Rx * Ry * Rz style matrix) to the Unity rotation of an imported model: S * R * M with the
         /// z mirror S and the import's model flip M = diag(-1, 1, 1) (see OrbitLayout.RotationToUnity).</summary>
@@ -584,20 +585,15 @@ namespace GoF2Remake.UI
             foreach (var p in planets)
             {
                 var planet = Spawn($"galaxymap_planet_{p.textureIndex:000}", systemRoot.transform) ?? Spawn("galaxymap_planet_000", systemRoot.transform);
+                if (planet != null) LightBySun(planet);
                 planetObjects.Add(planet != null ? planet.transform : null);
                 planetScales.Add(planet != null ? planet.transform.localScale / 128f : Vector3.zero);
                 var orbit = Spawn("galaxymap_orbit", systemRoot.transform);
                 if (orbit != null) orbit.transform.localScale = Vector3.one * (2f * p.radius / 65536f / 128f);
                 orbitObjects.Add(orbit != null ? orbit.transform : null);
             }
-            // One light, direction (0, -1, -1), diffuse 2.0 (ambient 0.2 is the flat scene ambient set in BuildWorld).
-            var lightGo = new GameObject("Sun light") { layer = Layer };
-            lightGo.transform.SetParent(systemRoot.transform, false);
-            lightGo.transform.rotation = Quaternion.LookRotation(OrbitLayoutDir(new Vector3(0f, -1f, -1f)));
-            sunLight = lightGo.AddComponent<Light>();
-            sunLight.type = LightType.Directional;
-            sunLight.intensity = 1.6f;
-            sunLight.cullingMask = 1 << Layer;
+            // The light at the sun (LightSetLightPosition, ambient 0.2, diffuse 2.0): GoF2/MapPlanet (LightBySun) with the
+            // sun's position as a global (UpdateSystemTransforms).
             yaw = 4096f;
             pitch = -4096f;
             yawVel = pitchVel = 0f;
@@ -605,6 +601,32 @@ namespace GoF2Remake.UI
             autoRotate = false;
             BuildPlanetItems();
             UpdateSystemTransforms();
+        }
+
+        /// <summary>StarMap::initStarSystem's light at the sun: the planet's materials swapped for GoF2/MapPlanet copies (its
+        /// texture and tint), lit toward _StarMapSunPos per pixel without the distance fade of URP's point lights.</summary>
+        static void LightBySun(GameObject planet)
+        {
+            if (planetShader == null) planetShader = Resources.Load<Shader>("GoF2StarMap/MapPlanet");
+            if (planetShader == null) return;
+            foreach (var r in planet.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                var mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    var src = mats[i];
+                    if (src == null || !(src.shader.name.Contains("Lit") || src.shader.name == "GoF2/Hull")) continue;   // the planet's lit hull only (not a glow)
+                    if (!planetMaterials.TryGetValue(src, out var m) || m == null)
+                    {
+                        m = new Material(planetShader) { name = src.name + " (map planet)" };
+                        if (src.HasProperty("_BaseMap")) { m.SetTexture("_BaseMap", src.GetTexture("_BaseMap")); m.SetTextureScale("_BaseMap", src.GetTextureScale("_BaseMap")); m.SetTextureOffset("_BaseMap", src.GetTextureOffset("_BaseMap")); }
+                        if (src.HasProperty("_BaseColor")) m.SetColor("_BaseColor", src.GetColor("_BaseColor"));
+                        planetMaterials[src] = m;
+                    }
+                    mats[i] = m;
+                }
+                r.sharedMaterials = mats;
+            }
         }
 
         void DestroySystem()
@@ -635,6 +657,7 @@ namespace GoF2Remake.UI
             if (systemRoot == null) return;
             var rc = ContainerRotation();
             var sun = SunGame(zoomSystem);
+            Shader.SetGlobalVector(SunPosId, systemRoot.transform.TransformPoint(U(sun)));   // GoF2/MapPlanet's light
             for (int k = 0; k < planets.Count; k++)
             {
                 var pl = planetObjects[k];
