@@ -303,6 +303,7 @@ namespace GoF2Remake.World
                     a.pingPongRotation = true;
                     if (a.gameObject.name.Contains("_anim")) a.applyMaterialChannels = true;
                 }
+            CollectRoomHighlights(roomGo);
 
             shipPivot = PadPosition(shipIndex);   // clear of the pad (remake)
             var ship = SpawnShip(shipIndex, shipPivot, Quaternion.identity, hangarRoot, "Player ship");
@@ -576,6 +577,10 @@ namespace GoF2Remake.World
         {
             Settings.Changed -= ApplyAntialiasing;
             if (dofProfile != null) Destroy(dofProfile);
+            var copies = new HashSet<Material>();
+            foreach (var (_, _, matte) in roomHighlights) foreach (var m in matte) copies.Add(m);
+            foreach (var (_, lit, _) in roomHighlights) foreach (var m in lit) copies.Remove(m);
+            foreach (var m in copies) if (m != null) Destroy(m);
         }
 
         // ---- depth of field (remake option "Hangar depth of field", Settings.HangarDepthOfField) ---------------------------
@@ -615,12 +620,59 @@ namespace GoF2Remake.World
             if (data != null) data.volumeLayerMask |= 1 << DofLayer;
         }
 
+        // The room's URP Lit materials with and without their specular highlights (CollectRoomHighlights).
+        readonly List<(Renderer renderer, Material[] lit, Material[] matte)> roomHighlights = new List<(Renderer, Material[], Material[])>();
+        bool roomMatte;
+
+        /// <summary>Remake: under the hangar's depth of field the room's specular highlights are left out. The key light's
+        /// highlights on the room's glossy parts (the Terran forcefield's top beam) are tiny HDR glints that pop in and out as
+        /// the camera drifts a few centimetres; sharp they are a pixel's sparkle, but the blur spreads each into a bright
+        /// blob, which flickered, worst where the beam meets the screen's top edge (measured with the camera stepped like its
+        /// drift: 0.7-1 % of the top strip's pixels flickering, Bokeh or Gaussian, with or without DLSS; 0 with the
+        /// highlights off, as with the depth of field off). Under the blur the room looks the same without them.</summary>
+        void CollectRoomHighlights(GameObject room)
+        {
+            roomHighlights.Clear();
+            roomMatte = false;
+            if (room == null) return;
+            var copies = new Dictionary<Material, Material>();
+            foreach (var r in room.GetComponentsInChildren<Renderer>(true))
+            {
+                var mats = r.sharedMaterials;
+                Material[] matte = null;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    var m = mats[i];
+                    if (m == null || !m.HasProperty("_SpecularHighlights") || m.IsKeywordEnabled("_SPECULARHIGHLIGHTS_OFF")) continue;
+                    if (!copies.TryGetValue(m, out var c))
+                    {
+                        c = new Material(m) { name = m.name + " (no highlights)" };
+                        c.SetFloat("_SpecularHighlights", 0f);
+                        c.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
+                        copies[m] = c;
+                    }
+                    matte ??= (Material[])mats.Clone();
+                    matte[i] = c;
+                }
+                if (matte != null) roomHighlights.Add((r, mats, matte));
+            }
+        }
+
+        void SetRoomMatte(bool matte)
+        {
+            if (roomMatte == matte) return;
+            roomMatte = matte;
+            foreach (var (r, lit, m) in roomHighlights)
+                if (r != null) r.sharedMaterials = matte ? m : lit;
+        }
+
         void UpdateDepthOfField()
         {
             if (dofVolume == null) return;
             bool on = Settings.HangarDepthOfField && View == StationView.Hangar && playerShip != null && mainCamera != null
                       && !Vr.VrMode.Enabled && !UI.StarMap.IsOpen;
             if (dofVolume.enabled != on) dofVolume.enabled = on;
+            SetRoomMatte(on);
             if (!on) return;
             float focus = Mathf.Max(1f, Vector3.Distance(mainCamera.transform.position, playerShip.position));
             // Inspect ship: focused on the ship's centre, through a wider lens (300 mm at f/2 kept only ~6 m sharp up close).
