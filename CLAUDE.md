@@ -1992,6 +1992,29 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   the mods that are on bring nothing to load, `ModLoading.HasWork`: no mods or only quests), so does the fade before a
   game scene when the mods changed in the menu (Leave). Measured in the Editor with the five PR ships: 5.3 s with frames of
   100-180 ms before, 0.9-1.9 s after with smooth frames (two of 83 / 164 ms right after the menu scene's load).
+  Faster loading (2026-10-11, measured with the GoF3 Ships mod: 79 GLBs, 329 textures, 24-thread CPU, Editor, from the
+  ships' start): cold 5.25 -> 2.92 s, warm 1.2 -> 1.0-1.1 s with the hangar shadows done 0.1 s after the ships (were up to a
+  second, one hull per frame; now hull reads until 3 ms of the frame, `ShipShadowBaker.PrebakeReadMs`), GCs 25 -> 12 cold.
+  The encoder spreads a texture over the job workers (`IJobParallelFor`: the role's conversion per pixel row, each mip level
+  per row, every block row of every level at once; one serial job per texture before) and does the metallic-roughness /
+  normal conversion itself (`ModTextureEncoder.Remap`; `ModMaterials.Convert` on the main thread is now only the fallback);
+  output byte-identical to the old encoder (all 329 cached files compared). Cached textures don't wait for a decode slot
+  (`CacheSlots` 16 / phones 4; `DecodeSlots` now processorCount / 2, 4..12, phones 2), their data and the encoder's output
+  stay native (`ModTextureCache.Entry.data` is a NativeArray read straight from the file; the cache file written from
+  `Work.Data` on a worker thread: the 1-5 MB managed copies drove the collections), and uploads share a 4 ms budget per
+  frame (`ModMaterials.UploadTurn`). `ModShips.Ready` asks `ModContent.AnyShipModels` (ActiveShips rebuilt every entry: ~200
+  KB and 2 ms per call for 79 ships, three calls a frame from the loading screen). Left: the GLBs are read whole into
+  managed arrays for glTFast (~430 MB for this mod, most of the warm load's GCs).
+  Phones (no DXT): the same jobs encode ETC2 (`ModTextureEncoder.Target.Etc2`, ETC2_RGB / ETC2_RGBA8, cache kind "etc2";
+  every OpenGL ES 3 / Vulkan device reads it) instead of Texture2D.Compress on the main thread, one texture a frame: the colour
+  in ETC1's individual / differential modes, never T / H / planar, the table and indices chosen by each pixel's brightness
+  offset, the alpha as EAC. Checked in the Editor with Unity's own ETC2 decoder (2048 px ship maps): RGB 33.1 dB (Unity's
+  fast ETC2 32.9, normal 36.6), a normal map with X in alpha 30.3 / 53.9 dB (Unity fast 30.1 / 54.1); with 4 job workers
+  and Burst safety checks off 34-41 ms per opaque texture with its mipmaps, 104-135 ms with alpha, off the main thread (Unity
+  fast: 31-51 / 363-418 ms on it, the top level only); the whole loader forced through it built all 79 GoF3 ships. On a
+  phone (S24 Ultra): the 79 GoF3 ships cold in 9.5 s, nothing compressed on the main thread, the hulls
+  checked up close. Texture2D.Compress stays for a GPU that reads neither; a phone's old "gpu" cache files are no longer read
+  (nothing deletes them).
 - **Mod browser** (`ModBrowser`, the main menu's Mods button and `modsPanel`; styles `.mods-*` in MainMenu.uss): the list in
   load order (thumbnail, name, version · author, On / Off / Error / Can't load), a click or keyboard / controller focus selecting a row (the mouse's hover focus doesn't: passing over the rows on the way to Turn on changed the mod it acted on), the selected mod's preview, name, meta,
   description and credits (mod.json `credits`), where it is installed, errors and warnings, Turn on / off (also the
