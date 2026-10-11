@@ -7,7 +7,12 @@
 //               cooked once (Physics.BakeMesh) and shared by every collider using it.
 //   Cast        shots (Gun): a sphere cast along the shot's path this frame, the nearest hull a shot may hit
 //   Overlap     the player's ship (PlayerCollision): the hulls touching its probe sphere, pushed out of with
-//               Physics.ComputePenetration
+//               Physics.ComputePenetration; Sweep: the probe swept from last frame's place, so a fast ship (boost,
+//               fast-forward) stops at a thin hull instead of passing through it between two frames
+//   Shown       a part that can't be seen (its renderer off, scaled to nothing, faded out by its animation's `extra`
+//               channel) neither stops shots nor the ship
+//   Suppressed  the main menu's backdrop builds no hulls (nobody flies there; the cooking would only cost loading)
+// Sweep, Shown and Suppressed follow a contributor's precise-collision version (2026-10-11).
 // Untouched: NPC fighters steering round stations and freighters (Obstacle volumes), the original's rules for what can be
 // hit (stations never, a ship's own shots never) and for what the player slides along (landmarks and freighters, not
 // fighters), asteroids (their cube), crates. The physics simulation isn't used: the bodies are kinematic, the queries read
@@ -30,6 +35,11 @@ namespace GoF2Remake.Flight
         static readonly RaycastHit[] hits = new RaycastHit[64];
         static readonly List<Renderer> lowLods = new List<Renderer>();
         static int syncedFrame = -1;
+        static readonly MaterialPropertyBlock shownBlock = new MaterialPropertyBlock();
+        static readonly int FadeId = Shader.PropertyToID("_Fade"), ColorId = Shader.PropertyToID("_Color"), BaseColorId = Shader.PropertyToID("_BaseColor");
+
+        /// <summary>No hulls are made while set (MenuBackground: the main menu's live orbit).</summary>
+        public static bool Suppressed;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics()
@@ -37,6 +47,7 @@ namespace GoF2Remake.Flight
             bodies.Clear();
             baked.Clear();
             syncedFrame = -1;
+            Suppressed = false;
         }
 
         /// <summary>Some hull exists (a quick skip for the shot tests).</summary>
@@ -46,7 +57,7 @@ namespace GoF2Remake.Flight
         /// player slides along (either may be null). Null when the model has no readable hull mesh.</summary>
         public static HullBody Attach(GameObject model, Target target, Obstacle obstacle)
         {
-            if (model == null) return null;
+            if (model == null || Suppressed) return null;
             var body = model.GetComponent<HullBody>();
             if (body == null)
             {
@@ -114,6 +125,27 @@ namespace GoF2Remake.Flight
 
         public static HullBody BodyOf(Collider c) => c != null && bodies.TryGetValue(c, out var b) ? b : null;
 
+        /// <summary>The part this collider shapes can be seen: its renderer (on the collider's parent, the mesh's object)
+        /// enabled, not scaled to nothing, not faded out by PartAnimation's `extra` channel (_Fade, or the alpha / colour of
+        /// _Color / _BaseColor through the renderer's property block). Inactive parts have their colliders off already.</summary>
+        public static bool Shown(Collider c)
+        {
+            if (c == null || !c.enabled) return false;
+            var t = c.transform.parent;
+            var r = t != null ? t.GetComponent<Renderer>() : null;
+            if (r == null || !r.enabled) return false;
+            var sc = t.lossyScale;
+            if (Mathf.Abs(sc.x) < 1e-4f || Mathf.Abs(sc.y) < 1e-4f || Mathf.Abs(sc.z) < 1e-4f) return false;
+            if (!r.HasPropertyBlock()) return true;
+            r.GetPropertyBlock(shownBlock);
+            if (shownBlock.HasFloat(FadeId) && shownBlock.GetFloat(FadeId) < 0.01f) return false;
+            if (shownBlock.HasColor(ColorId) && Faded(shownBlock.GetColor(ColorId))) return false;
+            if (shownBlock.HasColor(BaseColorId) && Faded(shownBlock.GetColor(BaseColorId))) return false;
+            return true;
+        }
+
+        static bool Faded(Color c) => c.a < 0.01f || c.maxColorComponent < 0.01f;
+
         /// <summary>The queries read the transforms as of this frame's first query (the hulls moved since the last physics
         /// step: their kinematic bodies aren't simulated).</summary>
         static void Sync()
@@ -139,12 +171,35 @@ namespace GoF2Remake.Flight
             {
                 if (hits[i].distance >= best) continue;
                 var b = BodyOf(hits[i].collider);
-                if (b == null || b.target == null || !valid(b.target)) continue;
+                if (b == null || b.target == null || !valid(b.target) || !Shown(hits[i].collider)) continue;
                 best = hits[i].distance;
                 target = b.target;
                 point = hits[i].distance > 0f ? hits[i].point : from;
             }
             return target != null;
+        }
+
+        /// <summary>A sphere of 'radius' swept from 'from' to 'to': the distance to the first shown hull 'valid' accepts that
+        /// it runs into on the way (not one it starts inside: the penetration push takes those); false = none.</summary>
+        public static bool Sweep(Vector3 from, Vector3 to, float radius, Func<HullBody, bool> valid, out float distance)
+        {
+            distance = 0f;
+            var d = to - from;
+            float len = d.magnitude;
+            if (len < 1e-4f) return false;
+            Sync();
+            int n = Physics.SphereCastNonAlloc(from, radius, d / len, hits, len, HullMask, QueryTriggerInteraction.Ignore);
+            float best = float.MaxValue;
+            for (int i = 0; i < n; i++)
+            {
+                if (hits[i].distance <= 0f || hits[i].distance >= best) continue;
+                var b = BodyOf(hits[i].collider);
+                if (b == null || !valid(b) || !Shown(hits[i].collider)) continue;
+                best = hits[i].distance;
+            }
+            if (best == float.MaxValue) return false;
+            distance = best;
+            return true;
         }
 
         /// <summary>The hull colliders within 'radius' of 'centre' into 'buffer'; their count.</summary>

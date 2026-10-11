@@ -188,6 +188,7 @@ namespace GoF2Remake.World
 
         void Awake()
         {
+            HullCollision.Suppressed = false;   // the main menu's backdrop had them off (whichever scene's code runs first)
             // Multiplayer: loaded after its session ended (a docking queued behind the menu): on to the menu (nothing is
             // saved, SaveGame.SessionGame).
             if (GoF2Remake.Multiplayer.NetGame.SessionLost) SceneManager.LoadScene("MainMenu");

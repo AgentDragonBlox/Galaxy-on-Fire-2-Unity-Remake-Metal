@@ -140,6 +140,13 @@ namespace GoF2Remake.World
         }
 
         /// <summary>Assembly name of a station (PlayerStation::PlayerStation, assemblies_stations_notes.md), null if none.</summary>
+        /// <summary>PlayerStation::PlayerStation: Kothar's station exploding (index 0x50) or damaged (the Valkyrie add-on won)
+        /// collides by its own table entry, 1005 (the blown-off module's box gone, its debris spheres), not the intact
+        /// station's 100 (the remake used 100 until 2026-10-11; a contributor's precise-collision version found it).</summary>
+        const int KotharDamagedCollision = 1005;
+        static bool KotharDamaged(OrbitLayout layout) =>
+            layout.stationIndex == 100 && !layout.alienOrbit && ((!Session.FreePlay && Story.Index == 80) || Story.Dlc1Won);
+
         public static string StationAssembly(Database db, OrbitLayout layout)
         {
             // Special cases, as they are before the campaign changes them.
@@ -205,7 +212,8 @@ namespace GoF2Remake.World
                 o.landmark = o.isStation = true;
                 var own = Modding.ModWorld.ModelOf(layout.stationIndex);
                 o.volumes = own != null && Modding.ModStations.Built(own.station) ? Modding.ModStations.Volumes(own, station)   // a mod's model
-                          : GoF2Remake.Flight.CollisionVolume.ForStation(StationLook(layout.stationIndex), layout.systemIndex < 0,
+                          : GoF2Remake.Flight.CollisionVolume.ForStation(KotharDamaged(layout) ? KotharDamagedCollision
+                                                                         : StationLook(layout.stationIndex), layout.systemIndex < 0,
                                                                          layout.alienOrbit && Story.Dlc1Won);
                 // PlayerStation+0x150: the transform's bounding radius (Transform+0xe0, about the station's own origin)
                 // + 5000 units. A radius from the origin, not the bounds' half size: a lopsided station (Tornard, 57,
