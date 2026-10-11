@@ -208,8 +208,8 @@ namespace GoF2Remake.World
             OrbitBuilder.SpawnBackdrop(Layout, mainCamera);
             BuildHangar();
             BuildBar();
-            // Remake: ships now and then flying past outside the bar's windows.
-            gameObject.AddComponent<BarFlybys>().Setup(this, barRoot, barPosB, barRotB, BarRace == 1, RandomParkedShip,
+            // Remake: ships now and then flying past outside the bar's windows (not at an evacuated station).
+            if (!Evacuated) gameObject.AddComponent<BarFlybys>().Setup(this, barRoot, barPosB, barRotB, BarRace == 1, RandomParkedShip,
                                                        ship => SpawnShip(ship, Vector3.zero, Quaternion.identity, barRoot, "Flyby"));
             Debug.Log($"StationLevel: station {station} {Station?.name} ({Station?.systemName}), hangar {HangarIndex}, " +
                       $"bar {BarRace}, ship {shipIndex}, {VisitorCount} visitors");
@@ -326,7 +326,7 @@ namespace GoF2Remake.World
             // The others come and go (remake), except the club's stored hulls. Multiplayer: the other players docked here park
             // on the slots too (NetHangar), with or without the NPC traffic and the flights.
             bool slots = ParkedSlotCount > 0 && ParkedMaxCount > 0;
-            bool npcTraffic = Settings.HangarFlights && Lane != null && slots && !KaamoClub.StorageAt(Layout.stationIndex);
+            bool npcTraffic = Settings.HangarFlights && Lane != null && slots && !KaamoClub.StorageAt(Layout.stationIndex) && !Evacuated;
             if (npcTraffic || (slots && GoF2Remake.Multiplayer.NetGame.Active))
                 traffic = new HangarTraffic(Lane, ParkedSlotCount, ParkedMaxCount,
                                             parkedShips, db, NewParkedShip, ParkedPosition,
@@ -389,7 +389,7 @@ namespace GoF2Remake.World
         {
             int slotCount = ParkedSlotCount;
             int max = ParkedMaxCount;
-            if (slotCount <= 0 || max <= 0) return;
+            if (slotCount <= 0 || max <= 0 || Evacuated) return;   // remake: an evacuated station's hangar is empty
             bool club = KaamoClub.StorageAt(Layout.stationIndex);
             int count = Mathf.Min(club ? Mathf.Min(Session.KaamoShips.Count, max) : Random.Range(0, max + 1), slotCount);
             if (GoF2Remake.Multiplayer.NetGame.Active && !club) count = Mathf.Min(count, slotCount - 1);   // a pad for another player
@@ -411,6 +411,11 @@ namespace GoF2Remake.World
         /// <summary>A heading that fits the pad (StationTables.FitParkingYaw); a custom hangar's as it is.</summary>
         float FitParkingYaw(int slot, int ship, float gameYaw) =>
             customHangar != null ? gameYaw : StationTables.FitParkingYaw(HangarIndex, slot, ship, gameYaw);
+
+        /// <summary>The evacuated supernova system's stations (Shop.InSupernovaSystem, system 27 before campaign 158): an empty
+        /// lounge like the original's (AgentGenerator.CreateAgents), and (remake) no parked ships, hangar traffic or bar flybys
+        /// either.</summary>
+        bool Evacuated => Shop.InSupernovaSystem(Shop.SystemOf(db, Layout.stationIndex), Layout.stationIndex);
 
         int NewParkedShip() => Layout.stationIndex == 100 ? StationTables.DeepScienceShips[Random.Range(0, 3)] : RandomParkedShip();
 
@@ -867,7 +872,16 @@ namespace GoF2Remake.World
 
         /// <summary>ModStation::leaveStation 0xec1ec after the "Depart the station?" confirmation: into space (after the
         /// remake's take-off).</summary>
-        public void Launch() => Depart(LaunchNow);
+        public void Launch()
+        {
+            // ModStation::OnTouchEnd, leaving at campaign 0x18 from Thynome (10): the AB-1 Retractor seller of index 23 has
+            // moved on (Agent::setEvent(1) + setOfferAccepted: 858 "I don't have anything left, sorry."), as step 23's Info
+            // page 192 warns.
+            if (!Session.FreePlay && Story.Index == 24 && Layout.stationIndex == 10 && Stock?.agents != null)
+                foreach (var a in Stock.agents)
+                    if (a.offer == AgentOffer.SellItem && a.sellItem == 68) a.accepted = a.known = true;   // known: no first-chat offer
+            Depart(LaunchNow);
+        }
 
         /// <summary>Remake: the player's ship takes off and flies out through the forcefield, then 'then' runs (loads the
         /// next scene); straight away with the flights off. It lifts off at once and holds over its pad while another

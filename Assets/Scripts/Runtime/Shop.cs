@@ -222,6 +222,8 @@ namespace GoF2Remake.Data
                 }
             }
             if (stock.agents == null || (stock.agents.Count == 0 && station != 108)) stock.agents = AgentGenerator.CreateAgents(db, station);   // saves from before the bar
+            // An evacuated supernova station's lounge is empty (AgentGenerator.CreateAgents): visitors a save kept from before go.
+            if (InSupernovaSystem(SystemOf(db, station), station)) stock.agents.Clear();
             // The Kaamo Club never has a dealer (getShipBuyList); a save from a test build that gave it one is cleared.
             if (station == 108 && stock.ships != null) stock.ships.Clear();
             // Status::departStation: at the owned club the storage is the station's stock (one shared list here).
