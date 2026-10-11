@@ -1832,14 +1832,20 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
 - **Weapon fx** (`ModWeapons`, items.json `"fx"` on a new item or an override; `ModFxPart`): projectile / muzzle / impact
   each the base item's, `false` (none), a `sprite` (PNG on a two-sided 1 x 1 quad, white vertex colours: the GoF2 Shader
   Graphs keep `_USEVERTEXCOLOR_ON` in every game material, so it stays on) or a `model` (glTF; with `texture` every
-  renderer gets the fx material and white vertex colours, else its own glTF materials); fields size (game units: the
+  renderer gets the fx material and white vertex colours, else its own glTF materials), or the base item's own part recoloured
+  (only `color` / `glow`, `ModWeapons.Recolor`: the effect materials (GoF2/Additive / AlphaBlend; a missile's hull stays)
+  copied with their texture made grey by `Resources/GoF2Mods/FxRecolor.shader` (each texel's brightest channel, alpha kept;
+  one RenderTexture per atlas) and `_Color` = the colour, so the hue is replaced and the shape / brightness kept; a modder's
+  colour-only projectile used to be refused whole, the original look left); colours `[r, g, b]` 0-1, 0-255 when a value is
+  above 1, or "#rrggbb"; fields size (game units: the
   sprite's width / the model's largest extent; the N'saan's own bolt is ~1600 units, its impact ~6300), color, glow,
   additive (copies of `ModAssets.fxAdditive` = mat_27250 sprite_fire / `fxAlpha` = mat_20101 sprite_smoke, **GoF2 > Build >
   Mod Assets**), lifetime (muzzle 100 / impact 300 ms), grow, fade, spin, alongFlight + stretch (axial billboard about the
   flight direction, taken from its own movement: GunRig turns blaster roots to the camera), rotate; `shot` / `explosionSound`
   (files or lists, loaded decoded), `shotLoops`. Each item gets a WeaponFx of its own (`Instantiate` of the base item's with
   the parts / clips replaced); `WeaponFx.Load` returns `ModWeapons.Fx(item)` first (null while loading: the base look
-  meanwhile), so every gun (player, NPCs, turrets, sentries, `NetShotMirror`) uses it. `ModFxPart` (on the sprite / model
+  meanwhile; an override's item number resolves through `ModContent.TryResolveItem`, which now loads the table first: on
+  the startup loading screen nothing had, and every override's fx was dropped), so every gun (player, NPCs, turrets, sentries, `NetShotMirror`) uses it. `ModFxPart` (on the sprite / model
   under the part's root, since GunRig sets the root's scale and rotation): camera facing, lifetime growth and fade through
   `_Color` (rgb additive, alpha otherwise); `PartAnimation.PlayOnce` restarts it (`ModFxPart.RestartAll`, also turning it
   to the camera at once) and `GunRig.MaxLength` counts its lifetime. Loaded in the background with the rest

@@ -463,6 +463,9 @@ namespace GoF2Remake.Modding
         {
             index = -1;
             if (string.IsNullOrEmpty(reference)) return false;
+            // The table's size and the mod numbers first (ModWeapons reads the overrides' fx on the loading screen, before
+            // anything else loaded the database: originalItems was still -1 and every override's fx was dropped).
+            EnsureMapping();
             if (int.TryParse(reference, out index)) return index >= 0 && (index < originalItems || itemDefAt.ContainsKey(index));
             return itemIndex.TryGetValue(reference, out index);
         }
