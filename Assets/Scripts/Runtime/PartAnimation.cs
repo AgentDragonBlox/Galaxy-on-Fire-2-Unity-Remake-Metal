@@ -80,6 +80,19 @@ namespace GoF2Remake.Visuals
         static readonly int ColorId = Shader.PropertyToID("_Color"), BaseColorId = Shader.PropertyToID("_BaseColor"),
             FadeId = Shader.PropertyToID("_Fade"), UVOffsetId = Shader.PropertyToID("_UVOffset"), MainTexStId = Shader.PropertyToID("_MainTex_ST");
 
+        // The parsed sidecars, shared by every instance of a model (read only): each Awake parsed its keyframes again, ~300 KB
+        // of garbage and ~1.5 ms per ship explosion (the blast and its 3-9 streaks), and every ship spawned.
+        static readonly Dictionary<TextAsset, MeshMeta> parsed = new Dictionary<TextAsset, MeshMeta>();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => parsed.Clear();
+
+        static MeshMeta Parse(TextAsset meta)
+        {
+            if (!parsed.TryGetValue(meta, out var m)) parsed[meta] = m = JsonUtility.FromJson<MeshMeta>(meta.text);
+            return m;
+        }
+
         class Track { public Transform tr; public AnimationKey[][] pos = new AnimationKey[3][]; public AnimationKey[][] rot = new AnimationKey[3][]; public AnimationKey[][] scl = new AnimationKey[3][]; public float[] rotTimes; public Vector3 basePos; public Quaternion baseRot; public Vector3 baseScale; public AnimationKey[] extra, uv, uvY; public Renderer renderer; public MaterialPropertyBlock block; public int fadeMode; public int fadeProperty = ColorId; public Color baseColor; public int uvMode; public Vector4 baseST; public bool initialised; }
         readonly List<Track> tracks = new List<Track>();
         float timeMs, lengthMs, extraMs;
@@ -91,7 +104,7 @@ namespace GoF2Remake.Visuals
                 && rotationMap[0].sign < 0f && rotationMap[1].sign < 0f && rotationMap[2].sign < 0f)
                 rotationMap = new[] { new AxisMap { source = 0, sign = 1 }, new AxisMap { source = 2, sign = -1 }, new AxisMap { source = 1, sign = 1 } };
             if (meta == null) return;
-            var m = JsonUtility.FromJson<MeshMeta>(meta.text);
+            var m = Parse(meta);
             if (m == null || m.parts == null) return;
             var byName = new Dictionary<string, Transform>();
             foreach (var t in GetComponentsInChildren<Transform>(true)) if (!byName.ContainsKey(t.name)) byName[t.name] = t;

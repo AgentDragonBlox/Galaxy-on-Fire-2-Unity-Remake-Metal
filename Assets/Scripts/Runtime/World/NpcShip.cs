@@ -250,6 +250,7 @@ namespace GoF2Remake.World
         float dyingMs, deadMs;
         Vector3 spinAxis, deathDir;
         Explosion explosion;
+        int explosionSerial;   // the explosions are pooled: this one's Spawn (Explosion.Done)
         GameObject wreck;
         WreckBurn wreckBurn;
         Crate crate;
@@ -1803,6 +1804,7 @@ namespace GoF2Remake.World
             if (dyingMs > 0f) return;
             // PlayerFixedObject::update: setScaling(6), 8 for the Terran battleship (0x37e7) and the pirate outpost (0x37a3).
             explosion = Explosion.Spawn(transform.position, IsFixed ? Spec.explosionScale : IsFreighter ? (Spec.ship == 14 ? 8f : 6f) : 1f);
+            explosionSerial = explosion != null ? explosion.Serial : 0;
             wreckBurn?.SetEmitting(false);   // state 4: enableSystemEmit(false)
             Current = State.Dead;
             smoke?.SetEmitting(false);   // the end of the tumble: Explosion::start, smoke and fire off
@@ -1931,7 +1933,7 @@ namespace GoF2Remake.World
                 if (modelGo != null && modelGo.activeSelf) modelGo.SetActive(false);
                 if (wreck != null) Destroy(wreck);
             }
-            bool exploded = explosion == null || explosion.Finished;
+            bool exploded = explosion == null || explosion.Done(explosionSerial);
             if (exploded && crate == null && moreCrates.TrueForAll(c => c == null) && deadMs > 300f) SetDead();
         }
     }

@@ -13,6 +13,9 @@
 //   type 13  sn_fireworks_lookat_anim_add, setScaling(0.25)
 // During the first 2000 ms it rumbles the camera: p = (1 - min(d, 30000) / 30000) * (1 - t / 2000)
 // (Explosion::update 0xb5768 -> TargetFollowCamera::setRumblePercentage).
+// Remake: pooled. Each explosion was 2-11 Instantiates (the blast, its streaks); a finished one now gives its parts back
+// (per prefab and material, stripped and their animations collected once) and its root waits for the next Spawn. The pool
+// lives in the active scene and goes with it.
 
 using System.Collections.Generic;
 using GoF2Remake.Visuals;
@@ -20,16 +23,40 @@ using UnityEngine;
 
 namespace GoF2Remake.Flight
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public class Explosion : MonoBehaviour
     {
         const float M = 0.05f, RumbleMs = 2000f, RumbleRange = 30000f;
 
+        /// <summary>One pooled part: a pivot holding the instance (Add's camera-facing turn), or a bare streak.</summary>
+        sealed class Part
+        {
+            public Transform root;
+            public GameObject instance;
+            public PartAnimation[] anims;
+            public Modding.ModFxPart[] mods;
+            public (GameObject, Material, bool) key;
+        }
+
+        static readonly Dictionary<(GameObject, Material, bool), Stack<Part>> freeParts = new Dictionary<(GameObject, Material, bool), Stack<Part>>();
+        static readonly Stack<Explosion> freeRoots = new Stack<Explosion>();
+        static Transform pool;   // inactive holder in the active scene; null again once its scene is gone
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() { freeParts.Clear(); freeRoots.Clear(); pool = null; }
+
         readonly List<Transform> lookAt = new List<Transform>();
+        readonly List<Part> parts = new List<Part>();
         float lengthMs = 4500f, ageMs;
         bool rumble = true;
+        int serial;
 
         public float LengthMs => lengthMs;
         public bool Finished => ageMs >= lengthMs;
+        /// <summary>This Spawn's number: the root is used again once it has played out (Done).</summary>
+        public int Serial => serial;
+        /// <summary>The explosion of Spawn 'spawnSerial' has played out (or the root has moved on to another one).</summary>
+        public bool Done(int spawnSerial) => spawnSerial != serial || Finished;
 
         /// <summary>Spawns a type-0 ship explosion (null when the combat assets are missing).</summary>
         public static Explosion Spawn(Vector3 position, float scale = 1f, bool sound = true)
@@ -44,10 +71,10 @@ namespace GoF2Remake.Flight
         {
             var assets = CombatAssets.Load();
             if (assets == null) return null;
-            var root = new GameObject($"Explosion {type}");
-            root.transform.position = position;
-            var e = root.AddComponent<Explosion>();
+            var e = TakeRoot(type);
+            e.transform.position = position;
             e.lengthMs = 0f;
+            e.ageMs = 0f;
             float speed = 1f;
             switch (type)
             {
@@ -80,14 +107,13 @@ namespace GoF2Remake.Flight
                         int n = 3 + Random.Range(0, 7);
                         for (int i = 0; i < n; i++)
                         {
-                            var d = Instantiate(assets.debris, root.transform, false);
-                            d.transform.localRotation = Quaternion.Euler(Random.Range(0, 360), Random.Range(0, 360), 0f);
+                            var d = e.TakePart(assets.debris, null, false);
+                            d.root.localRotation = Quaternion.Euler(Random.Range(0, 360), Random.Range(0, 360), 0f);
                             // addFireStreaks: 0.5..0.99, never scaled again (Explosion::setScaling 0xb4ee0 scales only the
                             // blast and its _add, the streaks just get its animation speed): a freighter's x6 made them huge lines.
-                            d.transform.localScale *= Random.Range(50, 100) * 0.01f;
-                            GunRig.StripForFx(d);
-                            foreach (var a in d.GetComponentsInChildren<PartAnimation>(true)) a.applyMaterialChannels = true;   // fade as they stretch
-                            e.lengthMs = Mathf.Max(e.lengthMs, PartAnimation.PlayOnce(d));
+                            d.root.localScale = assets.debris.transform.localScale * (Random.Range(50, 100) * 0.01f);
+                            foreach (var a in d.anims) a.applyMaterialChannels = true;   // fade as they stretch
+                            e.lengthMs = Mathf.Max(e.lengthMs, PartAnimation.PlayOnce(d.anims, d.mods));
                         }
                     }
                     break;
@@ -103,17 +129,95 @@ namespace GoF2Remake.Flight
         Transform Add(GameObject prefab, float scale, bool faceCamera, float speed, Material material = null)
         {
             if (prefab == null) return null;
-            var pivot = new GameObject(prefab.name).transform;
-            pivot.SetParent(transform, false);
-            var go = Instantiate(prefab, pivot, false);
-            go.transform.localScale *= scale;
-            if (material != null) foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.sharedMaterial = material;
-            GunRig.StripForFx(go);
-            foreach (var a in go.GetComponentsInChildren<PartAnimation>(true)) { a.speed = speed; a.applyMaterialChannels = true; }   // their `extra` fade-out
-            float len = PartAnimation.PlayOnce(go) / Mathf.Max(0.05f, speed);
+            var p = TakePart(prefab, material, true);
+            p.instance.transform.localScale = prefab.transform.localScale * scale;
+            foreach (var a in p.anims) { a.speed = speed; a.applyMaterialChannels = true; }   // their `extra` fade-out
+            float len = PartAnimation.PlayOnce(p.anims, p.mods) / Mathf.Max(0.05f, speed);
             lengthMs = Mathf.Max(lengthMs, len);
-            if (faceCamera) lookAt.Add(pivot);
-            return pivot;
+            if (faceCamera) lookAt.Add(p.root);
+            return p.root;
+        }
+
+        static Transform Pool()
+        {
+            if (pool != null) return pool;
+            // A new scene: the old one took the pooled objects with it.
+            freeParts.Clear();
+            freeRoots.Clear();
+            var go = new GameObject("Explosion pool");
+            go.SetActive(false);
+            pool = go.transform;
+            return pool;
+        }
+
+        static Explosion TakeRoot(int type)
+        {
+            Pool();
+            while (freeRoots.Count > 0)
+            {
+                var e = freeRoots.Pop();
+                if (e == null) continue;
+                e.serial++;
+                e.gameObject.SetActive(true);
+                return e;
+            }
+            return new GameObject($"Explosion {type}").AddComponent<Explosion>();
+        }
+
+        /// <summary>A part from the pool (a new instance when none is free) under this explosion at its prefab's pose;
+        /// 'pivot': inside a pivot of its own (Add's camera-facing turn), else bare (the streaks).</summary>
+        Part TakePart(GameObject prefab, Material material, bool pivot)
+        {
+            var key = (prefab, material, pivot);
+            Part p = null;
+            if (freeParts.TryGetValue(key, out var stack))
+                while (p == null && stack.Count > 0)
+                {
+                    p = stack.Pop();
+                    if (p.root == null) p = null;
+                }
+            if (p == null)
+            {
+                // Made under this (active) explosion, so PartAnimation.Awake runs now, as Instantiate always did.
+                p = new Part { key = key };
+                var holder = pivot ? new GameObject(prefab.name).transform : null;
+                if (holder != null) holder.SetParent(transform, false);
+                p.instance = Instantiate(prefab, holder != null ? holder : transform, false);
+                p.root = holder != null ? holder : p.instance.transform;
+                if (material != null) foreach (var r in p.instance.GetComponentsInChildren<Renderer>(true)) r.sharedMaterial = material;
+                GunRig.StripForFx(p.instance);
+                p.anims = p.instance.GetComponentsInChildren<PartAnimation>(true);
+                p.mods = p.instance.GetComponentsInChildren<Modding.ModFxPart>(true);
+            }
+            p.root.SetParent(transform, false);
+            var inst = p.instance.transform;
+            inst.localPosition = prefab.transform.localPosition;
+            inst.localRotation = prefab.transform.localRotation;
+            inst.localScale = prefab.transform.localScale;
+            if (pivot)
+            {
+                p.root.localPosition = Vector3.zero;
+                p.root.localRotation = Quaternion.identity;
+            }
+            parts.Add(p);
+            return p;
+        }
+
+        /// <summary>Played out: the parts back to the pool, the root waiting for the next Spawn.</summary>
+        void Release()
+        {
+            var holder = Pool();
+            foreach (var p in parts)
+            {
+                if (p.root == null) continue;
+                p.root.SetParent(holder, false);
+                if (!freeParts.TryGetValue(p.key, out var stack)) freeParts[p.key] = stack = new Stack<Part>();
+                stack.Push(p);
+            }
+            parts.Clear();
+            lookAt.Clear();
+            gameObject.SetActive(false);
+            freeRoots.Push(this);
         }
 
         void LateUpdate()
@@ -128,7 +232,7 @@ namespace GoF2Remake.Flight
                 var chase = cam.GetComponent<ChaseCamera>();
                 if (chase != null) chase.Rumble(p);
             }
-            if (ageMs >= lengthMs + 200f) Destroy(gameObject);
+            if (ageMs >= lengthMs + 200f) Release();
         }
     }
 }
