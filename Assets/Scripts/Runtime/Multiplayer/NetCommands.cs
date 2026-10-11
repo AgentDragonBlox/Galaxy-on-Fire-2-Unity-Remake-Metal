@@ -785,7 +785,6 @@ namespace GoF2Remake.Multiplayer
                 n++;
                 sb.Append('\n');
                 if (ids) sb.Append('#').Append(p.OwnerClientId).Append(' ');
-                if (p is NetPlayer np && np.IsDev) sb.Append(by == null ? DevIdentity.PlainTag : DevIdentity.Tag).Append(' ');   // the console: plain
                 sb.Append(p.DisplayName);
                 if (p == by) sb.Append(' ').Append(X("mpCmdYou", "(you)"));
                 sb.Append(": ").Append(WhereText(p)).Append(", ").Append(UI.ItemInfo.ShipName(p.ShipIndex));

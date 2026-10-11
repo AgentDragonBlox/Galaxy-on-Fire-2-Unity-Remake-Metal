@@ -212,7 +212,7 @@ namespace GoF2Remake.UI
             squadPanel.style.display = members.Count > 1 ? DisplayStyle.Flex : DisplayStyle.None;
             if (members.Count <= 1) { squadKey = ""; return; }
             var sb = new StringBuilder(squadCollapsed ? "c" : "o");
-            foreach (var m in members) sb.Append('|').Append(m.OwnerClientId).Append(m.DisplayName).Append(m.IsDev).Append(Where(m)).Append(m.Distress);
+            foreach (var m in members) sb.Append('|').Append(m.OwnerClientId).Append(m.DisplayName).Append(Where(m)).Append(m.Distress);
             sb.Append('|').Append(NetDistress.Active).Append(NetPlayer.Local != null && NetPlayer.Local.InSpace);
             string key = sb.ToString();
             if (key != squadKey)
@@ -226,7 +226,7 @@ namespace GoF2Remake.UI
                 {
                     var row = new VisualElement();
                     row.AddToClassList("squad-member");
-                    var name = new Label((m.Distress ? "⚠ " : "") + m.DevPrefix + m.DisplayName + (m.IsOwner ? $"  ({Localization.Extra("mpYou", "you")})" : ""));
+                    var name = new Label((m.Distress ? "⚠ " : "") + m.DisplayName + (m.IsOwner ? $"  ({Localization.Extra("mpYou", "you")})" : ""));
                     name.AddToClassList("squad-name");
                     if (m.Distress) name.style.color = new Color(1f, 0.4f, 0.35f);
                     row.Add(name);
@@ -294,7 +294,7 @@ namespace GoF2Remake.UI
             pilotsPanel.style.display = pilots.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
             if (pilots.Count == 0) { pilotsKey = ""; return; }
             var sb = new StringBuilder(pilotsCollapsed ? "c" : "o");
-            foreach (var p in pilots) sb.Append('|').Append(p.OwnerClientId).Append(p.DisplayName).Append(p.IsDev).Append(NetSquad.Same(p, me)).Append(NetSquad.WasInvited(p))
+            foreach (var p in pilots) sb.Append('|').Append(p.OwnerClientId).Append(p.DisplayName).Append(NetSquad.Same(p, me)).Append(NetSquad.WasInvited(p))
                                         .Append(NetTradeClient.WasAsked(p)).Append(TradingWith(p));
             string key = sb.ToString();
             if (key == pilotsKey) return;
@@ -306,7 +306,7 @@ namespace GoF2Remake.UI
             {
                 var row = new VisualElement();
                 row.AddToClassList("squad-pilot");
-                var name = new Label(p.DevPrefix + p.DisplayName + (p == me ? $"  ({Localization.Extra("mpYou", "you")})" : ""));
+                var name = new Label(p.DisplayName + (p == me ? $"  ({Localization.Extra("mpYou", "you")})" : ""));
                 name.AddToClassList("squad-name");
                 row.Add(name);
                 if (p == me) { }   // no invitation to oneself
