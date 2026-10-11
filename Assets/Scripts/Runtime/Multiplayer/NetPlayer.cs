@@ -68,6 +68,7 @@ namespace GoF2Remake.Multiplayer
         readonly NetworkVariable<bool> distress = new NetworkVariable<bool>(false, Read, Write);  // NetDistress: calls for help
         readonly NetworkVariable<bool> admin = new NetworkVariable<bool>(false);   // the server's: admin commands (NetCommands)
         readonly NetworkVariable<byte> staffRole = new NetworkVariable<byte>(0);   // the server's: the profile's role (NetModeration)
+        readonly NetworkVariable<bool> dev = new NetworkVariable<bool>(false);     // the server's: the developer, proven (DevIdentity)
         readonly NetworkVariable<bool> engine = new NetworkVariable<bool>(true, Read, Write);   // the engine glow shows
         readonly NetworkVariable<float> boost = new NetworkVariable<float>(0f, Read, Write);    // 0..1 (FlightModel.BoostVisualPercent)
         readonly NetworkVariable<float> cloak = new NetworkVariable<float>(0f, Read, Write);    // 0..100
@@ -201,8 +202,43 @@ namespace GoF2Remake.Multiplayer
         public int FactionHome => factionHome.Value;
         /// <summary>Server: NetFactions' home for this player.</summary>
         public void SetFactionHome(int station) { if (IsServer && factionHome.Value != station) factionHome.Value = station; }
-        /// <summary>The name with the faction's tag before it ("[TAG] Name"): the lock plate and the chat.</summary>
-        public string TaggedName => FactionTag.Length > 0 ? $"[{FactionTag}] {DisplayName}" : DisplayName;
+        /// <summary>The name with the faction's tag before it ("[TAG] Name"), and the developer's [DEV] before that: the lock
+        /// plate and the chat.</summary>
+        public string TaggedName => DevPrefix + (FactionTag.Length > 0 ? $"[{FactionTag}] {DisplayName}" : DisplayName);
+        /// <summary>The developer (DevIdentity: the server checked their key's signature). Cosmetic: the [DEV] tag.</summary>
+        public bool IsDev => dev.Value;
+        /// <summary>"[DEV] " in gold for the developer, else "" (rich text).</summary>
+        public string DevPrefix => dev.Value ? DevIdentity.Tag + " " : "";
+
+        // ---- the developer's tag (DevIdentity) ----------------------------------------------------------------------
+        byte[] devChallenge;   // the server's: the challenge sent to this player's game, null = none open
+
+        /// <summary>A game holding the developer's key asks for a challenge (once per spawn).</summary>
+        [Rpc(SendTo.Server)]
+        void DevHelloRpc(RpcParams rpc = default)
+        {
+            if (rpc.Receive.SenderClientId != OwnerClientId || dev.Value || devChallenge != null) return;
+            devChallenge = DevIdentity.NewChallenge();
+            DevChallengeRpc(devChallenge);
+        }
+
+        [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
+        void DevChallengeRpc(byte[] challenge)
+        {
+            var signature = DevIdentity.Sign(challenge);
+            if (signature != null) DevProofRpc(signature);
+        }
+
+        /// <summary>The signature of the challenge: checked against the game's public key, one try per challenge.</summary>
+        [Rpc(SendTo.Server)]
+        void DevProofRpc(byte[] signature, RpcParams rpc = default)
+        {
+            if (rpc.Receive.SenderClientId != OwnerClientId || devChallenge == null) return;
+            bool ok = DevIdentity.Verify(devChallenge, signature);
+            devChallenge = null;
+            if (ok) { dev.Value = true; Debug.Log($"{DisplayName} (#{OwnerClientId}) is the developer: [DEV]"); }
+            else Debug.LogWarning($"{DisplayName} (#{OwnerClientId}) sent a developer signature that doesn't check out");
+        }
         public string DisplayName
         {
             get
@@ -254,6 +290,7 @@ namespace GoF2Remake.Multiplayer
                 ship.Value = Session.ShipIndex;
                 pilot.Value = NetGame.Clean(NetGame.PlayerName);
                 sender = new NetShotSender(ShotUpRpc, BlastUpRpc, () => level != null && level.Weapons != null ? level.Weapons.LockTarget : null);
+                if (DevIdentity.HasKey) DevHelloRpc();   // the developer's tag: the server sends a challenge to sign
                 SceneManager.sceneLoaded += OnSceneLoaded;
                 admin.OnValueChanged += (_, on) => NetChat.Notice(on
                     ? Localization.Extra("mpYouAdmin", "You are now an admin: /kick is available (/help).")
