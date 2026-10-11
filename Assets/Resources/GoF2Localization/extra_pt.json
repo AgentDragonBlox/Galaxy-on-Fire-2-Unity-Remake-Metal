@@ -1301,5 +1301,7 @@
  "cloakLosesPursuers": "Camuflagem despista perseguidores",
  "cloakLosesPursuersHelp": "As naves inimigas perdem você de vista enquanto estiver camuflado: voam até onde o viram pela última vez e depois voltam à patrulha. Desligado: como no original, continuam perseguindo e mirando em você, mas não atiram.",
  "cloakBay": "Compartimento de camuflagem em naves furtivas",
- "cloakBayHelp": "O Specter e o Scimitar têm uma camuflagem embutida. Uma camuflagem que você instalar a substitui sem ocupar um espaço de equipamento. Desligado: ocupa um espaço, como no original."
+ "cloakBayHelp": "O Specter e o Scimitar têm uma camuflagem embutida. Uma camuflagem que você instalar a substitui sem ocupar um espaço de equipamento. Desligado: ocupa um espaço, como no original.",
+ "autoPlayDialogue": "Reprodução automática de diálogos",
+ "dialogueAuto": "AUTO"
 }

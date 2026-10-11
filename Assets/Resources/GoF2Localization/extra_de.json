@@ -1301,5 +1301,7 @@
  "cloakLosesPursuers": "Tarnung schüttelt Verfolger ab",
  "cloakLosesPursuersHelp": "Feindliche Schiffe verlieren dich, solange du getarnt bist: Sie fliegen dorthin, wo sie dich zuletzt gesehen haben, und kehren dann zu ihrer Patrouille zurück. Aus: wie im Original verfolgen sie dich weiter und zielen auf dich, feuern aber nicht.",
  "cloakBay": "Tarnbucht bei Tarnschiffen",
- "cloakBayHelp": "Der Specter und der Scimitar haben eine eingebaute Tarnung. Eine Tarnung, die du montierst, ersetzt sie, ohne einen Ausrüstungsplatz zu belegen. Aus: Sie belegt einen Platz, wie im Original."
+ "cloakBayHelp": "Der Specter und der Scimitar haben eine eingebaute Tarnung. Eine Tarnung, die du montierst, ersetzt sie, ohne einen Ausrüstungsplatz zu belegen. Aus: Sie belegt einen Platz, wie im Original.",
+ "autoPlayDialogue": "Dialoge automatisch abspielen",
+ "dialogueAuto": "AUTO"
 }

@@ -194,6 +194,17 @@
     color: #0B1016;
 }
 
+/* Its key before the text (StationMenu, InputGlyph.WithGlyphs): L with keys and mouse, X with a controller, none on touch. */
+.launch-glyph--key,
+.launch-glyph--pad {
+    display: none;
+}
+
+.input-keyboard .launch-glyph--key,
+.input-gamepad .launch-glyph--pad {
+    display: flex;
+}
+
 /* ---- keyboard / controller hints (left of the launch button) ------------------------------ */
 
 .station-hints {

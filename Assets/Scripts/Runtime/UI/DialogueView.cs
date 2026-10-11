@@ -10,8 +10,12 @@
 //                  the last page (DialogueWindow::update 0x195bf0)
 //   one-page note  ShowMessage: text only with OK (524) (the DialogueWindow(text, name, portrait) variant)
 // Input: keyboard Enter / Space / right = next, Backspace / left = back, Esc = skip; controller A = next, B = back,
-// Y / Menu = skip; the confirmation takes Enter / A = yes, Esc / B = no. The box is a little larger than the original's
-// 694x486 so the remake's font reads well.
+// Y / Menu = skip, X = auto; the confirmation takes Enter / A = yes, Esc / B = no. With a controller the buttons carry
+// their glyphs (remake: nothing showed that Y skips). The box is a little larger than the original's 694x486 so the
+// remake's font reads well.
+// Remake: the AUTO toggle in the header (Settings.AutoAdvanceDialogue, the Gameplay option "Auto-play dialogue"): on, a
+// voiced page turns when its line has ended (the original's auto-advance), a page without voice after a reading time
+// once it has typed in; never past the last page.
 // Remake option "Animated dialogue" (TextReveal): the page types in with pacing, shouting and tinted names; Next during
 // it shows the page at once, pages read before show at once, the portrait fades in when the speaker changes, the text
 // scrolls along with a long page, and the Next button breathes once the page is complete.
@@ -50,11 +54,14 @@ namespace GoF2Remake.UI
         }
 
         const float VoicePauseMs = 500f;
+        /// <summary>Auto-play without a voice line: this long after the page has shown, plus per character.</summary>
+        const float ReadBaseMs = 1500f, ReadPerCharMs = 45f, ReadMinMs = 2500f, ReadMaxMs = 12000f;
 
         readonly VisualElement root, portrait, confirm;
         readonly Label speaker, text, confirmText;
         readonly ScrollView scroll;
-        readonly Button back, skip, next, confirmYes, confirmNo;
+        readonly Button back, skip, next, confirmYes, confirmNo, auto;
+        readonly Label nextLabel;   // the Next button's text, beside its controller glyph (InputGlyph.WithGlyphs)
         readonly AudioSource voice;
         readonly List<Page> pages = new List<Page>();
         Action<bool> closed;
@@ -120,9 +127,51 @@ namespace GoF2Remake.UI
             confirmText.text = Localization.Get(396);
             confirmYes.text = Localization.Get(134).ToUpperInvariant();
             confirmNo.text = Localization.Get(135).ToUpperInvariant();
+            // With a controller every button shows its glyph (remake: nothing showed that Y skips).
+            PadGlyph(back, PadButton.B);
+            PadGlyph(skip, PadButton.Y);
+            nextLabel = PadGlyph(next, PadButton.A);
+            PadGlyph(confirmYes, PadButton.A);
+            PadGlyph(confirmNo, PadButton.B);
             reveal = new TextReveal(text);
             scroll.RegisterCallback<PointerDownEvent>(_ => { if (!InGrace) reveal.Finish(); });   // a tap on the text shows it all
+            // The AUTO toggle at the right of the header, a dot that lights while it is on (an X glyph with a controller).
+            // A row: the indicator, then the label (the button's own text can't share the row with a child).
+            auto = new Button { name = "dialogueAuto" };
+            auto.AddToClassList("dialogue-auto");
+            var dot = new VisualElement();
+            dot.AddToClassList("dialogue-auto-dot");
+            auto.Add(dot);
+            auto.RegisterCallback<PointerDownEvent>(_ => ButtonSound?.Invoke(true), TrickleDown.TrickleDown);
+            auto.clicked += () => { ButtonSound?.Invoke(false); ToggleAuto(); };
+            root.Q(className: "dialogue-header")?.Add(auto);
+            var autoGlyph = InputGlyph.Pad(PadButton.X);
+            autoGlyph.AddToClassList("dialogue-pad-glyph");
+            autoGlyph.pickingMode = PickingMode.Ignore;
+            auto.Add(autoGlyph);
+            var autoLabel = new Label(Localization.Extra("dialogueAuto", "AUTO"));
+            autoLabel.AddToClassList("dialogue-auto-label");
+            autoLabel.AddToClassList("gof-semibold");
+            autoLabel.pickingMode = PickingMode.Ignore;
+            auto.Add(autoLabel);
+            RefreshAuto();
         }
+
+        static Label PadGlyph(Button b, PadButton button)
+        {
+            var g = InputGlyph.Pad(button);
+            g.AddToClassList("dialogue-pad-glyph");
+            return InputGlyph.WithGlyphs(b, g);
+        }
+
+        void ToggleAuto()
+        {
+            Settings.AutoAdvanceDialogue = !Settings.AutoAdvanceDialogue;
+            pauseMs = 0f;
+            RefreshAuto();
+        }
+
+        void RefreshAuto() => auto?.EnableInClassList("dialogue-auto--on", Settings.AutoAdvanceDialogue);
 
         Button Bind(string name, Action action)
         {
@@ -200,7 +249,9 @@ namespace GoF2Remake.UI
             bool last = page == pages.Count - 1;
             back.EnableInClassList("dialogue-button--hidden", message || page == 0);
             skip.EnableInClassList("dialogue-button--hidden", message || pages.Count <= 1);
-            next.text = (message ? Localization.Get(524) : Localization.Get(last ? 181 : 180)).ToUpperInvariant();
+            auto.EnableInClassList("dialogue-button--hidden", message || pages.Count <= 1);
+            RefreshAuto();
+            nextLabel.text = (message ? Localization.Get(524) : Localization.Get(last ? 181 : 180)).ToUpperInvariant();
             pauseMs = 0f;
             PageShown?.Invoke(p.textId);
             if (voice != null)
@@ -280,7 +331,10 @@ namespace GoF2Remake.UI
         /// <summary>Keyboard / controller input and the voice auto-advance; call every frame (unscaled time).</summary>
         public void Tick(float unscaledDtMs)
         {
-            if (!IsOpen || paused) return;
+            if (!IsOpen) return;
+            RefreshAuto();   // the Gameplay option is the same setting: a change in the menu over the conversation shows here
+            if (paused) return;
+            root.EnableInClassList("dialogue--pad", InputMode.Current == InputKind.Gamepad);
             TickAnimation(unscaledDtMs);
             if (InGrace) return;   // the keys of whatever the player was doing
             var kb = GoF2Remake.Multiplayer.NetChat.Keys;   // null while a multiplayer chat line is typed
@@ -301,14 +355,18 @@ namespace GoF2Remake.UI
             { if (page > 0) { ButtonSound?.Invoke(false); Back(); } return; }
             if (Pressed(k => k.escapeKey.wasPressedThisFrame, g => g.buttonNorth.wasPressedThisFrame || g.startButton.wasPressedThisFrame))
             { ButtonSound?.Invoke(false); AskSkip(); return; }
+            if (!message && pages.Count > 1 && Pressed(_ => false, g => g.buttonWest.wasPressedThisFrame))
+            { ButtonSound?.Invoke(false); ToggleAuto(); return; }
 
-            // DialogueWindow::update: with voice on, turn the page once the line has ended and its pause passed (remake: the
-            // auto-advance option can turn it off).
-            if (Settings.AutoAdvanceDialogue && voice != null && voice.clip != null && !voice.isPlaying && Settings.VoiceVolume > 0f && page < pages.Count - 1)
-            {
-                pauseMs += unscaledDtMs;
-                if (pauseMs >= VoicePauseMs) { page++; LoadPage(); }
-            }
+            // DialogueWindow::update: with voice on, turn the page once the line has ended and its pause passed. Remake: the
+            // AUTO toggle turns it off, and turns a page without a voice line too, a reading time after it has shown.
+            if (!Settings.AutoAdvanceDialogue || page >= pages.Count - 1 || reveal.Running) return;
+            bool voiced = voice != null && voice.clip != null && Settings.VoiceVolume > 0f;
+            if (voiced && voice.isPlaying) return;
+            pauseMs += unscaledDtMs;
+            float wait = voiced ? VoicePauseMs
+                       : Mathf.Clamp(ReadBaseMs + ReadPerCharMs * (pages[page].text?.Length ?? 0), ReadMinMs, ReadMaxMs);
+            if (pauseMs >= wait) { page++; LoadPage(); }
         }
     }
 }

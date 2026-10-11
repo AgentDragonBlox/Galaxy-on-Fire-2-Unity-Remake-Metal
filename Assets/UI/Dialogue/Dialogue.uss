@@ -39,6 +39,7 @@
 }
 
 .dialogue-speaker {
+    flex-grow: 1;
     font-size: 24px;
     letter-spacing: 3px;
     color: #FFFFFF;
@@ -104,6 +105,80 @@
 
 .dialogue-button--hidden {
     visibility: hidden;
+}
+
+/* Remake: the AUTO toggle at the right of the header (Settings.AutoAdvanceDialogue), a dot lit while it is on. */
+.dialogue-auto {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    min-width: 104px;
+    margin: 0;
+    padding: 0 14px 0 4px;
+    background-color: rgba(4, 10, 18, 0.55);
+    border-width: 1px;
+    border-color: var(--gof-cyan-soft);
+    border-radius: 18px;
+    transition-property: background-color, border-color;
+    transition-duration: 0.2s;
+}
+
+.dialogue-auto-label {
+    margin: 0;
+    padding: 0;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.6);
+    -unity-text-align: middle-left;
+}
+
+.dialogue-auto--on .dialogue-auto-label {
+    color: #FFFFFF;
+}
+
+.can-hover .dialogue-auto:hover,
+.dialogue-auto:focus {
+    border-color: var(--gof-amber);
+}
+
+.dialogue-auto-dot {
+    margin: 0 9px 0 9px;
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.dialogue-auto--on {
+    border-color: var(--gof-cyan);
+    background-color: rgba(62, 200, 255, 0.2);
+}
+
+.dialogue-auto--on .dialogue-auto-dot {
+    background-color: var(--gof-cyan);
+}
+
+/* With a controller every button shows its glyph before its text (InputGlyph.WithGlyphs); the AUTO dot gives way to the X. */
+.dialogue-pad-glyph {
+    display: none;
+}
+
+.dialogue--pad .dialogue-pad-glyph {
+    display: flex;
+}
+
+.dialogue-auto .dialogue-pad-glyph {
+    width: 26px;
+    height: 26px;
+    border-radius: 13px;
+    font-size: 14px;
+    margin: 0 6px 0 0;
+    padding: 0;
+}
+
+.dialogue--pad .dialogue-auto-dot {
+    display: none;
 }
 
 .dialogue-confirm {

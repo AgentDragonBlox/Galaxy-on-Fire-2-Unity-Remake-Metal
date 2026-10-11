@@ -213,6 +213,12 @@ namespace GoF2Remake.UI
             statusButton.text = T(169).ToUpperInvariant();
             inspectButton.text = Localization.Extra("stationInspect", "INSPECT SHIP");
             launchButton.text = Localization.Extra("stationLaunch", "LAUNCH");
+            // Remake: its key on the button, L with keys and mouse, X with a controller (the root's input-* class picks one).
+            var launchKey = InputGlyph.Key("L");
+            launchKey.AddToClassList("launch-glyph--key");
+            var launchPad = InputGlyph.Pad(PadButton.X);
+            launchPad.AddToClassList("launch-glyph--pad");
+            InputGlyph.WithGlyphs(launchButton, launchKey, launchPad);
             root.Q<Button>("loungeBack").text = Localization.Extra("hudBack", "BACK");
             dialogNo.text = T(135).ToUpperInvariant();
             root.Q<Button>("menuButton").text = Localization.Extra("hudMenu", "MENU");
