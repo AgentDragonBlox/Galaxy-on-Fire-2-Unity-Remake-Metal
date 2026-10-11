@@ -284,7 +284,7 @@
  "kaamoOwned": "Tuyo desde el principio",
  "kaamoSellShip": "VENDER NAVE",
   "kaamoStacking": "Mejoras del Kaamo Club acumulables",
-  "kaamoStackingHelp": "Los mecánicos del Kaamo Club instalan su mejora una y otra vez, y cada nivel cuesta el doble que el anterior. Desactivado: una de cada, como en el original. No está en el original.",
+  "kaamoStackingHelp": "Los mecánicos del Kaamo Club instalan su mejora una y otra vez, y cada nivel cuesta el doble que el anterior. Hasta el nivel 10. Desactivado: una de cada, como en el original. No está en el original.",
  "keyAutofire": "Pulsar disparar dos veces para fuego automático",
  "keySpace": "Espacio",
  "launchCamera": "Cámara de despegue y llegada",
@@ -1344,5 +1344,6 @@
  "resupplyWrongRace": "Sin existencias aquí: esta nave solo lleva armas de su propia raza.",
  "empBreaksCloak": "El PEM rompe el camuflaje",
  "empBreaksCloakHelp": "Un impacto PEM en una nave camuflada anula su camuflaje al instante, y un camuflaje que aún se carga falla: el tuyo, el de los Spectres y el de otros jugadores. Desactivado: como en el original, nada termina un camuflaje antes de tiempo.",
- "cloakDisrupted": "¡Camuflaje interrumpido!"
+ "cloakDisrupted": "¡Camuflaje interrumpido!",
+ "kaamoModMaxed": "No puedo ir más allá: tu #SHIP_NAME ya tiene esta mejora en el nivel {0}."
 }

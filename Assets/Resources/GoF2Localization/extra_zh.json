@@ -284,7 +284,7 @@
   "kaamoOwned": "开局即拥有",
   "kaamoSellShip": "出售飞船",
   "kaamoStacking": "Kaamo Club 升级可叠加",
-  "kaamoStackingHelp": "Kaamo Club 的技师可以反复安装升级，每一级的价格是上一级的两倍。关闭：每种仅一次，与原版相同。原版中没有此功能。",
+  "kaamoStackingHelp": "Kaamo Club 的技师可以反复安装升级，每一级的价格是上一级的两倍。最多到 10 级。关闭：每种仅一次，与原版相同。原版中没有此功能。",
   "keyAutofire": "连按两下射击键自动射击",
   "keySpace": "Space",
   "launchCamera": "起飞和抵达镜头",
@@ -1344,5 +1344,6 @@
   "resupplyWrongRace": "此处无库存：这艘船只携带本族的武器。",
   "empBreaksCloak": "EMP 破除隐形",
   "empBreaksCloakHelp": "EMP 命中隐形中的飞船会立即使其隐形失效，正在充能的隐形也会失败：包括你、幽灵以及其他玩家的隐形。关闭：与原版相同，任何东西都不会提前结束隐形。",
-  "cloakDisrupted": "隐形被干扰！"
+  "cloakDisrupted": "隐形被干扰！",
+  "kaamoModMaxed": "我只能做到这一步了：你的#SHIP_NAME的这项升级已经是{0}级了。"
 }

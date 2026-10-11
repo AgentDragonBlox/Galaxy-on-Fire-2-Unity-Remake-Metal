@@ -284,7 +284,7 @@
  "kaamoOwned": "Tuo fin dall'inizio",
  "kaamoSellShip": "VENDI NAVE",
   "kaamoStacking": "Potenziamenti del Kaamo Club cumulabili",
-  "kaamoStackingHelp": "I meccanici del Kaamo Club installano il loro potenziamento più volte, ogni livello costa il doppio del precedente. Disattivato: uno per tipo, come nell'originale. Non presente nell'originale.",
+  "kaamoStackingHelp": "I meccanici del Kaamo Club installano il loro potenziamento più volte, ogni livello costa il doppio del precedente. Fino al livello 10. Disattivato: uno per tipo, come nell'originale. Non presente nell'originale.",
  "keyAutofire": "Premi due volte fuoco per il fuoco automatico",
  "keySpace": "Spazio",
  "launchCamera": "Telecamera di decollo e arrivo",
@@ -1344,5 +1344,6 @@
  "resupplyWrongRace": "Non disponibile qui: questa nave trasporta solo le armi della propria razza.",
  "empBreaksCloak": "L'IEM rompe l'occultamento",
  "empBreaksCloakHelp": "Un colpo IEM su una nave occultata ne annulla subito l'occultamento, e un occultamento ancora in carica fallisce: il tuo, quello degli Specter e quello degli altri giocatori. Disattivato: come nell'originale, niente interrompe un occultamento.",
- "cloakDisrupted": "Occultamento disturbato!"
+ "cloakDisrupted": "Occultamento disturbato!",
+ "kaamoModMaxed": "Più di così non posso fare: la tua #SHIP_NAME ha già questo potenziamento al livello {0}."
 }

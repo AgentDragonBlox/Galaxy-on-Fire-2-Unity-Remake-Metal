@@ -284,7 +284,7 @@
  "kaamoOwned": "Twój od początku",
  "kaamoSellShip": "SPRZEDAJ STATEK",
   "kaamoStacking": "Kumulowane ulepszenia Kaamo Club",
-  "kaamoStackingHelp": "Mechanicy z Kaamo Club montują swoje ulepszenie wielokrotnie, a każdy poziom kosztuje dwa razy więcej niż poprzedni. Wyłączone: po jednym, jak w oryginale. Nie ma tego w oryginale.",
+  "kaamoStackingHelp": "Mechanicy z Kaamo Club montują swoje ulepszenie wielokrotnie, a każdy poziom kosztuje dwa razy więcej niż poprzedni. Do poziomu 10. Wyłączone: po jednym, jak w oryginale. Nie ma tego w oryginale.",
  "keyAutofire": "Dwukrotne naciśnięcie strzału włącza ogień ciągły",
  "keySpace": "Spacja",
  "launchCamera": "Kamera startu i przylotu",
@@ -1344,5 +1344,6 @@
  "resupplyWrongRace": "Brak na stanie: ten statek przewozi tylko broń własnej rasy.",
  "empBreaksCloak": "EMP przerywa kamuflaż",
  "empBreaksCloakHelp": "Trafienie EMP w zakamuflowany statek od razu zdejmuje kamuflaż, a ładujący się jeszcze kamuflaż zawodzi: twój, Specterów i innych graczy. Wyłączone: jak w oryginale nic nie przerywa kamuflażu przed czasem.",
- "cloakDisrupted": "Kamuflaż zakłócony!"
+ "cloakDisrupted": "Kamuflaż zakłócony!",
+ "kaamoModMaxed": "Dalej już nie da rady: twój #SHIP_NAME ma to ulepszenie na poziomie {0}."
 }

@@ -284,7 +284,7 @@
  "kaamoOwned": "最初から所有",
  "kaamoSellShip": "船を売却",
   "kaamoStacking": "Kaamo Club 強化の重ねがけ",
-  "kaamoStackingHelp": "Kaamo Club のメカニックが何度でも強化を施します。レベルごとに価格は前の2倍になります。オフ：各1回のみ（オリジナルと同じ）。オリジナルにはない機能です。",
+  "kaamoStackingHelp": "Kaamo Club のメカニックが何度でも強化を施します。最大レベル10まで。レベルごとに価格は前の2倍になります。オフ：各1回のみ（オリジナルと同じ）。オリジナルにはない機能です。",
  "keyAutofire": "発射を2回押すと連射",
  "keySpace": "スペース",
  "launchCamera": "発進・到着カメラ",
@@ -1344,5 +1344,6 @@
  "resupplyWrongRace": "ここでは扱っていません：この船は自種族の武器しか積んでいません。",
  "empBreaksCloak": "EMPでクロークを解除",
  "empBreaksCloakHelp": "クローク中の船にEMPが命中するとクロークが即座に解除され、充電中のクロークは失敗します：あなた、スペクター、他のプレイヤーのクロークが対象です。オフ：オリジナル通り、クロークが途中で終わることはありません。",
- "cloakDisrupted": "クロークが妨害された！"
+ "cloakDisrupted": "クロークが妨害された！",
+ "kaamoModMaxed": "これ以上は無理だ：君の#SHIP_NAMEはこのアップグレードがすでにレベル{0}だ。"
 }

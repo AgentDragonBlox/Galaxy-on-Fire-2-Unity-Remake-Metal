@@ -284,7 +284,7 @@
  "kaamoOwned": "Vanaf het begin van jou",
  "kaamoSellShip": "SCHIP VERKOPEN",
   "kaamoStacking": "Stapelbare Kaamo Club-upgrades",
-  "kaamoStackingHelp": "De monteurs van de Kaamo Club bouwen hun upgrade steeds opnieuw in, elk niveau kost het dubbele van het vorige. Uit: één van elk, zoals in het origineel. Niet in het origineel.",
+  "kaamoStackingHelp": "De monteurs van de Kaamo Club bouwen hun upgrade steeds opnieuw in, elk niveau kost het dubbele van het vorige. Tot niveau 10. Uit: één van elk, zoals in het origineel. Niet in het origineel.",
  "keyAutofire": "Twee keer vuren voor automatisch vuren",
  "keySpace": "Spatie",
  "launchCamera": "Vertrek- en aankomstcamera",
@@ -1344,5 +1344,6 @@
  "resupplyWrongRace": "Hier niet op voorraad: dit schip voert alleen de wapens van zijn eigen ras.",
  "empBreaksCloak": "EMP breekt camouflage",
  "empBreaksCloakHelp": "Een EMP-treffer op een gecamoufleerd schip heft de camouflage meteen op, en een camouflage die nog laadt mislukt: die van jou, van de Specters en van andere spelers. Uit: zoals in het origineel beëindigt niets een camouflage voortijdig.",
- "cloakDisrupted": "Camouflage verstoord!"
+ "cloakDisrupted": "Camouflage verstoord!",
+ "kaamoModMaxed": "Verder kan ik niet gaan: je #SHIP_NAME heeft deze upgrade al op niveau {0}."
 }

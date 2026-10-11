@@ -124,8 +124,14 @@ namespace GoF2Remake.Data
         /// the ship is traded).</summary>
         public static List<int> ShipMods = new List<int>();
         /// <summary>Remake: with Settings.KaamoStacking a mod can be fitted again (a level is how many times it is in the
-        /// list); the original's rule is one of each.</summary>
-        public static void AddShipMod(int mod) { if (mod >= 0 && (Settings.KaamoStacking || !ShipMods.Contains(mod))) ShipMods.Add(mod); }
+        /// list), up to MaxModLevel; the original's rule is one of each.</summary>
+        public static void AddShipMod(int mod)
+        {
+            if (mod >= 0 && (!ShipMods.Contains(mod) || (Settings.KaamoStacking && ModLevel(mod) < MaxModLevel))) ShipMods.Add(mod);
+        }
+        /// <summary>Remake: the highest level of one Kaamo upgrade with stacking (players' feedback, 2026-10: 45 equipment slots
+        /// on a Cronus); levels fitted before the cap stay.</summary>
+        public const int MaxModLevel = 10;
         public static bool HasMod(int mod) => ShipMods.Contains(mod);
         /// <summary>How many times the mod is fitted (its level; 0 = none).</summary>
         public static int ModLevel(int mod)

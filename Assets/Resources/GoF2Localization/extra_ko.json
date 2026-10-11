@@ -284,7 +284,7 @@
  "kaamoOwned": "처음부터 소유",
  "kaamoSellShip": "함선 판매",
   "kaamoStacking": "Kaamo Club 업그레이드 중첩",
-  "kaamoStackingHelp": "Kaamo Club 정비공이 업그레이드를 계속 장착해 주며, 레벨마다 가격이 이전의 두 배가 됩니다. 끄기: 원작처럼 종류별 한 번만. 원작에는 없는 기능입니다.",
+  "kaamoStackingHelp": "Kaamo Club 정비공이 업그레이드를 계속 장착해 주며, 레벨마다 가격이 이전의 두 배가 됩니다. 최대 10레벨까지. 끄기: 원작처럼 종류별 한 번만. 원작에는 없는 기능입니다.",
  "keyAutofire": "발사를 두 번 눌러 자동 사격",
  "keySpace": "스페이스",
  "launchCamera": "출격 및 도착 카메라",
@@ -1344,5 +1344,6 @@
  "resupplyWrongRace": "여기서는 취급하지 않습니다: 이 함선은 자기 종족의 무기만 싣고 있습니다.",
  "empBreaksCloak": "EMP가 클로킹을 해제",
  "empBreaksCloakHelp": "클로킹 중인 함선에 EMP가 명중하면 클로킹이 즉시 풀리고, 충전 중인 클로킹은 실패합니다: 당신, 스펙터, 다른 플레이어의 클로킹 모두 해당됩니다. 끔: 원작처럼 클로킹이 중간에 끝나지 않습니다.",
- "cloakDisrupted": "클로킹 교란됨!"
+ "cloakDisrupted": "클로킹 교란됨!",
+ "kaamoModMaxed": "더는 안 됩니다: 당신의 #SHIP_NAME은 이 업그레이드가 이미 {0}레벨입니다."
 }

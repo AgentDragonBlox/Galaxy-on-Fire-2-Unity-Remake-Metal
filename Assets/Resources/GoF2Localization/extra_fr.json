@@ -284,7 +284,7 @@
  "kaamoOwned": "À toi dès le départ",
  "kaamoSellShip": "VENDRE LE VAISSEAU",
   "kaamoStacking": "Améliorations du Kaamo Club cumulables",
-  "kaamoStackingHelp": "Les mécaniciens du Kaamo Club installent leur amélioration encore et encore, chaque niveau coûtant le double du précédent. Désactivé : une de chaque, comme dans l'original. Absent de l'original.",
+  "kaamoStackingHelp": "Les mécaniciens du Kaamo Club installent leur amélioration encore et encore, chaque niveau coûtant le double du précédent. Jusqu'au niveau 10. Désactivé : une de chaque, comme dans l'original. Absent de l'original.",
  "keyAutofire": "Double appui sur tirer pour le tir automatique",
  "keySpace": "Espace",
  "launchCamera": "Caméra de décollage et d'arrivée",
@@ -1344,5 +1344,6 @@
  "resupplyWrongRace": "Pas en stock ici : ce vaisseau ne transporte que les armes de son propre peuple.",
  "empBreaksCloak": "L'IEM brise le camouflage",
  "empBreaksCloakHelp": "Un tir IEM sur un vaisseau camouflé le rend visible aussitôt, et un camouflage encore en charge échoue : le tien, celui des Spectres et celui des autres joueurs. Désactivé : comme dans l'original, rien n'interrompt un camouflage.",
- "cloakDisrupted": "Camouflage perturbé !"
+ "cloakDisrupted": "Camouflage perturbé !",
+ "kaamoModMaxed": "Je ne peux pas aller plus loin : ton #SHIP_NAME a déjà cette amélioration au niveau {0}."
 }
