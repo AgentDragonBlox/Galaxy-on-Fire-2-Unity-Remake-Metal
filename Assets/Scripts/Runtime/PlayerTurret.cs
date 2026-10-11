@@ -322,7 +322,7 @@ namespace GoF2Remake.Flight
             if (on) foreach (var other in On(gameObject)) if (other != this && other.InTurretView) other.SetTurretView(false);
             InTurretView = on;
             if (weapons != null) weapons.TurretView = on;
-            if (ship != null) ship.steeringLocked = on;
+            if (ship != null) { ship.steeringLocked = on; ship.CenterMouse(); }   // mouse steering's stick starts centred
             if (chase != null)
             {
                 // Docked at an object the chase camera is off (ObjectDocking's look-at camera): on for the turret's view.

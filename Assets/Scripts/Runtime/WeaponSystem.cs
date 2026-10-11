@@ -376,7 +376,10 @@ namespace GoF2Remake.Flight
         {
             float dtMs = Time.deltaTime * 1000f * TimeExtender.PlayerFactor;
             // The game is paused (Time.timeScale 0: dialogues, the autopilot menu, the star map): no firing at all.
-            bool halted = Blocked || Navigation.InputHalted;
+            // Blocked guns don't halt the turret view: it opens only where the turret may fire (PlayerTurret.GunsBlocked: docked at
+            // an object), and the fire button is its trigger (FireHeld; the press used to be latched there, a player's report
+            // at 135's mining plant).
+            bool halted = (Blocked && !TurretView) || Navigation.InputHalted;
             bool primaryPressed = useBuiltInInput && firePrimaryAction.IsPressed();
             bool secondaryPressed = useBuiltInInput && fireSecondaryAction.IsPressed();
             if (halted) { primaryLatched |= primaryPressed; secondaryLatched |= secondaryPressed; }

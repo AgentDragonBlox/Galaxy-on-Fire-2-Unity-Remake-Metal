@@ -333,7 +333,8 @@ namespace GoF2Remake.Flight
             if (weapons != null && weapons.SecondaryItems().Count > 0) list.Add(new Target { kind = Kind.Secondary, name = Localization.Get(266) });
             if (HasWingmen != null && HasWingmen()) list.Add(new Target { kind = Kind.Wingmen, name = Localization.Get(306) });
             if (Cloak != null) list.Add(new Target { kind = Kind.Cloak, name = Cloak.ItemName, disabled = !Cloak.Rules.Available });
-            if (GalaxyMap.HasJumpDrive(db)) list.Add(new Target { kind = Kind.KhadorDrive, name = Localization.Get(1359) });
+            // Remake: not while docked at an object (it holds the ship: undock first).
+            if (GalaxyMap.HasJumpDrive(db) && (Docking == null || Docking.State == ObjectDocking.Phase.Idle || Docking.State == ObjectDocking.Phase.Approach)) list.Add(new Target { kind = Kind.KhadorDrive, name = Localization.Get(1359) });
             // Remake: the time extender too (the original has it only on its own touch slot), so one menu holds every
             // device: secondaries, wingmen, cloak, Khador Drive and the time extender (half-transparent while recharging).
             if (Extender != null)
@@ -357,8 +358,11 @@ namespace GoF2Remake.Flight
         /// <summary>MGame::OnTouchEnd, autopilot button: only while nothing else flies the ship; pauses the game.</summary>
         public bool CanOpenMenu => !Autopilot && !Jumping && !paused && (mining == null || mining.State == Mining.Phase.Idle) && (Docking == null || !Docking.Busy);
         /// <summary>MGame::OnTouchEnd, quick menu button (key 4): refused only while mining (PlayerEgo::isMining), so it opens
-        /// on the autopilot too (remake: not while jumping or docking at an object either).</summary>
-        public bool CanOpenActions => !Jumping && !paused && (mining == null || mining.State == Mining.Phase.Idle) && (Docking == null || !Docking.Busy);
+        /// on the autopilot and docked at an object too (remake: not while jumping, easing in or out of a docking or hacking;
+        /// docked it was refused until a player's report at 135's mining plant).</summary>
+        public bool CanOpenActions => !Jumping && !paused && (mining == null || mining.State == Mining.Phase.Idle)
+                                      && (Docking == null || ((Docking.State == ObjectDocking.Phase.Idle || Docking.State == ObjectDocking.Phase.Approach
+                                                               || Docking.State == ObjectDocking.Phase.Docked) && Docking.Hacking == null));
 
         /// <summary>The open menu is the quick (action) menu, not the autopilot's.</summary>
         public bool MenuIsActions { get; private set; }
@@ -421,8 +425,9 @@ namespace GoF2Remake.Flight
         /// <summary>Touch button / key held for fast-forward (checked every frame).</summary>
         public void SetFastForwardHeld(bool held) => fastForwardHeld = held;
 
-        /// <summary>MGame::OnTouchBegin key 0x100: allowed while the autopilot or an asteroid approach runs, not within
-        /// 20000 units of the target (and no hostile ships, none exist yet).</summary>
+        /// <summary>MGame::OnTouchBegin key 0x100: allowed while the autopilot, an asteroid approach or the approach to an
+        /// object's docking point runs (PlayerEgo::isDockingToDockingPoint; the remake left that one out, a player's report at
+        /// 135's mining plant), not within 20000 units of the target, and no hostile ships.</summary>
         public bool CanFastForward
         {
             get
@@ -431,6 +436,7 @@ namespace GoF2Remake.Flight
                 if (Autopilot) return !AboutToReach;
                 if (mining != null && mining.Target != null && mining.State == Mining.Phase.Approaching)
                     return (mining.Target.transform.position - ship.transform.position).magnitude / M >= AboutToReachUnits;
+                if (Docking != null && Docking.ApproachDistanceUnits >= AboutToReachUnits) return true;
                 return false;
             }
         }

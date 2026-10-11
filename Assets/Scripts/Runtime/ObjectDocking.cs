@@ -64,6 +64,10 @@ namespace GoF2Remake.Flight
         /// <summary>Docked at a hackable object's won game (the generic hidden-blueprint wrecks use it).</summary>
         public event Action<NpcShip> HackWon;
 
+        /// <summary>While approaching: game units from the ship to the approach point, else -1 (Navigation.CanFastForward).</summary>
+        public float ApproachDistanceUnits => State == Phase.Approach && Target != null && ship != null
+            ? (Target.transform.TransformPoint(approachLocal) - ship.transform.position).magnitude / M : -1f;
+
         public string PromptText =>
             State == Phase.Docked ? Localization.Extra("hudUndock", "UNDOCK")
             : State == Phase.Approach ? Localization.Extra("hudAutopilotOff", "AUTOPILOT OFF")
