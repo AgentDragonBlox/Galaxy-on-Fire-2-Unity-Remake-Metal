@@ -510,6 +510,7 @@ namespace GoF2Remake.Multiplayer
             if (from == null || from.Station != Station || !PvpWith(from)) return;   // only where players may fight
             var hp = level != null && level.Health != null && level.Health.Target != null ? level.Health.Target.hitpoints : null;
             if (hp == null || !hp.Alive || level.Health.Target.phased) return;   // a phase cloak: it passes through
+            PlayerCloak.Of(level.Health)?.Break();   // remake (Settings.EmpBreaksCloak, the session's): the cloak drops
             NetAggression.Hit(shooter, emp);
             hp.shield = Mathf.Max(0f, hp.shield - emp);
             empShockMs = 1500f;

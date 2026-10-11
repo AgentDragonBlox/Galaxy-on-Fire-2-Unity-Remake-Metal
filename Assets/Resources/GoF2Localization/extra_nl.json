@@ -1341,5 +1341,8 @@
  "resupplyBadgeNotStocked": "NIET OP VOORRAAD",
  "resupplyBadgeSoldOut": "UITVERKOCHT",
  "resupplyAmmoCap": "Bijgevuld: meer dan {0} krijg je hier niet.",
- "resupplyWrongRace": "Hier niet op voorraad: dit schip voert alleen de wapens van zijn eigen ras."
+ "resupplyWrongRace": "Hier niet op voorraad: dit schip voert alleen de wapens van zijn eigen ras.",
+ "empBreaksCloak": "EMP breekt camouflage",
+ "empBreaksCloakHelp": "Een EMP-treffer op een gecamoufleerd schip heft de camouflage meteen op, en een camouflage die nog laadt mislukt: die van jou, van de Specters en van andere spelers. Uit: zoals in het origineel beëindigt niets een camouflage voortijdig.",
+ "cloakDisrupted": "Camouflage verstoord!"
 }

@@ -1341,5 +1341,8 @@
  "resupplyBadgeNotStocked": "在庫なし",
  "resupplyBadgeSoldOut": "売り切れ",
  "resupplyAmmoCap": "補充完了：ここで受け取れるのは最大{0}までです。",
- "resupplyWrongRace": "ここでは扱っていません：この船は自種族の武器しか積んでいません。"
+ "resupplyWrongRace": "ここでは扱っていません：この船は自種族の武器しか積んでいません。",
+ "empBreaksCloak": "EMPでクロークを解除",
+ "empBreaksCloakHelp": "クローク中の船にEMPが命中するとクロークが即座に解除され、充電中のクロークは失敗します：あなた、スペクター、他のプレイヤーのクロークが対象です。オフ：オリジナル通り、クロークが途中で終わることはありません。",
+ "cloakDisrupted": "クロークが妨害された！"
 }

@@ -159,6 +159,7 @@ namespace GoF2Remake.World
         /// (OnPlayerEmp), then the EMP lands.</summary>
         public void OnRemoteEmp(ulong client, int emp)
         {
+            if (Target.Alive) BreakCloak();
             if (Hp == null || !Target.Alive || Hp.emp <= 0) return;
             if (!alwaysEnemy && !IsWingman && Race != Standing.Void && Race != Standing.Specter)
             {
@@ -275,6 +276,10 @@ namespace GoF2Remake.World
         /// <summary>The Specters (race 10) and Harval's Scimitar (ship 49) can cloak (NpcCloak).</summary>
         public bool CanCloak => cloak != null;
         public bool Cloaked => cloak != null && cloak.Cloaked;
+        /// <summary>Its cloak's fade, 0..100 (multiplayer: NetProxy draws it in the other players' games).</summary>
+        public float CloakPercent => cloak != null ? cloak.Percentage : 0f;
+        /// <summary>RadarHidden without the cloak (a level's or the spec's): NetProxy hides those copies, a cloaked one shows its cloak.</summary>
+        public bool ScriptRadarHidden => radarHidden;
         /// <summary>setCloakingPossible: may cloak on its own.</summary>
         public bool CloakingPossible { get => cloak != null && cloak.Possible; set { if (cloak != null) cloak.Possible = value; } }
         /// <summary>PlayerFighter::cloak(ms) from a level script; 0 uncloaks.</summary>
@@ -1061,7 +1066,7 @@ namespace GoF2Remake.World
             if (emp == null) return;
             empGun = new Gun(emp, 0f, 400f, 4, 3000f, 16f) { owner = Target, emp = emp.Stat("empDamage", 8) };
             empRig = new GunRig(empGun, WeaponFx.Load(18), fxRootRef, null, 2);
-            empGun.Hit += (b, hit, point) => { if (hit.hitpoints != null) hit.hitpoints.DamageEmp((int)empGun.emp); empRig.ShowImpact(point); };
+            empGun.Hit += (b, hit, point) => { EmpBreaksCloak(hit); if (hit.hitpoints != null && !hit.isPlayer) hit.hitpoints.DamageEmp((int)empGun.emp); empRig.ShowImpact(point); };
         }
 
         /// <summary>PlayerFighter::setWingmanCommand 0xf096c: 1 fire at will (boosts off for good), 2 secure the next
@@ -1597,8 +1602,23 @@ namespace GoF2Remake.World
             else if (hit.isPlayer && ObjectDocking.PlayerDocked) dmg = (int)(dmg * 0.75f);
             else if (!hit.isPlayer && RemoteDockedAtObject != null && RemoteDockedAtObject(hit)) dmg = (int)(dmg * 0.75f);   // multiplayer
             hit.Damage(dmg, true, g.bullets[bullet].velocity);
+            if (g.emp > 0f) EmpBreaksCloak(hit);
             if (g.emp > 0f && !hit.isPlayer && hit.hitpoints != null) hit.hitpoints.DamageEmp((int)g.emp);
             r.ShowImpact(point);
+        }
+
+        /// <summary>Remake (Settings.EmpBreaksCloak): an EMP hit drops this ship's cloak (NpcCloak.Break).</summary>
+        public void BreakCloak()
+        {
+            if (cloak != null && Settings.EmpBreaksCloak) cloak.Break();
+        }
+
+        /// <summary>An NPC's EMP shot on 'hit': its cloak drops, the player's or another NPC's (Settings.EmpBreaksCloak).</summary>
+        static void EmpBreaksCloak(Target hit)
+        {
+            if (hit == null || !Settings.EmpBreaksCloak) return;
+            if (hit.isPlayer) PlayerCloak.Of(hit)?.Break();
+            else hit.GetComponent<NpcShip>()?.BreakCloak();
         }
 
         /// <summary>Player::damage friendly-fire bookkeeping (§4.5), hits by the player only.</summary>

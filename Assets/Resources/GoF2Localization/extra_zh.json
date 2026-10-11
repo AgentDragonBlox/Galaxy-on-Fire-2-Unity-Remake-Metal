@@ -1341,5 +1341,8 @@
   "resupplyBadgeNotStocked": "无库存",
   "resupplyBadgeSoldOut": "已售罄",
   "resupplyAmmoCap": "已补满：在这里最多只能补充到{0}。",
-  "resupplyWrongRace": "此处无库存：这艘船只携带本族的武器。"
+  "resupplyWrongRace": "此处无库存：这艘船只携带本族的武器。",
+  "empBreaksCloak": "EMP 破除隐形",
+  "empBreaksCloakHelp": "EMP 命中隐形中的飞船会立即使其隐形失效，正在充能的隐形也会失败：包括你、幽灵以及其他玩家的隐形。关闭：与原版相同，任何东西都不会提前结束隐形。",
+  "cloakDisrupted": "隐形被干扰！"
 }

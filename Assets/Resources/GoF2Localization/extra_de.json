@@ -1341,5 +1341,8 @@
  "resupplyBadgeNotStocked": "NICHT VORRÄTIG",
  "resupplyBadgeSoldOut": "AUSVERKAUFT",
  "resupplyAmmoCap": "Aufgefüllt: Mehr als {0} bekommst du hier nicht.",
- "resupplyWrongRace": "Hier nicht vorrätig: Dieses Schiff führt nur die Waffen seines eigenen Volkes."
+ "resupplyWrongRace": "Hier nicht vorrätig: Dieses Schiff führt nur die Waffen seines eigenen Volkes.",
+ "empBreaksCloak": "EMP bricht Tarnung",
+ "empBreaksCloakHelp": "Ein EMP-Treffer auf ein getarntes Schiff hebt seine Tarnung sofort auf, und eine Tarnung, die noch lädt, schlägt fehl: deine, die der Specter und die anderer Spieler. Aus: wie im Original beendet nichts eine Tarnung vorzeitig.",
+ "cloakDisrupted": "Tarnung gestört!"
 }

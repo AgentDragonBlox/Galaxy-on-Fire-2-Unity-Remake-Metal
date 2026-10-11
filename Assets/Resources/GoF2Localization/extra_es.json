@@ -1341,5 +1341,8 @@
  "resupplyBadgeNotStocked": "SIN EXISTENCIAS",
  "resupplyBadgeSoldOut": "AGOTADO",
  "resupplyAmmoCap": "Recargado: aquí no puedes llevarte más de {0}.",
- "resupplyWrongRace": "Sin existencias aquí: esta nave solo lleva armas de su propia raza."
+ "resupplyWrongRace": "Sin existencias aquí: esta nave solo lleva armas de su propia raza.",
+ "empBreaksCloak": "El PEM rompe el camuflaje",
+ "empBreaksCloakHelp": "Un impacto PEM en una nave camuflada anula su camuflaje al instante, y un camuflaje que aún se carga falla: el tuyo, el de los Spectres y el de otros jugadores. Desactivado: como en el original, nada termina un camuflaje antes de tiempo.",
+ "cloakDisrupted": "¡Camuflaje interrumpido!"
 }

@@ -211,6 +211,10 @@ namespace GoF2Remake.Data
         /// (Ship::hasCloakIntegrated); a cloak mounted on them goes into that bay, replacing it, instead of taking an
         /// equipment slot (Hangar.HasCloakBay). Off = the original: it takes a slot. A session rule.</summary>
         public static bool CloakBay { get => Rule(R.CloakBay, "cloakBay", true); set => SetRule(R.CloakBay, "cloakBay", value); }
+        /// <summary>Remake (players' suggestion): an EMP hit on a cloaked or charging cloak ends it at once (PlayerCloak.Break,
+        /// NpcCloak.Break): the player's, a Specter's, another player's. Off = the original: nothing ends a cloak early. A
+        /// session rule.</summary>
+        public static bool EmpBreaksCloak { get => Rule(R.EmpBreaksCloak, "empBreaksCloak", true); set => SetRule(R.EmpBreaksCloak, "empBreaksCloak", value); }
         /// <summary>Remake (players' suggestion): the capital ships fight back (World.CapitalShips): escorts, stronger turrets,
         /// a killable carrier and Vossk battleship with loot, the carrier's Inflicts and its resupply dock. Off = the original.
         /// A session rule.</summary>
@@ -232,6 +236,7 @@ namespace GoF2Remake.Data
             if (GetBool("kaamoStacking", true)) m |= R.KaamoStacking;
             if (GetBool("kaamoKeepsEquipment", true)) m |= R.KaamoKeepsEquipment;
             if (GetBool("cloakBay", true)) m |= R.CloakBay;
+            if (GetBool("empBreaksCloak", true)) m |= R.EmpBreaksCloak;
             return m;
         }
 
@@ -298,7 +303,7 @@ namespace GoF2Remake.Data
         public static readonly string[] GameplayKeys =
         {
             "launchCamera", "hangarFlights", "tutorialHints", "showStoryStep", "pirateEvents", "capitalShips", "kaamoStacking", "kaamoKeepsEquipment", "cloakBay", "informerOriginalRule",
-            "originalTargetLock", "dyingCargoMarkers", "cloakLosesPursuers", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "discordPresence",
+            "originalTargetLock", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "discordPresence",
         };
         public static readonly string[] LanguageKeys = { "voiceLanguage" };
 

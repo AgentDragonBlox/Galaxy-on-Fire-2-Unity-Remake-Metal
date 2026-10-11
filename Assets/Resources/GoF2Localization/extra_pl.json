@@ -1341,5 +1341,8 @@
  "resupplyBadgeNotStocked": "BRAK NA STANIE",
  "resupplyBadgeSoldOut": "WYPRZEDANE",
  "resupplyAmmoCap": "Uzupełniono: więcej niż {0} tutaj nie dostaniesz.",
- "resupplyWrongRace": "Brak na stanie: ten statek przewozi tylko broń własnej rasy."
+ "resupplyWrongRace": "Brak na stanie: ten statek przewozi tylko broń własnej rasy.",
+ "empBreaksCloak": "EMP przerywa kamuflaż",
+ "empBreaksCloakHelp": "Trafienie EMP w zakamuflowany statek od razu zdejmuje kamuflaż, a ładujący się jeszcze kamuflaż zawodzi: twój, Specterów i innych graczy. Wyłączone: jak w oryginale nic nie przerywa kamuflażu przed czasem.",
+ "cloakDisrupted": "Kamuflaż zakłócony!"
 }

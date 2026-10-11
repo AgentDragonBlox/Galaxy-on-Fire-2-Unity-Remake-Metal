@@ -1341,5 +1341,8 @@
  "resupplyBadgeNotStocked": "재고 없음",
  "resupplyBadgeSoldOut": "품절",
  "resupplyAmmoCap": "보충 완료: 여기서는 최대 {0}개까지만 받을 수 있습니다.",
- "resupplyWrongRace": "여기서는 취급하지 않습니다: 이 함선은 자기 종족의 무기만 싣고 있습니다."
+ "resupplyWrongRace": "여기서는 취급하지 않습니다: 이 함선은 자기 종족의 무기만 싣고 있습니다.",
+ "empBreaksCloak": "EMP가 클로킹을 해제",
+ "empBreaksCloakHelp": "클로킹 중인 함선에 EMP가 명중하면 클로킹이 즉시 풀리고, 충전 중인 클로킹은 실패합니다: 당신, 스펙터, 다른 플레이어의 클로킹 모두 해당됩니다. 끔: 원작처럼 클로킹이 중간에 끝나지 않습니다.",
+ "cloakDisrupted": "클로킹 교란됨!"
 }

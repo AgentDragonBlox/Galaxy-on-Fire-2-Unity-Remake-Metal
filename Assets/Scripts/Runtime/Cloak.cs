@@ -8,6 +8,7 @@
 //                                       cooldown over -> "Cloak ready" (316)
 //   getCloakingPercentage 0xa81a0       0..100 over the first / last 2000 ms, 100 between
 // Nothing ends the cloak early (firing, hits, boosting and locks don't touch it). Every level starts ready.
+// Remake option (Settings.EmpBreaksCloak, on by default): an EMP hit does (Break).
 
 using UnityEngine;
 
@@ -62,6 +63,17 @@ namespace GoF2Remake.Flight
             if (State != Phase.Ready || cellsInCargo < cells) return false;
             State = Phase.Charging;
             Timer = 0f;
+            return true;
+        }
+
+        /// <summary>Remake (Settings.EmpBreaksCloak): an EMP hit ends a charge or the cloak at once and the cooldown starts;
+        /// false = nothing to break.</summary>
+        public bool Break()
+        {
+            if (State != Phase.Charging && State != Phase.Cloaked) return false;
+            State = Phase.Cooldown;
+            Timer = 0f;
+            CooldownLeft = cooldownMs;
             return true;
         }
 

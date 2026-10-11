@@ -342,6 +342,10 @@ namespace GoF2Remake.UI
                 () => Settings.CloakLosesPursuers, v => Settings.CloakLosesPursuers = v);
             cloakLoses.description = () => X("cloakLosesPursuersHelp", "Enemy ships lose track of you while you're cloaked: they fly to where they last saw you, then go back to their patrol. Off: as in the original, they keep chasing and aiming at you but don't fire.");
             list.Add(SessionRule(cloakLoses));
+            var empCloak = Toggle("empBreaksCloak", OptionPage.Gameplay, () => X("empBreaksCloak", "EMP breaks cloaks"),
+                () => Settings.EmpBreaksCloak, v => Settings.EmpBreaksCloak = v);
+            empCloak.description = () => X("empBreaksCloakHelp", "An EMP hit on a cloaked ship drops its cloak at once, and a cloak still charging fails: yours, the Specters' and other players'. Off: as in the original, nothing ends a cloak early.");
+            list.Add(SessionRule(empCloak));
             var pirateEvents = Toggle("pirateEvents", OptionPage.Gameplay, () => X("pirateEvents", "Pirate outposts and bosses"),
                 () => Settings.PirateEvents, v => Settings.PirateEvents = v);
             pirateEvents.description = () => X("pirateEventsHelp", "Now and then an orbit holds a pirate outpost with its guards or a pirate boss with escorts; destroying them pays a bounty. Not in the original.");

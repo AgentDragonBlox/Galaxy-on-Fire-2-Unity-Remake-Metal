@@ -5,6 +5,7 @@
 // CloakGlow). The look is the player's (GoF2/Cloak, PlayerCloak): the hull dissolves into the refracted screen.
 //   handleCloaking   when panicking a 50 % chance, otherwise every 8000 ms a 30 % chance, for 9000 + rnd(5000) ms
 //   level scripts    cloak(ms) (the ambush fly-ins), setCloakingPossible(false) (asleep / cutscene Specters)
+//   remake           an EMP hit (Settings.EmpBreaksCloak) drops it at once and keeps it off for 6 s (Break)
 // Plain class run by NpcShip.
 
 using System.Collections.Generic;
@@ -43,7 +44,18 @@ namespace GoF2Remake.World
         readonly List<(Renderer r, Material[] original, Material[] cloak)> hull = new List<(Renderer, Material[], Material[])>();
         readonly CloakGlow glow = new CloakGlow();
         readonly object owner = new object();
-        float totalMs, elapsedMs, rollMs;
+        float totalMs, elapsedMs, rollMs, brokenMs;
+        const float BrokenMs = 6000f;
+
+        /// <summary>Remake (Settings.EmpBreaksCloak): an EMP hit drops the cloak at once, and it can't cloak again on its own
+        /// for 6 s (a panicking ship rolled every frame); true = it was cloaked.</summary>
+        public bool Break()
+        {
+            brokenMs = BrokenMs;
+            if (!Cloaked) return false;
+            Stop();
+            return true;
+        }
         bool swapped;
 
         /// <param name="keepEngine">another player's ship: its engine glow stays on like the local player's (#85)</param>
@@ -95,10 +107,11 @@ namespace GoF2Remake.World
         /// its own (awake), 'panicking' = PlayerFighter+0x1d8.</summary>
         public void Update(float dtMs, bool mayRoll, bool panicking, bool empDisabled = false)
         {
+            if (brokenMs > 0f) brokenMs -= dtMs;
             if (empDisabled) return;
             if (!Cloaked)
             {
-                if (!Possible || !mayRoll) return;
+                if (!Possible || !mayRoll || brokenMs > 0f) return;
                 rollMs += dtMs;
                 bool roll = panicking ? Random.Range(0, 100) < 50 : rollMs >= RollEveryMs && Random.Range(0, 100) < 30;
                 if (rollMs >= RollEveryMs) rollMs = 0f;

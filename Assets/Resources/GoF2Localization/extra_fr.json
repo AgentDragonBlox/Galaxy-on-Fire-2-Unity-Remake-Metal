@@ -1341,5 +1341,8 @@
  "resupplyBadgeNotStocked": "PAS EN STOCK",
  "resupplyBadgeSoldOut": "ÉPUISÉ",
  "resupplyAmmoCap": "Plein : tu ne peux pas en prendre plus de {0} ici.",
- "resupplyWrongRace": "Pas en stock ici : ce vaisseau ne transporte que les armes de son propre peuple."
+ "resupplyWrongRace": "Pas en stock ici : ce vaisseau ne transporte que les armes de son propre peuple.",
+ "empBreaksCloak": "L'IEM brise le camouflage",
+ "empBreaksCloakHelp": "Un tir IEM sur un vaisseau camouflé le rend visible aussitôt, et un camouflage encore en charge échoue : le tien, celui des Spectres et celui des autres joueurs. Désactivé : comme dans l'original, rien n'interrompt un camouflage.",
+ "cloakDisrupted": "Camouflage perturbé !"
 }

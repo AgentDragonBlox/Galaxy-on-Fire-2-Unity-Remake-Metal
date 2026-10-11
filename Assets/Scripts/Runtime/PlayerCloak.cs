@@ -100,6 +100,26 @@ namespace GoF2Remake.Flight
             foreach (var h in hull) foreach (var m in h.cloak) Destroy(m);
         }
 
+        /// <summary>Remake (Settings.EmpBreaksCloak): an EMP hit drops the cloak at once (no fade) or ends its charge, then
+        /// the cooldown; "Cloak disrupted!". A phase cloak is out of the EMP's reach anyway (Target.phased).</summary>
+        public void Break()
+        {
+            if (Rules == null || !Settings.EmpBreaksCloak) return;
+            bool cloaked = Rules.Cloaked;
+            if (!Rules.Break()) return;
+            if (cloaked)
+            {
+                target.cloaked = false;
+                target.phased = false;
+                Play();
+                Swap(false);
+            }
+            Message?.Invoke(Localization.Extra("cloakDisrupted", "Cloak disrupted!"));
+        }
+
+        /// <summary>The ship's cloak, if it has one (the player's ship root).</summary>
+        public static PlayerCloak Of(Component c) => c != null ? c.GetComponentInParent<PlayerCloak>() : null;
+
         /// <summary>MGame::useCloak -> PlayerEgo::toggleCloaking.</summary>
         public void Use()
         {

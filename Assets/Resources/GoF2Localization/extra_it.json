@@ -1341,5 +1341,8 @@
  "resupplyBadgeNotStocked": "NON DISPONIBILE",
  "resupplyBadgeSoldOut": "ESAURITO",
  "resupplyAmmoCap": "Rifornito: qui non puoi prenderne più di {0}.",
- "resupplyWrongRace": "Non disponibile qui: questa nave trasporta solo le armi della propria razza."
+ "resupplyWrongRace": "Non disponibile qui: questa nave trasporta solo le armi della propria razza.",
+ "empBreaksCloak": "L'IEM rompe l'occultamento",
+ "empBreaksCloakHelp": "Un colpo IEM su una nave occultata ne annulla subito l'occultamento, e un occultamento ancora in carica fallisce: il tuo, quello degli Specter e quello degli altri giocatori. Disattivato: come nell'originale, niente interrompe un occultamento.",
+ "cloakDisrupted": "Occultamento disturbato!"
 }

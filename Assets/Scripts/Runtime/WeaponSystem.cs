@@ -595,8 +595,9 @@ namespace GoF2Remake.Flight
             if (emp <= 0 || target.playerProof || target.phased) return;   // phased: a phase cloak
             if (target.RemoteEmp != null) { if (target.Alive) target.RemoteEmp(emp); return; }   // multiplayer: its owner's game
             if (target.hitpoints == null || !target.isShip || !target.Alive) return;
-            if (target.hitpoints.emp <= 0 || target.hitpoints.hull <= 0) return;   // already disabled
             var npc = target.GetComponent<World.NpcShip>();
+            npc?.BreakCloak();   // remake (Settings.EmpBreaksCloak): a Specter's cloak drops, even on a ship already disabled
+            if (target.hitpoints.emp <= 0 || target.hitpoints.hull <= 0) return;   // already disabled
             npc?.OnPlayerEmp(emp);
             if (!target.hitpoints.DamageEmp(emp)) return;
             if (npc != null) npc.OnPlayerDisabled();
