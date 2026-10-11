@@ -251,6 +251,7 @@ namespace GoF2Remake.World
         GameObject wreck;
         WreckBurn wreckBurn;
         Crate crate;
+        readonly List<Crate> moreCrates = new List<Crate>();   // remake: a crate per kind of loot (DropCrate)
         Obstacle obstacle;
         ShipSmoke smoke;
         ShipBurn burn;
@@ -426,6 +427,8 @@ namespace GoF2Remake.World
             loot = spec.lootItem >= 0 ? new List<ItemStack> { new ItemStack(spec.lootItem, Mathf.Max(1, spec.lootAmount)) }
                  : spec.missionCrate >= 0 ? new List<ItemStack> { new ItemStack(spec.missionCrate, 1) }
                  : spec.noLoot ? new List<ItemStack>() : RollLoot();
+            if (spec.lootItem >= 0 && spec.extraLoot != null)   // remake: a pirate outpost's crate by its tier
+                foreach (var st in spec.extraLoot) if (st != null && st.amount > 0) loot.Add(new ItemStack(st.item, st.amount));
 
             sfx = gameObject.AddComponent<AudioSource>();
             Setup3D(sfx);
@@ -1667,6 +1670,7 @@ namespace GoF2Remake.World
                     modelGo.SetActive(false);
                 }
                 crate?.DelayExpiry(dyingMs);   // the crate's 60 s run from state 4, the end of the wreck animation
+                foreach (var c in moreCrates) if (c != null) c.DelayExpiry(dyingMs);
             }
             else if (IsFreighter)
             {
@@ -1822,15 +1826,47 @@ namespace GoF2Remake.World
                 Target.crate = crate;
                 return;
             }
+            // Remake: loot of several kinds (a pirate outpost's by its tier, a capital ship's) drops a crate per kind (one
+            // crate still holds all of one thing), thrown off in different directions; the original's ships drop one stack.
+            var stacks = loot.FindAll(s => s != null && s.amount > 0);
+            bool split = stacks.Count > 1 && Spec.missionCrate < 0;
+            var dirs = split ? SpreadDirections(stacks.Count) : null;
+            for (int i = 0; i < (split ? stacks.Count : 1); i++)
+            {
+                var c = MakeCrate(split ? new List<ItemStack> { stacks[i] } : loot);
+                if (split) c.Launch(dirs[i], CrateBurst);
+                if (i == 0) { crate = c; Target.crate = c; }
+                else moreCrates.Add(c);
+            }
+        }
+
+        const float CrateBurst = 3f;   // several crates fly apart at 3x a crate's usual push
+
+        Crate MakeCrate(List<ItemStack> items)
+        {
             var prefab = assets.Crate(Race);
             var go = prefab != null ? Instantiate(prefab, transform.position, Random.rotation) : new GameObject("Crate");
             go.name = "Crate";
-            crate = go.AddComponent<Crate>();
-            crate.Setup(loot, Race);
-            crate.fromFriend = Target.friendToPlayer;
-            crate.missionCrate = Spec.missionCrate >= 0;
-            crate.missionLoot = MissionShip;   // multiplayer: only the mission's team takes it
-            Target.crate = crate;
+            var c = go.AddComponent<Crate>();
+            c.Setup(items, Race);
+            c.fromFriend = Target.friendToPlayer;
+            c.missionCrate = Spec.missionCrate >= 0;
+            c.missionLoot = MissionShip;   // multiplayer: only the mission's team takes it
+            return c;
+        }
+
+        /// <summary>'n' directions spread evenly over a sphere (a Fibonacci spiral), turned at random.</summary>
+        static Vector3[] SpreadDirections(int n)
+        {
+            var dirs = new Vector3[n];
+            var turn = Random.rotation;
+            float golden = Mathf.PI * (3f - Mathf.Sqrt(5f));
+            for (int i = 0; i < n; i++)
+            {
+                float y = n == 1 ? 0f : 1f - 2f * (i + 0.5f) / n, r = Mathf.Sqrt(1f - y * y), a = golden * i;
+                dirs[i] = turn * new Vector3(Mathf.Cos(a) * r, y, Mathf.Sin(a) * r);
+            }
+            return dirs;
         }
 
         void UpdateDead(float dtMs)
@@ -1843,7 +1879,7 @@ namespace GoF2Remake.World
                 if (wreck != null) Destroy(wreck);
             }
             bool exploded = explosion == null || explosion.Finished;
-            if (exploded && crate == null && deadMs > 300f) SetDead();
+            if (exploded && crate == null && moreCrates.TrueForAll(c => c == null) && deadMs > 300f) SetDead();
         }
     }
 }

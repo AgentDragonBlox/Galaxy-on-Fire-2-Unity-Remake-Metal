@@ -465,6 +465,23 @@ namespace GoF2Remake.Flight
             if (crate.race == Standing.Void) Session.AlienRemainsCollected += n;
             else if (Session.IsBooze(entry.item)) Session.BoozeTypes.Add(entry.item);
             Message?.Invoke($"{n}t {GameNames.Item(entry.item)}", 2);
+            // Remake: a crate of several stacks (the remake's own: a capital ship's, a pirate outpost's by tier; the
+            // original's crates hold one) gives every one of them, as far as the hold has room (it used to give the first).
+            if (ship == null && !crate.missionCrate)
+                foreach (var more in crate.loot)
+                {
+                    if (more == entry || more.amount <= 0) continue;
+                    int room = Shop.FreeCargo(db);
+                    if (room <= 0) { Message?.Invoke(Localization.Get(322), 1); break; }
+                    int k = Mathf.Min(more.amount, room);
+                    more.amount -= k;
+                    var mountedMore = db.Item(more.item)?.TypeId == 1 ? Session.Equipment.Find(e => e.item == more.item) : null;
+                    if (mountedMore != null) mountedMore.amount += k; else Shop.AddToCargo(more.item, k);
+                    Session.CratesSalvaged += k;
+                    if (crate.race == Standing.Void) Session.AlienRemainsCollected += k;
+                    else if (Session.IsBooze(more.item)) Session.BoozeTypes.Add(more.item);
+                    Message?.Invoke($"{k}t {GameNames.Item(more.item)}", 2);
+                }
             crate.CapturedHere?.Invoke();   // multiplayer: the capture reaches the crate's owner (NetCrate)
             Destroy(crate.gameObject);
         }

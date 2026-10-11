@@ -182,6 +182,9 @@ namespace GoF2Remake.Data
         public static List<WantedState> Wanted = new List<WantedState>();
         /// <summary>Status+0x04: bounties collected per board (0 Terran, 1 Vossk, 2 Nivelian, 3 Midorian).</summary>
         public static int[] CollectedBounties = new int[4];
+        /// <summary>Remake: the Pirate activity board's reports (PirateReports) and the next report's id.</summary>
+        public static List<PirateSighting> PirateSightings = new List<PirateSighting>();
+        public static int NextPirateSightingId;
         /// <summary>hints[0x2a] (601, the Terran board), hints 613 (the other boards) and 0x33-0x36 (3232, ships 45-48 at
         /// Quineros) shown, as bits 0 / 1 / 2-5.</summary>
         public static int WantedHints;
@@ -438,6 +441,8 @@ namespace GoF2Remake.Data
             StoryTargets = new List<int>();
             Wanted = new List<WantedState>();
             CollectedBounties = new int[4];
+            PirateSightings = new List<PirateSighting>();
+            NextPirateSightingId = 0;
             WantedHints = 0;
             HiddenBlueprintsFound = 0;
             VoidInvasionSystem = VoidInvasionStation = -1;

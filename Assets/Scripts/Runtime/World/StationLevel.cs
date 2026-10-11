@@ -172,6 +172,7 @@ namespace GoF2Remake.World
             int station = stationOverride >= 0 ? stationOverride : Session.StationIndex;
             Hangar.NewDocking();
             Stock = Shop.EnterStation(db, station);
+            PirateReports.Refresh(db);   // remake: the Pirate activity board's old reports off, new ones in
             Story.OnDocked(db, station, Stock);   // ModStation::OnInitialize's story tweaks (index 1: Betty ...)
             // Remake debug (PlayerHull): a hull the player can't normally fly never sits in a hangar (an old save from the
             // battleship toggle): back in the player's own ship.

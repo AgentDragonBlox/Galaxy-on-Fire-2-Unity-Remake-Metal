@@ -349,6 +349,11 @@
     color: var(--gof-amber);
 }
 
+/* The Pirate activity board's tier 5, "Extremely dangerous" (tier 4 takes the amber above). */
+.wanted-row--tier5 {
+    color: #FF5A4A;
+}
+
 .wanted-row--selected,
 .wanted-row:focus,
 .can-hover .wanted-row:hover {

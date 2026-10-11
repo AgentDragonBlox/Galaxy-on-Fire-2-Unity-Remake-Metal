@@ -337,7 +337,8 @@ namespace GoF2Remake.UI
             root.EnableInClassList("ticker-off", !shown);
             if (!shown) return;
             if (!newsOnly || tickerBase == null) tickerBase = NewsTicker.Build(level.Database, st.system, level.Layout.raceId) ?? "";
-            tickerSingle = GoF2Remake.Multiplayer.NetNews.Ticker(st.index) + tickerBase;
+            // Remake: the Pirate activity board's reports in this system and its gate neighbours, before the game's own.
+            tickerSingle = GoF2Remake.Multiplayer.NetNews.Ticker(st.index) + PirateReports.Ticker(level.Database, st.system) + tickerBase;
             tickerNewsDirty = false;
             tickerBuiltAt = Time.unscaledTime;
             tickerText.text = tickerSingle;

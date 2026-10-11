@@ -55,6 +55,7 @@ namespace GoF2Remake.Multiplayer
         readonly NetworkVariable<bool> freePvp = new NetworkVariable<bool>();        // players may fight anywhere (else only in arenas)
         readonly NetworkVariable<FixedString4096Bytes> claims = new NetworkVariable<FixedString4096Bytes>();   // NetFactions' territory
         readonly NetworkVariable<FixedString4096Bytes> sieges = new NetworkVariable<FixedString4096Bytes>();   // NetFactions' sieges
+        readonly NetworkVariable<FixedString4096Bytes> pirateBoard = new NetworkVariable<FixedString4096Bytes>();   // PirateReports' board (JSON)
         readonly NetworkVariable<int> toll = new NetworkVariable<int>();   // NetFactions.Toll
         readonly NetworkVariable<int> rules = new NetworkVariable<int>();   // NetRules: the session's gameplay options
         readonly NetworkVariable<FixedString64Bytes> serverId = new NetworkVariable<FixedString64Bytes>();   // their key on the client
@@ -157,13 +158,17 @@ namespace GoF2Remake.Multiplayer
                 freePvp.Value = NetGame.FreePvp;
                 rules.Value = NetRules.Host;
                 NetFactions.OnStateSpawned();   // the claims, now that this object exists
+                PirateReports.ServerReset();   // the Pirate activity board starts empty (filled by the next sweep)
                 sessionMods.Value = NetMods.SessionList;
                 proxyPrefab = Resources.Load<GameObject>($"{NetGame.PrefabFolder}/NetProxy");
                 cratePrefab = Resources.Load<GameObject>($"{NetGame.PrefabFolder}/NetCrate");
                 NetRateLimit.Reset();
                 NetTrade.Reset();
             }
-            else
+            // The session's Pirate activity board on every game (the host's too), now and whenever the server changes it.
+            pirateBoard.OnValueChanged += (_, now) => PirateReports.ApplyShared(now.ToString());
+            PirateReports.ApplyShared(pirateBoard.Value.ToString());
+            if (!IsServer)
             {
                 NetMods.ApplyFromServer(sessionMods.Value.ToString());   // the session's mods before the world is built
                 // A server with profiles: the world waits for this player's profile (NetProfileClient.Begin -> EnterWorld).
@@ -684,6 +689,61 @@ namespace GoF2Remake.Multiplayer
         public void ChargedRpc(int token, bool paid, RpcParams rpc = default)
         {
             if (NetRateLimit.Allow(rpc.Receive.SenderClientId, NetRateLimit.Kind.Mission)) NetFactions.OnCharged(rpc.Receive.SenderClientId, token, paid);
+        }
+
+        // ---- the Pirate activity board (PirateReports) ------------------------------------------------------------
+
+        const float PirateSeconds = 5f;
+        float pirateTimer;
+
+        /// <summary>The session's Pirate activity board as published (JSON; empty = none).</summary>
+        public string PirateBoardJson => pirateBoard.Value.ToString();
+
+        /// <summary>Server: the board as everyone's games read it (cut short only past 4096 bytes: 5 reports take ~1 KB).</summary>
+        void SetPirateBoard(string json)
+        {
+            if (!IsServer) return;
+            json ??= "";
+            if (System.Text.Encoding.UTF8.GetByteCount(json) > 4000) return;
+            if (pirateBoard.Value.ToString() != json) pirateBoard.Value = json;
+        }
+
+        /// <summary>The orbit's authority: report 'id' destroyed; 'killer' = the client whose kill it was (the sender itself
+        /// for its own kill or an NPC's). Checked against the server's board and the sender's orbit. The bounty is paid here,
+        /// never by the sender's game: to the killer, or split evenly across the killer's squad (every member online,
+        /// wherever they are; players' suggestion).</summary>
+        [Rpc(SendTo.Server)]
+        public void PirateSightingDoneRpc(int id, ulong killer, RpcParams rpc = default)
+        {
+            ulong client = rpc.Receive.SenderClientId;
+            if (!NetRateLimit.Allow(client, NetRateLimit.Kind.Kill)) return;
+            int bounty = PirateReports.ServerDone(id, station => NetGuard.InOrbit(client, station), SetPirateBoard);
+            if (bounty <= 0) return;
+            if (!NetworkManager.ConnectedClients.ContainsKey(killer)) killer = client;
+            var team = new List<ulong>();
+            var who = NetPlayer.All.Find(p => p != null && p.IsSpawned && p.OwnerClientId == killer);
+            if (who != null && who.SquadId != 0)
+                foreach (var p in NetPlayer.All)
+                    if (p != null && p.IsSpawned && p.SquadId == who.SquadId && NetworkManager.ConnectedClients.ContainsKey(p.OwnerClientId))
+                        team.Add(p.OwnerClientId);
+            if (team.Count == 0) team.Add(killer);
+            int share = Mathf.Max(1, bounty / team.Count);
+            foreach (ulong c in team) PirateBountyRpc(share, team.Count, RpcTarget.Single(c, RpcTargetUse.Temp));
+        }
+
+        /// <summary>A reported pirate's bounty (or this player's share of it, 'shares' > 1: the squad's): the flight HUD's bounty
+        /// line in flight, a chat notice for a share.</summary>
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
+        void PirateBountyRpc(int amount, int shares, RpcParams rpc = default)
+        {
+            if (amount <= 0) return;
+            var traffic = FindAnyObjectByType<GoF2Remake.World.Traffic>();
+            if (traffic != null) traffic.PayBounty(amount);
+            else { Session.Credits += amount; FindAnyObjectByType<GoF2Remake.UI.StationMenu>()?.RefreshCredits(); }
+            if (shares > 1)
+                NetChat.Notice(string.Format(Localization.Extra("pirateBountyShared", "Pirate bounty shared with your squad: +{0} each ({1} pilots)."),
+                                             GoF2Remake.UI.ItemInfo.Credits(amount), shares));
+            NetProfileClient.Upload();
         }
 
         /// <summary>Server: credits from the faction bank to the player's game.</summary>
@@ -1408,6 +1468,11 @@ namespace GoF2Remake.Multiplayer
             sweepTimer = SweepSeconds;
             NetRateLimit.Tick();   // the clients that kept flooding go
             NetStock.HostTick(this);   // the stock resets
+            if ((pirateTimer -= SweepSeconds) <= 0f)
+            {
+                pirateTimer = PirateSeconds;
+                PirateReports.ServerTick(Database.Load(), SetPirateBoard);   // the Pirate activity board kept full
+            }
             DissolveSingles();   // a squadmate who disconnected
             if ((pruneTimer -= SweepSeconds) <= 0f) { pruneTimer = PruneSeconds; Prune(); }
             // An orbit's objects go once their owner isn't in that orbit any more.

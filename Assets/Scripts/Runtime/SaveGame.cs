@@ -16,7 +16,7 @@ namespace GoF2Remake.Data
     [Serializable]
     public class SaveData
     {
-        public const int CurrentVersion = 16;
+        public const int CurrentVersion = 17;
 
         public int version = CurrentVersion;
         public string savedAtUtc;
@@ -100,6 +100,9 @@ namespace GoF2Remake.Data
         public string runId;
         // version 16: the mods' new-game options on in this game (Session.ModGameOptions, Modding.ModGameOptions)
         public List<string> modGameOptions;
+        /// <summary>v17: the Pirate activity board (PirateReports).</summary>
+        public List<PirateSighting> pirateSightings;
+        public int nextPirateSightingId;
 
         [Serializable]
         public class KnownPrice { public int item, price, system; }
@@ -268,6 +271,7 @@ namespace GoF2Remake.Data
                 hardcore = Session.Hardcore,
                 runId = Session.RunId ?? "",
                 modGameOptions = new List<string>(Session.ModGameOptions),
+                pirateSightings = new List<PirateSighting>(Session.PirateSightings), nextPirateSightingId = Session.NextPirateSightingId,
                 campaignMission = Session.CampaignMission,
                 station = Session.StationIndex,
                 previousStation = Session.PreviousStationIndex,
@@ -468,6 +472,10 @@ namespace GoF2Remake.Data
             Session.FreePlay = s.freePlay;
             Session.ModCampaign = s.modCampaign ?? "";
             Session.ModGameOptions = new HashSet<string>(s.modGameOptions ?? new List<string>());
+            // A session (a server profile) reads the session's board instead (NetState, PirateReports.ApplyShared).
+            if (GoF2Remake.Multiplayer.NetGame.Active) PirateReports.ApplyShared(GoF2Remake.Multiplayer.NetState.Instance?.PirateBoardJson);
+            else Session.PirateSightings = s.pirateSightings != null ? s.pirateSightings.FindAll(p => p != null) : new List<PirateSighting>();
+            Session.NextPirateSightingId = s.nextPirateSightingId;
             Session.StoryMission = s.storyMission ?? new StoryMission();
             Session.StoryStepStart = s.storyStepStart;
             Session.StoryRadioPending = s.storyRadioPending;
