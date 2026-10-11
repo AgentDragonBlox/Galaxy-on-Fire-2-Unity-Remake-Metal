@@ -86,7 +86,9 @@ namespace GoF2Remake.Flight
         public SpawnSpec capitalHost;      // ... and whose
         public bool capitalEnhanced;       // built with the option on (hit boxes, CapitalShip on the host)
         public bool fleetBattle;           // a fleet battle's capital ship (TrafficPlan.AddFleetBattle) ...
-        public SpawnSpec battleFoe;        // ... and the enemy capital ship it closes in on
+        public SpawnSpec battleFoe;        // ... and the enemy capital ship it fights
+        public bool turretHunter;          // an enhanced turret that goes for the enemy capital ship's turrets first
+        public SpawnSpec routeAround;      // the capital ship its loop circles (moved along with it in a fleet battle)
         public float deathMs = -1f;        // a fixed object's dying time before the big explosion (-1 = its wreck animation or 20 s)
         public int empPoints = -1;         // the EMP pool (-1 = NpcTables.Emp)
         public const int CapitalBattleship = 1, CapitalCarrier = 2, CapitalVossk = 3;
@@ -703,7 +705,7 @@ namespace GoF2Remake.Flight
                 {
                     group = NpcGroup.Escort, race = own.race, ship = NpcTables.RandomFighter(own.race), route = loop,
                     position = own.position + new Vector3(Random.Range(-15000, 15000), Random.Range(-6000, 6000), Random.Range(-20000, 20000)),
-                    capitalPart = true, capitalHost = own, capitalEnhanced = true,
+                    capitalPart = true, capitalHost = own, capitalEnhanced = true, routeAround = foe,
                 });
         }
 

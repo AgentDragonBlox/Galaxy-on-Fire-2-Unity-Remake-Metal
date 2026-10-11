@@ -1330,5 +1330,16 @@
  "pirateTickerOutpost": "{0}星系で海賊の前哨基地が報告された。脅威：{2}。賞金：{1}",
  "pirateWarningBoss": "パイロット各位に告ぐ：この星系で海賊{0}が目撃された。首に賞金が懸けられている。注意して飛行せよ。",
  "pirateWarningOutpost": "パイロット各位に告ぐ：この星系で海賊の前哨基地が報告された。襲撃に備え、注意して飛行せよ。",
- "pirateBountyShared": "海賊の賞金を分隊で分配：一人あたり +{0}（パイロット{1}名）。"
+ "pirateBountyShared": "海賊の賞金を分隊で分配：一人あたり +{0}（パイロット{1}名）。",
+ "vosskLaunch": "ヴォスクの大戦艦がH'Socを発進させています！",
+ "vosskDeckClosed": "ヴォスクの大戦艦の飛行甲板はあなたには閉ざされています。",
+ "vosskInBattle": "ヴォスクの大戦艦は交戦中です：飛行甲板は閉鎖されています。",
+ "vosskRefused": "ヴォスクの大戦艦が受け入れるのは、ヴォスクの船に乗りヴォスクに信頼されているパイロットか、ヴォスクのシグネチャーを持つパイロットだけです。",
+ "resupplyRepairTextVossk": "大戦艦の甲板員が船体を補修し、装甲板を交換します。シールドは自動で回復します。",
+ "resupplyNotStocked": "設計図から製造された武器はここでは扱っていません。",
+ "resupplySoldOut": "売り切れです。",
+ "resupplyBadgeNotStocked": "在庫なし",
+ "resupplyBadgeSoldOut": "売り切れ",
+ "resupplyAmmoCap": "補充完了：ここで受け取れるのは最大{0}までです。",
+ "resupplyWrongRace": "ここでは扱っていません：この船は自種族の武器しか積んでいません。"
 }

@@ -41,6 +41,20 @@ namespace GoF2Remake.Flight
 
         public bool Active => isActiveAndEnabled && volumes != null && volumes.Count > 0;
 
+        /// <summary>Remake (a fleet battle's capital ships turn, CapitalShip): the volumes were made for 'baseRotation' and
+        /// turn with the owner from there (the original's are never rotated).</summary>
+        public bool rotates;
+        public Quaternion baseRotation = Quaternion.identity;
+
+        /// <summary>'world' in the volumes' frame (relative to the owner, turned back to the base rotation).</summary>
+        Vector3 Local(Vector3 world)
+        {
+            var p = world - transform.position;
+            return rotates ? baseRotation * (Quaternion.Inverse(transform.rotation) * p) : p;
+        }
+
+        Vector3 ToWorld(Vector3 local) => transform.position + (rotates ? transform.rotation * (Quaternion.Inverse(baseRotation) * local) : local);
+
         void OnEnable() => All.Add(this);
         void OnDisable() => All.Remove(this);
 
@@ -48,7 +62,7 @@ namespace GoF2Remake.Flight
         public bool Touches(Vector3 world, out int index)
         {
             index = -1;
-            var p = world - transform.position;
+            var p = Local(world);
             if (cubeHalf > 0f && (Mathf.Abs(p.x) >= cubeHalf || Mathf.Abs(p.y) >= cubeHalf || Mathf.Abs(p.z) >= cubeHalf)) return false;
             for (int i = 0; i < volumes.Count; i++)
                 if (volumes[i].Contains(p)) { index = i; return true; }
@@ -56,13 +70,12 @@ namespace GoF2Remake.Flight
         }
 
         /// <summary>projectCollisionOnSurface: 'world' moved out of every volume containing it.</summary>
-        public Vector3 PushOut(Vector3 world) => transform.position + CollisionVolume.ProjectOut(world - transform.position, volumes);
+        public Vector3 PushOut(Vector3 world) => ToWorld(CollisionVolume.ProjectOut(Local(world), volumes));
 
         /// <summary>getProjectionVector: the unit vector away from the touched volume (or the owner).</summary>
         public Vector3 ProjectionVector(Vector3 world, int index)
         {
-            var from = transform.position;
-            if (projectFromVolume && index >= 0 && index < volumes.Count) from += volumes[index].centre;
+            var from = projectFromVolume && index >= 0 && index < volumes.Count ? ToWorld(volumes[index].centre) : transform.position;
             var d = world - from;
             return d.sqrMagnitude > 1e-8f ? d.normalized : Vector3.zero;
         }

@@ -1330,5 +1330,16 @@
  "pirateTickerOutpost": "在{0}星系报告发现海盗前哨。威胁：{2}。赏金：{1}",
  "pirateWarningBoss": "各位飞行员请注意：在本星系发现了海盗{0}。悬赏捉拿。请小心飞行。",
  "pirateWarningOutpost": "各位飞行员请注意：本星系报告发现一座海盗前哨。预计会有袭击，请小心飞行。",
- "pirateBountyShared": "海盗赏金已与你的小队平分：每人 +{0}（{1} 名飞行员）。"
+ "pirateBountyShared": "海盗赏金已与你的小队平分：每人 +{0}（{1} 名飞行员）。",
+  "vosskLaunch": "Vossk战船正在放出它的H'Soc！",
+  "vosskDeckClosed": "Vossk战船的飞行甲板不对您开放。",
+  "vosskInBattle": "Vossk战船正在交战：它的飞行甲板已关闭。",
+  "vosskRefused": "Vossk战船只接纳驾驶Vossk飞船且受Vossk人信任的飞行员，或持有Vossk人识别标志的飞行员。",
+  "resupplyRepairTextVossk": "战船的甲板人员会修补你的船壳并更换装甲板。护盾会自行充能。",
+  "resupplyNotStocked": "这里不供应按蓝图制造的武器。",
+  "resupplySoldOut": "已售罄。",
+  "resupplyBadgeNotStocked": "无库存",
+  "resupplyBadgeSoldOut": "已售罄",
+  "resupplyAmmoCap": "已补满：在这里最多只能补充到{0}。",
+  "resupplyWrongRace": "此处无库存：这艘船只携带本族的武器。"
 }

@@ -69,6 +69,7 @@ namespace GoF2Remake.World
         TurretAim turretAim;
         Transform turretBarrel;
         Target turretTarget, turretIgnored;
+        bool turretTargetFixed;   // the target is a turret: aimed at where it is, no lead
         float turretPickMs;
         const float TurretRangeUnits = 50000f, TurretLeadUnits = 1500f, TurretPickMs = 3000f, TurretDeathMs = 4500f;
         public Target Target { get; private set; }
@@ -562,9 +563,11 @@ namespace GoF2Remake.World
             {
                 turretPickMs = 0f;
                 turretTarget = PickTurretTarget();
+                turretTargetFixed = turretTarget != null && IsTurretTarget(turretTarget);
             }
             if (turretTarget == null || turretTarget.cloaked) return;   // handleTurret: no turning toward a cloaked target
             var at = Spec.capitalEnhanced && turretTarget.boxes != null && turretTarget.boxes.Length > 0 ? TurretAimPoint(turretTarget, turretBarrel.position)
+                   : turretTargetFixed ? turretTarget.transform.position
                    : turretTarget.transform.position + turretTarget.transform.forward * TurretLeadUnits * M;
             bool aligned = turretAim.Step(at, dtMs);
             if (turretAim.LimitHit) { turretIgnored = turretTarget; turretPickMs += dtMs; return; }   // out of reach: dropped
@@ -606,12 +609,21 @@ namespace GoF2Remake.World
                                : e.isPlayer ? Target.hostileToPlayer : e.isShip && e.race >= 0 && Standing.RacesHostile(e.race, Race);
                 if (!candidate) continue;
                 float d = (TurretAimPoint(e, transform.position) - transform.position).magnitude;
+                // Remake (CapitalShips): a turret hunter takes an enemy capital ship's turret in reach before its hull (the
+                // hull's nearest point is always nearer, so no turret was ever shot at in a fleet battle).
+                if (d < bestD && Spec.turretHunter && !e.isPlayer && (e.boxes == null || e.boxes.Length == 0) && IsTurretTarget(e)) d *= 0.3f;
                 if (d >= bestD) continue;
                 if (e == turretIgnored) { ignored = e; continue; }
                 bestD = d;
                 best = e;
             }
             return best ?? ignored;
+        }
+
+        static bool IsTurretTarget(Target t)
+        {
+            var s = t != null ? t.GetComponent<NpcShip>() : null;
+            return s != null && s.IsTurret;
         }
 
         /// <summary>Where a turret measures and aims: the target's position, or (remake, World.CapitalShips) for an enhanced
@@ -914,6 +926,14 @@ namespace GoF2Remake.World
         public void SetMoving(bool on) => parked = !on;
         public bool Moving => !parked;
 
+        /// <summary>Remake (CapitalShip): its route moved by 'gameDelta' (game units), an escort's loop following its capital
+        /// ship through a fleet battle.</summary>
+        public void ShiftRoute(Vector3 gameDelta)
+        {
+            if (route == null || route == Spec.route) return;
+            for (int i = 0; i < route.points.Count; i++) route.points[i] += gameDelta;
+        }
+
         /// <summary>KIPlayer::setRoute: fly this route (game units) when there is nothing to attack.</summary>
         public void SetRoute(Route r)
         {
@@ -1193,11 +1213,24 @@ namespace GoF2Remake.World
             if (idx > 0)
             {
                 idx = -1;
+                // Remake (CapitalShips): a fleet battle's fighter takes the nearest race-hostile ship (its hull's nearest
+                // point), not the first of the list: in a Terran system the local patrols come first, so the Vossk side's
+                // fighters flew off to them and never touched the enemy capital ship.
+                bool nearest = Spec.capitalPart && Spec.capitalHost != null && Spec.capitalHost.fleetBattle;
+                // ... and only within the battle's area, so the fighters stay between and around the capital ships.
+                Vector3 centre = Vector3.zero;
+                float reach = 0f;
+                bool leash = nearest && CapitalShip.BattleArea(Spec.capitalHost, out centre, out reach);
+                float best = float.MaxValue;
                 for (int i = 1; i < n; i++)
                 {
                     var e = enemies[i];
                     if (!Pursuable(e)) continue;
-                    if (Standing.RacesHostile(Race, e.race)) { idx = i; attacking = true; break; }
+                    if (!Standing.RacesHostile(Race, e.race)) continue;
+                    if (!nearest) { idx = i; attacking = true; break; }
+                    if (leash && (e.transform.position - centre).sqrMagnitude > reach * reach) continue;
+                    float d = (e.NearestPoint(transform.position) - transform.position).sqrMagnitude;
+                    if (d < best) { best = d; idx = i; attacking = true; }
                 }
             }
             targetIdx = idx;

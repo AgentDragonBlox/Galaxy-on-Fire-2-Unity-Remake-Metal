@@ -1330,5 +1330,16 @@
  "pirateTickerOutpost": "Posto avançado pirata relatado no sistema {0}. Ameaça: {2}. Recompensa: {1}",
  "pirateWarningBoss": "Atenção, pilotos: o pirata {0} foi avistado neste sistema. Há uma recompensa pela cabeça dele. Voem com cuidado.",
  "pirateWarningOutpost": "Atenção, pilotos: um posto avançado pirata foi relatado neste sistema. Esperem ataques e voem com cuidado.",
- "pirateBountyShared": "Recompensa pirata dividida com seu esquadrão: +{0} para cada ({1} pilotos)."
+ "pirateBountyShared": "Recompensa pirata dividida com seu esquadrão: +{0} para cada ({1} pilotos).",
+ "vosskLaunch": "A nave de guerra vossk está lançando seus H'Socs!",
+ "vosskDeckClosed": "O convés de voo da nave de guerra vossk está fechado para você.",
+ "vosskInBattle": "A nave de guerra vossk está em combate: o convés de voo está fechado.",
+ "vosskRefused": "A nave de guerra vossk só aceita pilotos em quem os Vossk confiam, numa nave vossk, ou pilotos com uma assinatura vossk.",
+ "resupplyRepairTextVossk": "A tripulação do convés da nave de guerra remenda o seu casco e substitui as placas de blindagem. O escudo se recarrega sozinho.",
+ "resupplyNotStocked": "Armas fabricadas a partir de projetos não estão em estoque aqui.",
+ "resupplySoldOut": "Esgotado.",
+ "resupplyBadgeNotStocked": "SEM ESTOQUE",
+ "resupplyBadgeSoldOut": "ESGOTADO",
+ "resupplyAmmoCap": "Reabastecido: aqui você não pode levar mais de {0}.",
+ "resupplyWrongRace": "Sem estoque aqui: esta nave só carrega armas da sua própria raça."
 }

@@ -1330,5 +1330,16 @@
  "pirateTickerOutpost": "Avant-poste pirate signalé dans le système {0}. Menace : {2}. Prime : {1}",
  "pirateWarningBoss": "Attention, pilotes : le pirate {0} a été repéré dans ce système. Sa tête est mise à prix. Soyez prudents.",
  "pirateWarningOutpost": "Attention, pilotes : un avant-poste pirate a été signalé dans ce système. Attendez-vous à des raids et soyez prudents.",
- "pirateBountyShared": "Prime pirate partagée avec votre escouade : +{0} chacun ({1} pilotes)."
+ "pirateBountyShared": "Prime pirate partagée avec votre escouade : +{0} chacun ({1} pilotes).",
+ "vosskLaunch": "Le cuirassé vossk lance ses H'Soc !",
+ "vosskDeckClosed": "Le pont d'envol du cuirassé vossk t'est fermé.",
+ "vosskInBattle": "Le cuirassé vossk est au combat : son pont d'envol est fermé.",
+ "vosskRefused": "Le cuirassé vossk n'accueille que les pilotes en qui les Vossk ont confiance, à bord d'un vaisseau vossk, ou les pilotes portant une signature vossk.",
+ "resupplyRepairTextVossk": "L'équipe de pont du cuirassé répare ta coque et remplace les plaques d'armure. Le bouclier se recharge tout seul.",
+ "resupplyNotStocked": "Les armes fabriquées d'après un plan ne sont pas en stock ici.",
+ "resupplySoldOut": "Épuisé.",
+ "resupplyBadgeNotStocked": "PAS EN STOCK",
+ "resupplyBadgeSoldOut": "ÉPUISÉ",
+ "resupplyAmmoCap": "Plein : tu ne peux pas en prendre plus de {0} ici.",
+ "resupplyWrongRace": "Pas en stock ici : ce vaisseau ne transporte que les armes de son propre peuple."
 }

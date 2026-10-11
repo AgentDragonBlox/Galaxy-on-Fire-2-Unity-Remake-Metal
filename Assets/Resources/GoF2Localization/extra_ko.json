@@ -1330,5 +1330,16 @@
  "pirateTickerOutpost": "{0} 성계에서 해적 전초기지가 보고되었습니다. 위협: {2}. 현상금: {1}",
  "pirateWarningBoss": "파일럿들은 주목하라: 이 성계에서 해적 {0}이(가) 목격되었다. 현상금이 걸려 있다. 조심해서 비행하라.",
  "pirateWarningOutpost": "파일럿들은 주목하라: 이 성계에서 해적 전초기지가 보고되었다. 습격에 대비하고 조심해서 비행하라.",
- "pirateBountyShared": "해적 현상금을 분대와 나눴습니다: 1인당 +{0} (파일럿 {1}명)."
+ "pirateBountyShared": "해적 현상금을 분대와 나눴습니다: 1인당 +{0} (파일럿 {1}명).",
+ "vosskLaunch": "Vossk 전투함이 H'Soc를 출격시키고 있습니다!",
+ "vosskDeckClosed": "Vossk 전투함의 비행갑판은 당신에게 닫혀 있습니다.",
+ "vosskInBattle": "Vossk 전투함이 교전 중입니다: 비행갑판이 닫혀 있습니다.",
+ "vosskRefused": "Vossk 전투함은 Vossk 함선을 탄, Vossk가 신뢰하는 파일럿이나 Vossk 시그니쳐를 가진 파일럿만 받습니다.",
+ "resupplyRepairTextVossk": "전투함의 갑판 승무원이 선체를 땜질하고 아머 판을 교체합니다. 쉴드는 저절로 충전됩니다.",
+ "resupplyNotStocked": "설계도로 만든 무기는 여기서 취급하지 않습니다.",
+ "resupplySoldOut": "품절입니다.",
+ "resupplyBadgeNotStocked": "재고 없음",
+ "resupplyBadgeSoldOut": "품절",
+ "resupplyAmmoCap": "보충 완료: 여기서는 최대 {0}개까지만 받을 수 있습니다.",
+ "resupplyWrongRace": "여기서는 취급하지 않습니다: 이 함선은 자기 종족의 무기만 싣고 있습니다."
 }

@@ -44,6 +44,9 @@ namespace GoF2Remake.Flight
             public float timer;        // ms left; <= limit = free
             public float age;          // ms since the shot (mines, cluster corkscrew)
             public bool lockLost;      // remake: a missile shaken off by a boost flies straight on (Target.boosting)
+            public Vector3 aim;        // remake: where on its lock target it homes, in the target's own frame (SetAim) ...
+            public bool aimed;         // ... else on the target's centre
+            public Target target;      // remake: its own target instead of the gun's lock (SetTarget), null = the lock
             public bool Active(float limit) => timer > limit;
         }
 
@@ -223,7 +226,7 @@ namespace GoF2Remake.Flight
                 bb.up = up;
                 bb.timer = lifetimeMs;
                 bb.age = 0f;
-                bb.lockLost = false;
+                bb.lockLost = false; bb.aimed = false; bb.target = null;
                 reloadAcc = 0f;
                 Fired?.Invoke(this, 0);
                 return 0;
@@ -241,7 +244,7 @@ namespace GoF2Remake.Flight
                     c.up = up;
                     c.timer = lifetimeMs;
                     c.age = 0f;
-                    c.lockLost = false;
+                    c.lockLost = false; c.aimed = false; c.target = null;
                 }
                 reloadAcc = 0f;
                 Fired?.Invoke(this, free);
@@ -263,7 +266,7 @@ namespace GoF2Remake.Flight
             b.up = up;
             b.timer = lifetimeMs;
             b.age = 0f;
-            b.lockLost = false;
+            b.lockLost = false; b.aimed = false; b.target = null;
             reloadAcc = 0f;
             Fired?.Invoke(this, free);
             return free;
@@ -282,10 +285,27 @@ namespace GoF2Remake.Flight
                 b.up = up;
                 b.timer = lifeMs;
                 b.age = 0f;
-                b.lockLost = false;
+                b.lockLost = false; b.aimed = false; b.target = null;
                 return true;
             }
             return false;
+        }
+
+        /// <summary>Remake (the capital ships' salvos, CapitalShips.SpreadAim): bullet 'i' homes on 'local', a point in the
+        /// lock target's own frame, instead of its centre, so a salvo spreads over a big hull.</summary>
+        public void SetAim(int i, Vector3 local)
+        {
+            if (i < 0 || i >= bullets.Length) return;
+            bullets[i].aim = local;
+            bullets[i].aimed = true;
+        }
+
+        /// <summary>Remake (the capital ships' salvos): bullet 'i' homes on 't' instead of the gun's lock, so one salvo can
+        /// go for several ships.</summary>
+        public void SetTarget(int i, Target t)
+        {
+            if (i < 0 || i >= bullets.Length) return;
+            bullets[i].target = t;
         }
 
         /// <summary>Gun::update: move bullets, home missiles, test hits. 'lockTarget' may be null.</summary>
@@ -300,22 +320,26 @@ namespace GoF2Remake.Flight
             lastTargets = targets;
             float limit = FreeLimit;
             // Missiles: 1/6 of the error per 33 ms frame, made frame-rate independent.
-            float steer = Homing && lockTarget != null && lockTarget.Alive ? 1f - Mathf.Pow(5f / 6f, dtMs / 33.3f) : 0f;
+            float steerRate = Homing ? 1f - Mathf.Pow(5f / 6f, dtMs / 33.3f) : 0f;
             bool shaken = false;
             for (int i = 0; i < bullets.Length; i++)
             {
                 ref var b = ref bullets[i];
                 if (b.timer <= limit) continue;
+                // A missile with its own target (SetTarget) homes on that one, the others on the gun's lock.
+                var homeOn = (object)b.target != null ? b.target : lockTarget;
+                float steer = homeOn != null && homeOn.Alive ? steerRate : 0f;
                 // Remake: a boost or a cloak shakes off every missile homing on that ship (players only: the local player's
                 // ship and, in multiplayer, the other players' copies, NetPlayer); they fly straight on. The original has no
                 // evasion.
-                if (dropShaken && !b.lockLost) { b.lockLost = true; shaken = true; }
-                if (steer > 0f && !b.lockLost && lockTarget.ShakesMissiles) { b.lockLost = true; shaken = true; }
-                if (steer > 0f && !b.lockLost && lockTarget.isPlayer) IncomingMissiles.Report(this, i, b.position, b.velocity);
+                if (dropShaken && !b.lockLost && (object)b.target == null) { b.lockLost = true; shaken = true; }
+                if (steer > 0f && !b.lockLost && homeOn.ShakesMissiles) { b.lockLost = true; shaken = true; }
+                if (steer > 0f && !b.lockLost && homeOn.isPlayer) IncomingMissiles.Report(this, i, b.position, b.velocity);
                 if (steer > 0f && !b.lockLost && b.age >= homingDelayMs)
                 {
                     float speed = b.velocity.magnitude;
-                    var desired = (lockTarget.transform.position - b.position).normalized;
+                    var goal = b.aimed ? homeOn.transform.TransformPoint(b.aim) : homeOn.transform.position;
+                    var desired = (goal - b.position).normalized;
                     var cur = b.velocity / Mathf.Max(speed, 1e-6f);
                     b.velocity = Vector3.Normalize(cur + (desired - cur) * steer) * speed;
                 }

@@ -1330,5 +1330,16 @@
  "pirateTickerOutpost": "Piratenaußenposten im System {0} gemeldet. Bedrohung: {2}. Kopfgeld: {1}",
  "pirateWarningBoss": "Achtung, Piloten: Der Pirat {0} wurde in diesem System gesichtet. Auf seinen Kopf ist ein Kopfgeld ausgesetzt. Fliegt vorsichtig.",
  "pirateWarningOutpost": "Achtung, Piloten: In diesem System wurde ein Piratenaußenposten gemeldet. Rechnet mit Überfällen und fliegt vorsichtig.",
- "pirateBountyShared": "Piratenkopfgeld mit deinem Geschwader geteilt: je +{0} ({1} Piloten)."
+ "pirateBountyShared": "Piratenkopfgeld mit deinem Geschwader geteilt: je +{0} ({1} Piloten).",
+ "vosskLaunch": "Das Vossk-Schlachtschiff startet seine H'Socs!",
+ "vosskDeckClosed": "Das Flugdeck des Vossk-Schlachtschiffs ist für dich gesperrt.",
+ "vosskInBattle": "Das Vossk-Schlachtschiff ist im Gefecht: Sein Flugdeck ist geschlossen.",
+ "vosskRefused": "Das Vossk-Schlachtschiff nimmt nur Piloten auf, denen die Vossk vertrauen, in einem Vossk-Schiff, oder Piloten mit einer Vossk-Signatur.",
+ "resupplyRepairTextVossk": "Die Deckmannschaft des Schlachtschiffs flickt deine Hülle und ersetzt die Panzerplatten. Der Schild lädt sich von selbst auf.",
+ "resupplyNotStocked": "Waffen aus Bauplänen sind hier nicht vorrätig.",
+ "resupplySoldOut": "Ausverkauft.",
+ "resupplyBadgeNotStocked": "NICHT VORRÄTIG",
+ "resupplyBadgeSoldOut": "AUSVERKAUFT",
+ "resupplyAmmoCap": "Aufgefüllt: Mehr als {0} bekommst du hier nicht.",
+ "resupplyWrongRace": "Hier nicht vorrätig: Dieses Schiff führt nur die Waffen seines eigenen Volkes."
 }

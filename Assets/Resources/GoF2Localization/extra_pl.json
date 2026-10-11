@@ -1330,5 +1330,16 @@
  "pirateTickerOutpost": "Zgłoszono posterunek piratów w systemie {0}. Zagrożenie: {2}. Nagroda: {1}",
  "pirateWarningBoss": "Uwaga, piloci: pirat {0} został zauważony w tym systemie. Za jego głowę wyznaczono nagrodę. Latajcie ostrożnie.",
  "pirateWarningOutpost": "Uwaga, piloci: w tym systemie zgłoszono posterunek piratów. Spodziewajcie się napadów i latajcie ostrożnie.",
- "pirateBountyShared": "Nagroda za pirata podzielona z twoją eskadrą: +{0} na osobę ({1} pilotów)."
+ "pirateBountyShared": "Nagroda za pirata podzielona z twoją eskadrą: +{0} na osobę ({1} pilotów).",
+ "vosskLaunch": "Vosskański statek wojenny wypuszcza swoje H'Soki!",
+ "vosskDeckClosed": "Pokład startowy vosskańskiego statku wojennego jest dla ciebie zamknięty.",
+ "vosskInBattle": "Vosskański statek wojenny jest w walce: jego pokład startowy jest zamknięty.",
+ "vosskRefused": "Vosskański statek wojenny przyjmuje tylko pilotów, którym ufają Vosskowie, w vosskańskim statku, albo pilotów z vosskańskim oznaczeniem.",
+ "resupplyRepairTextVossk": "Załoga pokładowa statku wojennego łata twój kadłub i wymienia płyty pancerza. Tarcza ładuje się sama.",
+ "resupplyNotStocked": "Broni budowanej z planów nie ma tu na stanie.",
+ "resupplySoldOut": "Wyprzedane.",
+ "resupplyBadgeNotStocked": "BRAK NA STANIE",
+ "resupplyBadgeSoldOut": "WYPRZEDANE",
+ "resupplyAmmoCap": "Uzupełniono: więcej niż {0} tutaj nie dostaniesz.",
+ "resupplyWrongRace": "Brak na stanie: ten statek przewozi tylko broń własnej rasy."
 }

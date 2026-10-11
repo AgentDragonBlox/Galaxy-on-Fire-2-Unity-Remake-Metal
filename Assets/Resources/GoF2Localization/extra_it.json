@@ -1330,5 +1330,16 @@
  "pirateTickerOutpost": "Avamposto pirata segnalato nel sistema {0}. Minaccia: {2}. Taglia: {1}",
  "pirateWarningBoss": "Attenzione, piloti: il pirata {0} è stato avvistato in questo sistema. C'è una taglia sulla sua testa. Volate con prudenza.",
  "pirateWarningOutpost": "Attenzione, piloti: è stato segnalato un avamposto pirata in questo sistema. Aspettatevi incursioni e volate con prudenza.",
- "pirateBountyShared": "Taglia pirata condivisa con la tua squadra: +{0} a testa ({1} piloti)."
+ "pirateBountyShared": "Taglia pirata condivisa con la tua squadra: +{0} a testa ({1} piloti).",
+ "vosskLaunch": "La corazzata vossk sta lanciando i suoi H'Soc!",
+ "vosskDeckClosed": "Il ponte di volo della corazzata vossk è chiuso per te.",
+ "vosskInBattle": "La corazzata vossk è in battaglia: il suo ponte di volo è chiuso.",
+ "vosskRefused": "La corazzata vossk accoglie solo piloti di cui i Vossk si fidano su una nave vossk, o piloti con un'identità vossk.",
+ "resupplyRepairTextVossk": "L'equipaggio di ponte della corazzata rattoppa il tuo scafo e sostituisce le piastre della corazzatura. Lo scudo si ricarica da solo.",
+ "resupplyNotStocked": "Le armi costruite da progetto non sono disponibili qui.",
+ "resupplySoldOut": "Esaurito.",
+ "resupplyBadgeNotStocked": "NON DISPONIBILE",
+ "resupplyBadgeSoldOut": "ESAURITO",
+ "resupplyAmmoCap": "Rifornito: qui non puoi prenderne più di {0}.",
+ "resupplyWrongRace": "Non disponibile qui: questa nave trasporta solo le armi della propria razza."
 }

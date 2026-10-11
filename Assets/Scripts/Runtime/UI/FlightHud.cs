@@ -1113,8 +1113,8 @@ namespace GoF2Remake.UI
         bool resupplyShown;
         CarrierShopWindow carrierShop;
 
-        /// <summary>Remake (CapitalShips): the carrier's resupply window (CarrierShopWindow, the hangar shop's look) while
-        /// docked at it; the game waits under it like under a menu (Navigation.OpenMenu(force)).</summary>
+        /// <summary>Remake (CapitalShips): the resupply window of the carrier or the Vossk battleship (CarrierShopWindow, the
+        /// hangar shop's look) while docked at it; the game waits under it like under a menu (Navigation.OpenMenu(force)).</summary>
         void OpenCarrierShop()
         {
             if (nav == null || level == null) return;
@@ -1124,7 +1124,7 @@ namespace GoF2Remake.UI
             weapons?.SetPrimaryHeld(false);
             carrierShop ??= new CarrierShopWindow(safeArea ?? root, level.Database, health, PlayButton, PlayUi,
                                                   text => miningView?.ShowMessage(text), OnCarrierShopClosed);
-            carrierShop.Open();
+            carrierShop.Open(docking != null ? docking.Target : null);
             BuildHints(InputMode.Current);
             // Inside the carrier: the station hangar's ambience under the window (it plays through the paused game).
             var atmo = CombatAudio.Load()?.hangarAtmo;

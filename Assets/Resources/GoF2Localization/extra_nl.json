@@ -1330,5 +1330,16 @@
  "pirateTickerOutpost": "Piratenpost gemeld in het {0}-systeem. Dreiging: {2}. Premie: {1}",
  "pirateWarningBoss": "Let op, piloten: de piraat {0} is in dit systeem gezien. Er staat een premie op zijn hoofd. Vlieg voorzichtig.",
  "pirateWarningOutpost": "Let op, piloten: er is een piratenpost gemeld in dit systeem. Reken op overvallen en vlieg voorzichtig.",
- "pirateBountyShared": "Piratenpremie gedeeld met je squad: +{0} per persoon ({1} piloten)."
+ "pirateBountyShared": "Piratenpremie gedeeld met je squad: +{0} per persoon ({1} piloten).",
+ "vosskLaunch": "Het Vossk-slagschip lanceert zijn H'Socs!",
+ "vosskDeckClosed": "Het vliegdek van het Vossk-slagschip is voor jou gesloten.",
+ "vosskInBattle": "Het Vossk-slagschip is in gevecht: zijn vliegdek is gesloten.",
+ "vosskRefused": "Het Vossk-slagschip neemt alleen piloten op die de Vossk vertrouwen, in een Vossk-schip, of piloten met een Vossk-signatuur.",
+ "resupplyRepairTextVossk": "De dekbemanning van het slagschip lapt je romp op en vervangt de pantserplaten. Het schild laadt zichzelf op.",
+ "resupplyNotStocked": "Wapens uit bouwtekeningen zijn hier niet op voorraad.",
+ "resupplySoldOut": "Uitverkocht.",
+ "resupplyBadgeNotStocked": "NIET OP VOORRAAD",
+ "resupplyBadgeSoldOut": "UITVERKOCHT",
+ "resupplyAmmoCap": "Bijgevuld: meer dan {0} krijg je hier niet.",
+ "resupplyWrongRace": "Hier niet op voorraad: dit schip voert alleen de wapens van zijn eigen ras."
 }

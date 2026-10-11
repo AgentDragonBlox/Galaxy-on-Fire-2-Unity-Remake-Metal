@@ -103,8 +103,10 @@ namespace GoF2Remake.World
             var from = launchers.Count > 0 ? launchers[launcherIndex % launchers.Count].position + transform.up * 400f * M
                                            : transform.position + transform.up * 3000f * M;
             var toward = (target.transform.position - from).normalized;
-            var dir = (transform.up * 0.85f + toward * 0.5f).normalized;
-            if (missiles.TryFire(from, Quaternion.LookRotation(dir, transform.forward), false) < 0) return false;
+            var dir = (transform.up * 0.35f + toward).normalized;   // a short climb out of the launcher, then homing
+            int b = missiles.TryFire(from, Quaternion.LookRotation(dir, transform.forward), false);
+            if (b < 0) return false;
+            if (CapitalShips.SpreadAim(target, null, out var aim)) missiles.SetAim(b, aim);   // a big hull: its own spot
             launcherIndex++;
             rig.OnShot();
             Sfx.PlayAt(fx != null ? fx.Shot : null, from, 0.8f);
