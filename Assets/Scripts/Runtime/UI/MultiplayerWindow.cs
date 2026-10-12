@@ -611,6 +611,7 @@ namespace GoF2Remake.UI
                 body.Add(Line($"{c.name}{(c.home ? "  ⌂ " + Localization.Extra("mpPanelHome", "home") : "")}{(c.sieged ? "  ⚔ " + Localization.Extra("mpPanelSieged", "under siege") : "")}  ·  " +
                               string.Format(Localization.Extra("mpPanelLapses", "lapses in {0:0.#} days without a member docking"), c.daysLeft), c.sieged ? Bad : Color.white));
                 GarrisonRow(c, officer);
+                VatRow(c, officer);
             }
             if (s.dockedStation >= 0)
             {
@@ -674,6 +675,32 @@ namespace GoF2Remake.UI
                 {
                     garrisonEdit.Remove(c.station);
                     Send($"/faction garrison {edit.ships} {edit.level} {c.station}");
+                }, "squad-button--accept"));
+            body.Add(row);
+        }
+
+        // The VAT rate being edited per claim, until it is sent or the claim is gone.
+        readonly Dictionary<int, int> vatEdit = new Dictionary<int, int>();
+
+        /// <summary>A claim's VAT (NetFactions): its rate and the goods it costs, for officers a stepper (0..MaxVat) and Set
+        /// ("/faction vat rate station").</summary>
+        void VatRow(NetPanel.ClaimRow c, bool officer)
+        {
+            int current = Mathf.Clamp(c.vat, 0, NetFactions.MaxVat);
+            int edit = vatEdit.TryGetValue(c.station, out int e) ? e : current;
+            body.Add(Text("    " + string.Format(Localization.Extra("mpPanelVat", "VAT: {0}% (non-members pay +{1:0.#}%, {0}% fewer goods)"), current, current / 10f), 14, Dim));
+            if (!officer) return;
+            var row = Row();
+            void Set(int v) { vatEdit[c.station] = v; Rebuild(); }
+            row.Add(Text("    " + Localization.Extra("mpPanelVatRate", "VAT"), 14, Color.white));
+            row.Add(Btn("−", () => Set(Mathf.Max(0, edit - 1)), null));
+            row.Add(Text(edit + "%", 16, Accent));
+            row.Add(Btn("+", () => Set(Mathf.Min(NetFactions.MaxVat, edit + 1)), null));
+            if (edit != current)
+                row.Add(Btn(Localization.Extra("mpPanelVatSet", "Set"), () =>
+                {
+                    vatEdit.Remove(c.station);
+                    Send($"/faction vat {edit} {c.station}");
                 }, "squad-button--accept"));
             body.Add(row);
         }

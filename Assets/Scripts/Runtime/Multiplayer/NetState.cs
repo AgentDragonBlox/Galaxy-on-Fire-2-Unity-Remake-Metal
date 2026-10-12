@@ -89,7 +89,7 @@ namespace GoF2Remake.Multiplayer
         internal void SetDebugAllowed(bool on) { if (IsServer && debugAllowed.Value != on) debugAllowed.Value = on; }
         internal void SetFreePvp(bool on) { if (IsServer && freePvp.Value != on) freePvp.Value = on; }
 
-        /// <summary>The factions' claimed stations, "station|TAG|Name" per line (NetFactions, NetFactionsClient).</summary>
+        /// <summary>The factions' claimed stations, "station|TAG|Name|VAT %" per line (NetFactions, NetFactionsClient).</summary>
         public string Claims => claims.Value.ToString();
 
         /// <summary>Server: the claims (cut at a whole line to fit the network variable's 4 KB).</summary>
@@ -993,10 +993,10 @@ namespace GoF2Remake.Multiplayer
                 NetRateLimit.Reject(client, $"a trade of {delta} x item {item} at {station}");
                 return;
             }
-            int done = NetStock.HostItem(station, item, delta);
+            int done = NetStock.HostItem(station, item, delta, out int vatUnits);
             if (delta < 0 && done < -delta)
                 ItemRefusedRpc(station, item, price, -delta - done, RpcTarget.Single(client, RpcTargetUse.Temp));
-            if (delta < 0 && done > 0 && NetProfiles.Enabled) NetFactions.OnPurchase(client, station, price * done);   // a faction station's tax
+            if (delta < 0 && vatUnits > 0 && NetProfiles.Enabled) NetFactions.OnPurchase(client, station, item, price, vatUnits);   // a faction station's VAT
             dirtyStock.Add(station);
         }
 
@@ -1051,6 +1051,7 @@ namespace GoF2Remake.Multiplayer
             else ok = added >= 0 && reserved != null && reserved.Remove(added);   // the reserved row back: not bought after all
             if (!ok) { NetRateLimit.Reject(client, $"an unreserved ship trade {removed} -> {added} at {station}"); return; }
             if (NetStock.HostShip(station, removed, added)) dirtyStock.Add(station);
+            if (removed >= 0 && NetProfiles.Enabled) NetFactions.OnShipBought(client, station, removed);   // a faction station's VAT
         }
 
         /// <summary>Host: the stock of 'station' for every player docked there.</summary>

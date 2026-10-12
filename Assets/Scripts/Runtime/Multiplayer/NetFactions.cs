@@ -21,7 +21,7 @@
 //   Claims: "/faction claim" (officers, docked at the station) claims it for ClaimCost from the bank, at most MaxClaims per
 //     faction; not the Kaamo Club (108) or Loma (system 25). The first claim is the home; "/faction home" (officers, docked at
 //     another claim) moves it; "/faction unclaim" (officers, docked there) gives it up. A claim no member has docked at for
-//     LapseDays lapses. The claims reach every player (NetState.Claims: "station|TAG|Name" lines; NetFactionsClient), who
+//     LapseDays lapses. The claims reach every player (NetState.Claims: "station|TAG|Name|VAT" lines; NetFactionsClient), who
 //     see the owner on the star map, the station's header and the orbit information.
 //   Home: a member signing in starts docked at the faction's home, and a destroyed member respawns there.
 // Phase 3, contest and benefits:
@@ -50,8 +50,14 @@
 //   Defence: in a held station's orbit its own race's NPC fighters treat the holder's members as friends and the
 //     members of other factions as enemies, unless that pilot paid the toll (Toll credits, asked on arrival by
 //     TerritoryView; NetPlayer.TollStation) for this visit. Pilots without a faction are treated as always.
-//   Trade cut: at a held station members buy items MemberDiscountPercent cheaper, the members of other factions pay
-//     TaxPercent more, which goes to the holder's bank (OnPurchase, from the shared stock's trades; NetFactionsClient).
+//   Trade cut: at a held station members buy items MemberDiscountPercent cheaper and pay no VAT.
+//   VAT: each claim has the holder's rate (Claim.vat, 0..MaxVat %, "/faction vat <rate> [station]", officers; DefaultVat for
+//     a new claim). Everyone else (other factions and pilots without one) buys items and dealer ships at the list price plus
+//     a tenth of the rate (VatMarkup: 20 % -> +2 %); the rate's share of what they paid goes to the holder's bank
+//     (OnPurchase from the shared stock's trades, OnShipBought from the dealer's). Selling there pays no VAT. Units players
+//     sold into a station's stock carry no VAT when bought back (NetStock's resale count, cleared when the stock is rolled
+//     again), so a buy-and-sell loop doesn't mint money. A higher rate thins the station's goods: each stock roll keeps
+//     (100 - rate) % of every row and of the dealer ships (NetStock.Make).
 //   Garrison (players' request: a station whose holders are offline fell to one attacker in 5 minutes): officers set a
 //     claim's garrison, "/faction garrison <ships> <level> [station]" or the Faction tab: 0..MaxGarrison fighters of the
 //     system's race at level 1..MaxGarrisonLevel (hull x(1 + 0.5 (level - 1)), gun x(1 + 0.25 (level - 1)), the dearer
@@ -77,7 +83,13 @@ namespace GoF2Remake.Multiplayer
         const float InviteSeconds = 300f, ClaimTickSeconds = 60f, ChargeSeconds = 300f;   // a deposit's answer may lag (a phone in the background)
         public const int DefaultClaimCost = 500_000, DefaultMaxClaims = 3, DefaultLapseDays = 14;
         public const int DefaultSiegeCost = 250_000, DefaultToll = 10_000;
-        public const int MemberDiscountPercent = 10, TaxPercent = 5;
+        public const int MemberDiscountPercent = 10, DefaultVat = 5, MaxVat = 20;
+
+        /// <summary>The price a non-member pays at a station with VAT 'rate': the list price + a tenth of the rate.</summary>
+        public static int VatMarkup(int price, int rate) => rate <= 0 || price <= 0 ? price : (int)Math.Min(int.MaxValue, (long)Math.Round(price * (1.0 + rate / 1000.0)));
+
+        /// <summary>Server: the VAT rate of the station's claim (0 = no holder or none).</summary>
+        public static int VatAt(int station) => list == null ? 0 : Mathf.Clamp(ClaimAt(station)?.vat ?? 0, 0, MaxVat);
         const long SiegeDelaySeconds = 600, SiegeSeconds = 900, ProtectionHours = 24;
         const long SiegeMeetSeconds = 2 * 86400, SiegeForfeitSeconds = 60, StandoffSeconds = 3600, LapsedLockSeconds = 48 * 3600;
         const int MaxExtensions = 4, LapseFloorDays = 3;
@@ -149,6 +161,7 @@ namespace GoF2Remake.Multiplayer
         {
             public int station; public string faction, claimed, lastDock; public long protectedUntil;
             public int garrisonSize, garrisonLevel = 1; public long garrisonPaidUntil;   // the garrison (0 = none) and its upkeep
+            public int vat = DefaultVat;                                                  // the holder's VAT rate (%)
         }
 
         /// <summary>A siege: times in Unix seconds. armed = waiting for both sides (from startsAt until expiresAt), started =
@@ -226,7 +239,7 @@ namespace GoF2Remake.Multiplayer
             if (list.sieges == null) list.sieges = new List<Siege>();
             if (list.lapsed == null) list.lapsed = new List<Lapsed>();
             foreach (var c in list.factions) { c.officers ??= new List<string>(); c.members ??= new List<string>(); }
-            foreach (var c in list.claims) c.garrisonLevel = Mathf.Clamp(c.garrisonLevel, 1, MaxGarrisonLevel);
+            foreach (var c in list.claims) { c.garrisonLevel = Mathf.Clamp(c.garrisonLevel, 1, MaxGarrisonLevel); c.vat = Mathf.Clamp(c.vat, 0, MaxVat); }
             foreach (var x in list.sieges)
             {
                 x.garrisonBack ??= new List<long>();
@@ -315,10 +328,11 @@ namespace GoF2Remake.Multiplayer
                 case "siege": return DeclareSiege(client, me);
                 case "sieges": return SiegesText();
                 case "garrison": return SetGarrison(client, me, arg);
+                case "vat": return SetVat(client, me, arg);
                 default:
                     return Localization.Extra("mpFactionHelp", "Faction commands: /faction create TAG Name, invite <pilot>, join TAG, leave, kick <pilot>, " +
                                                             "promote / demote <pilot>, leader <pilot>, disband, info [TAG], list; deposit N, withdraw N; " +
-                                                            "claim, unclaim, home, claims [TAG] (docked at the station); garrison <ships> <level> [station]; siege (in another faction's orbit), sieges; " +
+                                                            "claim, unclaim, home, claims [TAG] (docked at the station); garrison <ships> <level> [station]; vat <0-20> [station]; siege (in another faction's orbit), sieges; " +
                                                             "/f <text> talks to your faction.");
             }
         }
@@ -689,7 +703,7 @@ namespace GoF2Remake.Multiplayer
                 foreach (ulong c in NetProfiles.ClientsOf(m)) NetSquad.Find(c)?.SetFactionHome(HomeOf(m));
         }
 
-        /// <summary>Every claim to the players (NetState.Claims): "station|TAG|Name" per line.</summary>
+        /// <summary>Every claim to the players (NetState.Claims): "station|TAG|Name|VAT %" per line.</summary>
         static void PublishClaims()
         {
             if (list == null || NetState.Instance == null) return;
@@ -697,7 +711,8 @@ namespace GoF2Remake.Multiplayer
             foreach (var c in list.claims)
             {
                 var faction = list.factions.Find(x => x.id == c.faction);
-                if (faction != null) sb.Append(c.station).Append('|').Append(faction.tag).Append('|').Append(faction.name.Replace("|", " ")).Append('\n');
+                if (faction != null) sb.Append(c.station).Append('|').Append(faction.tag).Append('|').Append(faction.name.Replace("|", " "))
+                                       .Append('|').Append(Mathf.Clamp(c.vat, 0, MaxVat)).Append('\n');
             }
             NetState.Instance.SetClaims(sb.ToString());
         }
@@ -1155,20 +1170,64 @@ namespace GoF2Remake.Multiplayer
             TellFaction(owner, string.Format(Localization.Extra("mpTollReceived", "[{0}] {1} paid the {2:N0} credits toll at {3}."), payer.tag, NameOf(account), paid, StationName(station)));
         }
 
-        /// <summary>NetState.StockItemRpc: a unit bought at 'station' for 'price' (the buyer's game added the tax for a faction's
-        /// station it isn't in: TaxPercent of the list price): the tax into the holder's bank.</summary>
-        public static void OnPurchase(ulong client, int station, int price)
+        /// <summary>NetState.StockItemRpc: 'units' of 'item' bought at 'station' for 'price' each that carry VAT (not resold
+        /// stock): the rate's share of what a non-member paid into the holder's bank. The price is the buyer's game's, capped
+        /// at the item's highest list price with the markup.</summary>
+        public static void OnPurchase(ulong client, int station, int item, int price, int units)
         {
             var held = ClaimAt(station);
-            if (held == null || price <= 0 || TaxPercent <= 0) return;
+            int rate = VatAt(station);
+            if (held == null || price <= 0 || units <= 0 || rate <= 0) return;
             var buyer = OfClient(client);
-            if (buyer != null && buyer.id == held.faction) return;   // members pay less, no tax
+            if (buyer != null && buyer.id == held.faction) return;   // members: their discount, no VAT
+            var owner = list.factions.Find(c => c.id == held.faction);
+            var it = NetGame.Db?.Item(item);
+            if (owner == null || it == null) return;
+            long paid = Math.Min(price, VatMarkup(it.maxPrice, rate)) * (long)units;
+            long vat = (long)Math.Round(paid / (1.0 + rate / 1000.0) * rate / 100.0);
+            if (vat <= 0) return;
+            owner.bank += vat;
+            taxDirty = true;
+        }
+
+        /// <summary>NetState.StockShipRpc: a dealer ship bought at 'station' (the reserved row taken): the VAT of a non-member's
+        /// purchase from the ship's list price (the server's own number).</summary>
+        public static void OnShipBought(ulong client, int station, int ship)
+        {
+            var held = ClaimAt(station);
+            int rate = VatAt(station);
+            var s = NetGame.Db?.Ship(ship);
+            if (held == null || rate <= 0 || s == null || s.price <= 0) return;
+            var buyer = OfClient(client);
+            if (buyer != null && buyer.id == held.faction) return;
             var owner = list.factions.Find(c => c.id == held.faction);
             if (owner == null) return;
-            int tax = price - Mathf.RoundToInt(price * 100f / (100f + TaxPercent));
-            if (tax <= 0) return;
-            owner.bank += tax;
+            owner.bank += (long)Math.Round(s.price * rate / 100.0);
             taxDirty = true;
+        }
+
+        /// <summary>"/faction vat [rate] [station]": the claim's VAT rate (officers), or what it is now. The station is the one
+        /// docked at unless given (any of the faction's claims, by number). A new rate thins the goods from the next stock roll.</summary>
+        static string SetVat(ulong client, string me, string arg)
+        {
+            var faction = Of(me);
+            if (faction == null) return Localization.Extra("mpFactionNone", "You aren't in a faction.");
+            var words = arg.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            int station = DockedAt(client);
+            if (words.Length >= 2 && int.TryParse(words[1], out int given)) station = given;
+            var held = ClaimAt(station);
+            if (held == null || held.faction != faction.id) return Localization.Extra("mpVatWhere", "Dock at one of your faction's stations, or name one: /faction vat <rate> <station>.");
+            if (words.Length == 0)
+                return string.Format(Localization.Extra("mpVatInfo", "{0}: VAT {1}%, {2}% fewer goods."), StationName(station), held.vat, held.vat);
+            if (!IsOfficer(faction, me)) return Localization.Extra("mpFactionNotOfficer", "Only a faction's leader and officers can do that.");
+            if (!int.TryParse(words[0].TrimEnd('%'), out int rate) || rate < 0 || rate > MaxVat)
+                return string.Format(Localization.Extra("mpVatUsage", "/faction vat <0-{0}> [station]"), MaxVat);
+            held.vat = rate;
+            Save();
+            PublishClaims();
+            TellFaction(faction, string.Format(Localization.Extra("mpVatSet", "{0}'s VAT is {1}% now: its goods thin to {2}% from the next restock."),
+                                               StationName(station), rate, 100 - rate));
+            return "";
         }
 
         static bool taxDirty;
@@ -1211,7 +1270,8 @@ namespace GoF2Remake.Multiplayer
                 if (c.faction == faction.id)
                     s.claims.Add(new NetPanel.ClaimRow { station = c.station, name = StationName(c.station), home = c.station == s.home,
                                                          daysLeft = (float)Math.Max(0, LapseDays - DaysSince(c.lastDock)), sieged = SiegeAt(c.station) != null,
-                                                         garrisonSize = c.garrisonSize, garrisonLevel = Mathf.Clamp(c.garrisonLevel, 1, MaxGarrisonLevel) });
+                                                         garrisonSize = c.garrisonSize, garrisonLevel = Mathf.Clamp(c.garrisonLevel, 1, MaxGarrisonLevel),
+                                                         vat = Mathf.Clamp(c.vat, 0, MaxVat) });
         }
 
         // ---- the server console -----------------------------------------------------------------------------

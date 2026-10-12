@@ -44,6 +44,7 @@ namespace GoF2Remake.Multiplayer
             public List<int> ships;
             public float made;
             public readonly Dictionary<int, int> rareTarget = new Dictionary<int, int>();   // item -> the units it restocks to
+            public readonly Dictionary<int, int> resale = new Dictionary<int, int>();       // item -> units players sold into it (no VAT bought back)
             public float rareNext;
         }
 
@@ -197,6 +198,7 @@ namespace GoF2Remake.Multiplayer
             var e = new Entry { items = Shop.GenerateItems(db, station), ships = Shop.GenerateShips(db, station) ?? new List<int>(), made = Time.unscaledTime,
                                 rareNext = Time.unscaledTime + RareStepSeconds };
             HostExtras(station, e.items);
+            ThinForVat(station, e);
             foreach (var r in e.items) if (IsRare(r.item)) e.rareTarget[r.item] = r.amount;
             if (old == null) return e;   // a first list: full
             e.items.RemoveAll(r => IsRare(r.item));
@@ -208,6 +210,18 @@ namespace GoF2Remake.Multiplayer
             }
             e.rareNext = old.rareNext;
             return e;
+        }
+
+        /// <summary>A faction station's VAT thins its goods: every row keeps (100 - rate) % of its units (at least 1), the dealer
+        /// keeps that share of its ships (NetFactions.VatAt).</summary>
+        static void ThinForVat(int station, Entry e)
+        {
+            int rate = NetFactions.VatAt(station);
+            if (rate <= 0) return;
+            float keep = (100 - rate) / 100f;
+            foreach (var r in e.items) if (r.amount > 1) r.amount = Math.Max(1, Mathf.RoundToInt(r.amount * keep));
+            int ships = Mathf.RoundToInt(e.ships.Count * keep);
+            while (e.ships.Count > ships) e.ships.RemoveAt(UnityEngine.Random.Range(0, e.ships.Count));
         }
 
         static bool IsRare(int item)
@@ -274,8 +288,10 @@ namespace GoF2Remake.Multiplayer
         /// <summary>The host's stock row changes by 'delta' units (a sale +, a purchase -; several at once from a shop's
         /// Buy all / Sell all, Hangar.EndBatch). Returns the units done: a purchase gets only what the row still has (another
         /// pilot may have bought some first); the caller refuses the rest.</summary>
-        internal static int HostItem(int station, int item, int delta)
+        /// 'vatUnits' = the bought units that carry a faction station's VAT: not those players sold into the row (resale).
+        internal static int HostItem(int station, int item, int delta, out int vatUnits)
         {
+            vatUnits = 0;
             if (delta == 0) return 0;
             var e = Get(station);
             var row = e.items.Find(r => r.item == item);
@@ -285,8 +301,14 @@ namespace GoF2Remake.Multiplayer
                 int granted = Math.Min(row.amount, -delta);
                 row.amount -= granted;
                 if (row.amount <= 0) e.items.Remove(row);
+                e.resale.TryGetValue(item, out int resold);
+                int fromResale = Math.Min(resold, granted);
+                if (fromResale > 0) e.resale[item] = resold - fromResale;
+                vatUnits = granted - fromResale;
                 return granted;
             }
+            e.resale.TryGetValue(item, out int sold);
+            e.resale[item] = (int)Math.Min((long)sold + delta, MaxRowAmount);
             else if (row != null) row.amount = Math.Min(row.amount + delta, MaxRowAmount);   // a seller can't grow a row without end
             else
             {

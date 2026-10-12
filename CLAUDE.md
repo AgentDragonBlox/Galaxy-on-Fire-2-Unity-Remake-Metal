@@ -956,7 +956,7 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   paying is only caught by that check); **claims** (`/faction claim`, officers, docked there: `-claimcost` (500 000) from the
   bank, `-maxclaims` (3) per faction, not 108 or system 25; `/faction unclaim`, `/faction home`, `/faction claims [TAG]`; the first
   claim is the home; a claim no member docked at for `-claimdays` (14) lapses, `NetFactions.Tick` once a minute; a claim
-  is announced to everyone); `NetState.Claims` ("station|TAG|Name" lines, a 4 KB FixedString) shows the holder on the
+  is announced to everyone); `NetState.Claims` ("station|TAG|Name|VAT" lines, a 4 KB FixedString) shows the holder on the
   star map (planet "[TAG] Name", system "Name [TAG]"), the station header's system line and the orbit information.
   **Home**: a member's game starts docked at the faction's home (`ProfileHeaderRpc`'s home), and a destroyed member
   respawns there (`NetPlayer.FactionHome`, `FlightHud.LoadLastSave`). Disbanding frees the faction's claims (the bank is
@@ -986,9 +986,15 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   pilots as enemies unless they paid the toll this visit: `NpcShip.TerritoryToLocal`, `NetOrbit.HostileToRemote`,
   `NetFactionsClient.Relation`; pilots without a faction as always); **toll** (`-toll`, 10 000 credits, or `N%` = N % of the pilot's credits (`NetFactions.ParseToll` / `TollFor`, stored as -N; the pilot's game sends the amount, the server caps it at that share of the profile's worth); `TerritoryView` asks on
   arrival through `Traffic.Ask`, `NetFactionsClient.PayToll` -> `TollPaidRpc`, the holder's bank, `NetPlayer.TollStation`
-  for the others' NPCs); **trade cut** (`Hangar.Buy` through `NetFactionsClient.BuyPrice`: members -10 %, other factions +5 %;
-  the server banks the tax from `StockItemRpc`'s price, `NetFactions.OnPurchase`; the list shows the plain price; ships
-  aren't cut). **Garrison** (players' request: offline holders lost a station to one attacker in 5 minutes): `/faction garrison <ships 0-12> <level 1-5> [station]` or the Faction tab's claim rows (officers, not during the station's siege); upkeep 300 x ships x level a day from the bank (`NetFactions.GarrisonCost`, the first day when set, unpaid = disbanded; reset when the station is taken). In an armed siege the server counts it (`Siege.garrisonAlive`, out with `NetState.Sieges`' 7th / 8th fields), a dead one back after 90 s; the orbit authority flies that many (`NetOrbit.UpdateGarrison`, eventTag `NetOrbit.GarrisonTag`, system race, level 3+ strong fighters, hull x(1 + 0.5 (L - 1)), gun x(1 + 0.25 (L - 1)), no loot, swarming in front of the station; `NetFactionsClient.GarrisonRelation`: the attackers' enemy, the holders' friend) and reports each death (`NetState.GarrisonKillRpc`: the sender runs the orbit, at most 6 per 10 s); they jump out when the siege ends; the banner shows the count. Not yet: shared storage at the home. Not tested in a build yet.
+  for the others' NPCs); **trade cut** (`Hangar.Buy` through `NetFactionsClient.BuyPrice`: members -10 %, no VAT; the list shows the plain
+  price); **VAT** (per claim, `Claim.vat`, 0-20 %, default 5, `/faction vat <rate> [station]` or the Faction tab's claim rows,
+  officers): everyone else (other factions and factionless pilots) buys items and dealer ships at the list price + a tenth of
+  the rate (`NetFactions.VatMarkup`: 20 % -> +2 %; ships through `Hangar.BuyShipPrice` / `NetFactionsClient.ShipBuyPrice`),
+  the rate's share of the paid price goes to the holder's bank (`NetFactions.OnPurchase` from `StockItemRpc`, the price capped
+  at the item's max with the markup; `OnShipBought` from `StockShipRpc`, the server's own ship price); selling pays no VAT;
+  units players sold into the stock carry none when bought back (`NetStock` resale count, reset with each roll), so a
+  buy-and-sell loop mints nothing; each stock roll keeps (100 - rate) % of every row and of the dealer ships
+  (`NetStock.ThinForVat`); the claims line carries the rate (`NetState.Claims`: "station|TAG|Name|VAT"). **Garrison** (players' request: offline holders lost a station to one attacker in 5 minutes): `/faction garrison <ships 0-12> <level 1-5> [station]` or the Faction tab's claim rows (officers, not during the station's siege); upkeep 300 x ships x level a day from the bank (`NetFactions.GarrisonCost`, the first day when set, unpaid = disbanded; reset when the station is taken). In an armed siege the server counts it (`Siege.garrisonAlive`, out with `NetState.Sieges`' 7th / 8th fields), a dead one back after 90 s; the orbit authority flies that many (`NetOrbit.UpdateGarrison`, eventTag `NetOrbit.GarrisonTag`, system race, level 3+ strong fighters, hull x(1 + 0.5 (L - 1)), gun x(1 + 0.25 (L - 1)), no loot, swarming in front of the station; `NetFactionsClient.GarrisonRelation`: the attackers' enemy, the holders' friend) and reports each death (`NetState.GarrisonKillRpc`: the sender runs the orbit, at most 6 per 10 s); they jump out when the siege ends; the banner shows the count. Not yet: shared storage at the home. Not tested in a build yet.
   UI: the **multiplayer window** (`MultiplayerWindow`, code-built, Squad.uss buttons; in the station a "MULTIPLAYER" button in
   the top bar left of Menu; in flight its own button on the right under the HUD readout and the "Multiplayer window"
   binding, N (`FlightHud`: Esc / B / the binding close it, the flight controls and the mouse-steering cursor wait

@@ -268,13 +268,17 @@ namespace GoF2Remake.Data
 
         public int ShipPrice(int ship) => Shop.ShipPrice(db, ship, Station);
 
+        /// <summary>What a dealer ship costs here (multiplayer: a faction station's VAT markup for non-members); ShipPrice is
+        /// its value (a trade-in, the club's storage).</summary>
+        public int BuyShipPrice(int ship) => Storage ? ShipPrice(ship) : GoF2Remake.Multiplayer.NetFactionsClient.ShipBuyPrice(Station, ShipPrice(ship));
+
         /// <summary>HangarWindow::selectItem (ship row): 'need' = missing credits after trading in the current ship.</summary>
         public Result CanBuyShip(int ship, out int need)
         {
             need = 0;
             if (Session.Passengers > 0) return Result.Passengers;   // 336
             if (ship == Session.ShipIndex) return Result.SameShip;
-            int cost = Cheats.FreeShopping ? 0 : ShipPrice(ship) - ShipPrice(Session.ShipIndex);
+            int cost = Cheats.FreeShopping ? 0 : BuyShipPrice(ship) - ShipPrice(Session.ShipIndex);
             if (Session.Credits < cost) { need = cost - Session.Credits; return Result.NoCredits; }
             return Result.Ok;
         }
@@ -288,7 +292,7 @@ namespace GoF2Remake.Data
             if (CanBuyShip(ship, out _) != Result.Ok) return false;
             int old = Session.ShipIndex;
             var oldMods = new List<int>(Session.ShipMods ?? new List<int>());
-            if (!Cheats.FreeShopping) ChangeCredits(ShipPrice(old) - ShipPrice(ship));
+            if (!Cheats.FreeShopping) ChangeCredits(ShipPrice(old) - BuyShipPrice(ship));
             SwitchTo(ship, Stock.TakeMods(ship), dismount: true);
             int row = Stock.ships.IndexOf(ship);
             if (row >= 0) Stock.ships[row] = old; else Stock.ships.Add(old);
@@ -422,7 +426,7 @@ namespace GoF2Remake.Data
         {
             need = 0;
             if (KaamoClub.HasShip(Session.ShipIndex)) return Result.AlreadyStored;   // 328 (the old ship's type)
-            int cost = Cheats.FreeShopping ? 0 : ShipPrice(ship);
+            int cost = Cheats.FreeShopping ? 0 : BuyShipPrice(ship);
             if (Session.Credits < cost) { need = cost - Session.Credits; return Result.NoCredits; }
             return Result.Ok;
         }
@@ -432,7 +436,7 @@ namespace GoF2Remake.Data
             if (CanKeepAndBuyShip(ship, out _) != Result.Ok) return false;
             int old = Session.ShipIndex;
             var oldMods = Session.ShipMods;
-            if (!Cheats.FreeShopping) ChangeCredits(-ShipPrice(ship));
+            if (!Cheats.FreeShopping) ChangeCredits(-BuyShipPrice(ship));
             var kept = EquipmentToStore();
             SwitchTo(ship, Stock.TakeMods(ship), dismount: true);   // the bought row's mods (OnTouchEnd: getMods of the row, both branches)
             Stock.ships.Remove(ship);   // the bought row is gone

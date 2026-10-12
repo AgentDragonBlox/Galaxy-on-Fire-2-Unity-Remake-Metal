@@ -16,9 +16,10 @@ namespace GoF2Remake.Multiplayer
     {
         static string parsedFrom;
         static readonly Dictionary<int, (string tag, string name)> owners = new Dictionary<int, (string, string)>();
+        static readonly Dictionary<int, int> vats = new Dictionary<int, int>();   // station -> the holder's VAT rate
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { parsedFrom = siegesFrom = null; owners.Clear(); sieges.Clear(); TollStation = -1; }
+        static void ResetStatics() { parsedFrom = siegesFrom = null; owners.Clear(); vats.Clear(); sieges.Clear(); TollStation = -1; }
 
         /// <summary>A siege as the players see it: the seconds left counted from when the line arrived (to the arming, the
         /// call-off while armed, or the fight's end). armed = waiting for both sides or fighting, started = fighting.</summary>
@@ -104,14 +105,26 @@ namespace GoF2Remake.Multiplayer
         }
 
         /// <summary>The trade cut on a unit's list price at 'station' (multiplayer, a held station): members pay
-        /// NetFactions.MemberDiscountPercent less, other factions' pilots NetFactions.TaxPercent more (the holder's tax).</summary>
+        /// NetFactions.MemberDiscountPercent less, everyone else the holder's VAT markup (a tenth of its rate, NetFactions.VatMarkup;
+        /// the rate's share goes to the holder's bank, server-side).</summary>
         public static int BuyPrice(int station, int price)
         {
-            if (price <= 0 || NetPlayer.Local == null) return price;
+            if (price <= 0 || NetPlayer.Local == null || !Owner(station, out string owner, out _)) return price;
             string tag = NetPlayer.Local.FactionTag;
-            if (string.IsNullOrEmpty(tag) || !Owner(station, out string owner, out _)) return price;
-            return tag == owner ? UnityEngine.Mathf.RoundToInt(price * (100 - NetFactions.MemberDiscountPercent) / 100f)
-                                : UnityEngine.Mathf.RoundToInt(price * (100 + NetFactions.TaxPercent) / 100f);
+            return !string.IsNullOrEmpty(tag) && tag == owner ? UnityEngine.Mathf.RoundToInt(price * (100 - NetFactions.MemberDiscountPercent) / 100f)
+                                                              : NetFactions.VatMarkup(price, VatAt(station));
+        }
+
+        /// <summary>The holder's VAT rate at 'station' (0 = no holder).</summary>
+        public static int VatAt(int station) { Refresh(); return vats.TryGetValue(station, out int v) ? v : 0; }
+
+        /// <summary>A dealer ship's price for the local pilot at 'station': non-members pay the VAT markup (members the list
+        /// price: ships get no member discount).</summary>
+        public static int ShipBuyPrice(int station, int price)
+        {
+            if (price <= 0 || NetPlayer.Local == null || !Owner(station, out string owner, out _)) return price;
+            string tag = NetPlayer.Local.FactionTag;
+            return !string.IsNullOrEmpty(tag) && tag == owner ? price : NetFactions.VatMarkup(price, VatAt(station));
         }
 
         /// <summary>The toll for this station's holder: the credits go, the server banks them.</summary>
@@ -135,10 +148,13 @@ namespace GoF2Remake.Multiplayer
             if (text == parsedFrom) return;
             parsedFrom = text;
             owners.Clear();
+            vats.Clear();
             foreach (var line in text.Split('\n'))
             {
                 var parts = line.Split('|');
-                if (parts.Length >= 3 && int.TryParse(parts[0], out int station)) owners[station] = (parts[1], parts[2]);
+                if (parts.Length < 3 || !int.TryParse(parts[0], out int station)) continue;
+                owners[station] = (parts[1], parts[2]);
+                vats[station] = parts.Length >= 4 && int.TryParse(parts[3], out int v) ? UnityEngine.Mathf.Clamp(v, 0, NetFactions.MaxVat) : 0;
             }
         }
 
