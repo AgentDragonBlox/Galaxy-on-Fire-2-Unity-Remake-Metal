@@ -115,13 +115,16 @@ namespace GoF2Remake.Multiplayer
         }
 
         /// <summary>The toll for this station's holder: the credits go, the server banks them.</summary>
+        /// <summary>What the local pilot pays for the toll now (the server's fixed amount, or its share of their credits; 0 = none).</summary>
+        public static int TollAmount => NetState.Instance != null && NetState.Instance.Toll != 0 ? NetFactions.TollFor(NetState.Instance.Toll, Session.Credits) : 0;
+
         public static bool PayToll(int station)
         {
-            int toll = NetState.Instance != null ? NetState.Instance.Toll : 0;
+            int toll = TollAmount;
             if (toll <= 0 || Session.Credits < toll) return false;
             Session.Credits -= toll;
             TollStation = station;
-            NetState.Instance.TollPaidRpc(station);
+            NetState.Instance.TollPaidRpc(station, toll);
             NetProfileClient.Upload();
             return true;
         }

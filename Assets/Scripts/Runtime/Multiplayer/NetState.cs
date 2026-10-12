@@ -111,7 +111,8 @@ namespace GoF2Remake.Multiplayer
             if (sieges.Value.ToString() != text) sieges.Value = text;
         }
 
-        /// <summary>The toll a pilot of another faction pays at a held station (NetFactions.Toll; 0 = none).</summary>
+        /// <summary>The toll a pilot of another faction pays at a held station (NetFactions.Toll: credits, or -N = N % of the
+        /// pilot's credits; 0 = none). What one pilot pays: NetFactionsClient.TollAmount.</summary>
         public int Toll => toll.Value;
 
         internal void SetToll(int value) { if (IsServer && toll.Value != value) toll.Value = value; }
@@ -629,9 +630,9 @@ namespace GoF2Remake.Multiplayer
 
         /// <summary>A pilot of another faction paid the toll at 'station' (their game took the credits).</summary>
         [Rpc(SendTo.Server)]
-        public void TollPaidRpc(int station, RpcParams rpc = default)
+        public void TollPaidRpc(int station, int amount, RpcParams rpc = default)
         {
-            if (NetRateLimit.Allow(rpc.Receive.SenderClientId, NetRateLimit.Kind.Request)) NetFactions.OnTollPaid(rpc.Receive.SenderClientId, station);
+            if (NetRateLimit.Allow(rpc.Receive.SenderClientId, NetRateLimit.Kind.Request)) NetFactions.OnTollPaid(rpc.Receive.SenderClientId, station, amount);
         }
 
         /// <summary>An orbit's authority: one of the besieged station's garrison fighters died there (NetOrbit.UpdateGarrison).</summary>

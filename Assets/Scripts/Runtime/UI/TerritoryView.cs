@@ -86,7 +86,7 @@ namespace GoF2Remake.UI
         void AskToll(int station)
         {
             if (tollAsked || !level.LaunchCameraOver || level.Traffic == null || NetPlayer.Local == null) return;
-            int toll = NetState.Instance != null ? NetState.Instance.Toll : 0;
+            int toll = NetFactionsClient.TollAmount;   // a percentage toll: its share of the credits now
             string tag = NetPlayer.Local.FactionTag;
             if (toll <= 0 || NetFactionsClient.Relation(station, tag, NetFactionsClient.TollStation) >= 0) { tollAsked = true; return; }
             tollAsked = true;

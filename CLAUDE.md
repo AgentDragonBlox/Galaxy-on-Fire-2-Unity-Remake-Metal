@@ -984,7 +984,7 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   `/faction sieges`, console `sieges`; `TerritoryView`'s banner);
   **defence** (in a held orbit the fighters of the system's race treat the holder's members as friends and other factions'
   pilots as enemies unless they paid the toll this visit: `NpcShip.TerritoryToLocal`, `NetOrbit.HostileToRemote`,
-  `NetFactionsClient.Relation`; pilots without a faction as always); **toll** (`-toll`, 10 000; `TerritoryView` asks on
+  `NetFactionsClient.Relation`; pilots without a faction as always); **toll** (`-toll`, 10 000 credits, or `N%` = N % of the pilot's credits (`NetFactions.ParseToll` / `TollFor`, stored as -N; the pilot's game sends the amount, the server caps it at that share of the profile's worth); `TerritoryView` asks on
   arrival through `Traffic.Ask`, `NetFactionsClient.PayToll` -> `TollPaidRpc`, the holder's bank, `NetPlayer.TollStation`
   for the others' NPCs); **trade cut** (`Hangar.Buy` through `NetFactionsClient.BuyPrice`: members -10 %, other factions +5 %;
   the server banks the tax from `StockItemRpc`'s price, `NetFactions.OnPurchase`; the list shows the plain price; ships

@@ -117,7 +117,7 @@ Players on a different game version are turned away with a message saying which 
 | `-maxclaims N` | Stations per faction (default 3). |
 | `-claimdays N` | Days without a member docking before a claim is lost (default 14). |
 | `-siegecost N` | A siege's stake, paid from the attacking faction's bank (default 250 000): the winner's bank gets it (the defenders' when nobody fought within the 2 days and 4 extra days); back to the attacker when the claim is given up or the defenders disband. |
-| `-toll N` | The toll other factions' pilots pay at a faction's station (default 10 000, 0 = none). |
+| `-toll N` or `-toll N%` | The toll other factions' pilots pay at a faction's station: N credits, or N % (0-100) of the pilot's credits (default 10 000, 0 = none). |
 
 The environment variable `GOF2_ADMIN_TOKEN` can replace `-admintoken`.
 

@@ -1015,6 +1015,7 @@
  "mpSiegeCost": "Un asedio cuesta {0:N0} créditos del banco (tiene {1:N0}).",
  "mpSiegeDeclared": "[{0}] {1} asedia {2}, controlada por [{3}] {4}: empieza en {5} minutos y dura {6}.",
  "mpSiegeHeld": "[{0}] defendió {1} contra [{2}].",
+ "mpSetToll": "toll es una cantidad de créditos o un porcentaje (0-100%).",
  "mpSiegeKillRepair": "Derribo confirmado: tu nave está reparada.",
  "mpSiegeDeclared3": "[{0}] {1} asedia {2}, en manos de [{3}] {4}: en {5} minutos las defensas de la estación crecen hasta que pilotos de ambas facciones se encuentren en la órbita (en {6} días); luego un combate de 15 minutos, gana quien más derribos logre. {7:N0} créditos para el ganador.",
  "mpSiegeArmed2": "El asedio de {0} está armado: sus defensas crecen hasta que pilotos de [{1}] y [{2}] se encuentren en su órbita.",

@@ -114,7 +114,7 @@ namespace GoF2Remake.Multiplayer
                 int.TryParse(Value("-maxclaims"), out int maxClaims) ? maxClaims : NetFactions.DefaultMaxClaims,
                 int.TryParse(Value("-claimdays"), out int days) ? days : NetFactions.DefaultLapseDays,
                 int.TryParse(Value("-siegecost"), out int siegeCost) ? siegeCost : NetFactions.DefaultSiegeCost,
-                int.TryParse(Value("-toll"), out int toll) ? toll : NetFactions.DefaultToll);
+                NetFactions.ParseToll(Value("-toll")) ?? NetFactions.DefaultToll);   // credits or "5%"
             ListName = Value("-name") ?? DefaultListName;
             // The settings saved by the admins (server_settings.json) for whatever the command line didn't give.
             NetServerSettings.Load(HasFlag);

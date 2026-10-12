@@ -99,9 +99,25 @@ namespace GoF2Remake.Multiplayer
         public static int GarrisonCost(int ships, int level) => Mathf.Max(0, ships) * Mathf.Clamp(level, 1, MaxGarrisonLevel) * GarrisonUpkeep;
 
         /// <summary>A siege's price from the bank (-siegecost), the toll a pilot of another faction pays at a held station
-        /// (-toll; 0 = none).</summary>
+        /// (-toll: credits, or "N%" = N percent of the pilot's credits, stored as -N; 0 = none; TollText / ParseToll).</summary>
         public static int SiegeCost { get; internal set; } = DefaultSiegeCost;
         public static int Toll { get; internal set; } = DefaultToll;
+
+        /// <summary>"10000" = that many credits, "5%" = 5 % of the pilot's credits (1..100, stored as -5); null = not valid.</summary>
+        public static int? ParseToll(string text)
+        {
+            text = (text ?? "").Trim().Replace(",", "").Replace(" ", "");
+            if (text.EndsWith("%"))
+                return int.TryParse(text.TrimEnd('%'), out int pct) && pct >= 0 && pct <= 100 ? -pct : (int?)null;
+            return long.TryParse(text, out long n) && n >= 0 ? (int)Math.Min(n, int.MaxValue) : (int?)null;
+        }
+
+        /// <summary>The toll setting as typed: "10000" or "5%".</summary>
+        public static string TollText(int toll) => toll < 0 ? $"{-toll}%" : toll.ToString();
+
+        /// <summary>What a pilot with 'credits' pays for the toll setting 'toll' (0 = none).</summary>
+        public static int TollFor(int toll, long credits) =>
+            toll >= 0 ? toll : (int)Math.Min(int.MaxValue, Math.Max(1L, Math.Max(0L, credits) * -toll / 100));
         const int KaamoStation = 108, LomaSystem = 25;
 
         /// <summary>A claim's price from the bank (-claimcost), the claims per faction (-maxclaims), the days without a member
@@ -114,7 +130,7 @@ namespace GoF2Remake.Multiplayer
         public static void Configure(int claimCost, int maxClaims, int lapseDays, int siegeCost, int toll)
         {
             SiegeCost = Mathf.Max(0, siegeCost);
-            Toll = Mathf.Max(0, toll);
+            Toll = Mathf.Max(-100, toll);   // -N = N % of the pilot's credits
             ClaimCost = Mathf.Max(0, claimCost);
             MaxClaims = Mathf.Clamp(maxClaims, 0, 100);
             LapseDays = Mathf.Max(1, lapseDays);
@@ -1122,18 +1138,21 @@ namespace GoF2Remake.Multiplayer
 
         /// <summary>NetState.TollPaidRpc: a player of another faction paid the toll at 'station' (their game took the credits):
         /// into the holder's bank.</summary>
-        public static void OnTollPaid(ulong client, int station)
+        public static void OnTollPaid(ulong client, int station, int amount)
         {
             var held = ClaimAt(station);
             string account = NetProfiles.AccountOf(client);
             var payer = Of(account);
-            if (held == null || account == null || payer == null || payer.id == held.faction || Toll <= 0) return;
+            if (held == null || account == null || payer == null || payer.id == held.faction || Toll == 0) return;
             var owner = list.factions.Find(c => c.id == held.faction);
             if (owner == null) return;
-            owner.bank += Toll;
-            NetProfiles.AdjustWorth(account, -Toll);
+            // A fixed toll is the server's own amount; a percentage is what the pilot's game says it paid, at most that share
+            // of the profile's recorded worth (its credits are part of it) and at least 1.
+            int paid = Toll > 0 ? Toll : Mathf.Clamp(amount, 1, TollFor(Toll, NetProfiles.WorthOf(account)));
+            owner.bank += paid;
+            NetProfiles.AdjustWorth(account, -paid);
             Save();
-            TellFaction(owner, string.Format(Localization.Extra("mpTollReceived", "[{0}] {1} paid the {2:N0} credits toll at {3}."), payer.tag, NameOf(account), Toll, StationName(station)));
+            TellFaction(owner, string.Format(Localization.Extra("mpTollReceived", "[{0}] {1} paid the {2:N0} credits toll at {3}."), payer.tag, NameOf(account), paid, StationName(station)));
         }
 
         /// <summary>NetState.StockItemRpc: a unit bought at 'station' for 'price' (the buyer's game added the tax for a faction's

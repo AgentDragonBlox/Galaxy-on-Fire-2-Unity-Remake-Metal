@@ -1015,6 +1015,7 @@
  "mpSiegeCost": "Um cerco custa {0:N0} créditos do banco (ele tem {1:N0}).",
  "mpSiegeDeclared": "[{0}] {1} cerca {2}, controlada por [{3}] {4}: começa em {5} minutos e dura {6}.",
  "mpSiegeHeld": "[{0}] defendeu {1} contra [{2}].",
+ "mpSetToll": "toll é um número de créditos ou uma porcentagem (0-100%).",
  "mpSiegeKillRepair": "Abate confirmado: sua nave foi reparada.",
  "mpSiegeDeclared3": "[{0}] {1} sitia {2}, controlada por [{3}] {4}: em {5} minutos as defesas da estação crescem até pilotos das duas facções se encontrarem na órbita (em até {6} dias); depois um combate de 15 minutos, vence quem abater mais. {7:N0} créditos para o vencedor.",
  "mpSiegeArmed2": "O cerco de {0} está armado: suas defesas crescem até pilotos de [{1}] e [{2}] se encontrarem na órbita.",

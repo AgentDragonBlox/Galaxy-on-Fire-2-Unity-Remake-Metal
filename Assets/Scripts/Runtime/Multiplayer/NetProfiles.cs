@@ -186,6 +186,9 @@ namespace GoF2Remake.Multiplayer
             SaveIndex();
         }
 
+        /// <summary>A profile's worth at its last accepted upload (credits + ships + items), 0 = unknown.</summary>
+        internal static long WorthOf(string id) => id == null ? 0 : index?.accounts.Find(x => x.id == id)?.worth ?? 0;
+
         /// <summary>A profile's role (NetModeration), 0 for none / a guest.</summary>
         internal static int RoleOf(string id) => id == null ? 0 : index?.accounts.Find(x => x.id == id)?.role ?? 0;
 
