@@ -610,6 +610,8 @@ namespace GoF2Remake.World
         /// ~130 m the hangar cameras keep from the turntable the ~60 m ship stays sharp, the room behind it goes soft),
         /// Gaussian on phones (cheaper; the background only). The focus follows the ship (the camera drifts, the hangar
         /// flights move it).</summary>
+        bool bokehDof;   // the hangar view's mode (Bokeh, phones Gaussian); the orbit always Gaussian (UpdateDepthOfField)
+
         void SetupDepthOfField()
         {
             if (mainCamera == null) return;
@@ -622,8 +624,8 @@ namespace GoF2Remake.World
             // Assets/Settings/HangarDepthOfFieldShaders.asset has it on (ShaderBuildPreprocessor scans the profile assets).
             dofProfile = ScriptableObject.CreateInstance<VolumeProfile>();
             dof = dofProfile.Add<UnityEngine.Rendering.Universal.DepthOfField>(true);
-            bool bokeh = !Application.isMobilePlatform;
-            dof.mode.Override(bokeh ? UnityEngine.Rendering.Universal.DepthOfFieldMode.Bokeh : UnityEngine.Rendering.Universal.DepthOfFieldMode.Gaussian);
+            bokehDof = !Application.isMobilePlatform;
+            dof.mode.Override(bokehDof ? UnityEngine.Rendering.Universal.DepthOfFieldMode.Bokeh : UnityEngine.Rendering.Universal.DepthOfFieldMode.Gaussian);
             dof.focalLength.Override(300f);
             dof.aperture.Override(2f);
             dof.gaussianMaxRadius.Override(1f);
@@ -689,13 +691,21 @@ namespace GoF2Remake.World
             SetRoomMatte(on);
             if (!on) return;
             float focus = Mathf.Max(1f, Vector3.Distance(mainCamera.transform.position, playerShip.position));
-            // Inspect ship: focused on the ship's centre, through a wider lens (300 mm at f/2 kept only ~6 m sharp up close).
+            // Inspect ship / the Mod Builder: focused on the ship's centre, through a wider lens (300 mm at f/2 kept only ~6 m
+            // sharp up close).
             float inspect = Mathf.SmoothStep(0f, 1f, Inspect.Blend);
             if (inspect > 0f) focus = Mathf.Lerp(focus, Mathf.Max(1f, Vector3.Distance(mainCamera.transform.position, Inspect.Centre)), inspect);
             dof.focalLength.value = Mathf.Lerp(300f, 50f, inspect);
             dof.focusDistance.value = focus;
             dof.gaussianStart.value = focus + Mathf.Lerp(25f, Inspect.Radius * 1.2f + 10f, inspect);
             dof.gaussianEnd.value = focus + Mathf.Lerp(140f, Inspect.Radius * 3f + 60f, inspect);
+            // Orbiting, a physical lens can't both keep the whole hull sharp and blur the room: at ~80 m a 50 mm lens blurred
+            // nothing (the option seemed off in the Mod Builder), a longer one the hull's own far side. The orbit takes the
+            // Gaussian blur instead, which starts past the hull (gaussianStart above) and blurs the room behind it.
+            var mode = inspect > 0.5f || !bokehDof ? UnityEngine.Rendering.Universal.DepthOfFieldMode.Gaussian
+                                                   : UnityEngine.Rendering.Universal.DepthOfFieldMode.Bokeh;
+            if (dof.mode.value != mode) dof.mode.value = mode;
+            dof.gaussianMaxRadius.value = Mathf.Lerp(1f, 1.5f, inspect);
         }
 
         void ApplyAntialiasing()

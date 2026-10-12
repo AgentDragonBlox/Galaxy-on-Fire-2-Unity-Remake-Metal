@@ -75,7 +75,7 @@ namespace GoF2Remake.UI
                 characterList.Add(row);
             }
             if (Project.Characters.Count == 0)
-                Note(characterList, T("mbNoCharacters", "No characters yet. Add one from a portrait image (PNG, 4:5)."));
+                Note(characterList, T("mbNoCharacters", "No characters yet. Add one from a portrait image (PNG, JPG, TGA, BMP, DDS or the game's .aei; 4:5 like the game's portraits)."));
         }
 
         void BuildCharacterPage()
