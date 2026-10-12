@@ -309,7 +309,7 @@ namespace GoF2Remake.Multiplayer
             }
             e.resale.TryGetValue(item, out int sold);
             e.resale[item] = (int)Math.Min((long)sold + delta, MaxRowAmount);
-            else if (row != null) row.amount = Math.Min(row.amount + delta, MaxRowAmount);   // a seller can't grow a row without end
+            if (row != null) row.amount = Math.Min(row.amount + delta, MaxRowAmount);   // a seller can't grow a row without end
             else
             {
                 int at = e.items.FindIndex(r => r.item > item);
