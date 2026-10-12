@@ -46,6 +46,17 @@ namespace GoF2Remake.Modding
             Revision++;
         }
 
+#if UNITY_EDITOR
+        // A code reload drops these lists without closing the zips they read, and the Editor then kept a lock on every zip mod
+        // until it quit (an export couldn't replace its own mod): they are closed before the reload.
+        [UnityEditor.InitializeOnLoadMethod]
+        static void CloseZipsBeforeReload() => UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += () =>
+        {
+            if (installed != null) foreach (var m in installed) m.Release();
+            builderProject?.Release();
+        };
+#endif
+
         /// <summary>The folder every platform reads (created on first use).</summary>
         public static string UserFolder => Path.Combine(Application.persistentDataPath, "Mods");
 

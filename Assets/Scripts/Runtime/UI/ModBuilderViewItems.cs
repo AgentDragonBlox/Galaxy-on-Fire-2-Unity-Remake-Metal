@@ -127,8 +127,7 @@ namespace GoF2Remake.UI
             var irow = Add(itemPage, new VisualElement(), "mbv-row");
             Add(irow, new Label($"{T("mbIcon", "Icon")}: {(it.Icon != null ? System.IO.Path.GetFileName(it.Icon) : T("mbBaseIcon", "the base item's"))}"), "mbv-inline-label");
             if (ModImport.Available)
-                Act(irow, T("mbChoose", "Choose…"), () => PickFile(T("mbPickIcon", "Choose a shop icon (PNG, 180 x 88)"), "PNG image", "png",
-                    new byte[] { 0x89, (byte)'P', (byte)'N', (byte)'G' }, T("mbNotPng", "That isn't a PNG image."), path =>
+                Act(irow, T("mbChoose", "Choose…"), () => PickImage(T("mbPickIcon", "Choose a shop icon (180 x 88)"), path =>
                     {
                         string old = it.Icon;
                         it.Icon = Project.AddFile(path, "icons", it.IsOverride ? "item_" + it.OverrideIndex : it.LocalId, ".png");

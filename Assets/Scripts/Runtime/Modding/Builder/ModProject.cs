@@ -70,14 +70,29 @@ namespace GoF2Remake.Modding
             return l;
         }
 
-        /// <summary>A project's id from its name: lower case a-z 0-9 _, made unique among the projects and installed mods.</summary>
-        public static string IdFor(string name)
+        /// <summary>A name as an id (like a repository's name on GitHub / GitLab): lower case, a-z 0-9, anything else one '_'.</summary>
+        public static string Slug(string name)
         {
             var chars = (name ?? "").Trim().ToLowerInvariant().Select(c => c >= 'a' && c <= 'z' || c >= '0' && c <= '9' ? c : '_').ToArray();
             string id = new string(chars).Trim('_');
             while (id.Contains("__")) id = id.Replace("__", "_");
             if (id.Length == 0) id = "my_mod";
-            if (id.Length > ModManifest.MaxIdLength - 4) id = id.Substring(0, ModManifest.MaxIdLength - 4);
+            if (id.Length > ModManifest.MaxIdLength - 4) id = id.Substring(0, ModManifest.MaxIdLength - 4).Trim('_');
+            return id;
+        }
+
+        /// <summary>The id this project's name gives: its slug, numbered ("_2") when another project or mod has that.</summary>
+        public string IdFromName(string name)
+        {
+            string id = Slug(name), unique = id;
+            for (int i = 2; IdRefusal(unique) != null && i < 1000; i++) unique = $"{id}_{i}";
+            return unique;
+        }
+
+        /// <summary>A project's id from its name: lower case a-z 0-9 _, made unique among the projects and installed mods.</summary>
+        public static string IdFor(string name)
+        {
+            string id = Slug(name);
             string unique = id;
             for (int i = 2; Directory.Exists(Path.Combine(Root, unique)) || ModManager.Find(unique) != null; i++) unique = $"{id}_{i}";
             return unique;
@@ -178,6 +193,69 @@ namespace GoF2Remake.Modding
             File.Move(tmp, path);
         }
 
+        /// <summary>Why 'id' can't be this project's new mod id (null = it can): the mod.json rules, and no other project
+        /// or installed mod (but this project's own export) may have it.</summary>
+        public string IdRefusal(string id)
+        {
+            if (!ModManifest.ValidId(id)) return $"an id may only use a-z, 0-9, _ and - (at most {ModManifest.MaxIdLength})";
+            if (string.Equals(id, Id, StringComparison.OrdinalIgnoreCase)) return null;
+            foreach (var dir in Directory.Exists(Root) ? Directory.GetDirectories(Root) : new string[0])
+            {
+                if (string.Equals(Path.GetFullPath(dir), Path.GetFullPath(Folder), StringComparison.OrdinalIgnoreCase)) continue;
+                if (string.Equals(Path.GetFileName(dir), id, StringComparison.OrdinalIgnoreCase)) return $"another project uses \"{id}\"";
+                var other = File.Exists(Path.Combine(dir, ModManifest.FileName)) ? Load(dir) : null;
+                if (other != null && string.Equals(other.Id, id, StringComparison.OrdinalIgnoreCase)) return $"the project \"{other.Name}\" uses \"{id}\"";
+            }
+            var mod = ModManager.Find(id);
+            if (mod != null && !PreviousIds.Contains(mod.Id, StringComparer.OrdinalIgnoreCase))
+                return $"the installed mod \"{mod.Name}\" uses \"{id}\"";
+            return null;
+        }
+
+        /// <summary>The ids this project had before (builder.json "previousIds"): an export replaces a mod installed under one.</summary>
+        public List<string> PreviousIds =>
+            builder["previousIds"] is JArray a ? a.Select(t => t.ToString()).ToList() : new List<string>();
+
+        /// <summary>Gives the mod a new id: mod.json, every "old:" key the project's own files name (ships, items,
+        /// characters, event graphs refer to their mod's content as "id:name"), the folder (renamed when it was named after
+        /// the id), the old id kept in builder.json so the next export replaces the mod installed under it. Returns the
+        /// project read again from its new place (this object is done with), or null with the error.</summary>
+        public ModProject ChangeId(string id, out string error)
+        {
+            error = IdRefusal(id);
+            if (error != null) return null;
+            if (string.Equals(id, Id, StringComparison.Ordinal)) return this;
+            string old = Id;
+            try
+            {
+                var prev = PreviousIds;
+                if (!prev.Contains(old, StringComparer.OrdinalIgnoreCase)) prev.Add(old);
+                prev.RemoveAll(p => string.Equals(p, id, StringComparison.OrdinalIgnoreCase));
+                builder["previousIds"] = new JArray(prev);
+                manifest["id"] = id;
+                Save();
+                // "old:..." references in the project's own files (not a longer id that only ends in it).
+                var re = new System.Text.RegularExpressions.Regex("(?<![A-Za-z0-9_-])" + System.Text.RegularExpressions.Regex.Escape(old) + ":");
+                foreach (var f in Directory.GetFiles(Folder, "*", SearchOption.AllDirectories))
+                {
+                    string ext = Path.GetExtension(f).ToLowerInvariant();
+                    if (ext != ".json" && ext != ".gof2event" && ext != ".gof2netevent") continue;
+                    if (Path.GetFileName(f) == ModManifest.FileName || Path.GetFileName(f) == BuilderFile) continue;
+                    string text = File.ReadAllText(f), changed = re.Replace(text, id + ":");
+                    if (changed != text) File.WriteAllText(f, changed);
+                }
+                string folder = Folder;
+                if (string.Equals(Path.GetFileName(Folder), old, StringComparison.OrdinalIgnoreCase))
+                {
+                    string target = Path.Combine(Root, id);
+                    if (!Directory.Exists(target)) { Directory.Move(Folder, target); folder = target; }
+                }
+                Debug.Log($"Mod Builder: the project \"{Name}\" is now the mod \"{id}\" (was \"{old}\")");
+                return Load(folder);
+            }
+            catch (Exception e) { error = e.Message; Debug.LogWarning($"Mod Builder: changing {old}'s id failed: {e.Message}"); return null; }
+        }
+
         /// <summary>Deletes the project's folder.</summary>
         public bool Delete(out string error)
         {
@@ -188,11 +266,16 @@ namespace GoF2Remake.Modding
 
         // ---- export ---------------------------------------------------------------------------------------------
 
-        /// <summary>An installed mod (not this project) already has the project's id: the export replaces it.</summary>
-        public ModInfo InstalledMod => ModManager.Installed.FirstOrDefault(m => string.Equals(m.Id, Id, StringComparison.OrdinalIgnoreCase));
+        /// <summary>An installed mod (not this project) has the project's id, or an id it had before (ChangeId): the export
+        /// replaces it.</summary>
+        public ModInfo InstalledMod =>
+            ModManager.Installed.FirstOrDefault(m => string.Equals(m.Id, Id, StringComparison.OrdinalIgnoreCase))
+            ?? ModManager.Installed.FirstOrDefault(m => m.Id != null && PreviousIds.Contains(m.Id, StringComparer.OrdinalIgnoreCase));
 
-        /// <summary>Zips the mod's files (not builder.json) into the Mods folder as "<id>.zip", replacing an installed mod with
-        /// that id in its own folder (it keeps its on / off and load order). Returns the zip's path, or null with the error.</summary>
+        /// <summary>Zips the mod's files (not builder.json) into the Mods folder as "<name>.zip" (the project's name as it is
+        /// now), replacing an installed mod with its id in its own folder (it keeps its on / off and load order), or one under
+        /// an id it had before (ChangeId; the new id is turned on when that was). Returns the zip's path, or null with the
+        /// error.</summary>
         public string Export(out string error)
         {
             error = null;
@@ -201,14 +284,17 @@ namespace GoF2Remake.Modding
             {
                 var old = InstalledMod;
                 string folder = old != null ? ModManager.FolderOf(old) : ModManager.MainFolder;
-                if (old != null && !ModImport.Delete(old, out error, keepEnabled: true)) return null;
+                // The mod installed under an earlier id: the new one takes its place, on if it was on.
+                bool renamed = old != null && !string.Equals(old.Id, Id, StringComparison.OrdinalIgnoreCase);
+                bool wasOn = renamed && ModManager.IsEnabled(old.Id);
+                if (old != null && !ModImport.Delete(old, out error, keepEnabled: !renamed)) return null;
                 Directory.CreateDirectory(folder);
-                string target = Path.Combine(folder, Id + ".zip"), tmp = target + ".tmp";
+                string target = Path.Combine(folder, ZipName(folder)), tmp = target + ".tmp";
                 using (var zip = new ZipArchive(File.Create(tmp), ZipArchiveMode.Create))
                     foreach (var f in Directory.GetFiles(Folder, "*", SearchOption.AllDirectories))
                     {
                         string rel = f.Substring(Folder.Length).TrimStart('/', '\\').Replace('\\', '/');
-                        if (rel == BuilderFile || rel.EndsWith(".tmp")) continue;
+                        if (rel == BuilderFile || rel.EndsWith(".tmp") || rel.StartsWith(TemplatesFolder + "/")) continue;   // not the skin templates
                         var e = zip.CreateEntry(rel, System.IO.Compression.CompressionLevel.Optimal);
                         using var dst = e.Open();
                         using var src = File.OpenRead(f);
@@ -218,9 +304,23 @@ namespace GoF2Remake.Modding
                 File.Move(tmp, target);
                 Debug.Log($"Mod Builder: exported \"{Id}\" to {target}");
                 ModManager.Scan();
+                if (wasOn) ModManager.SetEnabled(Id, true);
                 return target;
             }
             catch (Exception e) { error = e.Message; Debug.LogWarning($"Mod Builder: export of {Id} failed: {e.Message}"); return null; }
+        }
+
+        /// <summary>The zip's file name from the project's name (characters a file name can't hold become '_'); another
+        /// file of that name in the folder (a different mod: the old one was removed first) gets the id appended.</summary>
+        string ZipName(string folder)
+        {
+            var bad = Path.GetInvalidFileNameChars();
+            string name = new string((Name ?? "").Select(c => Array.IndexOf(bad, c) >= 0 ? '_' : c).ToArray()).Trim().TrimEnd('.');
+            if (name.Length > 60) name = name.Substring(0, 60).TrimEnd();
+            if (name.Length == 0) name = Id;
+            string file = name + ".zip";
+            if (File.Exists(Path.Combine(folder, file)) || Directory.Exists(Path.Combine(folder, name))) file = $"{name} ({Id}).zip";
+            return file;
         }
 
         // ---- ships ------------------------------------------------------------------------------------------------
@@ -264,6 +364,83 @@ namespace GoF2Remake.Modding
         {
             if (string.IsNullOrEmpty(path) || stillUsed) return;
             try { File.Delete(Path.Combine(Folder, path)); } catch { }
+        }
+
+        // ---- skins ---------------------------------------------------------------------------------------------
+
+        /// <summary>Where the builder saves the game's textures to paint over (never exported).</summary>
+        public const string TemplatesFolder = "templates";
+        static readonly string[] ImageExtensions = ImageImport.FileExtensions;   // every format the game reads
+
+        /// <summary>The game ships the project re-skins: the ones added in the builder (builder.json "skins") and any whose
+        /// texture a file in textures/ replaces ("ship_028_terran_diffuse" is ship 28's; v_ / sn_ add-on ships too).</summary>
+        public List<int> SkinShips()
+        {
+            var set = new SortedSet<int>();
+            if (builder["skins"] is JArray a) foreach (var t in a) if (t.Type == JTokenType.Integer) set.Add((int)t);
+            string dir = Path.Combine(Folder, ModTextures.Folder);
+            var shipName = new System.Text.RegularExpressions.Regex(@"^(?:v_|sn_)?ship_(\d{3})_");
+            if (Directory.Exists(dir))
+            {
+                foreach (var f in Directory.GetFiles(dir))
+                {
+                    var m = shipName.Match(Path.GetFileNameWithoutExtension(f));
+                    if (m.Success && ImageExtensions.Contains(Path.GetExtension(f).ToLowerInvariant())) set.Add(int.Parse(m.Groups[1].Value));
+                }
+                // a ship's own textures: textures/<its assembly>/
+                foreach (var d in Directory.GetDirectories(dir))
+                {
+                    var m = shipName.Match(Path.GetFileName(d));
+                    if (m.Success && Directory.GetFiles(d).Any(f => ImageExtensions.Contains(Path.GetExtension(f).ToLowerInvariant())))
+                        set.Add(int.Parse(m.Groups[1].Value));
+                }
+            }
+            return set.ToList();
+        }
+
+        public void AddSkin(int ship)
+        {
+            if (!(builder["skins"] is JArray a)) builder["skins"] = a = new JArray();
+            if (!a.Any(t => t.Type == JTokenType.Integer && (int)t == ship)) a.Add(ship);
+        }
+
+        public void RemoveSkin(int ship)
+        {
+            if (builder["skins"] is JArray a) foreach (var t in a.Where(t => t.Type == JTokenType.Integer && (int)t == ship).ToList()) t.Remove();
+        }
+
+        /// <summary>The project's replacement of a game texture (textures/&lt;name&gt;.png or .jpg; with a scope, the one
+        /// for that assembly's objects only, textures/&lt;scope&gt;/&lt;name&gt;), null = none.</summary>
+        public string SkinTexture(string textureName, string scope = null)
+        {
+            string folder = scope == null ? ModTextures.Folder : ModTextures.Folder + "/" + scope;
+            foreach (var ext in ImageExtensions)
+            {
+                string rel = folder + "/" + textureName + ext;
+                if (File.Exists(Path.Combine(Folder, rel))) return rel;
+            }
+            return null;
+        }
+
+        /// <summary>A PNG as the replacement of a game texture, for every object or (scope) one assembly's only (any other
+        /// one of that name there goes).</summary>
+        public void SetSkinTexture(string textureName, string sourceFile, string scope = null)
+        {
+            RemoveSkinTexture(textureName, scope);
+            string dir = scope == null ? Path.Combine(Folder, ModTextures.Folder) : Path.Combine(Folder, ModTextures.Folder, scope);
+            Directory.CreateDirectory(dir);
+            File.Copy(sourceFile, Path.Combine(dir, textureName + ".png"), true);
+        }
+
+        public void RemoveSkinTexture(string textureName, string scope = null)
+        {
+            string dir = scope == null ? Path.Combine(Folder, ModTextures.Folder) : Path.Combine(Folder, ModTextures.Folder, scope);
+            foreach (var ext in ImageExtensions)
+            {
+                string path = Path.Combine(dir, textureName + ext);
+                if (File.Exists(path)) File.Delete(path);
+            }
+            if (scope != null && Directory.Exists(dir) && !Directory.EnumerateFileSystemEntries(dir).Any()) Directory.Delete(dir);
         }
 
         // ---- items and characters ------------------------------------------------------------------------------
@@ -385,6 +562,13 @@ namespace GoF2Remake.Modding
 
         public bool Flag(string key, bool fallback) => builder[key] is JValue v && v.Type == JTokenType.Boolean ? (bool)v : fallback;
         public void SetFlag(string key, bool on) => builder[key] = on;
+
+        /// <summary>The station the builder sits at and test-flies from (ModBuilder.Station), -1 = the default.</summary>
+        public int BuilderStation
+        {
+            get => builder["station"] is JValue v && v.Type == JTokenType.Integer ? (int)v : -1;
+            set => builder["station"] = value;
+        }
 
         /// <summary>The ship last worked on (its Ref), null = none.</summary>
         public string LastShip { get => Str(builder, "lastShip"); set => builder["lastShip"] = value; }

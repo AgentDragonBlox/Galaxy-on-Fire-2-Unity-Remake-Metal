@@ -1,8 +1,8 @@
 // ModBuilderViewCharacters.cs
 // The Mod Builder's Characters kind (part of ModBuilderView): the project's characters.json (ProjectCharacter,
 // Modding/README.md "Characters"), edited in the station's Space Lounge (ModBuilderView.SelectKind). Left: the characters with their portraits, a new one from a PNG portrait, Remove.
-// Right: the portrait as a conversation shows it (UI.Portrait.ShowCharacter: the game's background under it and frame over
-// it), the name, the portrait file, race, gender, mirrored / frame / background, and the story character it stands in for
+// Right: the portrait as a conversation shows it (UI.Portrait.ShowCharacter: the game's dark backdrop under it and its
+// scanline overlay, the "frame", over it), the name, the portrait file, race, gender, mirrored / frame / background, and the story character it stands in for
 // ("replaces": that speaker's portrait everywhere, and its name in the conversation headers), picked from the story's
 // speakers with their portraits; without one it is a character of the mod's own, for its quests, bar missions and events
 // (named "mod_id:id" or by name). Edits are written at once; the game reads them when the project is read again.
@@ -32,7 +32,7 @@ namespace GoF2Remake.UI
             scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             new DragScroll(scroll);
             characterList = scroll;
-            var add = Act(left, T("mbNewCharacter", "+ New character from a portrait…"), NewCharacter, "mbv-add");
+            var add = Act(left, T("mbNewCharacter", "+ New character from a portrait…"), NewCharacter, "mbv-add");   // any image ImageImport reads
             add.SetEnabled(ModImport.Available);
             Act(left, T("mbRemoveCharacter", "Remove character"), AskRemoveCharacter, "mbv-danger");
 
@@ -107,10 +107,12 @@ namespace GoF2Remake.UI
                     BuildCharacterPage();
                 }));
             Note(characterPage, T("mbPortraitNote", "4:5 like the game's portraits (320 x 400 stays sharp); a wider picture is cropped at the sides, a taller one keeps its top."));
+            Note(characterPage, T("mbPortraitLayersNote", "Scanlines: the faint lines over every portrait in the game. Dark backdrop: shows only through transparent parts of the picture (a cut-out character)."));
             var toggles = Add(characterPage, new VisualElement(), "mbv-row");
             FlagButton(toggles, T("mbMirrored", "Mirrored"), c.Mirrored, v => c.Mirrored = v);
-            FlagButton(toggles, T("mbFrame", "Frame"), c.Frame, v => c.Frame = v);
-            FlagButton(toggles, T("mbBackground", "Background"), c.Background, v => c.Background = v);
+            // characters.json "frame" / "background": the game's scanline overlay and the dark backdrop behind the picture.
+            FlagButton(toggles, T("mbScanlines", "Scanlines"), c.Frame, v => c.Frame = v);
+            FlagButton(toggles, T("mbBackdrop", "Dark backdrop"), c.Background, v => c.Background = v);
 
             Add(characterPage, new Label(T("mbRace", "Race").ToUpperInvariant()), "mbv-label");
             var races = Add(characterPage, new VisualElement(), "mbv-seg-row");
@@ -142,8 +144,7 @@ namespace GoF2Remake.UI
 
         void CharacterEdited() => MarkDirty();
 
-        void PickPng(Action<string> use) => PickFile(T("mbPickPortrait", "Choose a portrait (PNG)"), "PNG image", "png",
-            new byte[] { 0x89, (byte)'P', (byte)'N', (byte)'G' }, T("mbNotPng", "That isn't a PNG image."), use);
+        void PickPng(Action<string> use) => PickImage(T("mbPickPortrait", "Choose a portrait"), use);   // stored as PNG
 
         void NewCharacter() => PickPng(path =>
         {

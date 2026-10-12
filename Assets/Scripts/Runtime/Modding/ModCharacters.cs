@@ -1,7 +1,8 @@
 // ModCharacters.cs
 // Remake mods: characters of their own for conversations, the radio, questions and bar mission clients (a mod's
 // characters.json): a name (per language), a portrait PNG drawn in the game's 160 x 200 portrait box (4:5; 320 x 400
-// stays sharp in HD, scaled to cover the box, its top kept), over the game's portrait background and under its frame
+// stays sharp in HD, scaled to cover the box, its top kept), over the game's portrait backdrop (a dark, half-transparent
+// fill: only through the PNG's transparent parts) and under its "frame" (in fact a faint scanline overlay, alpha <= 27)
 // (both optional), mirrored on request, and a race / gender for what the game draws or plays by race: the bar figure of
 // a bar mission's client, the name's colour in the dialogue. "replaces": a story character (by name or number) whose
 // portrait, and name when it has one (StoryTable.SpeakerName), it takes everywhere, the game's own story included.

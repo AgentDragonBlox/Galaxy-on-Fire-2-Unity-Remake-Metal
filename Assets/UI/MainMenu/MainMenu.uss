@@ -730,6 +730,14 @@
     margin-bottom: 4px;
 }
 
+/* Under the project's name, like GitHub's "will be created as": the mod id it gives. */
+.mb-id-hint {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--gof-text-dim);
+    opacity: 0.8;
+}
+
 .mb-actions > .mods-action {
     white-space: nowrap;
     padding: 10px 14px;

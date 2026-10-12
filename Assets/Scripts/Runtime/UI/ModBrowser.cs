@@ -54,7 +54,7 @@ namespace GoF2Remake.UI
             Panel.usageHints = UsageHints.DynamicTransform;
 
             var titleRow = Add(Panel, new VisualElement(), "mods-title-row");
-            Add(titleRow, new Label(T("modsTitle", "Mods").ToUpperInvariant()), "panel-title", "gof-semibold");
+            Add(titleRow, new Label(T("modBrowser", "Mod Browser").ToUpperInvariant()), "panel-title", "gof-semibold");
             Add(titleRow, new VisualElement(), "mp-title-spacer");
             count = Add(titleRow, new Label(), "mods-count");
             Add(Panel, new VisualElement(), "panel-accent");

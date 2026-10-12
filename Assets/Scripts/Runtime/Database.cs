@@ -215,12 +215,13 @@ namespace GoF2Remake.Data
         public List<AssemblyData> Assemblies = new List<AssemblyData>();
 
         /// <summary>Globals::getShipGroup: a ship's assembled object, the main pack's "ship_NNN_*" first, else the add-ons'
-        /// "v_ship_NNN_*" / "sn_ship_NNN_*" (ships 39-41 and 44+); the variant ending in 'raceName' when there is one.</summary>
-        public AssemblyData ShipAssembly(int ship, string raceName = null)
+        /// "v_ship_NNN_*" / "sn_ship_NNN_*" (ships 39-41 and 44+); the variant ending in 'raceName' when there is one.
+        /// 'original': the game's own model even when a mod replaces it (the stand-in while the mod's is built).</summary>
+        public AssemblyData ShipAssembly(int ship, string raceName = null, bool original = false)
         {
             // A mod's model for this ship (a new mod ship, or an original's replaced: ModContent.ModelOverrides).
             string modName = $"ship_{ship:000}_mod";
-            var modded = Assemblies.Find(a => a.pack == "mod" && a.name == modName);
+            var modded = original ? null : Assemblies.Find(a => a.pack == "mod" && a.name == modName);
             if (modded != null) return modded;
             string p = $"ship_{ship:000}_";
             bool Match(AssemblyData a, bool main) =>

@@ -2,7 +2,7 @@
 // Remake-only: the main menu's Mod Builder page (Mods > Mod Builder): the player's mod projects (Modding.ModProject,
 // Application.persistentDataPath/ModProjects). On the left the projects (the newest first) under a "new project" row
 // (a name and Create); on the right the selected project: its name, author, version and description (saved as they are
-// typed), what it holds by kind of content (Ships, Items and Characters open the hangar editor on that kind; the other
+// typed), what it holds by kind of content (Ships, Items, Characters and Skins open the hangar editor on that kind; the other
 // kinds show "Coming soon" for now),
 // and Open in hangar, Export as mod (zips it into the Mods folder, asks before replacing an installed mod with its id),
 // Open folder (desktop) and Delete (asks).
@@ -19,6 +19,7 @@ using UnityEngine.UIElements;
 
 namespace GoF2Remake.UI
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public class ModBuilderProjects
     {
         public VisualElement Panel { get; }
@@ -32,6 +33,7 @@ namespace GoF2Remake.UI
         readonly Label count, empty, note, title, meta;
         readonly VisualElement detail, content;
         readonly TextField newName, nameField, authorField, versionField, descField;
+        readonly Label idHint;
         readonly Button openButton, exportButton, deleteButton;
         List<ModProject> projects = new List<ModProject>();
         ModProject selected;
@@ -40,8 +42,8 @@ namespace GoF2Remake.UI
         static string T(string key, string english) => Localization.Extra(key, english);
         static string Count(int n, string oneKey, string one, string manyKey, string many) => n == 1 ? T(oneKey, one) : string.Format(T(manyKey, many), n);
 
-        /// <summary>The kinds of content a mod can hold, in the order the page shows them; ships, items and characters can be
-        /// built so far (their ModBuilder.Kind in Buildable).</summary>
+        /// <summary>The kinds of content a mod can hold, in the order the page shows them; ships, items, characters and skins
+        /// can be built so far (their ModBuilder.Kind in Buildable).</summary>
         static readonly (string key, string english, string desc)[] Kinds =
         {
             ("mbShips", "Ships", "New ships from a .glb model, or changes to the game's ships: stats, hardpoints, test flights."),
@@ -60,7 +62,8 @@ namespace GoF2Remake.UI
         /// <summary>The kinds the builder edits: their place in Kinds and the builder's tab.</summary>
         static ModBuilder.Kind? Buildable(string key) => key switch
         {
-            "mbShips" => ModBuilder.Kind.Ships, "mbItems" => ModBuilder.Kind.Items, "mbCharacters" => ModBuilder.Kind.Characters, _ => null,
+            "mbShips" => ModBuilder.Kind.Ships, "mbItems" => ModBuilder.Kind.Items, "mbCharacters" => ModBuilder.Kind.Characters,
+            "mbSkins" => ModBuilder.Kind.Skins, _ => null,
         };
 
         public ModBuilderProjects(VisualElement host, Action back, Action<VisualElement> hookFocus, Action click, Action<ModProject> open,
@@ -87,7 +90,10 @@ namespace GoF2Remake.UI
             var left = Add(body, new VisualElement(), "mods-left");
             var newRow = Add(left, new VisualElement(), "mb-new-row");
             newName = Add(newRow, new TextField { maxLength = 40 }, "mb-field", "mb-new-name");
-            newName.textEdition.placeholder = T("mbNewPlaceholder", "New project name");
+            // One field for both: what is typed filters the list (every word must match the name, id, author or
+            // description), and Create / Enter makes a new project of that name.
+            newName.textEdition.placeholder = T("mbNewPlaceholder", "Search, or name a new project");
+            newName.RegisterValueChangedCallback(_ => RebuildRows());
             newName.RegisterCallback<KeyDownEvent>(e =>
             {
                 if (e.keyCode != KeyCode.Return && e.keyCode != KeyCode.KeypadEnter) return;
@@ -109,6 +115,17 @@ namespace GoF2Remake.UI
             meta = Add(detailScroll, new Label(), "mods-meta");
             var fields = Add(detailScroll, new VisualElement(), "mb-fields");
             nameField = Field(fields, T("mbName", "Name"), 60, v => { selected.Name = v.Trim().Length > 0 ? v.Trim() : selected.Id; title.text = selected.Name; });
+            idHint = Add(nameField.parent, new Label(), "mb-id-hint");
+            nameField.RegisterValueChangedCallback(_ => UpdateIdHint());
+            // Leaving the name (or Enter) also moves an id that doesn't match it yet (a project renamed before the id
+            // followed the name) without the name being edited.
+            nameField.RegisterCallback<FocusOutEvent>(_ => { SaveIfDirty(); FollowName(); });
+            nameField.RegisterCallback<KeyDownEvent>(e =>
+            {
+                if (e.keyCode != KeyCode.Return && e.keyCode != KeyCode.KeypadEnter) return;
+                SaveIfDirty();
+                FollowName();
+            });
             var pair = Add(fields, new VisualElement(), "mb-field-pair");
             authorField = Field(pair, T("mbAuthor", "Author"), 40, v => selected.Author = v.Trim());
             versionField = Field(pair, T("mbVersion", "Version"), 16, v => selected.Version = v.Trim().Length > 0 ? v.Trim() : "1.0");
@@ -159,6 +176,34 @@ namespace GoF2Remake.UI
             return f;
         }
 
+        /// <summary>The line under the name (like GitHub's "will be created as"): the mod id the name gives, in grey, and
+        /// the id it had while that differs; the project takes it when the name is saved (FollowName).</summary>
+        void UpdateIdHint()
+        {
+            if (selected == null) { idHint.text = ""; return; }
+            string id = selected.IdFromName(nameField.value);
+            idHint.text = id == selected.Id
+                ? string.Format(T("mbIdHint", "Mod id: {0}"), id)
+                : string.Format(T("mbIdHintChange", "Mod id: {0}  (was {1})"), id, selected.Id);
+        }
+
+        /// <summary>The name was saved: the mod id follows it (ModProject.ChangeId: mod.json, the project's own "id:" keys,
+        /// its folder; the next export replaces the mod installed under the old id).</summary>
+        void FollowName()
+        {
+            if (selected == null || selected.LoadError != null) return;
+            string id = selected.IdFromName(selected.Name);
+            if (id == selected.Id) return;
+            var p = selected;
+            var renamed = p.ChangeId(id, out string error);
+            if (renamed == null) { notice(T("mbTitle", "Mod Builder"), string.Format(T("mbIdFailed", "The mod id couldn't follow the name: {0}"), error)); return; }
+            int at = projects.IndexOf(p);
+            if (at >= 0) projects[at] = renamed;
+            selected = renamed;
+            RebuildRows();
+            Refresh();
+        }
+
         bool dirty;
 
         void SaveIfDirty()
@@ -166,6 +211,7 @@ namespace GoF2Remake.UI
             if (!dirty || selected == null) return;
             dirty = false;
             selected.Save();
+            FollowName();
             RebuildRows();
         }
 
@@ -185,9 +231,10 @@ namespace GoF2Remake.UI
         void RebuildRows()
         {
             list.Clear();
-            foreach (var p in projects)
+            var shown = projects.Where(Matches).ToList();
+            foreach (var p in shown)
             {
-                var row = new Button(() => { click(); Select(p); });
+                var row = new Button(() => { click(); Select(p); }) { userData = p };
                 row.AddToClassList("mods-row");
                 var thumb = Add(row, new VisualElement { pickingMode = PickingMode.Ignore }, "mods-thumb", "mb-thumb");
                 var icon = ProjectIcon(p);
@@ -202,26 +249,79 @@ namespace GoF2Remake.UI
                 row.RegisterCallback<FocusInEvent>(_ => { if (Time.frameCount - hoverFrame > 1) Select(p); });
                 list.Add(row);
             }
-            empty.text = T("mbEmpty", "No projects yet. Type a name above and press Create to start your first mod.");
-            empty.style.display = projects.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            empty.text = projects.Count == 0
+                ? T("mbEmpty", "No projects yet. Type a name above and press Create to start your first mod.")
+                : T("mbNoMatch", "No project matches. Press Create to start one with this name.");
+            empty.style.display = shown.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
             count.text = projects.Count == 1 ? T("mbCountOne", "1 project") : string.Format(T("mbCount", "{0} projects"), projects.Count);
             note.text = string.Format(T("mbNote", "Projects are kept in {0}. Export as mod puts a finished one into your Mods folder, where it is turned on in the Mod Browser."),
                                       ModProject.Root);
         }
 
-        /// <summary>The first ship's shop icon (an original's, for an override), else none.</summary>
-        static Texture2D ProjectIcon(ModProject p)
+        /// <summary>The search field's filter: every word typed is in the project's name, id, author or description.</summary>
+        bool Matches(ModProject p)
         {
-            var s = p.Ships.FirstOrDefault(x => x.IsOverride);
-            return s != null ? ItemInfo.ShipIcon(s.OverrideIndex) : null;
+            string q = newName?.value?.Trim();
+            if (string.IsNullOrEmpty(q)) return true;
+            string hay = $"{p.Name} {p.Id} {p.Author} {p.Description}";
+            foreach (var w in q.Split((char[])null, StringSplitOptions.RemoveEmptyEntries))
+                if (hay.IndexOf(w, StringComparison.OrdinalIgnoreCase) < 0) return false;
+            return true;
         }
 
-        static string Sub(ModProject p)
+        // Icons read from the projects' folders, by path and change time (the list is rebuilt on every visit).
+        static readonly Dictionary<string, Texture2D> fileIcons = new Dictionary<string, Texture2D>();
+
+        /// <summary>The row's picture: the first ship's shop icon (its own made by the builder, an original's for an
+        /// override), else the first re-skinned ship's, else the first item's (its own icon or its original's).</summary>
+        static Texture2D ProjectIcon(ModProject p)
         {
-            int ships = p.Ships.Count;
-            string what = ships == 1 ? T("mbOneShip", "1 ship") : string.Format(T("mbShipsN", "{0} ships"), ships);
-            return $"{what}  ·  v{p.Version}  ·  {p.Modified.ToLocalTime():yyyy-MM-dd HH:mm}";
+            foreach (var s in p.Ships)
+            {
+                var own = FileIcon(p, s.Icon);
+                if (own != null) return own;
+                if (s.IsOverride && s.OverrideIndex >= 0) return ItemInfo.ShipIcon(s.OverrideIndex);
+            }
+            var skins = p.SkinShips();
+            if (skins.Count > 0) return ItemInfo.ShipIcon(skins[0]);
+            foreach (var i in p.Items)
+            {
+                var own = FileIcon(p, i.Icon);
+                if (own != null) return own;
+                if (i.Original >= 0) return ItemInfo.ItemIcon(i.Original);
+            }
+            return null;
         }
+
+        static Texture2D FileIcon(ModProject p, string rel)
+        {
+            if (string.IsNullOrEmpty(rel)) return null;
+            string path = System.IO.Path.Combine(p.Folder, rel);
+            if (!System.IO.File.Exists(path)) return null;
+            string key = path + "|" + System.IO.File.GetLastWriteTimeUtc(path).Ticks;
+            if (fileIcons.TryGetValue(key, out var t) && t != null) return t;
+            try { t = ImageImport.Decode(System.IO.File.ReadAllBytes(path), rel, false, false, out _); }
+            catch { t = null; }
+            if (t != null) t.wrapMode = TextureWrapMode.Clamp;
+            fileIcons[key] = t;
+            return t;
+        }
+
+        /// <summary>What the project holds, kind by kind ("2 ships · 1 skin"), or that it is still empty.</summary>
+        static string Contents(ModProject p)
+        {
+            var parts = new List<string>();
+            void Part(int n, string oneKey, string one, string manyKey, string many) { if (n > 0) parts.Add(Count(n, oneKey, one, manyKey, many)); }
+            Part(p.Ships.Count, "mbOneShip", "1 ship", "mbShipsN", "{0} ships");
+            Part(p.Items.Count, "mbOneItem", "1 item", "mbItemsN", "{0} items");
+            Part(p.Characters.Count, "mbOneCharacter", "1 character", "mbCharactersN", "{0} characters");
+            Part(p.SkinShips().Count, "mbOneSkin", "1 skin", "mbSkinsN", "{0} skins");
+            return parts.Count > 0 ? string.Join("  ·  ", parts) : T("mbProjectEmpty", "Empty");
+        }
+
+        static bool HasContent(ModProject p) => p.Ships.Count + p.Items.Count + p.Characters.Count + p.SkinShips().Count > 0;
+
+        static string Sub(ModProject p) => $"{Contents(p)}  ·  v{p.Version}  ·  {p.Modified.ToLocalTime():yyyy-MM-dd HH:mm}";
 
         void Select(ModProject p)
         {
@@ -229,7 +329,7 @@ namespace GoF2Remake.UI
             SaveIfDirty();
             selected = p;
             foreach (var row in list.Children())
-                row.EnableInClassList("mods-row--selected", projects.IndexOf(p) == list.IndexOf(row));
+                row.EnableInClassList("mods-row--selected", row.userData == p);
             Refresh();
         }
 
@@ -239,8 +339,10 @@ namespace GoF2Remake.UI
             if (selected == null) return;
             filling = true;
             title.text = selected.Name;
-            meta.text = selected.Id + (selected.LoadError != null ? "\n✖ " + selected.LoadError : "");
+            meta.text = selected.LoadError != null ? "✖ " + selected.LoadError : "";
+            meta.style.display = selected.LoadError != null ? DisplayStyle.Flex : DisplayStyle.None;
             nameField.value = selected.Name;
+            UpdateIdHint();
             authorField.value = selected.Author;
             versionField.value = selected.Version;
             descField.value = selected.Description;
@@ -261,6 +363,7 @@ namespace GoF2Remake.UI
                     ModBuilder.Kind.Ships => Count(selected.Ships.Count, "mbOneShip", "1 ship", "mbShipsN", "{0} ships"),
                     ModBuilder.Kind.Items => Count(selected.Items.Count, "mbOneItem", "1 item", "mbItemsN", "{0} items"),
                     ModBuilder.Kind.Characters => Count(selected.Characters.Count, "mbOneCharacter", "1 character", "mbCharactersN", "{0} characters"),
+                    ModBuilder.Kind.Skins => Count(selected.SkinShips().Count, "mbOneSkin", "1 skin", "mbSkinsN", "{0} skins"),
                     _ => T("mbSoon", "Coming soon"),
                 };
                 Add(tile, new Label(state.ToUpperInvariant()) { pickingMode = PickingMode.Ignore }, "mb-kind-state");
@@ -298,7 +401,7 @@ namespace GoF2Remake.UI
                 if (path == null) notice(heading, string.Format(T("mbExportFailed", "The mod couldn't be exported: {0}"), error));
                 else notice(heading, string.Format(T("mbExported", "\"{0}\" is in your Mods folder:\n{1}\nTurn it on in the Mod Browser to play with it."), selected.Name, path));
             }
-            if (selected.Ships.Count == 0) { notice(heading, T("mbExportEmpty", "This project has nothing in it yet. Open it in the hangar and add a ship first.")); return; }
+            if (!HasContent(selected)) { notice(heading, T("mbExportEmpty", "This project has nothing in it yet. Open it in the hangar and add a ship, item, character or skin first.")); return; }
             var old = selected.InstalledMod;
             if (old != null)
                 ask(heading, string.Format(T("mbExportReplace", "A mod with the id \"{0}\" is already installed (\"{1}\" v{2}). Replace it with this project?"),

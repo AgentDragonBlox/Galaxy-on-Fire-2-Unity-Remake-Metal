@@ -4,7 +4,8 @@
 //   top bar      the project, the kinds of content (Ships, Items, Characters; the rest greyed out, "Soon"), Save and Exit;
 //                a kind swaps the two side panels (Items / Characters: ModBuilderViewItems / ModBuilderViewCharacters,
 //                partial parts of this class); Items keeps the hangar, its turntable ship and Test fly; Characters is
-//                edited in the station's Space Lounge (no ship, Test fly or Engines there);
+//                edited in the station's Space Lounge (no ship, Test fly or Engines there); Skins (ModBuilderViewSkins)
+//                puts the skinned game ship on the turntable and flies it;
 //   left         the project's ships: new ones from a .glb model (the system's file picker, ModImport.Pick) or changes
 //                to one of the game's ships (a picker of the originals), Remove;
 //   right        the selected ship's tabs: Ship (name, description, race, armor, cargo, handling, price, equipment
@@ -66,11 +67,16 @@ namespace GoF2Remake.UI
         // placing a new hardpoint (Add): the next click on the hull
         int placing = -1;
         // the pointer over the 3D view
-        enum Drag { None, Gizmo, Camera }
+        enum Drag { None, Gizmo, Camera, Pan }
         Drag drag;
         Vector2 last, downAt;
         float travel, pinch = -1f;
         Vector2 fling;
+        // The drag's turn not yet applied (1080p pixels): pointer moves come at the mouse's rate, not the frame's (0, 1 or 2
+        // in a frame), so turning by each one as it came stepped unevenly and felt like dropped frames; the camera now
+        // takes it frame by frame, eased over ~25 ms (OrbitEaseMs).
+        Vector2 pendingTurn;
+        const float OrbitEaseMs = 25f;
 
         public ModBuilderView(StationLevel level, VisualElement stationRoot, Action<bool> sound)
         {
@@ -105,10 +111,11 @@ namespace GoF2Remake.UI
                      {
                          ("mbShips", "Ships", ModBuilder.Kind.Ships), ("mbItems", "Items", ModBuilder.Kind.Items), ("mbFx", "Weapon fx", null),
                          ("mbSystems", "Systems", null), ("mbInteriors", "Hangars", null), ("mbQuests", "Quests", null),
-                         ("mbCharacters", "Characters", ModBuilder.Kind.Characters), ("mbAudio", "Audio", null), ("mbSkins", "Skins", null),
+                         ("mbCharacters", "Characters", ModBuilder.Kind.Characters), ("mbAudio", "Audio", null), ("mbSkins", "Skins", ModBuilder.Kind.Skins),
                          ("mbCampaigns", "Campaigns", null), ("mbBlueprints", "Blueprints", null),
                      })
                 KindTab(kinds, T(k, e), kind);
+            TopButton(top, $"{T("mbHangar", "Hangar")}: {HangarTypeName(Session.StationIndex)}", PickHangar, "mbv-hangar-button");
             TopButton(top, T("mbSave", "Save"), () => { SaveNow(); Status(T("mbSaved", "Saved."), false); });
             TopButton(top, T("mbExit", "Exit"), () => { SaveNow(); ModBuilder.End(); }, "mbv-exit");
 
@@ -150,6 +157,7 @@ namespace GoF2Remake.UI
             loadout = Add(scroll, new VisualElement(), "mbv-page");
             BuildItemsPanels(leftGroups[(int)ModBuilder.Kind.Items], rightGroups[(int)ModBuilder.Kind.Items]);
             BuildCharactersPanels(leftGroups[(int)ModBuilder.Kind.Characters], rightGroups[(int)ModBuilder.Kind.Characters]);
+            BuildSkinsPanels(leftGroups[(int)ModBuilder.Kind.Skins], rightGroups[(int)ModBuilder.Kind.Skins]);
 
             // ---- bottom ----
             status = Add(root, new Label { pickingMode = PickingMode.Ignore }, "mbv-status");
@@ -260,7 +268,7 @@ namespace GoF2Remake.UI
 
         // ---- kinds of content ---------------------------------------------------------------------------------
 
-        const int KindCount = 3;
+        const int KindCount = 4;
         readonly Button[] kindTabs = new Button[KindCount];
         readonly VisualElement[] leftGroups = new VisualElement[KindCount], rightGroups = new VisualElement[KindCount];
         ModBuilder.Kind kind = (ModBuilder.Kind)(-1);
@@ -291,11 +299,15 @@ namespace GoF2Remake.UI
             drag = Drag.None;
             fling = Vector2.zero;
             testFly.style.display = bar ? DisplayStyle.None : StyleKeyword.Null;
+            root.EnableInClassList("mbv-root--bar", bar);   // no Test fly: the right panel reaches the bottom
             uiEngines.style.display = bar ? DisplayStyle.None : StyleKeyword.Null;
             // Item changes reach the rest of the builder (the loadout's pickers) once the game has read them.
             if (was == ModBuilder.Kind.Items && itemsChanged) { itemsChanged = false; RequestReload(true); }
             if (k == ModBuilder.Kind.Items) { RebuildItems(); BuildItemPage(); }
             if (k == ModBuilder.Kind.Characters) { RebuildCharacters(); BuildCharacterPage(); }
+            if (k == ModBuilder.Kind.Skins) { RebuildSkins(); BuildSkinPage(); }
+            // The turntable swaps between the project's ship and the skinned game ship.
+            if ((was == ModBuilder.Kind.Skins) != (k == ModBuilder.Kind.Skins) && (int)was >= 0) { ModBuilder.ApplyShip(); boundShip = -2; }
             if (ships) { RebuildShips(); BuildHardpointsPage(); BuildLoadoutPage(); }
         }
 
@@ -458,15 +470,14 @@ namespace GoF2Remake.UI
         {
             Heading(ship, T("mbTextures", "Textures"));
             if (!s.HullTexturesEditable) { Note(ship, T("mbTexturesManual", "This ship's materials are set by hand in ships.json.")); return; }
-            Note(ship, T("mbTexturesNote", "Only for a model without textures of its own (it shows white): PNG maps for the whole hull."));
+            Note(ship, T("mbTexturesNote", "Only for a model without textures of its own (it shows white): image maps for the whole hull (PNG, JPG, TGA, BMP, DDS; stored as PNG)."));
             foreach (var (role, english) in TextureRoles)
             {
                 string r = role;
                 string current = s.HullTexture(role);
                 var row = Add(ship, new VisualElement(), "mbv-row");
                 Add(row, new Label($"{T("mbTex_" + role, english)}: {(current != null ? System.IO.Path.GetFileName(current) : T("mbNone", "none"))}"), "mbv-inline-label");
-                Act(row, T("mbChoose", "Choose…"), () => PickFile(T("mbPickTexture", "Choose a PNG texture"), "PNG image", "png",
-                    new byte[] { 0x89, (byte)'P', (byte)'N', (byte)'G' }, T("mbNotPng", "That isn't a PNG image."), path =>
+                Act(row, T("mbChoose", "Choose…"), () => PickImage(T("mbPickTexture", "Choose a texture"), path =>
                     {
                         string id = s.IsOverride ? "ship_" + s.OverrideIndex : s.LocalId;
                         s.SetHullTexture(r, Project.AddTexture(path, $"{id}_{r}"));
@@ -909,11 +920,33 @@ namespace GoF2Remake.UI
             T("mbNotGlb", "That isn't a .glb model (glTF binary). In Blender: File > Export > glTF 2.0, format glTF Binary."), use);
 
         /// <summary>The picker for one kind of file: its first bytes must be 'magic', else 'wrong' is shown.</summary>
-        void PickFile(string title, string filterName, string extension, byte[] magic, string wrong, Action<string> use)
+        void PickFile(string title, string filterName, string extension, byte[] magic, string wrong, Action<string> use) =>
+            PickRaw(title, filterName, new[] { extension }, picked =>
+            {
+                var head = new byte[magic.Length];
+                using (var f = System.IO.File.OpenRead(picked.path)) f.Read(head, 0, head.Length);
+                if (!head.SequenceEqual(magic)) { Status(wrong, true); return; }
+                pickedName = picked.name;
+                use(picked.path);
+            });
+
+        /// <summary>The picker for an image (ImageImport: PNG, JPG, TGA, BMP, DDS, the game's .aei): 'use' gets it as a PNG
+        /// (a temporary file, copied into the project by 'use').</summary>
+        void PickImage(string title, Action<string> use) =>
+            PickRaw(title, T("mbImageFilter", "Images"), ImageImport.Extensions, picked =>
+            {
+                string png = ImageImport.ToPng(picked.path, picked.name, out string error);
+                if (png == null) { Status(error, true); return; }
+                try { pickedName = picked.name; use(png); }
+                finally { try { System.IO.File.Delete(png); } catch { } }
+            });
+
+        /// <summary>The system's file picker (ModImport.Pick, polled); 'handle' gets the copied file, which goes afterwards.</summary>
+        void PickRaw(string title, string filterName, string[] extensions, Action<ModImport.Picked> handle)
         {
             if (picking || Project == null) return;
             picking = true;
-            var poll = ModImport.Pick(title, filterName, new[] { extension });
+            var poll = ModImport.Pick(title, filterName, extensions);
             ModImport.Picked picked = null;
             root.schedule.Execute(() =>
             {
@@ -922,14 +955,7 @@ namespace GoF2Remake.UI
                 picking = false;
                 if (picked.cancelled) return;
                 if (picked.error != null) { Status(string.Format(T("mbPickFailed", "The file couldn't be read: {0}"), picked.error), true); return; }
-                try
-                {
-                    var head = new byte[magic.Length];
-                    using (var f = System.IO.File.OpenRead(picked.path)) f.Read(head, 0, head.Length);
-                    if (!head.SequenceEqual(magic)) { Status(wrong, true); return; }
-                    pickedName = picked.name;
-                    use(picked.path);
-                }
+                try { handle(picked); }
                 catch (Exception e) { Status(string.Format(T("mbPickFailed", "The file couldn't be read: {0}"), e.Message), true); }
                 finally { ModImport.Discard(picked.path); }
             }).Every(200).Until(() => picked != null);
@@ -964,6 +990,51 @@ namespace GoF2Remake.UI
                 }));
             }
             ShowPicker(T("mbChangeShipTitle", "Change a game ship"), choices);
+        }
+
+        /// <summary>The kinds of hangar by StationTables.HangarIndex (null: none).</summary>
+        static readonly string[] RoomNames = { "Terran", "Vossk", "Nivelian", "Midorian", null, null, null, "Deep science", "Battlestation" };
+
+        /// <summary>The kind of hangar a station has ("Vossk"), for the top bar's Hangar button.</summary>
+        static string HangarTypeName(int station)
+        {
+            var db = Database.Load();
+            var st = db.Stations.ElementAtOrDefault(station);
+            if (st == null) return "?";
+            int room = StationTables.HangarIndex(station, db.Systems.ElementAtOrDefault(st.system)?.raceId ?? 0);
+            return room >= 0 && room < RoomNames.Length && RoomNames[room] != null ? T("mbRoom" + room, RoomNames[room]) : "?";
+        }
+
+        /// <summary>One station per kind of hangar (StationTables.HangarIndex): picking one moves the builder there, and its
+        /// orbit is the test flights'. Dis (Terran) and Var Hastra (Midorian) where they can, else the first that can host.</summary>
+        void PickHangar()
+        {
+            var db = Database.Load();
+            var rooms = RoomNames;
+            int[] preferred = { 70, -1, -1, 78 };
+            int RoomOf(int i) => StationTables.HangarIndex(i, db.Systems.ElementAtOrDefault(db.Stations[i].system)?.raceId ?? 0);
+            var hosts = Enumerable.Range(0, db.Stations.Count).Where(ModBuilder.CanHost).ToList();
+            int current = hosts.Contains(Session.StationIndex) ? RoomOf(Session.StationIndex) : -1;
+            var choices = new List<(string, Texture2D, Action)>();
+            for (int room = 0; room < rooms.Length; room++)
+            {
+                if (rooms[room] == null) continue;
+                int r = room;
+                int station = room < preferred.Length && preferred[room] >= 0 && hosts.Contains(preferred[room]) && RoomOf(preferred[room]) == room
+                    ? preferred[room] : hosts.Where(i => RoomOf(i) == r).DefaultIfEmpty(-1).First();
+                if (station < 0) continue;
+                var st = db.Stations[station];
+                int race = db.Systems.ElementAtOrDefault(st.system)?.raceId ?? 0;
+                string label = $"{T("mbRoom" + room, rooms[room])}\n{st.name}" + (room == current ? " ✓" : "");
+                var emblem = Resources.Load<Texture2D>("GoF2Hud/race_" + (race >= 0 && race < 4 ? race : 0));
+                choices.Add((label, emblem, () =>
+                {
+                    if (r == current) return;
+                    SaveNow();
+                    ModBuilder.SwitchStation(station);
+                }));
+            }
+            ShowPicker(T("mbHangarTitle", "Build and test-fly at"), choices);
         }
 
         void AskRemove()
@@ -1012,6 +1083,7 @@ namespace GoF2Remake.UI
             var grid = Add(scroll, new VisualElement(), "mbv-picker-grid");
             foreach (var (name, icon, pick) in choices)
             {
+                if (pick == null) { Add(grid, new Label(name.ToUpperInvariant()), "mbv-picker-heading", "gof-semibold"); continue; }   // a section's heading
                 var tile = new Button(() => { sound(false); CloseModal(); pick(); }) { focusable = false };
                 tile.AddToClassList("mbv-tile");
                 var img = Add(tile, new VisualElement { pickingMode = PickingMode.Ignore }, "mbv-tile-icon");
@@ -1063,7 +1135,8 @@ namespace GoF2Remake.UI
 
         void StartTestFlight()
         {
-            if (Current == null) { Status(T("mbNoShipToFly", "Add a ship first."), true); return; }
+            bool skin = kind == ModBuilder.Kind.Skins && ModBuilder.SkinShip >= 0;
+            if (Current == null && !skin) { Status(T("mbNoShipToFly", "Add a ship first."), true); return; }
             if (!InHangar) return;
             if (launchPending || level.PlayerFlying) return;
             sound(false);
@@ -1102,6 +1175,8 @@ namespace GoF2Remake.UI
 
         public void Update()
         {
+            // Exit pressed: the project is closed and the main menu is loading; nothing here is rebuilt any more.
+            if (!ModBuilder.Active) return;
             float dt = Time.unscaledDeltaTime * 1000f;
             UpdateLayoutClasses();
             nowMs += dt;
@@ -1134,6 +1209,7 @@ namespace GoF2Remake.UI
                     ShowProblems();
                     RebuildShips();
                     if (kind == ModBuilder.Kind.Items) { RebuildItems(); BuildItemPage(); }
+                    if (kind == ModBuilder.Kind.Skins) { RebuildSkins(); BuildSkinPage(); }
                     var queued = afterReload.ToArray();
                     afterReload.Clear();
                     foreach (var a in queued) a();
@@ -1333,6 +1409,13 @@ namespace GoF2Remake.UI
                 return;
             }
             pinch = -1f;
+            if (pendingTurn != Vector2.zero)
+            {
+                var step = pendingTurn * (1f - Mathf.Exp(-dt / OrbitEaseMs));
+                if (pendingTurn.sqrMagnitude < 0.01f) step = pendingTurn;
+                pendingTurn -= step;
+                level.Inspect.Turn(step.x * 0.005f, step.y * 0.005f);
+            }
             if (drag == Drag.None && fling != Vector2.zero)
             {
                 float frames = dt / (1000f / 30f);
@@ -1365,8 +1448,8 @@ namespace GoF2Remake.UI
                 if (sp.z <= 0f) { tag.style.display = DisplayStyle.None; continue; }
                 tag.style.display = DisplayStyle.Flex;
                 tag.text = TypeShort[type] + counts[type];
-                tag.style.left = sp.x / Screen.width * w + 10f;
-                tag.style.top = (Screen.height - sp.y) / Screen.height * h - 24f;
+                // translate, not left / top: moving a tag every frame of an orbit then needs no layout pass
+                tag.style.translate = new Translate(sp.x / Screen.width * w + 10f, (Screen.height - sp.y) / Screen.height * h - 24f);
                 tag.style.color = ModBuilderGizmo.TypeColours[type];
                 tag.EnableInClassList("mbv-point-tag--on", i == gizmo.Selected);
             }
@@ -1384,6 +1467,7 @@ namespace GoF2Remake.UI
             travel = 0f;
             fling = Vector2.zero;
             viewport.CapturePointer(e.pointerId);
+            if (e.button == 2) { drag = Drag.Pan; return; }   // the middle button pans the view (a click centres it again)
             if (kind != ModBuilder.Kind.Ships) { drag = Drag.Camera; return; }   // the hardpoints are the Ships tab's
             if (e.button == 0 && placing >= 0)
             {
@@ -1412,6 +1496,11 @@ namespace GoF2Remake.UI
             delta.y = -delta.y;   // a drag up takes the camera down (the ship tips up with the finger), as in Inspect ship
             travel += delta.magnitude;
             last = p;
+            if (drag == Drag.Pan)
+            {
+                level.Inspect.Pan(new Vector2(delta.x, -delta.y));   // the screen's own up (delta's y is the orbit's, flipped)
+                return;
+            }
             if (drag == Drag.Gizmo)
             {
                 var kb = Keyboard.current;
@@ -1420,7 +1509,7 @@ namespace GoF2Remake.UI
             }
             else
             {
-                level.Inspect.Turn(delta.x * 0.005f, delta.y * 0.005f);
+                pendingTurn += delta;   // applied frame by frame (UpdateCamera)
                 fling = delta;
             }
         }
@@ -1441,6 +1530,10 @@ namespace GoF2Remake.UI
                 int i = gizmo.Selected;
                 if (s != null && i >= 0 && i < s.Mounts.Count) OnMountEdited(s.Mounts[i].slotType);
                 BuildHardpointsPage();
+            }
+            else if (drag == Drag.Pan)
+            {
+                if (travel < 6f) level.Inspect.ResetPan();   // a middle click: back on the ship's centre
             }
             else if (drag == Drag.Camera)
             {

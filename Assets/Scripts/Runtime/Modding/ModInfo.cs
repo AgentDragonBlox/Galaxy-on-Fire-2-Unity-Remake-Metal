@@ -65,9 +65,9 @@ namespace GoF2Remake.Modding
                 previewTried = true;
                 var bytes = Manifest != null && Source != null ? Source.ReadBytes(Manifest.preview) : null;
                 if (bytes == null) return null;
-                var t = new Texture2D(2, 2, TextureFormat.RGBA32, true) { name = Id + " preview", wrapMode = TextureWrapMode.Clamp };
-                if (t.LoadImage(bytes, true)) preview = t;
-                else { UnityEngine.Object.Destroy(t); Warnings.Add($"{Manifest.preview}: not a PNG or JPG image"); }
+                var t = ImageImport.Decode(bytes, Manifest.preview, false, true, out string error);   // PNG, JPG, TGA, BMP, DDS, .aei
+                if (t != null) { t.name = Id + " preview"; t.wrapMode = TextureWrapMode.Clamp; t.Apply(true, true); preview = t; }
+                else Warnings.Add($"{Manifest.preview}: {error}");
                 return preview;
             }
         }

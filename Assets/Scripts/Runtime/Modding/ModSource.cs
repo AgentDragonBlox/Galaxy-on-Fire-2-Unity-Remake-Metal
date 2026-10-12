@@ -108,7 +108,9 @@ namespace GoF2Remake.Modding
         public ZipSource(string archive)
         {
             Location = archive;
-            zip = new ZipArchive(File.OpenRead(archive), ZipArchiveMode.Read);
+            // Shared for delete: an export or Delete in the Mod Browser can replace the zip while this source (or one a
+            // domain reload left behind, open until it is collected) still reads it.
+            zip = new ZipArchive(new FileStream(archive, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete), ZipArchiveMode.Read);
             var all = zip.Entries.Where(e => !string.IsNullOrEmpty(e.Name)).ToList();
             string prefix = "";
             if (!all.Any(e => string.Equals(Normalise(e.FullName), ModManifest.FileName, StringComparison.OrdinalIgnoreCase)))
