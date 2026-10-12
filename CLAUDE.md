@@ -635,6 +635,19 @@ Research: `Reference/research/shop.md` (+ `item_icons.json`, reference price cod
 - **Prices** are deterministic per station: `java.util.Random(station)` reseeded per list (cargo, mounted, stock), min + distance factor * (max - min) +- 2 %; verified identical to `prices.py`. Selling pays the buying price; anything sold joins the station's stock. Loma (system 25) always charges the maximum. Remake: an item's price is fixed for the docking (`Hangar.PinPrices`, cleared by `Hangar.NewDocking` in `StationLevel`): an item's price depends on its place in the lists, so a trade moving it between the stock and the hold could shift it by up to ±2 %, and in multiplayer, where the window is priced again after every trade, buying and selling at once made money with every click.
 - **Stock** (`Generator::getItemBuyList`) and **dealer ships** (`getShipBuyList`) are rolled with `UnityEngine.Random` when docking at a station that isn't among the last 3 visited; re-docking after > 30 s nibbles 0-2 units off each row.
 - **Cargo:** every unit is 1 t, mounted items weigh nothing; buying never checks space, launching is refused while overloaded.
+- **Unknown item numbers** (a Windows crash report, 2026-10-12: `ItemInfo.Category` on a null item from `HangarWindow.AddRow`
+  after every trade; where the number came from is not known yet): `Shop.AddToCargo` refuses an item `Database.Shared` lacks
+  (a warning with the caller's stack), `Hangar.ShopItems` leaves one already in the hold or stock out of the list (a warning
+  once per number), `ItemInfo.Category(null)` is "", and `SaveGame.Load` drops such items from the save (after
+  `ModSaves.Fix`, `DropUnknownItems`: hold, equipment, shop memory and its bar offers, the Kaamo Club, the parked ship,
+  blueprints, the production queue; a warning each). A second report (Android, 2026-10-10) had it at docking.
+- **Blueprint states** (`Blueprints.Fit`, from `State` and the readers): the per-ingredient list is made as long as the
+  product's current recipe; one saved under another recipe (Default economy, a mod, an empty one for a then-unknown
+  product) was shorter and the Blueprints tab read past its end (an Android crash report, 2026-10-11).
+- **Cloud Diagnostics**: `Bootstrap.Init` switches exception capture off in the Editor
+  (`CrashReportHandler.enableCaptureExceptions`): contributors' clones reported their Editors' errors.
+- **ScrollTo** from a scheduled callback checks `contentContainer.Contains` first (`CheatsCatalog`'s icon grid,
+  `HangarWindow.ScrollToSelected`): the list can be rebuilt before it runs, and ScrollView.ScrollTo throws then.
 - **Sell all / Buy all** (remake, players' suggestion; Store all / Take all in the Kaamo Club's storage; `HangarWindow.TradeAll`, buttons under the trade arrows, or Shift + left / right, or a controller's LT / RT, shown on the buttons and in the hint row): every unit of the selected item: what the hold has of it, or the station's stock as far as the hold has room and the credits reach (no "not enough credits" after some units). In a session one stock message carries the count (`Hangar.BeginBatch` / `EndBatch`; `NetState.StockItemRpc` takes up to 10 000 units, grants what the host's row has and refuses the rest in one `ItemRefusedRpc` with the count, the faction tax on the granted units).
 - **List after a trade** (remake, `HangarWindow.Rebuild`; after a mount, demount or swap too, #45: they reset the selection to the top): the same row stays selected; when it is gone (missiles of a mounted
   type bought out: they go onto the mounted stack, not the hold) the row that took its place (or the one before it at the
@@ -1593,7 +1606,8 @@ now takes an option right after another (a dash and a letter) as no value). `Boo
   piped input stays line by line. Verified on Windows; the Linux terminal path is untested. Linux quits hard (`DedicatedServer.ExitNow` on `Application.quitting`: the
   web admin and Netcode down, the log flushed, the terminal's settings from the start put back with `tcsetattr`, then libc
   `_exit`): the key reader blocked in `Console.ReadKey` kept Unity's teardown from ever ending after "CodeReloadManager
-  destroyed"; the exit code is `DedicatedServer.Quit`'s (1 = failed). Verified: the Windows build headless with the Editor as the client (join, chat, say,
+  destroyed"; the exit code is `DedicatedServer.Quit`'s (1 = failed). Windows the same (`ExitProcess` after the flush, 2026-10-12): the key reader in `ReadConsoleInputW` held IL2CPP's
+  `Runtime::Shutdown` (AbortAllThreads -> Thread::Join), and a player's "Stopping the server..." was reported as a native crash. Verified: the Windows build headless with the Editor as the client (join, chat, say,
   kick, stop; over Relay, listed, with a password; the console window, no menu).
 - **Persistent hosted world** (the Host card's World Fresh / Persistent segments, `mp_persistent`,
   `NetGame.HostWantsPersistent` -> `PersistentHost`): `StartHost` configures `NetProfiles` on
@@ -1718,6 +1732,15 @@ Player-made content as data (no code: the game is IL2CPP), in `Scripts/Runtime/M
 guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/gof2-modding/SKILL.md` with it: an Agent Skill / paste-in guide for Claude and ChatGPT, with `reference.md` from **GoF2 > Build > Modding AI Reference** and the how-to `Modding/ai/README.md`), the examples `Modding/Examples/plasma_arsenal` (items) and `frontier_systems`
 (systems / stations). Items, ships, systems and stations, quests and bar missions (event graphs), voice-over, music.
 
+- **Unreadable mod files** (Android crash reports, 2026-10: "A local file header is corrupt" / "Corrupted data ReadInternal"
+  on single GLBs of the GoF3 Ships zip): `ZipSource` reads one entry at a time under its gate, `Dispose` takes the gate too
+  (a Mod Browser rescan, `ModManager.Scan`, released the archives while the background loaders still read them), checks
+  the length and the CRC-32 (`Crc32`, slicing-by-8, ~2.4 GB/s on the desktop: the inflater doesn't, and a damaged entry
+  inflated without an error into wrong bytes) and tries once more on the archive opened afresh; then a `ModFileException`
+  ("X is damaged in Y.zip: download or import the mod again"). The loaders (`ModShips`, `ModStations`, `ModWeapons`,
+  `ModCharacters`, `ModMaterials.Texture`, `ModJson.Read` as a ModJsonException, `ModInfo`, `EventRunner`) make it the mod's
+  warning and never `Debug.LogException` a file error (`ModFileException.IsFileError`): the cloud diagnostics count every
+  logged exception as an unhandled one; a load the mods changed under says nothing (a newer one runs).
 - **A mod** = a folder or a `.zip` (files at its root or in one top folder, `ZipSource`) with `mod.json`
   (`ModManifest`: id (a-z 0-9 _ -, the lasting name), name / description (a string or per language), version, author,
   website, preview image (default preview.png), dependencies). Mod JSON is read with Newtonsoft's JToken (`ModJson`: comments

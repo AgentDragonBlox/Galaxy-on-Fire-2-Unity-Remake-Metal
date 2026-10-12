@@ -170,7 +170,7 @@ namespace GoF2Remake.Modding
             {
                 loading++;
                 try { await ModMaterials.PreloadTexture(d.mod, d.portrait, false); }
-                catch (Exception e) { Debug.LogException(e); }
+                catch (Exception e) { if (!ModFileException.IsFileError(e)) Debug.LogException(e); else Debug.LogWarning($"Mods: {d.mod.Id}: {e.Message}"); }
                 finally { loading--; }
             }
         }

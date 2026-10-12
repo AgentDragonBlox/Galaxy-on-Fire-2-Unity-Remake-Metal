@@ -130,7 +130,9 @@ namespace GoF2Remake.Modding
             if (mod == null || string.IsNullOrEmpty(path)) return null;
             string key = Key(mod, path, linear, readable, normal);
             if (textures.TryGetValue(key, out var t)) return t;
-            var bytes = mod.Source.ReadBytes(path);
+            byte[] bytes;
+            try { bytes = mod.Source.ReadBytes(path); }
+            catch (System.Exception e) when (ModFileException.IsFileError(e)) { Warn(mod, e.Message); textures[key] = null; return null; }
             if (bytes == null) { Warn(mod, $"{path}: file not found"); textures[key] = null; return null; }
             // PNG / JPG by Unity's decoder, TGA / BMP / DDS / the game's .aei by ImageImport.
             t = ImageImport.Decode(bytes, path, linear, true, out string decodeError);

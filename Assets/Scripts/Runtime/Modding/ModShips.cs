@@ -180,7 +180,8 @@ namespace GoF2Remake.Modding
                 names[c.index] = c.name;
                 Debug.Log($"Mods: {mod.Id}: ship {c.index} \"{c.name}\" built from {c.model}");
             }
-            catch (System.Exception e) { Warn(mod, $"{c.model}: {e.Message}"); Debug.LogException(e); }
+            catch (System.Exception e) when (rev == ModManager.Revision) { Warn(mod, $"{c.model}: {e.Message}"); if (!ModFileException.IsFileError(e)) Debug.LogException(e); }
+            catch (System.Exception) { }   // a load the mods changed under (ModManager.Scan closes the old archives): a newer one runs
             finally
             {
                 if (rev == ModManager.Revision)
