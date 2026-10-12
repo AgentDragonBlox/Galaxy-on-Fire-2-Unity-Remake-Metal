@@ -963,16 +963,24 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   lost).
   Phase 3, contest and benefits: **sieges** (`/faction siege`, officers of another faction in the orbit or docked there:
   `-siegecost` (250 000) from the bank as the stake, one per faction, the faction needs room for a claim, not within 24 h of
-  the station's last siege; announced, armed 10 min later; armed, it waits until pilots of both factions are alive in that
-  orbit's space at once (real players: NPCs never start it), then the fight runs 15 min and the two factions' pilots may fire
-  at each other there (`NetFactionsClient.SiegePvp` in `NetPlayer.PvpWith`); a defending pilot seen alive in the fight and
-  destroyed there = taken (the claim changes hands), the defenders all gone from the orbit 60 s = taken (fled), the
-  attackers all gone 60 s or the time out = held; the stake to the winner's bank; no meeting within 2 days of the arming,
-  the claim lapsing / given up or the defenders disbanding = called off, the stake back to the attacker (`CallOff`); 24 h
-  protection after a fought one; from the arming the orbit authority also flies 16 free level-4 station defenders on top of
-  the garrison (`NetOrbit.UpdateSiegeDefenders`, tag `SiegeDefenderTag`, the garrison's relation, back 30 s after each
-  death, `NetFactions.SiegeDefenders` / `SiegeDefenderLevel`); `NetState.Sieges` lines (phase 0 announced / 1 armed / 2
-  fighting, seconds left, stake, garrison), `/faction sieges`, console `sieges`; `TerritoryView`'s banner);
+  the station's last siege, not the defenders' home while they hold another station; announced, armed 10 min later). Armed,
+  it waits until pilots of both factions are alive in that orbit's space at once (real players: NPCs never start it).
+  Meanwhile the station defenders escalate (`NetOrbit.UpdateSiegeDefenders`, tag `SiegeDefenderTag`, in every orbit, also
+  Thynome's and the others without traffic: 16 at level 3, +4 and +1 level every 6 h, at most 48 at level 5, guns x1.5 from
+  level 4, the garrison's relation, back 30 s after each death, `NetFactions.DefenderCount` / `DefenderLevel`; frozen at the
+  fight's start); the claim drains: a defender docking there halves its remaining lapse days, rounded up (15 -> 8 -> 4), 3 or
+  fewer stay, never a reset (`HalveLapse`; the claim tick's refresh skips sieged claims; a respawn after dying in the fight
+  isn't a dock), and a claim lapsing then goes to the attacker with the stake; the standoff clock: a side present while the
+  other has a pilot online elsewhere adds to the absent side's standoff, 60 min = that side forfeits; no fight within 2 days
+  of the arming = +1 day, at most 4 times, then the defenders keep it and the stake. The fight runs 15 min, the two factions
+  may fire at each other there (`NetFactionsClient.SiegePvp` in `NetPlayer.PvpWith`): every pilot of a side destroyed in the
+  orbit scores for the other side, a destroyed defender respawns docked at that station (`NetFactionsClient.DefendsSiegeHere`
+  in `FlightHud.LoadLastSave`), a side whose last pilot there left alive (docked, jumped, disconnected) and stays gone 60 s
+  waves the white flag and loses; at the end more kills wins, a tie = held. The stake to the winner; called off with the
+  stake back to the attacker: the claim given up, the defenders disbanding (`CallOff`). 24 h protection after a decided
+  siege. A claim lapsing without a siege can't be claimed for 48 h (`FactionList.lapsed`). `NetState.Sieges` lines (phase 0
+  announced / 1 armed / 2 fighting, seconds left, stake, garrison, station defenders and level, kills, days added),
+  `/faction sieges`, console `sieges`; `TerritoryView`'s banner);
   **defence** (in a held orbit the fighters of the system's race treat the holder's members as friends and other factions'
   pilots as enemies unless they paid the toll this visit: `NpcShip.TerritoryToLocal`, `NetOrbit.HostileToRemote`,
   `NetFactionsClient.Relation`; pilots without a faction as always); **toll** (`-toll`, 10 000; `TerritoryView` asks on

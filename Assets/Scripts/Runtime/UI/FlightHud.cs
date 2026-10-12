@@ -1342,7 +1342,9 @@ namespace GoF2Remake.UI
             if (GoF2Remake.Multiplayer.NetGame.Active)
             {
                 int home = GoF2Remake.Multiplayer.NetFactionsClient.Home;
-                if (home >= 0 && home < GoF2Remake.Multiplayer.NetGame.Db.Stations.Count) Session.StationIndex = home;
+                // A defender destroyed in their station's siege fight respawns there (NetFactions), not at home.
+                bool defending = GoF2Remake.Multiplayer.NetFactionsClient.DefendsSiegeHere(Session.StationIndex);
+                if (!defending && home >= 0 && home < GoF2Remake.Multiplayer.NetGame.Db.Stations.Count) Session.StationIndex = home;
                 Session.DockedFromSpace = false;
                 SceneManager.LoadScene("Station");
                 return;

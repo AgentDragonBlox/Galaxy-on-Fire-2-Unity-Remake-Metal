@@ -22,7 +22,11 @@ namespace GoF2Remake.Multiplayer
 
         /// <summary>A siege as the players see it: the seconds left counted from when the line arrived (to the arming, the
         /// call-off while armed, or the fight's end). armed = waiting for both sides or fighting, started = fighting.</summary>
-        public sealed class SiegeInfo { public int station, garrisonAlive, garrisonLevel = 1; public long stake; public string attacker, defender; public bool armed, started; public float secondsLeft, receivedAt; }
+        public sealed class SiegeInfo
+        {
+            public int station, garrisonAlive, garrisonLevel = 1, defenders, defenderLevel = 1, attKills, defKills, extensions;
+            public long stake; public string attacker, defender; public bool armed, started; public float secondsLeft, receivedAt;
+        }
 
         static string siegesFrom;
         static readonly Dictionary<int, SiegeInfo> sieges = new Dictionary<int, SiegeInfo>();
@@ -41,9 +45,16 @@ namespace GoF2Remake.Multiplayer
                 long.TryParse(p[5], out long stake);
                 int garrison = 0, level = 1;
                 if (p.Length >= 8) { int.TryParse(p[6], out garrison); int.TryParse(p[7], out level); }
+                int defenders = 0, defenderLevel = 1, attKills = 0, defKills = 0, extensions = 0;
+                if (p.Length >= 13)
+                {
+                    int.TryParse(p[8], out defenders); int.TryParse(p[9], out defenderLevel);
+                    int.TryParse(p[10], out attKills); int.TryParse(p[11], out defKills); int.TryParse(p[12], out extensions);
+                }
                 sieges[station] = new SiegeInfo { station = station, attacker = p[1], defender = p[2], armed = p[3] != "0", started = p[3] == "2",
                                                   secondsLeft = left, stake = stake, receivedAt = UnityEngine.Time.unscaledTime,
-                                                  garrisonAlive = garrison, garrisonLevel = level };
+                                                  garrisonAlive = garrison, garrisonLevel = level, defenders = defenders,
+                                                  defenderLevel = defenderLevel, attKills = attKills, defKills = defKills, extensions = extensions };
             }
         }
 
@@ -60,6 +71,15 @@ namespace GoF2Remake.Multiplayer
             var s = SiegeAt(station);
             if (s == null || !s.started || string.IsNullOrEmpty(tagA) || string.IsNullOrEmpty(tagB)) return false;
             return (tagA == s.attacker && tagB == s.defender) || (tagA == s.defender && tagB == s.attacker);
+        }
+
+        /// <summary>The local pilot defends 'station' in its running fight: destroyed, they respawn docked there (not at the
+        /// faction's home).</summary>
+        public static bool DefendsSiegeHere(int station)
+        {
+            var s = SiegeAt(station);
+            string tag = NetPlayer.Local != null ? NetPlayer.Local.FactionTag : null;
+            return s != null && s.started && !string.IsNullOrEmpty(tag) && tag == s.defender;
         }
 
         /// <summary>A besieged station's garrison fighter toward a pilot ('tag' their faction): -1 the attackers, +1 the
