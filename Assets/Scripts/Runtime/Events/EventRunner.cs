@@ -173,6 +173,10 @@ namespace GoF2Remake.Events
             public bool enemy;
             public float start;
             public readonly HashSet<long> seen = new HashSet<long>();
+            /// <summary>Seen dying or dead (destroyed, or an order's jump-out): the only way a seen ship stops counting.</summary>
+            public readonly HashSet<long> down = new HashSet<long>();
+            /// <summary>The orbits its ships were seen in, kept after they vanish (CheckEmpty).</summary>
+            public readonly HashSet<int> stations = new HashSet<int>();
         }
 
 
@@ -1236,7 +1240,10 @@ namespace GoF2Remake.Events
                     }
                 }
                 finally { executing = was; }
-                Debug.Log($"Server: {(team != null ? "mission" : "event")} {running} completed, {share} credits each for {players.Count} player(s)");
+                int killed = 0;
+                foreach (int k in kills.Values) killed += k;
+                Debug.Log($"Server: {(team != null ? "mission" : "event")} {running} completed after {EventHost.Now - startTime:0} s " +
+                          $"({killed} event ship(s) destroyed by players), {share} credits each for {players.Count} player(s)");
                 succeeded = true;
                 if (record != null)
                 {
@@ -1520,6 +1527,10 @@ namespace GoF2Remake.Events
                 var stations = new HashSet<int>();
                 foreach (var ship in EventHost.EventShips())
                     if (batches.ContainsKey(ship.tag)) stations.Add(ship.station);
+                // Ships that vanished without being destroyed (their game left the orbit) still hold their orbit, so the
+                // players leaving it ends the event instead of leaving it waiting for good.
+                foreach (var b in batches.Values)
+                    if (b.seen.Count > b.down.Count) stations.UnionWith(b.stations);
                 if (stations.Count == 0) { emptySince = -1f; return false; }   // nothing of the event's in space (yet)
                 foreach (var p in EventHost.Pilots)
                     if (p != null && p.IsSpawned && InScope(p) && p.InSpace && p.Hull > 0f && stations.Contains(p.Station)) { emptySince = -1f; return false; }
@@ -1806,7 +1817,8 @@ namespace GoF2Remake.Events
                 if (batches.Count == 0) return;   // the fight hasn't begun
                 foreach (var ship in EventHost.EventShips())
                 {
-                    if (!batches.ContainsKey(ship.tag)) continue;
+                    if (!batches.TryGetValue(ship.tag, out var batch)) continue;
+                    Observe(batch, ship);
                     if (ship.killer == ulong.MaxValue || !countedKills.Add(ship.key)) continue;
                     kills.TryGetValue(ship.killer, out int k);
                     kills[ship.killer] = k + 1;
@@ -1877,21 +1889,35 @@ namespace GoF2Remake.Events
                 return tag;
             }
 
+            /// <summary>Notes a batch's ship: seen, its orbit, and whether it is down (dying or dead).</summary>
+            static void Observe(Batch b, EventHost.Ship ship)
+            {
+                b.seen.Add(ship.key);
+                b.stations.Add(ship.station);
+                if (!ship.flying) b.down.Add(ship.key);
+            }
+
             /// <summary>This event's living spawned ships (only the enemies), the ones on their way included.</summary>
             int CountShips(bool enemiesOnly)
             {
                 if (batches.Count == 0) return 0;
-                int living = 0;
                 foreach (var ship in EventHost.EventShips())
                 {
-                    if (!batches.TryGetValue(ship.tag, out var b)) continue;
-                    b.seen.Add(ship.key);
-                    if (enemiesOnly && !b.enemy) continue;
-                    if (ship.flying) living++;
+                    if (batches.TryGetValue(ship.tag, out var b)) Observe(b, ship);
                 }
+                // A batch counts its ships until each was seen dying or dead. A ship that just vanishes (its game jumped or
+                // docked away, which unloads its traffic) is still alive: counting only the ships present let a player
+                // clear a mission by leaving the orbit right after the spawn. A taken-over ship gets a new key, its old
+                // copy despawned, so 'expected - down' (not 'seen - down') is the count. A batch nothing of was ever seen
+                // counts only while its ships may still be on their way (the spawn reached nobody).
+                int living = 0;
                 float now = EventHost.Now;
                 foreach (var b in batches.Values)
-                    if ((!enemiesOnly || b.enemy) && now - b.start < PendingSeconds) living += Math.Max(0, b.expected - b.seen.Count);
+                {
+                    if (enemiesOnly && !b.enemy) continue;
+                    if (b.seen.Count == 0 && now - b.start >= PendingSeconds) continue;
+                    living += Math.Max(0, b.expected - b.down.Count);
+                }
                 return living;
             }
 

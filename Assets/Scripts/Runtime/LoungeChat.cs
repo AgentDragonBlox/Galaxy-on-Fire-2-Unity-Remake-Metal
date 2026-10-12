@@ -339,12 +339,20 @@ namespace GoF2Remake.Data
             return item >= 0 ? ItemInfo.ItemName(item) : "";
         }
 
+        /// <summary>The price a mechanic's upgrade counts from for a hull without one: the Cronus (37) costs 0 in the Android
+        /// economy (Khador's story ship; Kothar's dealer sells it after the Valkyrie add-on), so every upgrade on it was free,
+        /// at any level (a multiplayer player stacked ten and more of each). Its Default Economy price (sessions price the
+        /// Cronus itself, Database.CronusSessionPrice; this covers single player, where step 77 sells it for nothing).</summary>
+        const int UnpricedShipPrice = 1_200_000;
+
         /// <summary>Agent::getModPricePercentage 0x1a698c: the ship's price x 20 / 30 / 40 / 20 % (mods 0..3); remake
-        /// (Settings.KaamoStacking): x2 for every level already fitted, capped at int.MaxValue.</summary>
+        /// (Settings.KaamoStacking): x2 for every level already fitted, capped at int.MaxValue; a hull priced 0 counts as
+        /// UnpricedShipPrice.</summary>
         int ModPrice(Agent a)
         {
             int[] pct = { 20, 30, 40, 20 };
             int ship = db.Ship(Session.ShipIndex)?.price ?? 0;
+            if (ship <= 0) ship = UnpricedShipPrice;
             if (a.sellMod < 0 || a.sellMod >= pct.Length) return a.sellPrice;
             double price = (double)ship * pct[a.sellMod] / 100 * System.Math.Pow(2, Session.ModLevel(a.sellMod));
             return price >= int.MaxValue ? int.MaxValue : (int)price;

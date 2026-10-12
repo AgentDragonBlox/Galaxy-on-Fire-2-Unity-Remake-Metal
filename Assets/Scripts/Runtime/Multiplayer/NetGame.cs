@@ -731,6 +731,7 @@ namespace GoF2Remake.Multiplayer
             Session.Difficulty = Session.DifficultyNormal;   // every session plays on Normal (the shared stock, NPCs, rewards)
             Session.Economy = Economy.Android;               // and on one economy (the shared stock's prices)
             Session.UseCompletedWorld();   // free play in the finished game's world (every dealer ship, Ginoya after the supernova)
+            ResetDb();   // the session's tables (Database.Load reads CompletedWorld: the Cronus' price)
             Session.StationIndex = Station;
             Session.LaunchedFromStation = false;   // the session starts docked (EnterWorld)
             // Remake: a modest start instead of resetGame's well-equipped Phantom, so the pilot works up to better ships (a

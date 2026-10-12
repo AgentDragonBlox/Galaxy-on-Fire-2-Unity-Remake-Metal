@@ -367,7 +367,8 @@ namespace GoF2Remake.Multiplayer
                 {
                     if (p.Where == NetPlayer.Place.None) continue;   // still loading: their name and place come with their scene
                     known[id] = (p.DisplayName, where, Time.unscaledTime);
-                    Log($"{p.DisplayName} (client {id}) joined, {where}. {Count()}");
+                    string who = NetProfiles.Describe(id);
+                    Log($"{p.DisplayName} (client {id}{(who.Length > 0 ? ", " + who : "")}) joined, {where}. {Count()}");
                 }
                 else if (k.where != where || k.name != p.DisplayName)
                 {

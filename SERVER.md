@@ -341,6 +341,8 @@ Players can only join a server running the same game version. To update:
 | "This game runs version X" | The player's game and the server are different versions. Update both. |
 | Local network: nobody can connect | Open the UDP port (default 7777) in the server's firewall. From outside the network, forward it on the router. |
 | The process ends right after starting | Read the log: `journalctl -u gof2 -n 100`, or `Player.log` in the game's data folder. A local server stops when its port is in use; try another `-port`. |
-| A player's progress isn't saved | Without `-allowdebug` the server turns away progress that grows faster than `maxearn`; the log says "upload not saved". |
+| A player's progress isn't saved | Without `-allowdebug` the server turns away progress that grows faster than `maxearn`; the log says "upload not saved" (once per profile every 10 minutes, with how many were refused since), and the ops, admins and masters online get a chat notice as often. |
+| "signed in more than 8 times in 10 minutes" | A player (or device) in a reconnect loop: the server turns them away for 10 minutes ("You reconnected too often"). Their joins and leaves don't show in the chat either: a join is told after 15 s in the game, and not when the player left under 2 minutes before. |
+| "Kaamo upgrade level(s) ... removed" | A profile had more than 3 levels of one Kaamo upgrade on a hull (builds from 2026-10-08 had no cap). The server cuts it back at sign-in and on every upload. |
 | A player's progress is gone | Profiles nobody has signed in to for 30 days are pruned. The last 50 pruned profiles are in `Pruned/` (see [Files](#files-the-server-keeps)). |
 | Lost admin access | Read the token from the log, or delete `admin_token.txt` and restart, then use `/claimadmin` again. |
