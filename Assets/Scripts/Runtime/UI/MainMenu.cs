@@ -1985,8 +1985,13 @@ namespace GoF2Remake.UI
 
         // ---- dialog ----------------------------------------------------------------------------
 
+        /// <summary>What had the focus when the dialog opened: closing gives it back (CloseDialog). The panel's first item
+        /// got it instead, and in the Mod Browser focusing the top row selects it, so No on Delete moved the selection.</summary>
+        VisualElement dialogReturn;
+
         void ShowDialog(string title, string text, Action onYes)
         {
+            if (!dialog.ClassListContains("dialog-backdrop--shown")) dialogReturn = root.focusController?.focusedElement as VisualElement;
             dialogYes = onYes;
             root.Q<Label>("dialogTitle").text = title.ToUpperInvariant();
             root.Q<Label>("dialogText").text = text;
@@ -2063,7 +2068,12 @@ namespace GoF2Remake.UI
             dialog.RemoveFromClassList("dialog-backdrop--shown");
             dialogYes = dialogNo = null;
             dialogCheck = null;
-            if (openPanel != null) FocusFirst(openPanel); else Select(exitButton);
+            var back = dialogReturn;
+            dialogReturn = null;
+            if (back != null && back.panel != null && openPanel != null && openPanel.Contains(back) && back.enabledInHierarchy
+                && back.resolvedStyle.display != DisplayStyle.None) Select(back);
+            else if (openPanel != null) FocusFirst(openPanel);
+            else Select(exitButton);
         }
 
         // ---- save slots (RecordHandler: 12 slots, slot 0 = Auto-save; SaveGame) ------------
