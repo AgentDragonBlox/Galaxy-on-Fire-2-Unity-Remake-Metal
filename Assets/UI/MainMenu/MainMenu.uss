@@ -723,7 +723,7 @@
     flex-direction: row;
 }
 
-.mb-field-pair > .mb-field-box:first-child {
+.mb-field-pair > .mb-field-box--first {
     margin-right: 14px;
     flex-grow: 3;
 }
