@@ -60,7 +60,7 @@ namespace GoF2Remake.UI
         {
             if (skinTextures.TryGetValue(ship, out var cached)) return cached;
             var list = new List<SkinTexture>();
-            var entry = Database.Load().ShipAssembly(ship);
+            var entry = Database.Shared.ShipAssembly(ship);
             var prefab = entry != null ? AssembledObject.LoadPrefab(entry) : null;
             if (prefab != null)
             {
@@ -332,7 +332,7 @@ namespace GoF2Remake.UI
 
         void PickSkinShip()
         {
-            var db = Database.Load();
+            var db = Database.Shared;
             var taken = new HashSet<int>(Project.SkinShips());
             var choices = new List<(string, Texture2D, Action)>();
             for (int i = 0; i < GameNames.OriginalShips; i++)

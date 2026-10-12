@@ -116,8 +116,7 @@ namespace GoF2Remake.UI
                      })
                 KindTab(kinds, T(k, e), kind);
             TopButton(top, $"{T("mbHangar", "Hangar")}: {HangarTypeName(Session.StationIndex)}", PickHangar, "mbv-hangar-button");
-            TopButton(top, T("mbSave", "Save"), () => { SaveNow(); Status(T("mbSaved", "Saved."), false); });
-            TopButton(top, T("mbExit", "Exit"), () => { SaveNow(); ModBuilder.End(); }, "mbv-exit");
+            TopButton(top, Localization.Get(172), ShowMenu, "mbv-menu-button");   // "Menu", like the station's
 
             // ---- left: the ships (or the kind's list) ----
             var left = uiLeft = Add(root, new VisualElement(), "mbv-left", "mbv-panel");
@@ -327,7 +326,7 @@ namespace GoF2Remake.UI
         {
             shipList.Clear();
             if (Project == null) return;
-            var db = Database.Load();
+            var db = Database.Shared;
             foreach (var s in Project.Ships)
             {
                 var row = new Button(() => { sound(false); SelectShip(s); }) { focusable = false };
@@ -379,7 +378,7 @@ namespace GoF2Remake.UI
             ship.Clear();
             var s = Current;
             if (s == null) { Note(ship, T("mbPickShip", "Add a ship on the left to start.")); return; }
-            var db = Database.Load();
+            var db = Database.Shared;
             var original = s.IsOverride ? db.Ship(s.OverrideIndex) : null;
             Heading(ship, s.IsOverride ? string.Format(T("mbChanges", "Changes {0}"), GameNames.Ship(s.OverrideIndex)) : T("mbNewShipSub", "New ship"));
             var name = Text(ship, T("mbName", "Name"), s.Name, 40, v => { s.Name = v.Trim(); RebuildShips(); MarkDirty(); });
@@ -670,7 +669,7 @@ namespace GoF2Remake.UI
             loadout.Clear();
             var s = Current;
             if (s == null) return;
-            var db = Database.Load();
+            var db = Database.Shared;
             Heading(loadout, T("mbTestFlight", "Test flight"));
             var flags = Add(loadout, new VisualElement(), "mbv-row");
             var god = Act(flags, ModBuilder.TestGodMode ? T("mbGodOn", "God mode: on") : T("mbGodOff", "God mode: off"),
@@ -720,7 +719,7 @@ namespace GoF2Remake.UI
 
         void SetSlot(int kind, int slot, int item)
         {
-            var db = Database.Load();
+            var db = Database.Shared;
             var s = Current;
             var slots = SlotsOf(db, s);
             while (slots[kind].Count <= slot) slots[kind].Add(-1);
@@ -878,7 +877,7 @@ namespace GoF2Remake.UI
             s.SetSlotCount(0, 2);
             s.SetSlotCount(1, 1);
             s.HangarHeight = Mathf.Max(0, Mathf.CeilToInt(-b.min.y / M) + 4);
-            Project.SetLoadout(s, DefaultLoadout(Database.Load(), s));
+            Project.SetLoadout(s, DefaultLoadout(Database.Shared, s));
             RequestReload(false);
             RebuildPages();
             Status(T("mbLayoutDone", "Placed a first set of hardpoints. Move them onto the hull in Hardpoints."), false);
@@ -970,7 +969,7 @@ namespace GoF2Remake.UI
         /// <summary>A picker of the game's ships for "Change a game ship" (not those already in the project).</summary>
         void PickOriginal()
         {
-            var db = Database.Load();
+            var db = Database.Shared;
             var taken = new HashSet<int>(Project.Ships.Where(s => s.IsOverride).Select(s => s.OverrideIndex));
             var choices = new List<(string name, Texture2D icon, Action pick)>();
             for (int i = 0; i < GameNames.OriginalShips; i++)
@@ -998,7 +997,7 @@ namespace GoF2Remake.UI
         /// <summary>The kind of hangar a station has ("Vossk"), for the top bar's Hangar button.</summary>
         static string HangarTypeName(int station)
         {
-            var db = Database.Load();
+            var db = Database.Shared;
             var st = db.Stations.ElementAtOrDefault(station);
             if (st == null) return "?";
             int room = StationTables.HangarIndex(station, db.Systems.ElementAtOrDefault(st.system)?.raceId ?? 0);
@@ -1009,11 +1008,11 @@ namespace GoF2Remake.UI
         /// orbit is the test flights'. Dis (Terran) and Var Hastra (Midorian) where they can, else the first that can host.</summary>
         void PickHangar()
         {
-            var db = Database.Load();
+            var db = Database.Shared;
             var rooms = RoomNames;
             int[] preferred = { 70, -1, -1, 78 };
             int RoomOf(int i) => StationTables.HangarIndex(i, db.Systems.ElementAtOrDefault(db.Stations[i].system)?.raceId ?? 0);
-            var hosts = Enumerable.Range(0, db.Stations.Count).Where(ModBuilder.CanHost).ToList();
+            var hosts = Enumerable.Range(0, db.Stations.Count).Where(i => ModBuilder.CanHost(i, db)).ToList();
             int current = hosts.Contains(Session.StationIndex) ? RoomOf(Session.StationIndex) : -1;
             var choices = new List<(string, Texture2D, Action)>();
             for (int room = 0; room < rooms.Length; room++)
@@ -1041,7 +1040,7 @@ namespace GoF2Remake.UI
         {
             var s = Current;
             if (s == null) return;
-            Confirm(T("mbRemoveShip", "Remove ship"), string.Format(T("mbRemoveShipText", "Remove \"{0}\" from the project?"), ShipName(s, Database.Load())), () =>
+            Confirm(T("mbRemoveShip", "Remove ship"), string.Format(T("mbRemoveShipText", "Remove \"{0}\" from the project?"), ShipName(s, Database.Shared)), () =>
             {
                 Project.Ships.Remove(s);
                 // Its model file goes too when no other ship uses it.
@@ -1058,7 +1057,7 @@ namespace GoF2Remake.UI
 
         void PickItem(int kind, int slot)
         {
-            var db = Database.Load();
+            var db = Database.Shared;
             var choices = new List<(string, Texture2D, Action)> { (T("mbEmptySlot", "— empty —"), null, () => SetSlot(kind, slot, -1)) };
             foreach (var it in ModBuilder.ItemsFor(db, kind))
             {
@@ -1110,7 +1109,39 @@ namespace GoF2Remake.UI
         void CloseModal()
         {
             modal.RemoveFromClassList("mbv-modal--shown");
+            modal.RemoveFromClassList("mbv-modal--options");
             modal.Clear();
+            optionsView = null;
+        }
+
+        // ---- the Menu (like the station's: Options, leaving) ----------------------------------------------------
+
+        OptionsView optionsView;
+
+        /// <summary>The top bar's Menu (or Esc with nothing else open): Resume, Options (the game's, OptionsView), Save and
+        /// Exit the Mod Builder (back to the projects page).</summary>
+        void ShowMenu()
+        {
+            CloseModal();
+            var box = Add(modal, new VisualElement(), "mbv-modal-box", "mbv-modal-box--menu", "mbv-panel");
+            Heading(box, Localization.Get(172));
+            Act(box, T("mbResume", "Resume"), CloseModal, "mbv-menu-item");
+            Act(box, Localization.Get(31), ShowOptions, "mbv-menu-item");   // Options
+            Act(box, T("mbSave", "Save"), () => { SaveNow(); CloseModal(); Status(T("mbSaved", "Saved."), false); }, "mbv-menu-item");
+            Act(box, T("mbExitBuilder", "Exit the Mod Builder"), () => { CloseModal(); SaveNow(); ModBuilder.End(); }, "mbv-menu-item", "mbv-danger");
+            modal.AddToClassList("mbv-modal--shown");
+        }
+
+        void ShowOptions()
+        {
+            modal.Clear();
+            optionsView = new OptionsView(ShowMenu, true);
+            optionsView.Root.EnableInClassList("can-hover", true);
+            optionsView.Changed += c => { if (c.def.kind == OptionKind.Choice || c.def.kind == OptionKind.Toggle) sound(false); };
+            modal.Add(optionsView.Root);
+            modal.AddToClassList("mbv-modal--options");
+            modal.AddToClassList("mbv-modal--shown");
+            optionsView.Select(optionsView.ActiveTab);
         }
 
         // ---- status -------------------------------------------------------------------------------------------
@@ -1343,7 +1374,7 @@ namespace GoF2Remake.UI
             if (!string.IsNullOrEmpty(s.Icon) && (made == null || made.Value.file != s.Icon)) return;   // the modder's own
             string key = IconKey(s);
             if (made != null && made.Value.key == key && System.IO.File.Exists(System.IO.Path.Combine(Project.Folder, made.Value.file))) return;
-            var db = Database.Load();
+            var db = Database.Shared;
             var entry = db.ShipAssembly(index);
             if (entry == null || !ModShips.Built.Any(b => b.ship == index)) return;   // not built: the Phantom would stand in
             var icon = ShipIconMaker.Make(ModShips.Template(entry.name));
@@ -1371,10 +1402,19 @@ namespace GoF2Remake.UI
             bool typing = focused != null && TextFieldKeys.InTextField(focused);
             if (kb.escapeKey.wasPressedThisFrame)
             {
-                if (ModalOpen) CloseModal();
+                if (optionsView != null) { if (!optionsView.CloseResetPrompt()) ShowMenu(); }   // Options: back to the Menu
+                else if (ModalOpen) CloseModal();
                 else if (typing) focused.Blur();
                 else if (placing >= 0) { placing = -1; BuildHardpointsPage(); }
                 else if (gizmo.Selected >= 0) { gizmo.Selected = -1; gizmo.Refresh(); BuildHardpointsPage(); }
+                else ShowMenu();   // nothing else to close: the Menu, like the station's Esc
+                return;
+            }
+            if (optionsView != null)
+            {
+                // Q / E switch the Options tabs, as in the game's menus.
+                if (kb.qKey.wasPressedThisFrame) optionsView.StepTab(-1);
+                if (kb.eKey.wasPressedThisFrame) optionsView.StepTab(1);
                 return;
             }
             if (typing || ModalOpen) return;
@@ -1461,14 +1501,18 @@ namespace GoF2Remake.UI
 
         void OnPointerDown(PointerDownEvent e)
         {
-            if (ModalOpen || boundTransform == null || reloading || !InHangar) return;
+            if (ModalOpen || !InHangar) return;
+            // While the preview rebuilds (reloading) the camera still turns and pans; only the hardpoints wait for the ship.
+            // (It refused every drag then, and a rebuild that never finished left the camera stuck.)
+            bool shipReady = boundTransform != null && !reloading;
+            if (!shipReady && !level.Inspect.Active) return;
             var p = ScreenPos();
             downAt = last = p;
             travel = 0f;
             fling = Vector2.zero;
             viewport.CapturePointer(e.pointerId);
             if (e.button == 2) { drag = Drag.Pan; return; }   // the middle button pans the view (a click centres it again)
-            if (kind != ModBuilder.Kind.Ships) { drag = Drag.Camera; return; }   // the hardpoints are the Ships tab's
+            if (kind != ModBuilder.Kind.Ships || !shipReady) { drag = Drag.Camera; return; }   // the hardpoints are the Ships tab's
             if (e.button == 0 && placing >= 0)
             {
                 if (gizmo.RaycastHull(p, out var hit, out _)) { int type = placing; placing = -1; AddMount(type, hit); }
@@ -1490,6 +1534,7 @@ namespace GoF2Remake.UI
         void OnPointerMove(PointerMoveEvent e)
         {
             if (drag == Drag.None || !viewport.HasPointerCapture(e.pointerId)) return;
+            if (e.pressedButtons == 0) { viewport.ReleasePointer(e.pointerId); EndDrag(); return; }   // released where we didn't hear it
             var p = ScreenPos();
             float scale = 1080f / Mathf.Max(1, Screen.height);
             var delta = (p - last) * scale;

@@ -1082,7 +1082,7 @@ namespace GoF2Remake.UI
                 Localization.Extra("modBrowserDesc", "The mods installed on this device: turn them on and off, set their order, import new ones."),
                 () => OpenPanel("modsPanel"));
             modsHubBuilder = Choice(Localization.Extra("mbTitle", "Mod Builder"),
-                Localization.Extra("modBuilderDesc", "Make your own mods in the game: new ships from a 3D model or changes to the game's ships, their hardpoints, and test flights."),
+                Localization.Extra("modBuilderDesc", "Make your own mods in the game: ships, items, characters and skins, tried out in the hangar and on a test flight, then exported for the Mod Browser."),
                 () => OpenPanel(Modding.ModBuilder.ProjectsPanel));
             var back = new Button(Back) { text = "‹  " + Localization.Get(170).ToUpperInvariant() };
             back.AddToClassList("menu-button");

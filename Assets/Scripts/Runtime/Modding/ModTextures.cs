@@ -55,6 +55,10 @@ namespace GoF2Remake.Modding
         {
             if (revision == ModManager.Revision) return;
             revision = ModManager.Revision;
+            // Loads of the earlier revision no longer count (their finally leaves 'loading' alone): it used to stay above 0
+            // for good after the mods changed while textures were loading, so ModLoading stayed Busy and the Mod Builder's
+            // preview waited forever (its camera refused new drags meanwhile).
+            loading = 0;
             textures.Clear();
             names.Clear();
             scopes.Clear();

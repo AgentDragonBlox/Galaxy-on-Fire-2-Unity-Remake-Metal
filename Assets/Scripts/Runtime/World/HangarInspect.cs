@@ -53,7 +53,8 @@ namespace GoF2Remake.World
             maxDistance = Mathf.Max(radius * MaxRadii, minDistance + 1f);
             yaw = Mathf.Atan2(d.x, d.z);
             pitch = Mathf.Asin(Mathf.Clamp(d.y / Mathf.Max(d.magnitude, 1e-3f), -1f, 1f));
-            targetDistance = Mathf.Clamp(radius * FocusRadii, minDistance, maxDistance);
+            // Re-begun on a rebuilt ship (the Mod Builder): the zoom stays where it was; it jumped back to the first close-up.
+            targetDistance = Mathf.Clamp(Active ? targetDistance : radius * FocusRadii, minDistance, maxDistance);
             Active = true;   // re-entered mid-blend, the blend goes on from where it is
         }
 

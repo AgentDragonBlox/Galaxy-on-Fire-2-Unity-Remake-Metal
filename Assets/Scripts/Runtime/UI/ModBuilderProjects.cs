@@ -52,10 +52,10 @@ namespace GoF2Remake.UI
             ("mbSystems", "Systems", "New star systems and stations on the map."),
             ("mbInteriors", "Hangars", "Custom hangar and Space Lounge rooms."),
             ("mbQuests", "Quests", "Event graphs: quests and missions with dialogue."),
-            ("mbCharacters", "Characters", "Portraits and speakers for conversations."),
+            ("mbCharacters", "Characters", "Portraits and names for conversations: your own characters, or new looks for the story's."),
             ("mbCampaigns", "Campaigns", "A new game of your own: start, galaxy, ships."),
             ("mbAudio", "Audio", "Replace or add music, sound effects and voices."),
-            ("mbSkins", "Skins", "New looks for the game's ships, stations and planets."),
+            ("mbSkins", "Skins", "New textures for the game's ships: hull paint, lights and engine glow, for one ship or all that share them."),
             ("mbBlueprints", "Blueprints", "Ships and items built from ingredients."),
         };
 

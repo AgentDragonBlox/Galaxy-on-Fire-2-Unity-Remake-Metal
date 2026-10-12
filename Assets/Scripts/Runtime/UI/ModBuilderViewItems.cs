@@ -97,7 +97,7 @@ namespace GoF2Remake.UI
             itemPage.Clear();
             var it = currentItem;
             if (it == null) { Note(itemPage, T("mbPickItem", "Add an item on the left to start.")); return; }
-            var db = Database.Load();
+            var db = Database.Shared;
             var original = it.Original >= 0 ? db.Item(it.Original) : null;
             bool isNew = !it.IsOverride;
 
@@ -228,7 +228,7 @@ namespace GoF2Remake.UI
         /// <summary>The game items a new item can be based on / changed: every original one that can be bought.</summary>
         List<(string, Texture2D, Action)> GameItemChoices(Action<int> pick, Func<int, bool> skip = null)
         {
-            var db = Database.Load();
+            var db = Database.Shared;
             var choices = new List<(string, Texture2D, Action)>();
             foreach (var it in db.Items.Where(i => !i.modded && i.maxPrice > 0 && !Session.Unsaleable.Contains(i.index) && !ModContent.IsMissingItem(i.index))
                                        .OrderBy(i => i.TypeId).ThenBy(i => i.categoryId).ThenBy(i => i.maxPrice))
@@ -297,7 +297,7 @@ namespace GoF2Remake.UI
                 Status(T("mbUpdating", "Updating the preview…"), false);
                 return;
             }
-            var db = Database.Load();
+            var db = Database.Shared;
             var data = db.Item(index);
             if (data == null || data.TypeId > 3) { Status(T("mbCantFit", "That item can't be mounted."), true); return; }
             int kind = data.TypeId;

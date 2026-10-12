@@ -28,15 +28,18 @@ namespace GoF2Remake.Modding
         static int StationFor(ModProject project)
         {
             int s = project?.BuilderStation ?? -1;
-            return s >= 0 && s < Database.Load().Stations.Count && CanHost(s) ? s : DefaultStation;
+            return s >= 0 && s < Database.Shared.Stations.Count && CanHost(s) ? s : DefaultStation;
         }
 
         /// <summary>A station the builder can sit at and test-fly from: one with a station in its orbit (not an empty orbit,
         /// in the finished game's world the builder plays in), and none whose orbit brings an event of its own (the Kaamo
         /// Club's siege, the pirate bases' outposts, Loma's toll).</summary>
-        public static bool CanHost(int station)
+        public static bool CanHost(int station) => CanHost(station, Database.Shared);
+
+        /// <summary>CanHost with the tables already read: Database.Load parses every data file again (~6 ms), and the
+        /// hangar picker asks for all ~130 stations (it took close to a second to open).</summary>
+        public static bool CanHost(int station, Database db)
         {
-            var db = Database.Load();
             var st = station >= 0 && station < db.Stations.Count ? db.Stations[station] : null;
             if (st == null || string.IsNullOrEmpty(st.name) || ModWorld.IsMissingStation(station)) return false;
             if (station == 108 || System.Array.IndexOf(PirateBases.Stations, station) >= 0 || st.system == 25) return false;
@@ -95,7 +98,7 @@ namespace GoF2Remake.Modding
             Active = true;
             TestFlying = false;
             ModManager.SetBuilderProject(project.Folder);
-            var db = Database.Load();
+            var db = Database.Shared;
             foreach (var s in project.Ships) if (s.IsOverride) s.FillFromGame(db.Ship(s.OverrideIndex));
             Ship = project.Ships.FirstOrDefault(s => s.Ref == project.LastShip) ?? project.Ships.FirstOrDefault();
             var skins = project.SkinShips();
@@ -135,7 +138,7 @@ namespace GoF2Remake.Modding
             {
                 if (ShowingSkin) return SkinShip;
                 int i = IndexOf(Ship);
-                return i >= 0 && Database.Load().Ship(i) != null ? i : PlaceholderShip;
+                return i >= 0 && Database.Shared.Ship(i) != null ? i : PlaceholderShip;
             }
         }
 
@@ -150,7 +153,7 @@ namespace GoF2Remake.Modding
         /// <summary>The current ship and its test loadout into the game's state (the flown ship, its equipment).</summary>
         public static void ApplyShip()
         {
-            var db = Database.Load();
+            var db = Database.Shared;
             Session.ShipIndex = CurrentIndex;
             // A skinned game ship flies with a loadout of its own slots (it has none saved).
             var loadout = ShowingSkin ? DefaultLoadout(db, Session.ShipIndex) : Ship != null ? Project.Loadout(Ship) : null;

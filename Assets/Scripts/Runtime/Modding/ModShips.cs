@@ -225,7 +225,7 @@ namespace GoF2Remake.Modding
             int ship = ShipOf(assembly);
             if (ship >= 0 && templates.TryGetValue(ship, out var t) && t != null) return t;
             if (!Ready) Debug.LogWarning($"Mods: ship {ship}'s model is still loading: the game's model stands in");
-            var db = Database.Load();
+            var db = Database.Shared;
             var stand = (ship >= 0 ? db.ShipAssembly(ship, original: true) : null) ?? db.ShipAssembly(FallbackShip, original: true);
             return stand != null && stand.pack != Pack ? Visuals.AssembledObject.LoadPrefab(stand) : null;
         }

@@ -428,7 +428,7 @@ namespace GoF2Remake.Flight
             int t = tier - 1;
             int sightingId = sighting != null ? sighting.id : -1;
             int rank = Mathf.Min(Session.Rank, 20);
-            var db = Database.Load();
+            var db = Database.Shared;
             int Fighter() => tier >= 4 ? NpcTables.StrongFighter(db, Standing.Pirate) : NpcTables.RandomFighter(Standing.Pirate);
             if (outpostEvent)
             {

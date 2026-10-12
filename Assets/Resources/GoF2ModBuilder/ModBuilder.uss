@@ -904,3 +904,19 @@
 .mbv-note--warn {
     color: var(--gof-amber);
 }
+
+/* The Menu (top bar): its entries one under another; Options (OptionsView) in place of the box. */
+.mbv-modal-box--menu {
+    width: 420px;
+}
+
+.mbv-menu-item {
+    margin: 6px 0 0 0;
+    padding: 12px 16px;
+    font-size: 18px;
+    -unity-text-align: middle-left;
+}
+
+.mbv-modal--options > .options-panel {
+    max-height: 90%;
+}

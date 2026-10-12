@@ -123,6 +123,11 @@ Menu items (from `Scripts/Editor`), grouped in submenus; **GoF2 > Tools Overview
 
 ## Data (`Assets/Resources/GoF2Data`, loaded with `Database.Load()`, JsonUtility)
 
+- `Database.Load()` parses every table again (~6 ms and several MB of garbage): use it once per scene (the levels keep
+  their own, `level.Database`) or where the result is changed; read-only lookups that run more often (UI rebuilds, spawns,
+  multiplayer mirrors, the Mod Builder) take `Database.Shared`, made again only when the economy or the mods change, and
+  never write to it.
+
 - `ships`, `items`, `systems`, `stations`: the economy and universe.
   - `items[].statList` has named stats (damage, range, boostSpeed, agility…).
   - `items[].rawAttributes` has the original attribute IDs.
@@ -2075,7 +2080,12 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   flight's view-edge shrink is computed from the camera as it starts) into the builder station's orbit: `SpaceLevel` passive (no traffic,
   wingmen), jumps / gate refused, no tutorial popups, `World.ModBuilderRange` keeps 3 hostile pirates coming (6 s after a
   death); docking, the pause menu's "Back to Mod Builder" or a death returns to the builder (`ModBuilder.EndTestFlight`).
-  Exit: `ModBuilder.End` (the menu's projects page). The top bar's kinds swap the side panels (`ModBuilderView.SelectKind`;
+  The top bar's Menu (`Localization.Get(172)`, also Esc with nothing else open; `ModBuilderView.ShowMenu`): Resume, Options
+  (the game's `OptionsView` in the builder's modal, Q / E switch tabs, Esc back to the Menu), Save, Exit the Mod Builder
+  (`ModBuilder.End`: the main menu's projects page). The orbit camera turns and pans while the preview rebuilds (only the
+  hardpoints wait for the ship), a re-begun orbit keeps its zoom (`HangarInspect.Begin`), and a drag whose release was missed
+  ends on the next move; `ModTextures.Preload` resets its loading count (an earlier revision's loads left it above 0 for good,
+  so the preview waited forever and the camera refused new drags). The top bar's kinds swap the side panels (`ModBuilderView.SelectKind`;
   the gizmo only with Ships): **Items** (`ModBuilderViewItems`, items.json as `ProjectItem`): new items from a game item
   (a copy: type, category, look) or changes to one, name, description, its own icon PNG, tech level, occurrence, prices
   and the base's stats by readable name (`ItemStats`; a new item's value equal to the base's isn't written), "Fit to the
