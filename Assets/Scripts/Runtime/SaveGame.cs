@@ -25,6 +25,8 @@ namespace GoF2Remake.Data
         public float difficulty;
         public int campaignMission;
         public int station, previousStation, ship, credits;
+        /// <summary>Remake: the station the player last docked at (Session.LastDockedStation), -1 = unknown (older saves).</summary>
+        public int lastDockedStation = -1;
         public List<ItemStack> equipment, cargo;
         public List<StationStock> recentStations;
         public List<int> seenItems, visitedStations, attackedStations;
@@ -278,7 +280,11 @@ namespace GoF2Remake.Data
             Session.FreelanceMission = new FreelanceMission();
             Session.Passengers = 0;
             Session.Cargo.RemoveAll(c => c.item == Freelance.SecureContainer);   // a Courier's containers (unsaleable)
-            if (Session.StationIndex < 0 || Session.StationIndex >= GoF2Remake.Multiplayer.NetGame.Db.Stations.Count)
+            // The game starts docked where the pilot last docked: a profile uploaded in flight names the orbit they were in,
+            // and signing out there and in again would dock them on the spot (out of a fight, without the trip back).
+            int stations = GoF2Remake.Multiplayer.NetGame.Db.Stations.Count;
+            if (Session.LastDockedStation >= 0 && Session.LastDockedStation < stations) Session.StationIndex = Session.LastDockedStation;
+            if (Session.StationIndex < 0 || Session.StationIndex >= stations)
                 Session.StationIndex = GoF2Remake.Multiplayer.NetGame.Station;
             Session.ProgrammedStation = -1;
             Session.LaunchedFromStation = false;
@@ -311,6 +317,7 @@ namespace GoF2Remake.Data
                 campaignMission = Session.CampaignMission,
                 station = Session.StationIndex,
                 previousStation = Session.PreviousStationIndex,
+                lastDockedStation = Session.LastDockedStation,
                 ship = Session.ShipIndex,
                 credits = Session.Credits,
                 equipment = Session.Equipment.ConvertAll(e => e.Clone()),
@@ -412,6 +419,7 @@ namespace GoF2Remake.Data
             if (s.campaignMission < 0 || s.campaignMission > Story.LastIndex) return "an unknown story mission";
             if (!Station(s.station) && s.station != Session.VoidOrbit) return "an unknown station";
             if (!StationOrNone(s.previousStation)) return "an unknown previous station";   // -1: none (also Session.VoidOrbit)
+            if (s.lastDockedStation != -1 && !Station(s.lastDockedStation)) return "an unknown last docked station";
             if (!Ship(s.ship)) return "an unknown ship";
             if (s.credits < 0) return "negative credits";
             if (Stacks(s.equipment, "equipment") is string e1) return e1;
@@ -474,6 +482,7 @@ namespace GoF2Remake.Data
             Session.CampaignMission = s.campaignMission;
             Session.StationIndex = s.station;
             Session.PreviousStationIndex = s.previousStation;
+            Session.LastDockedStation = s.lastDockedStation;
             Session.ShipIndex = s.ship;
             Session.Credits = s.credits;
             Session.Equipment = s.equipment ?? new List<ItemStack>();

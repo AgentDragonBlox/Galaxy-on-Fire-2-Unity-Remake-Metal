@@ -173,6 +173,7 @@ namespace GoF2Remake.World
             dbRevision = Modding.ModManager.Revision;
             int station = stationOverride >= 0 ? stationOverride : Session.StationIndex;
             Hangar.NewDocking();
+            if (stationOverride < 0) Session.LastDockedStation = station;   // where a multiplayer pilot starts and respawns
             Stock = Shop.EnterStation(db, station);
             PirateReports.Refresh(db);   // remake: the Pirate activity board's old reports off, new ones in
             Story.OnDocked(db, station, Stock);   // ModStation::OnInitialize's story tweaks (index 1: Betty ...)

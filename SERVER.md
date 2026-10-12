@@ -219,13 +219,18 @@ server can use the console; players use the chat commands above.
 | `token` | The admin token for `/claimadmin`. |
 | `settings`, `set <key> <value>` | The settings that change while the server runs. |
 | `profiles` | The player profiles: id, name, devices, worth, who is online. |
-| `profile delete <id>` | Deletes a profile (not while it is online; its file is kept as `.bak`). |
+| `profile info <id or name>` | One profile: role, devices, worth, play time, last seen, online, blocked. |
+| `profile delete <id or name> [force]` | Deletes a profile; its file is kept as `.bak`. Online it is refused unless `force`: its devices are dropped first ("Your profile on this server was deleted."). |
+| `profile block <id or name> [reason]` | Bans the profile and every device it signed in from, for good (the same as `ban`); an online player is dropped. A new profile from those devices is turned away too. |
+| `profile unblock <id or name>` | Lifts the block (`unban`). `profile blocked` lists the bans (`bans`). |
 | `profile restore <id>` | Brings back a profile pruned after 30 days unused (from `Pruned/`). |
 | `factions`, `faction disband <TAG>`, `sieges` | The factions; end one; the sieges. |
 | `arenas` | The arena matches and queues. |
 | `stop` | Tells the players and shuts the server down. Ctrl+C or closing the window does the same. |
 
-A server running as a Linux service has no console you can type into. Use the in-game Admin tab instead.
+A server running as a Linux service has no console you can type into. Use the in-game Admin tab, or the web admin's
+console (below): its `/api/command` runs these same commands, so a control panel can call `profile delete` /
+`profile block` there.
 
 ## The web admin
 

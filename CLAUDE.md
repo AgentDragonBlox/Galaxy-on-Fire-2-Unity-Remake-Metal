@@ -990,7 +990,8 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   NPC shots from the authority's side) go to their game (`NetPlayer.HitRpc`, `Target.RemoteDamage` with the NPC flag),
   which applies them to its own ship. Destroyed by a player: "X was destroyed by Y." for everyone
   (`NetState.DestroyedByRpc`). A destroyed player's game over says "Tap to respawn at the station." and docks them at the
-  orbit's station, repaired (no save is loaded). Players can only hurt each other in an arena match (below) or on a
+  station they last docked at (`Session.LastDockedStation`, set by `StationLevel`, saved as `lastDockedStation`), repaired
+  (no save is loaded). Players can only hurt each other in an arena match (below) or on a
   server started with `-freepvp` (`NetState.FreePvp`, `NetGame.FreePvp`): elsewhere another player's ship is
   `playerProof` (shots pass) and the owner's `HitRpc` / `EmpRpc` drop a player's hit unless the sender is in the same
   orbit and may fight (`NetPlayer.PvpWith`).
@@ -1040,8 +1041,10 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   claim is the home; a claim no member docked at for `-claimdays` (14) lapses, `NetFactions.Tick` once a minute; a claim
   is announced to everyone); `NetState.Claims` ("station|TAG|Name|VAT" lines, a 4 KB FixedString) shows the holder on the
   star map (planet "[TAG] Name", system "Name [TAG]"), the station header's system line and the orbit information.
-  **Home**: a member's game starts docked at the faction's home (`ProfileHeaderRpc`'s home), and a destroyed member
-  respawns there (`NetPlayer.FactionHome`, `FlightHud.LoadLastSave`). Disbanding frees the faction's claims (the bank is
+  **Home**: no longer a start or respawn point: signing out and in, or dying, was a free trip home (energy cells and time
+  saved). Every pilot signs in docked at the station they last docked at (`SaveGame.ApplyProfile`: `lastDockedStation`
+  beats the profile's `station`, which an upload in flight sets to the orbit) and respawns there (`FlightHud.LoadLastSave`;
+  a siege defender still respawns at the besieged station). `ProfileHeaderRpc` still carries the home, unused. Disbanding frees the faction's claims (the bank is
   lost).
   Phase 3, contest and benefits: **sieges** (`/faction siege`, officers of another faction in the orbit or docked there:
   `-siegecost` (250 000) from the bank as the stake, one per faction, the faction needs room for a claim, not within 24 h of
@@ -1688,7 +1691,9 @@ now takes an option right after another (a dash and a letter) as no value). `Boo
   profile; no limit on their number (the old `-maxprofiles`, default 50, turned new players into guests): a profile
   nobody signed in to for 30 days (`NetProfiles.PruneDays`, by lastSeen) is pruned at the start and hourly
   (`NetProfiles.Prune` from `Tick`; never online or staff), its file and its accounts.json entry moved to `Pruned/` (the
-  newest 50 kept), leaving its faction; the console's `profile restore <id>` brings it back (`ConsoleRestore`). Uploads (gzipped chunks, `UploadChunkRpc`): on every
+  newest 50 kept), leaving its faction; the console's `profile restore <id>` brings it back (`ConsoleRestore`). Console (and the web admin's `/api/command`, for control panels): `profile info | delete [force] | block [reason] |
+  unblock <id|name>`, `profile blocked` (`ConsoleInfo`, `ConsoleDelete`: force signs the devices out and drops them first;
+  block / unblock = `ban` / `unban`). Uploads (gzipped chunks, `UploadChunkRpc`): on every
   docking (`SaveGame.AutoSave`), every 60 s, when leaving (`NetGame.Shutdown`); each is checked like an imported save
   (`SaveGame.TryParse`), and without `-allowdebug` also turned away when the profile's worth (credits + ship prices +
   items at `minPrice`, `NetProfiles.Worth`) grew more than 2 000 000 + `-maxearn` per minute online since the last

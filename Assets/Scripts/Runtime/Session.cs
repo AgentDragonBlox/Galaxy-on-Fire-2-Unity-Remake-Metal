@@ -263,6 +263,11 @@ namespace GoF2Remake.Data
         /// <summary>Status' station stack [1]: where the player came from (the planet-jump arrival point), -1 = none.</summary>
         public static int PreviousStationIndex = -1;
 
+        /// <summary>Remake: the station the player last docked at (StationLevel), -1 = none yet. Multiplayer starts a signed-in
+        /// pilot and respawns a destroyed one there (it was the faction's home: a free trip home, saving energy cells and
+        /// time).</summary>
+        public static int LastDockedStation = -1;
+
         /// <summary>Player ship index (ships.json), Status+0x18c.</summary>
         public static int ShipIndex = 10;
 
@@ -387,6 +392,7 @@ namespace GoF2Remake.Data
             PlaySeconds = 0f;
             StationIndex = 78;
             PreviousStationIndex = -1;
+            LastDockedStation = -1;
             ShipIndex = 10;
             Equipment = StartEquipment();
             Cargo = new List<ItemStack>();

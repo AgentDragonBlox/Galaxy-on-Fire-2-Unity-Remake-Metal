@@ -1352,14 +1352,14 @@ namespace GoF2Remake.UI
             gameOverMs = -1f;
             if (hardcoreDead) { BackToMenu(); return; }   // hardcore: nothing to load
             if (Modding.ModBuilder.TestFlying) { Modding.ModBuilder.EndTestFlight(false); return; }
-            // Multiplayer: back in this orbit's station (a faction member: the faction's home, NetFactions), repaired (docking
-            // repairs), everything else kept.
+            // Multiplayer: back at the station last docked at (like single player's auto-save), repaired (docking repairs),
+            // everything else kept. Not the faction's home any more: dying was a free trip home.
             if (GoF2Remake.Multiplayer.NetGame.Active)
             {
-                int home = GoF2Remake.Multiplayer.NetFactionsClient.Home;
-                // A defender destroyed in their station's siege fight respawns there (NetFactions), not at home.
+                int docked = Session.LastDockedStation;
+                // A defender destroyed in their station's siege fight respawns there (NetFactions).
                 bool defending = GoF2Remake.Multiplayer.NetFactionsClient.DefendsSiegeHere(Session.StationIndex);
-                if (!defending && home >= 0 && home < GoF2Remake.Multiplayer.NetGame.Db.Stations.Count) Session.StationIndex = home;
+                if (!defending && docked >= 0 && docked < GoF2Remake.Multiplayer.NetGame.Db.Stations.Count) Session.StationIndex = docked;
                 Session.DockedFromSpace = false;
                 SceneManager.LoadScene("Station");
                 return;

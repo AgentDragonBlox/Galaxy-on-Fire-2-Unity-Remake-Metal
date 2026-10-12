@@ -773,15 +773,42 @@ namespace GoF2Remake.Multiplayer
         }
 
         /// <summary>DedicatedServer's "profile delete &lt;id&gt;": not while one of its devices is online.</summary>
-        public static string ConsoleDelete(string id)
+        /// <summary>Console "profile delete": a profile by its id or last pilot name. Online it is refused unless 'force': its
+        /// devices are signed out (what they still upload is ignored) and dropped, then it goes.</summary>
+        public static string ConsoleDelete(string who, bool force = false)
         {
             if (!Enabled) return "Player profiles are off (-noprofiles).";
-            var a = index.accounts.Find(x => x.id == id);
-            if (a == null) return $"No profile \"{id}\" (see \"profiles\").";
-            foreach (var l in logins.Values) if (l.account == a) return $"Profile {id} is online (client {l.client}): kick it first.";
+            string id = FindAccount((who ?? "").Trim());
+            var a = id != null ? index.accounts.Find(x => x.id == id) : null;
+            if (a == null) return $"No profile \"{who}\" (see \"profiles\").";
+            var online = new List<ulong>();
+            foreach (var l in logins.Values) if (l.account == a) online.Add(l.client);
+            if (online.Count > 0 && !force)
+                return $"Profile {id} ({a.name}) is online (client {string.Join(", ", online)}): kick it first, or \"profile delete {id} force\".";
+            foreach (ulong c in online)
+            {
+                logins.Remove(c);
+                incoming.Remove(c);
+                NetGame.Kick(c, Localization.Extra("mpProfileDeleted", "Your profile on this server was deleted."));
+            }
             DeleteAccount(a);
             SaveIndex();
-            return $"Deleted profile {id} (its file is kept as {id}.json.bak).";
+            return $"Deleted profile {id} ({(string.IsNullOrEmpty(a.name) ? "?" : a.name)}){(online.Count > 0 ? $", {online.Count} device(s) dropped" : "")} (its file is kept as {id}.json.bak).";
+        }
+
+        /// <summary>Console "profile info": one profile's details, ban included.</summary>
+        public static string ConsoleInfo(string who)
+        {
+            if (!Enabled) return "Player profiles are off (-noprofiles).";
+            string id = FindAccount((who ?? "").Trim());
+            var a = id != null ? index.accounts.Find(x => x.id == id) : null;
+            if (a == null) return $"No profile \"{who}\" (see \"profiles\").";
+            var online = new List<string>();
+            foreach (var l in logins.Values) if (l.account == a) online.Add($"client {l.client}{(l.controller ? "" : " (watching)")}");
+            string ban = NetModeration.BanReason(a.id, null);
+            return $"Profile {a.id}: {(string.IsNullOrEmpty(a.name) ? "?" : a.name)}, role {NetModeration.RoleName(a.role)}, {a.devices.Count} device(s), " +
+                   $"worth {a.worth:N0}, played {a.playSeconds / 3600f:0.#} h, created {a.created}, last seen {a.lastSeen}, " +
+                   $"{(online.Count > 0 ? "online: " + string.Join(", ", online) : "offline")}, {(ban != null ? "BLOCKED: " + ban : "not blocked")}.";
         }
 
         /// <summary>Profiles nobody signed in to for PruneDays (by lastSeen, else created) go: not one that is online, nor
