@@ -1015,6 +1015,7 @@
  "mpSiegeCost": "Un siège coûte {0:N0} crédits de la banque (elle a {1:N0}).",
  "mpSiegeDeclared": "[{0}] {1} assiège {2}, tenue par [{3}] {4} : il commence dans {5} minutes et dure {6}.",
  "mpSiegeHeld": "[{0}] a tenu {1} face à [{2}].",
+ "mpSiegeKillRepair": "Victoire confirmée : votre vaisseau est réparé.",
  "mpSiegeDeclared3": "[{0}] {1} assiège {2}, tenue par [{3}] {4} : dans {5} minutes les défenses de la station se renforcent jusqu'à ce que des pilotes des deux factions se rencontrent en orbite (sous {6} jours) ; puis un combat de 15 minutes, le plus de victoires l'emporte. {7:N0} crédits vont au vainqueur.",
  "mpSiegeArmed2": "Le siège de {0} est armé : ses défenses se renforcent jusqu'à ce que des pilotes de [{1}] et de [{2}] se rencontrent dans son orbite.",
  "mpSiegeStarts3": "Le siège de {0} a commencé : [{1}] et [{2}] peuvent s'y tirer dessus pendant 15 minutes. Le plus de victoires l'emporte ; quitter l'orbite en vie vaut reddition.",

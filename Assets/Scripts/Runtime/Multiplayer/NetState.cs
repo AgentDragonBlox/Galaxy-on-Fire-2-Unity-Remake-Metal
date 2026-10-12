@@ -501,6 +501,7 @@ namespace GoF2Remake.Multiplayer
             var by = NetSquad.Find(killer);
             if (victim == null || by == null || !HitRecently(victim.NetworkObjectId, killer, 30f)) return;
             NetArena.OnKill(victim.OwnerClientId, by.OwnerClientId);   // an arena match's score
+            NetFactions.OnPilotKilled(victim, by);                     // a siege fight: the killer repaired
             NoticeRpc(string.Format(Localization.Extra("mpDestroyedBy", "{0} was destroyed by {1}."), victim.DisplayName, by.DisplayName));
             EventRunner.OnPlayerKilled(by, victim);   // an event's "on pvpkill"
         }

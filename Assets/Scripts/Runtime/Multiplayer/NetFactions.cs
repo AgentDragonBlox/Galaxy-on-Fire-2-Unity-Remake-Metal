@@ -937,6 +937,22 @@ namespace GoF2Remake.Multiplayer
             if (changed) { Save(); PublishSieges(); }
         }
 
+        /// <summary>NetState.DestroyedByRpc (checked there: a hit from the killer within 30 s): in a siege fight a pilot of one
+        /// side destroying one of the other side in that orbit gets their ship repaired (hull, shield, armor), as the
+        /// destroyed one respawns fresh.</summary>
+        public static void OnPilotKilled(NetPlayer victim, NetPlayer killer)
+        {
+            if (list == null || victim == null || killer == null || NetState.Instance == null) return;
+            var s = SiegeAt(victim.Station);
+            if (s == null || !s.started || !killer.InSpace || killer.Station != s.station || killer.Hull <= 0f) return;
+            var a = OfClient(victim.OwnerClientId);
+            var b = OfClient(killer.OwnerClientId);
+            if (a == null || b == null) return;
+            bool opposite = (a.id == s.attacker && b.id == s.defender) || (a.id == s.defender && b.id == s.attacker);
+            if (!opposite) return;
+            NetState.Instance.SendAdmin(killer.OwnerClientId, NetAdmin.Order.Heal, 1, 0, 0, null, "");
+        }
+
         /// <summary>A defending pilot docked at their besieged claim: half its remaining lapse days (rounded up) while more than
         /// LapseFloorDays are left (15 -> 8 -> 4 -> 2; 3 or less stays). True = changed.</summary>
         static bool HalveLapse(Claim held, Faction defender)

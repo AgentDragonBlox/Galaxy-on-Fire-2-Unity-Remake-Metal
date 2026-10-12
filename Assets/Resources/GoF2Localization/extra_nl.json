@@ -1015,6 +1015,7 @@
  "mpSiegeCost": "Een beleg kost {0:N0} credits uit de bank (die heeft er {1:N0}).",
  "mpSiegeDeclared": "[{0}] {1} belegert {2}, gehouden door [{3}] {4}: het begint over {5} minuten en duurt {6}.",
  "mpSiegeHeld": "[{0}] heeft {1} tegen [{2}] verdedigd.",
+ "mpSiegeKillRepair": "Kill bevestigd: je schip is gerepareerd.",
  "mpSiegeDeclared3": "[{0}] {1} belegert {2}, in handen van [{3}] {4}: over {5} minuten groeit de verdediging van het station tot piloten van beide facties elkaar in de baan treffen (binnen {6} dagen); dan een gevecht van 15 minuten, de meeste kills wint. {7:N0} credits gaan naar de winnaar.",
  "mpSiegeArmed2": "Het beleg van {0} is scherp: de verdediging groeit tot piloten van [{1}] en [{2}] elkaar in de baan treffen.",
  "mpSiegeStarts3": "Het beleg van {0} is begonnen: [{1}] en [{2}] mogen daar 15 minuten op elkaar schieten. De meeste kills wint; de baan levend verlaten is overgave.",

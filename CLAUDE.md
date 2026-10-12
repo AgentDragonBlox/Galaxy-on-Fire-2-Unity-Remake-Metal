@@ -974,7 +974,8 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   other has a pilot online elsewhere adds to the absent side's standoff, 60 min = that side forfeits; no fight within 2 days
   of the arming = +1 day, at most 4 times, then the defenders keep it and the stake. The fight runs 15 min, the two factions
   may fire at each other there (`NetFactionsClient.SiegePvp` in `NetPlayer.PvpWith`): every pilot of a side destroyed in the
-  orbit scores for the other side, a destroyed defender respawns docked at that station (`NetFactionsClient.DefendsSiegeHere`
+  orbit scores for the other side, a player's kill of the other side repairs the killer at once (`NetFactions.OnPilotKilled` from
+  `NetState.DestroyedByRpc`: hull, shield, armor through the Heal order, a = 1), a destroyed defender respawns docked at that station (`NetFactionsClient.DefendsSiegeHere`
   in `FlightHud.LoadLastSave`), a side whose last pilot there left alive (docked, jumped, disconnected) and stays gone 60 s
   waves the white flag and loses; at the end more kills wins, a tie = held. The stake to the winner; called off with the
   stake back to the attacker: the claim given up, the defenders disbanding (`CallOff`). 24 h protection after a decided

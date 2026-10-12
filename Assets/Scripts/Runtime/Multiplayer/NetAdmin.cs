@@ -929,7 +929,9 @@ namespace GoF2Remake.Multiplayer
                     break;
                 case Order.Heal:
                     Cheats.Repair();
-                    NetChat.Notice(string.Format(X("mpAdmHealedYou", "{0} repaired your ship."), by));
+                    // a = 1: a siege fight's kill (NetFactions.OnPilotKilled), not an admin's order.
+                    NetChat.Notice(a == 1 ? X("mpSiegeKillRepair", "Kill confirmed: your ship is repaired.")
+                                          : string.Format(X("mpAdmHealedYou", "{0} repaired your ship."), by));
                     break;
                 case Order.Give:
                     if (!NetGuard.Item(a) || b < 1) return;
