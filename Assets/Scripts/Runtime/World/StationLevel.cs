@@ -97,6 +97,7 @@ namespace GoF2Remake.World
         public bool IntroPlaying => introT < 1.25f && View == StationView.Lounge;
 
         Database db;
+        int dbRevision;                       // ModManager.Revision when db was loaded
         Transform hangarRoot, barRoot, playerShip;
         int shipIndex;
         Vector3 shipPivot;                    // Unity, the camera parent (0, Y[ship at entry], 0)
@@ -138,13 +139,13 @@ namespace GoF2Remake.World
         Action afterDeparture;
         bool departed;
         /// <summary>The player's ship is flying in or out (the station menu hides and waits).</summary>
-        public bool PlayerFlying => playerFlight != null || departed;
+        public bool PlayerFlying => playerFlight != null || departed || pendingDeparture != null;
         /// <summary>The player's ship on the turntable (VR: grabbed to turn it).</summary>
         public Transform PlayerShip => playerShip;
         /// <summary>VR: a visitor picked with the laser (the lounge opens their chat, LoungePanel).</summary>
         public System.Action<int> VisitorPicked;
         /// <summary>The player's ship is taking off or gone (multiplayer: the others in this hangar see it leave).</summary>
-        public bool PlayerDeparting => (playerFlight != null && !playerFlight.arriving) || departed;
+        public bool PlayerDeparting => (playerFlight != null && !playerFlight.arriving) || departed || pendingDeparture != null;
         /// <summary>The hangar's ship traffic (multiplayer: the other players' ships too, NetHangar), null = none.</summary>
         public HangarTraffic Traffic => traffic;
         /// <summary>This docking flew in from the orbit (multiplayer: the others see it land; else the ship just appears).</summary>
@@ -169,6 +170,7 @@ namespace GoF2Remake.World
             // saved, SaveGame.SessionGame).
             if (GoF2Remake.Multiplayer.NetGame.SessionLost) SceneManager.LoadScene("MainMenu");
             db = Database.Load();
+            dbRevision = Modding.ModManager.Revision;
             int station = stationOverride >= 0 ? stationOverride : Session.StationIndex;
             Hangar.NewDocking();
             Stock = Shop.EnterStation(db, station);
@@ -349,6 +351,8 @@ namespace GoF2Remake.World
         /// (the camera keeps the pivot of the ship the hangar was entered with).</summary>
         public void ReplacePlayerShip(int index)
         {
+            // The Mod Builder changes the mods while docked: a ship added since the hangar opened isn't in the old tables.
+            if (dbRevision != Modding.ModManager.Revision) { db = Database.Load(); dbRevision = Modding.ModManager.Revision; }
             if (playerShip != null) Destroy(playerShip.gameObject);
             shipIndex = index;
             var ship = SpawnShip(index, PadPosition(index), Quaternion.identity, hangarRoot, "Player ship");
@@ -824,7 +828,10 @@ namespace GoF2Remake.World
         public HangarInspect Inspect { get; } = new HangarInspect();
 
         /// <summary>Starts inspecting the player's ship: only in the hangar, with the ship on its pad (not flying), not in VR.</summary>
-        public bool BeginInspect()
+        public bool BeginInspect() => BeginInspect(1.15f);
+
+        /// <summary>Inspect ship's orbit, 'minRadii' ship radii at the closest (the Mod Builder's camera goes nearer).</summary>
+        public bool BeginInspect(float minRadii)
         {
             if (View != StationView.Hangar || playerShip == null || PlayerFlying || Vr.VrMode.Enabled || mainCamera == null) return false;
             // The hull's box in the ship's own frame (a world box around a ship turned 45 deg is ~1.3x too big), without the
@@ -835,7 +842,7 @@ namespace GoF2Remake.World
             var scale = playerShip.lossyScale;
             var world = new Bounds(playerShip.TransformPoint(local.center), Vector3.Scale(local.size, new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z))));
             flingVelocity = 0f;
-            Inspect.Begin(mainCamera.transform.position, world);   // its extents' length is the hull's radius
+            Inspect.Begin(mainCamera.transform.position, world, minRadii);   // its extents' length is the hull's radius
             return true;
         }
 
@@ -893,7 +900,15 @@ namespace GoF2Remake.World
             var lane = Lane;
             if (!Settings.HangarFlights || lane == null || playerShip == null) { then?.Invoke(); return; }
             SetView(StationView.Hangar);
-            Inspect.End();   // the camera eases back to the hangar's for the take-off
+            // The camera eases back to the hangar's for the take-off first: the flight works out where the ship leaves the
+            // view (HangarFlight's shrink) from the camera as it starts, and from the orbit's close-up (the Mod Builder's
+            // camera) it shrank away before it reached the forcefield.
+            if (Inspect.Shown)
+            {
+                Inspect.End();
+                pendingDeparture = then;
+                return;
+            }
             flingVelocity = 0f;
             afterDeparture = then;
             var engine = HangarFlight.AddEngine(playerShip.gameObject, true, db, shipIndex, out float volume);
@@ -910,6 +925,8 @@ namespace GoF2Remake.World
         }
 
         float playerFlightStart;
+        /// <summary>A take-off waiting for the camera's blend back from the orbit (Depart).</summary>
+        Action pendingDeparture;
 
         void LaunchNow()
         {
@@ -933,6 +950,12 @@ namespace GoF2Remake.World
         void Update()
         {
             float dtMs = Time.deltaTime * 1000f;
+            if (pendingDeparture != null && !Inspect.Shown)
+            {
+                var then = pendingDeparture;
+                pendingDeparture = null;
+                Depart(then);
+            }
             if (playerFlight != null)
             {
                 playerFlight.Hold = traffic != null && traffic.Busy;

@@ -310,6 +310,8 @@ required). `override` changes originals (name, techLevel, looks, music...).
 
 - `characters.json`: `[{ "id", "name", "portrait": "portraits/x.png" (4:5, 320 x 400), "race", "gender", "mirrored",
   "background", "frame", "replaces" }]`. Named in dialogs as `id`, `mod_id:id` or the name; `id as Other Name`.
+  `replaces` (a story speaker's name, e.g. `"Keith"`, or number) takes that speaker's portrait everywhere, and its name
+  in the headers when the character has a `name`; other lines' mentions of the old name and the voices stay.
 - Voice-over: `[voice <clip>]` in a Dialog page / Radio line; files `voices/<clip>.ogg` (or `voices/en/`, `voices/de/`).
 - `music/<name>.ogg`: a game track's name (`Space_Terraner`, `Station_Vossk`, `Space_Battle_Full`, `Space_NoCombat_Void`
   (main menu)...) replaces it; any other name is a new track for systems/stations (`spaceMusic`, `stationMusic`, `music`) and

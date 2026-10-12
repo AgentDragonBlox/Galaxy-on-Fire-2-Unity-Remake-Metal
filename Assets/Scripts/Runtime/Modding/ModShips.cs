@@ -242,5 +242,8 @@ namespace GoF2Remake.Modding
 
         /// <summary>A mod ship's shop icon, null = none.</summary>
         public static Texture2D Icon(int ship) => icons.TryGetValue(ship, out var t) ? t : null;
+
+        /// <summary>A ship's icon replaced in place (the Mod Builder's generated one, until the project is read again).</summary>
+        public static void SetIcon(int ship, Texture2D icon) => icons[ship] = icon;
     }
 }

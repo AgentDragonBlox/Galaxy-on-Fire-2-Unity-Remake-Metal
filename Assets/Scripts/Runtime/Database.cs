@@ -119,6 +119,8 @@ namespace GoF2Remake.Data
         public string icon;                // the shop icon (PNG, 180 x 88 like the originals); none = the Phantom's
         public float modelLength = 1000f;  // nose to tail in game units (0.05 m each) after scaling
         public float modelYaw;             // degrees about Unity y, when the model's nose doesn't face +Z
+        public float modelPitch, modelRoll; // degrees about Unity x / z, for a model lying on its side or nose up in its file
+        public float[] modelOffset;        // game units (x, y, z in the ship's frame like the mounts): the sized model moved off the pivot
         public float engineGlowRadius = 24f;   // game units, the glow disc at each exhaust mount
         public float[] engineGlowColor;    // RGB 0..1: every exhaust's flame colour (a mount's glowColor wins); none = the original glow
         public List<CustomShipMaterial> materials;   // replace the model's materials on the renderers / submeshes they name

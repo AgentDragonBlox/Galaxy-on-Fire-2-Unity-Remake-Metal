@@ -3,6 +3,12 @@
 A mod is a folder (or a `.zip`) of plain files: JSON for data, PNG for images. Mods contain no code, so a mod you download can't
 harm your computer. Players turn mods on and off in the main menu's **Mods** screen.
 
+**Making a mod in the game:** main menu > **Mods** > **Mod Builder** (experimental) makes projects in this same format
+without writing any JSON: new ships from a `.glb` model or changes to the game's ships, their stats and textures, their
+hardpoints placed on the hull in 3D, and test flights against pirates. A new ship's shop icon is rendered from its model
+(`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). **Export as mod** puts the finished project into your
+Mods folder. Only ships can be built there so far; everything below can still be written by hand.
+
 **Making a mod with an AI assistant:** `Modding/ai/gof2-modding` is this guide condensed for Claude, ChatGPT and the like,
 with every original item, ship, system and station number in `reference.md`. See `Modding/ai/README.md` for how to use it.
 
@@ -355,6 +361,8 @@ A list of entries, like items.json: `"id"` adds a ship, `"override"` changes one
 | `slots` | `primary`, `secondary`, `turret`, `equipment`. A ship may have several turret slots, one per turret mount. |
 | `model` | **Required.** The ship's model, a `.glb` (or `.gltf`) file in the mod. Shots hit its real shape, and the player's ship slides along it: every mesh counts except those with an additive / glow material, so keep invisible helper meshes out of the file. |
 | `modelLength`, `modelYaw` | Its length nose to tail in game units (the Phantom is about 1000; 20 units = 1 m), and a turn in degrees when the model's nose doesn't point forward (+Z). The model is scaled to that length. |
+| `modelPitch`, `modelRoll` | More turns in degrees (about the side axis and the length axis), for a model lying nose up or on its side in its file. |
+| `modelOffset` | `[x, y, z]` in game units (like the mounts): the sized model moved off the ship's centre, the point it turns, docks and flies around. |
 | `icon` | The shop icon, a PNG of 180 x 88 like the originals (the ship on the plate). None = the Phantom's. |
 | `hangarHeight` | How high its pivot sits above the hangar pad, in game units (the originals 140 to 400). |
 | `mounts` | Where guns and exhausts sit, in game units from the ship's centre (x right, y up, z forward): `slotType` 0 primary gun, 1 secondary, 2 turret (`"upsideDown": true` hangs it under the hull), 3 engine exhaust (the flame and its particles; `turretAngles[0]` sizes the particles; `"glowColor": [r, g, b]` (0 to 1) colours that exhaust's flame and its exhaust particles; `"glowSize": [halfWidth, halfHeight, length]` (game units) makes the flame an ellipse of that size, its flared ring `length` behind the nozzle). |
@@ -420,7 +428,8 @@ fewer slots, what no longer fits moves to the hold the next time the player dock
 [ { "override": 10, "slots": { "primary": 3, "secondary": 2 } } ]
 ```
 
-An override of an original ship can also give it a new **model**: `model` with `modelLength`, `modelYaw`, `materials`,
+An override of an original ship can also give it a new **model**: `model` with `modelLength`, `modelYaw` (and `modelPitch`,
+`modelRoll`, `modelOffset`), `materials`,
 `engineGlowRadius` / `engineGlowColor` and the glows, as for a new ship. Every ship of that number then uses it (yours, the
 NPCs', the hangar's). Its guns and exhausts stay at the original's mounts unless the entry has its own `mounts`.
 
@@ -903,7 +912,7 @@ named can use them: a **Dialog** page, a **Radio** call, an **Ask** / **Vote** q
 | `race`, `gender` | What the game draws by race: the figure standing in the Space Lounge when the character is a bar mission's client, the name's colour in the dialogue. Default `terran`, `male`. |
 | `mirrored` | `true`: drawn mirrored (the game mirrors Keith's portrait). |
 | `background`, `frame` | `false`: without the game's portrait background / frame. |
-| `replaces` | A story character (`"Gunant Breh"`, or a speaker number) whose portrait this one takes everywhere, the game's own story included. Their name and voice stay. |
+| `replaces` | A story character (`"Gunant Breh"`, `"Keith"`, or a speaker number) whose portrait this one takes everywhere, the game's own story included, and whose name too when this character has a `name` (the dialogue and radio headers, `%player%` for Keith). Other characters' lines that mention the old name, and the voices, stay. |
 
 Name the character in a speaker slot by `vega`, by `frontier_systems:vega` (always unique, also across mods) or by its name
 (`Captain Vega`). `vega as Harbour Master` shows another name over the same face, like the story characters. In typed

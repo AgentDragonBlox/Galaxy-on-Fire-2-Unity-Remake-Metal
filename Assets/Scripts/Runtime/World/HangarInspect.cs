@@ -32,15 +32,16 @@ namespace GoF2Remake.World
         public float Radius => radius;
         public Vector3 Centre => centre;
 
-        /// <summary>From the hangar camera at 'cameraPosition' around the ship of 'shipBounds' (world).</summary>
-        public void Begin(Vector3 cameraPosition, Bounds shipBounds)
+        /// <summary>From the hangar camera at 'cameraPosition' around the ship of 'shipBounds' (world); 'minRadii': how close it
+        /// may zoom, in ship radii (the Mod Builder goes closer than Inspect ship).</summary>
+        public void Begin(Vector3 cameraPosition, Bounds shipBounds, float minRadii = MinRadii)
         {
             centre = shipBounds.center;
             radius = Mathf.Max(1f, shipBounds.extents.magnitude);
             floorY = shipBounds.min.y;
             var d = cameraPosition - centre;
-            distance = Mathf.Max(d.magnitude, radius * MinRadii);
-            minDistance = radius * MinRadii;
+            distance = Mathf.Max(d.magnitude, radius * minRadii);
+            minDistance = radius * minRadii;
             maxDistance = Mathf.Max(radius * MaxRadii, minDistance + 1f);
             yaw = Mathf.Atan2(d.x, d.z);
             pitch = Mathf.Asin(Mathf.Clamp(d.y / Mathf.Max(d.magnitude, 1e-3f), -1f, 1f));

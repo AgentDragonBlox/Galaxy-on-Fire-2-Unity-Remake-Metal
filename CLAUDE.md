@@ -1743,7 +1743,9 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
 - **Ship models** (`ModShips`, `ModShipBuilder`, `ModMaterials`, `ModGltfMaterials`; glTFast 6.20, `com.unity.cloud.gltfast`):
   each new ship's GLB loads with glTFast (asynchronous: `Preload` from the main menu, the menu's Leave and `NetGame.EnterWorld`
   wait for `Ready` / `WhenReady`, at most 30 s) into an AssembledObject template under a hidden DontDestroyOnLoad holder
-  (the run-time port of PR #34's CustomShipBuilder: hull turned by modelYaw and scaled to modelLength, engine glow discs at the
+  (the run-time port of PR #34's CustomShipBuilder: hull turned by modelYaw and scaled to modelLength (a skinned mesh baked into a plain one in its drawn pose first,
+  `ModShipBuilder.FlattenSkinned`: the sizing, collision, shadows and the Mod Builder read the bind-pose mesh, which the
+  bones drew elsewhere and at another size), engine glow discs at the
   slot-3 mounts on mat_34813 (a mount's `glowSize` [half width, half height, flame length] makes an ellipse; a `glowColor`
   or the ship's `engineGlowColor` switches the glow to `ModAssets.engineGlowTint`, the sprite in white
   (`Resources/GoF2Mods/ModEngineGlowWhite.png`, Build Mod Assets; the glow sprite there made round and soft, its ring of
@@ -1957,7 +1959,8 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   (`Page.character`), the radio box (`Traffic.Chatter.character`), EventScreen's question and mission card, the lounge
   client and the Missions window (`EventMissions.Offer.character`; the character's race / gender pick the bar figure).
   `replaces` (a story speaker by name / first name / number): `Portrait.ShowSpeaker` draws the character instead, story
-  included. `TextReveal.Names` tints character names as people (rebuilt when `ModManager.Revision` changes). Portraits
+  included, and `StoryTable.SpeakerName` gives its name when it has one (every header, the radio, `%player%`;
+  `OriginalSpeakerName` for lookups: the replacement's own resolution, /dialog names, which find either). `TextReveal.Names` tints character names as people (rebuilt when `ModManager.Revision` changes). Portraits
   through `ModMaterials` (Preload from the main menu). Example: frontier_systems' Captain Vega. Verified in Play mode: a
   dialogue page by id, one by key with a rename, a replaced story speaker (mirrored), a radio call in flight.
 - **Dependencies** (`ModManifest.dependencies`, "id" or "id>=version" → `dependencyVersions`, `VersionAtLeast`): `Active`
@@ -2021,6 +2024,50 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   phone (S24 Ultra): the 79 GoF3 ships cold in 9.5 s, nothing compressed on the main thread, the hulls
   checked up close. Texture2D.Compress stays for a GPU that reads neither; a phone's old "gpu" cache files are no longer read
   (nothing deletes them).
+- **Mod Builder** (remake, experimental; vertical slice: ships only): the main menu's Mods button opens a hub
+  (`MainMenu.BuildModsHub`, `modsHubPanel`: Mod Browser / Mod Builder; Back from either returns to it). The projects page
+  (`ModBuilderProjects`, `modBuilderPanel`, styles `.mb-*` in MainMenu.uss): `persistentDataPath/ModProjects/<id>`
+  (`Modding.ModProject`: a mod folder in the normal format, mod.json / ships.json / models / textures, plus builder.json
+  (never exported): each ship's test loadout, the test cheats, the last ship), New / name / author / version / description,
+  the content kinds (Ships; the others greyed "Coming soon"), Open in hangar, Export as mod (zips it into the Mods folder,
+  replacing an installed mod of that id after asking, `ModImport.Delete`), Open folder, Delete. Opening one
+  (`Modding.ModBuilder.Begin`): a throwaway free-play game (completed world) docked at Dis (70), the project the only active
+  mod (`ModManager.SetBuilderProject`: Active = the project and its dependencies, the enabled mods aside), nothing saved
+  (`SaveGame.Save` / `AutoSave` refuse while `ModBuilder.Active`). The Station scene then shows `ModBuilderView`
+  (`Resources/GoF2ModBuilder/ModBuilder.uss`) instead of the station menu (StationMenu hides its children and hands Update
+  over): ships list (+ new ship from .glb via `ModImport.Pick(title, filter, exts)`, + change a game ship, remove), tabs
+  Ship (name, description, race, stats, equipment slots, model; its length / scale +-10 %, turns about all three axes
+  (ships.json `modelYaw` + the new `modelPitch` / `modelRoll`, `ModShipBuilder`: Euler(pitch, yaw, roll)), position (the new
+  `modelOffset`, game units in the ship's frame, nudges of 2 % and Centre on pivot; moves and resizes carry the hardpoints
+  along, every change re-measures the hangar height), hangar height + Auto, hull textures: one
+  `materials` entry for all meshes, for GLBs without their own), Hardpoints (add by clicking the hull, list, X / Y / Z, mirror,
+  centre, delete, slot counts following the points, turret upside down, engine flame radius / length / particles), Loadout
+  (per-slot item pickers, Auto-fill, god mode / infinite ammo). The 3D editor is `World.ModBuilderGizmo` (balls drawn over the
+  hull by `Hidden/GoF2/BuilderGizmo`, Unity-style move arrows along the ship's axes (X = game +x = the pilot's left), a drag on
+  a ball slides it over the hull (MeshColliders on layer 22), a flat arrow on the floor toward the nose); the camera is
+  Inspect ship's orbit (`StationLevel.BeginInspect(minRadii)`). An Engines slider (off at the left, throttle up to 90 %,
+  then the boost) lights the glow and a standing exhaust plume (`ShipExhaust.stationary` / `stationaryBoost`: a rate over
+  time, the plume normally comes per distance flown). Below 1.58:1 / 1.4:1 the root takes `mbv-narrow` / `mbv-compact`
+  (narrower panels, smaller text); the kinds strip scrolls sideways so Save / Exit stay on screen. The panels fly out as the ship takes off and back in once it
+  has landed, like the station menu (`ModBuilderView.UpdateUiAnimation`: 450 ms, ease-out cubic, each panel to its own
+  edge and fading, one after another; no input meanwhile). Edits save at once; model-shaping ones (model, size, turn,
+  engine points, hangar height, textures) re-read the project (`ModBuilder.Reload`) and rebuild the turntable ship when its
+  model is ready. A new ship without hardpoints gets a first set from its bounds (two guns, a secondary, an engine) and its
+  hangar height. A new ship gets its shop icon rendered once its model is built (`Modding.ShipIconMaker`, the Hull Icons
+  builder's look at runtime: left side from above, orthographic, alpha from a black and a white render, over
+  `Resources/GoF2Icons/frame_ship.png`, which **GoF2 > Build > Ship Icon Frame** / Hull Icons write) into `icons/<id>.png`
+  and ships.json `icon`; builder.json keeps the file and the look it was made from (model file, turn, hull textures), so it
+  is made again only when that changes, and an icon the modder set by hand is never replaced. Test fly: the project read again, the loadout mounted, the cheats granted (`Cheats.Grant`, honoured while
+  `ModBuilder.Active`), the normal take-off (`StationLevel.Depart` now waits for the orbit camera's blend back first: the
+  flight's view-edge shrink is computed from the camera as it starts) into Dis' orbit: `SpaceLevel` passive (no traffic,
+  wingmen), jumps / gate refused, no tutorial popups, `World.ModBuilderRange` keeps 3 hostile pirates coming (6 s after a
+  death); docking, the pause menu's "Back to Mod Builder" or a death returns to the builder (`ModBuilder.EndTestFlight`).
+  Exit: `ModBuilder.End` (the menu's projects page). Verified in Play mode: projects, open, a .glb ship (auto hardpoints,
+  textures), a Phantom override, placing / dragging points, the loadout, test flight, dock back, exit, export. Not yet: a
+  real file-picker run, touch / controller use of the gizmo.
+- Orbit drags (remake, players' request): a vertical drag takes the camera down / up the other way round (a drag up tips the
+  ship up) in Inspect ship, Action Freeze (`PhotoMode`, the original's y flip dropped) and the Mod Builder; keys and sticks
+  unchanged.
 - **Mod browser** (`ModBrowser`, the main menu's Mods button and `modsPanel`; styles `.mods-*` in MainMenu.uss): the list in
   load order (thumbnail, name, version · author, On / Off / Error / Can't load), a click or keyboard / controller focus selecting a row (the mouse's hover focus doesn't: passing over the rows on the way to Turn on changed the mod it acted on), the selected mod's preview, name, meta,
   description and credits (mod.json `credits`), where it is installed, errors and warnings, Turn on / off (also the

@@ -147,6 +147,7 @@ namespace GoF2Remake.Data
             // Multiplayer: a session is a separate free-play game; it never overwrites the single-player saves (also not
             // after its connection went, while its game is still loaded).
             if (GoF2Remake.Multiplayer.NetGame.SessionGame) return false;
+            if (Modding.ModBuilder.Active) return false;   // the Mod Builder's throwaway game
             // Hardcore: only the auto-save (no slot to go back to after a death).
             if (Session.Hardcore && slot != AutoSaveSlot) return false;
             var s = Capture();
@@ -206,7 +207,7 @@ namespace GoF2Remake.Data
         {
             // Multiplayer: a server that keeps profiles gets the docked game instead (NetProfileClient; a no-op without).
             if (GoF2Remake.Multiplayer.NetGame.SessionGame) { GoF2Remake.Multiplayer.NetProfileClient.Upload(); return; }
-            if (Session.PlaySeconds <= 0f) return;
+            if (Session.PlaySeconds <= 0f || Modding.ModBuilder.Active) return;
             Save(AutoSaveSlot);
         }
 

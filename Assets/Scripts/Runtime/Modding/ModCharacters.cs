@@ -4,7 +4,7 @@
 // stays sharp in HD, scaled to cover the box, its top kept), over the game's portrait background and under its frame
 // (both optional), mirrored on request, and a race / gender for what the game draws or plays by race: the bar figure of
 // a bar mission's client, the name's colour in the dialogue. "replaces": a story character (by name or number) whose
-// portrait it takes everywhere, the game's own story included.
+// portrait, and name when it has one (StoryTable.SpeakerName), it takes everywhere, the game's own story included.
 // A speaker names one by "mod_id:character_id", by its id or by its name (NetAdmin.ResolveSpeaker; "vega as Bob" renames
 // it like a story speaker); it travels to every game as the speaker spec "-3 US rename US key" (SpeakerSpec), and each game
 // draws it from its own copy of the mod (multiplayer sessions share the host's mods). Portraits load in the background
@@ -33,6 +33,8 @@ namespace GoF2Remake.Modding
             public bool male = true, mirrored, frame = true, background = true;
             public string replaces;     // a story speaker's name or number
             public int replacesSpeaker = -2;   // resolved on first use (-1 none)
+
+            public bool HasName => name != null && name.Values.Any(n => !string.IsNullOrEmpty(n));
 
             /// <summary>The name in the current language (else English, else any).</summary>
             public string Name
@@ -145,7 +147,7 @@ namespace GoF2Remake.Modding
             if (int.TryParse(s, out int n)) return n >= 0 && n < StoryTable.SpeakerCount ? n : -1;
             for (int i = 0; i < StoryTable.SpeakerCount; i++)
             {
-                string name = StoryTable.SpeakerName(i);
+                string name = StoryTable.OriginalSpeakerName(i);   // not the replaced one: that asks this
                 if (!string.IsNullOrEmpty(name) && (name.Equals(s, StringComparison.OrdinalIgnoreCase) || name.Split(' ')[0].Equals(s, StringComparison.OrdinalIgnoreCase))) return i;
             }
             return -1;
