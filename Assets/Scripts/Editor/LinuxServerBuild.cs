@@ -24,7 +24,13 @@ namespace GoF2Remake.EditorTools
         const string FirstScene = "Assets/Scenes/MainMenu.unity";
 
         [MenuItem("GoF2/Build/Linux Dedicated Server", priority = 230)]
-        static void Build()
+        static void Build() => Run();
+
+        /// <summary>The command line (docker/build-server.sh): -executeMethod GoF2Remake.EditorTools.LinuxServerBuild.Batch;
+        /// exits 1 when the build fails (the menu item only logs it).</summary>
+        public static void Batch() => EditorApplication.Exit(Run() ? 0 : 1);
+
+        static bool Run()
         {
             var previousTarget = EditorUserBuildSettings.activeBuildTarget;
             var previousGroup = BuildPipeline.GetBuildTargetGroup(previousTarget);
@@ -39,7 +45,7 @@ namespace GoF2Remake.EditorTools
                     EditorUtility.DisplayDialog("Linux Dedicated Server",
                         "Couldn't switch to the Linux server target. Install the Unity Hub module \"Linux Dedicated Server Build Support\" " +
                         "for this Editor version, then try again.", "OK");
-                    return;
+                    return false;
                 }
                 PlayerSettings.SetScriptingBackend(NamedBuildTarget.Server, ScriptingImplementation.IL2CPP);   // like the Linux player
                 ServerOptimizations = true;
@@ -59,6 +65,7 @@ namespace GoF2Remake.EditorTools
                     Debug.Log($"GoF2: Linux dedicated server built: {Path.GetFullPath(Output)} ({s.totalSize / (1024 * 1024)} MB, {s.totalTime:mm\\:ss}).");
                 else
                     Debug.LogError($"GoF2: the Linux dedicated server build {s.result} ({s.totalErrors} errors; see the Console).");
+                return s.result == BuildResult.Succeeded;
             }
             finally
             {
