@@ -5,9 +5,11 @@ harm your computer. Players turn mods on and off in the main menu's **Mods** scr
 
 **Making a mod in the game:** main menu > **Mods** > **Mod Builder** (experimental) makes projects in this same format
 without writing any JSON: new ships from a `.glb` model or changes to the game's ships, their stats and textures, their
-hardpoints placed on the hull in 3D, and test flights against pirates. A new ship's shop icon is rendered from its model
+hardpoints placed on the hull in 3D, and test flights against pirates; new items made from a game item (or changes to one)
+with their own stats and icon, fitted to the ship to try them out; and characters with their portraits, for your quests
+or standing in for a story character. A new ship's shop icon is rendered from its model
 (`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). **Export as mod** puts the finished project into your
-Mods folder. Only ships can be built there so far; everything below can still be written by hand.
+Mods folder. Ships, items and characters can be built there so far; everything below can still be written by hand.
 
 **Making a mod with an AI assistant:** `Modding/ai/gof2-modding` is this guide condensed for Claude, ChatGPT and the like,
 with every original item, ship, system and station number in `reference.md`. See `Modding/ai/README.md` for how to use it.

@@ -5,8 +5,9 @@
 // the Mods folder. Beside the mod's files it keeps builder.json (never exported): each ship's test-flight loadout, the
 // test cheats and the ship last worked on.
 // The ships are ProjectShip: their ships.json entry as a JObject (fields the builder doesn't know, from a hand edit, are
-// kept), with typed accessors for what the builder edits and the hardpoints as WeaponMounts. Only ships for now; the
-// other kinds of content come later (the menu shows them as "Coming soon").
+// kept), with typed accessors for what the builder edits and the hardpoints as WeaponMounts. Items (items.json) and
+// characters (characters.json) are ProjectItem / ProjectCharacter (ProjectContent.cs) the same way; their files are written
+// only once the project has some (or had the file). The other kinds of content come later ("Coming soon").
 // Plain C#.
 
 using System;
@@ -21,6 +22,7 @@ using UnityEngine;
 
 namespace GoF2Remake.Modding
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public class ModProject
     {
         public const string BuilderFile = "builder.json";
@@ -38,6 +40,8 @@ namespace GoF2Remake.Modding
         public DateTime Modified { get; private set; }
 
         public readonly List<ProjectShip> Ships = new List<ProjectShip>();
+        public readonly List<ProjectItem> Items = new List<ProjectItem>();
+        public readonly List<ProjectCharacter> Characters = new List<ProjectCharacter>();
         JObject manifest = new JObject();
         JObject builder = new JObject();
         /// <summary>A content file couldn't be read (a hand edit gone wrong): shown, and the project isn't saved over it.</summary>
@@ -106,7 +110,7 @@ namespace GoF2Remake.Modding
                 p.manifest = JObject.Parse(File.ReadAllText(Path.Combine(folder, ModManifest.FileName)));
                 p.Id = Str(p.manifest, "id") ?? Path.GetFileName(folder);
                 p.Modified = Directory.GetLastWriteTimeUtc(folder);
-                foreach (var f in new[] { ModManifest.FileName, ModContent.ShipsFile, BuilderFile })
+                foreach (var f in new[] { ModManifest.FileName, ModContent.ShipsFile, ModContent.ItemsFile, ModCharacters.File, BuilderFile })
                 {
                     string path = Path.Combine(folder, f);
                     if (File.Exists(path)) { var t = File.GetLastWriteTimeUtc(path); if (t > p.Modified) p.Modified = t; }
@@ -121,6 +125,8 @@ namespace GoF2Remake.Modding
                     }
                     catch (Exception e) { p.LoadError = $"{ModContent.ShipsFile}: {e.Message}"; }
                 }
+                p.ReadList(ModContent.ItemsFile, o => p.Items.Add(new ProjectItem(o)));
+                p.ReadList(ModCharacters.File, o => p.Characters.Add(new ProjectCharacter(o)));
                 string b = Path.Combine(folder, BuilderFile);
                 if (File.Exists(b)) { try { p.builder = JObject.Parse(File.ReadAllText(b)); } catch { p.builder = new JObject(); } }
                 return p;
@@ -128,7 +134,20 @@ namespace GoF2Remake.Modding
             catch (Exception e) { Debug.LogWarning($"Mod Builder: can't read the project {folder}: {e.Message}"); return null; }
         }
 
-        /// <summary>Writes mod.json, ships.json and builder.json (each through a .tmp file).</summary>
+        /// <summary>A content file's entries (a broken file is the LoadError, and the project isn't saved over it).</summary>
+        void ReadList(string file, Action<JObject> add)
+        {
+            string path = Path.Combine(Folder, file);
+            if (!File.Exists(path)) return;
+            try
+            {
+                if (JToken.Parse(File.ReadAllText(path)) is JArray list)
+                    foreach (var t in list.OfType<JObject>()) add(t);
+            }
+            catch (Exception e) { LoadError ??= $"{file}: {e.Message}"; }
+        }
+
+        /// <summary>Writes mod.json, ships.json, items.json, characters.json and builder.json (each through a .tmp file).</summary>
         public void Save()
         {
             if (LoadError != null) { Debug.LogWarning($"Mod Builder: {Id} not saved: {LoadError}"); return; }
@@ -137,8 +156,18 @@ namespace GoF2Remake.Modding
             var list = new JArray();
             foreach (var s in Ships) list.Add(s.ToJson());
             Write(ModContent.ShipsFile, list.ToString(Formatting.Indented));
+            WriteList(ModContent.ItemsFile, Items.Select(i => i.ToJson()));
+            WriteList(ModCharacters.File, Characters.Select(c => c.ToJson()));
             Write(BuilderFile, builder.ToString(Formatting.Indented));
             Modified = DateTime.UtcNow;
+        }
+
+        /// <summary>A content file, written once there is something in it or it was there already.</summary>
+        void WriteList(string file, IEnumerable<JObject> entries)
+        {
+            var list = new JArray(entries);
+            if (list.Count == 0 && !File.Exists(Path.Combine(Folder, file))) return;
+            Write(file, list.ToString(Formatting.Indented));
         }
 
         void Write(string file, string text)
@@ -197,16 +226,73 @@ namespace GoF2Remake.Modding
         // ---- ships ------------------------------------------------------------------------------------------------
 
         /// <summary>A new ship id (a-z 0-9 _) from a name, unique in the project.</summary>
-        public string ShipIdFor(string name)
+        public string ShipIdFor(string name) => UniqueId(name, "ship", id => Ships.Any(s => s.LocalId == id));
+        public string ItemIdFor(string name) => UniqueId(name, "item", id => Items.Any(s => s.LocalId == id));
+        public string CharacterIdFor(string name) => UniqueId(name, "character", id => Characters.Any(s => s.Id == id));
+
+        static string UniqueId(string name, string fallback, Func<string, bool> taken)
         {
             var chars = (name ?? "").Trim().ToLowerInvariant().Select(c => c >= 'a' && c <= 'z' || c >= '0' && c <= '9' ? c : '_').ToArray();
             string id = new string(chars).Trim('_');
             while (id.Contains("__")) id = id.Replace("__", "_");
-            if (id.Length == 0) id = "ship";
-            if (id.Length > 32) id = id.Substring(0, 32);
+            if (id.Length == 0) id = fallback;
+            if (id.Length > 32) id = id.Substring(0, 32).Trim('_');
             string unique = id;
-            for (int i = 2; Ships.Any(s => s.LocalId == unique); i++) unique = $"{id}_{i}";
+            for (int i = 2; taken(unique); i++) unique = $"{id}_{i}";
             return unique;
+        }
+
+        /// <summary>Paths AddFile handed out this run: never again, even once deleted (ModMaterials keeps a texture by its
+        /// path until the project is read again, so a reused name would show the old picture).</summary>
+        static readonly HashSet<string> issued = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Copies a file into one of the project's folders under a name not used yet (a new name for every copy, so
+        /// nothing that loaded the old file shows it again); its path inside the project ("portraits/x.png").</summary>
+        public string AddFile(string sourceFile, string folder, string baseName, string extension)
+        {
+            string dir = Path.Combine(Folder, folder);
+            Directory.CreateDirectory(dir);
+            string name = baseName + extension;
+            for (int i = 2; File.Exists(Path.Combine(dir, name)) || issued.Contains(Path.Combine(dir, name)); i++) name = $"{baseName}_{i}{extension}";
+            issued.Add(Path.Combine(dir, name));
+            File.Copy(sourceFile, Path.Combine(dir, name), true);
+            return folder + "/" + name;
+        }
+
+        /// <summary>Deletes a file of the project unless 'stillUsed' (a portrait something else still names).</summary>
+        public void DeleteFile(string path, bool stillUsed)
+        {
+            if (string.IsNullOrEmpty(path) || stillUsed) return;
+            try { File.Delete(Path.Combine(Folder, path)); } catch { }
+        }
+
+        // ---- items and characters ------------------------------------------------------------------------------
+
+        /// <summary>A new item: a copy of the game item 'baseItem' under its own name.</summary>
+        public ProjectItem AddItem(int baseItem, string name)
+        {
+            var it = new ProjectItem(new JObject { ["id"] = ItemIdFor(name), ["base"] = baseItem, ["name"] = name, ["description"] = "" });
+            Items.Add(it);
+            return it;
+        }
+
+        /// <summary>A change to the game item 'item' (nothing changed until a field is given).</summary>
+        public ProjectItem AddItemOverride(int item)
+        {
+            var it = new ProjectItem(new JObject { ["override"] = item });
+            Items.Add(it);
+            return it;
+        }
+
+        /// <summary>A new character with its portrait (a path in the project).</summary>
+        public ProjectCharacter AddCharacter(string name, string portrait)
+        {
+            var c = new ProjectCharacter(new JObject
+            {
+                ["id"] = CharacterIdFor(name), ["name"] = name, ["portrait"] = portrait, ["race"] = "terran", ["gender"] = "male",
+            });
+            Characters.Add(c);
+            return c;
         }
 
         /// <summary>Copies a GLB into the project's models folder; its path inside the project ("models/<name>.glb").</summary>
@@ -250,14 +336,8 @@ namespace GoF2Remake.Modding
         /// <summary>An override of an original ship: its stats and hardpoints copied, so they can be changed.</summary>
         public ProjectShip AddOverride(Database db, int ship)
         {
-            var d = db.Ship(ship);
-            var o = new JObject { ["override"] = ship };
-            if (d != null)
-            {
-                o["armor"] = d.armor; o["cargo"] = d.cargo; o["handling"] = Mathf.RoundToInt(d.handling); o["price"] = d.price;
-                o["slots"] = new JObject { ["primary"] = d.slots?.primary ?? 0, ["secondary"] = d.slots?.secondary ?? 0, ["turret"] = d.slots?.turret ?? 0, ["equipment"] = d.slots?.equipment ?? 0 };
-            }
-            var s = new ProjectShip(o);
+            var s = new ProjectShip(new JObject { ["override"] = ship });
+            s.FillFromGame(db.Ship(ship));
             s.Mounts.AddRange((db.WeaponMounts.Find(w => w.ship == ship)?.mounts ?? new List<WeaponMount>()).Select(ProjectShip.Copy));
             Ships.Add(s);
             return s;
@@ -396,8 +476,8 @@ namespace GoF2Remake.Modding
         /// <summary>Slot count by kind: 0 primary, 1 secondary, 2 turret, 3 equipment.</summary>
         public int SlotCount(int kind)
         {
-            string k = SlotKey(kind);
-            return Slots[k] is JValue v && v.Type == JTokenType.Integer ? (int)v : 0;
+            string k = SlotKey(kind);   // read without making a "slots" object (FillFromGame looks for a missing one)
+            return json["slots"] is JObject o && o[k] is JValue v && v.Type == JTokenType.Integer ? (int)v : 0;
         }
 
         public void SetSlotCount(int kind, int count) => Slots[SlotKey(kind)] = Mathf.Clamp(count, 0, 99);
@@ -423,6 +503,20 @@ namespace GoF2Remake.Modding
         static string SlotKey(int kind) => kind == 0 ? "primary" : kind == 1 ? "secondary" : kind == 2 ? "turret" : "equipment";
 
         public int MountCount(int slotType) => Mounts.Count(m => m.slotType == slotType);
+
+        /// <summary>An override's stats and slots the entry doesn't give, from the game's ship (they are the game's anyway):
+        /// the builder shows and counts what the ship really has (a hand-written override without "slots" had none).</summary>
+        public void FillFromGame(ShipData d)
+        {
+            if (d == null) return;
+            if (json["armor"] == null) json["armor"] = d.armor;
+            if (json["cargo"] == null) json["cargo"] = d.cargo;
+            if (json["handling"] == null) json["handling"] = Mathf.RoundToInt(d.handling);
+            if (json["price"] == null) json["price"] = d.price;
+            var slots = Slots;
+            int[] counts = { d.slots?.primary ?? 0, d.slots?.secondary ?? 0, d.slots?.turret ?? 0, d.slots?.equipment ?? 0 };
+            for (int k = 0; k < 4; k++) if (slots[SlotKey(k)] == null) slots[SlotKey(k)] = counts[k];
+        }
 
         /// <summary>The entry as written to ships.json (the hardpoints from Mounts).</summary>
         public JObject ToJson()

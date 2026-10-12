@@ -31,11 +31,16 @@ namespace GoF2Remake.Modding
         public static ModProject Project { get; private set; }
         /// <summary>The ship being worked on (null = the project has none yet).</summary>
         public static ProjectShip Ship { get; set; }
+        /// <summary>The kinds of content the builder edits (its top tabs).</summary>
+        public enum Kind { Ships, Items, Characters }
+        /// <summary>The kind the builder opens on (the projects page's tile; kept through test flights).</summary>
+        public static Kind OpenKind { get; set; }
+
         /// <summary>A test flight runs (between Test fly and landing back in the builder).</summary>
         public static bool TestFlying { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { Active = TestFlying = false; Project = null; Ship = null; }
+        static void ResetStatics() { Active = TestFlying = false; Project = null; Ship = null; OpenKind = Kind.Ships; }
 
         /// <summary>Opens 'project': the builder's game; the caller loads the Station scene (after the mods have loaded).</summary>
         public static void Begin(ModProject project)
@@ -53,6 +58,8 @@ namespace GoF2Remake.Modding
             Active = true;
             TestFlying = false;
             ModManager.SetBuilderProject(project.Folder);
+            var db = Database.Load();
+            foreach (var s in project.Ships) if (s.IsOverride) s.FillFromGame(db.Ship(s.OverrideIndex));
             Ship = project.Ships.FirstOrDefault(s => s.Ref == project.LastShip) ?? project.Ships.FirstOrDefault();
             ApplyShip();
             Debug.Log($"Mod Builder: opened \"{project.Name}\" ({project.Folder}), {project.Ships.Count} ship(s)");

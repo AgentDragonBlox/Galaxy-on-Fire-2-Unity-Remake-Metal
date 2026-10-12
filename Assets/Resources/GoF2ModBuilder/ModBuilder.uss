@@ -647,6 +647,11 @@
     width: 640px;
 }
 
+/* A picker's list: a set height, or its scroll view sizes to nothing. */
+.mbv-modal-box--list {
+    height: 82%;
+}
+
 .mbv-confirm-text {
     margin: 8px 0 16px 0;
     font-size: 18px;
@@ -738,3 +743,98 @@
 
 /* The X / Y / Z rows keep their one-letter labels in every layout (the rules above are more specific than .mbv-xyz's). */
 .mbv-root .mbv-xyz > .mbv-field > .unity-label { min-width: 22px; max-width: 22px; }
+
+/* ---- kinds: each kind's side panels (ModBuilderView.SelectKind) ---------------------------------------------------- */
+
+.mbv-group {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    flex-direction: column;
+}
+
+/* Items: the selected item's icon and title. */
+.mbv-item-head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.mbv-item-head-icon {
+    width: 120px;
+    height: 59px;
+    flex-shrink: 0;
+    margin-right: 12px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* Characters: the portrait as a conversation shows it (the game's .portrait rules, UI/Dialogue/Dialogue.uss). */
+.mbv-char-preview {
+    align-items: center;
+    margin: 4px 0 10px 0;
+}
+
+.mbv-char-preview-name {
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: var(--gof-text);
+    margin-bottom: 6px;
+}
+
+.mbv-portrait {
+    width: 160px;
+    height: 200px;
+    flex-shrink: 0;
+    overflow: hidden;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.mbv-root .portrait-layers {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 160px;
+    height: 200px;
+}
+
+.mbv-root .portrait--mirrored .portrait-layers {
+    scale: -1 1;
+}
+
+.mbv-root .portrait-part,
+.mbv-root .portrait-frame {
+    position: absolute;
+    left: 0;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.mbv-root .portrait-frame {
+    top: 0;
+    width: 160px;
+    height: 200px;
+}
+
+.mbv-char-thumb {
+    width: 40px;
+    height: 50px;
+    flex-shrink: 0;
+    margin-right: 10px;
+    -unity-background-scale-mode: scale-and-crop;
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+/* The story speakers' picker: each portrait at half size. */
+.mbv-speaker-tile {
+    width: 112px;
+}
+
+.mbv-speaker-clip {
+    width: 80px;
+    height: 100px;
+    overflow: hidden;
+}
+
+.mbv-portrait--small {
+    scale: 0.5 0.5;
+    transform-origin: 0 0;
+}

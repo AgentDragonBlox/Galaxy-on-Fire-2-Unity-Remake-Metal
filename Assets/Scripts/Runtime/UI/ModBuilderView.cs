@@ -1,7 +1,10 @@
 // ModBuilderView.cs
 // Remake-only: the Mod Builder's screen over the hangar (Modding.ModBuilder), in place of the station menu (StationMenu
 // hides its own and hands Update over). Built in code with Resources/GoF2ModBuilder/ModBuilder.uss:
-//   top bar      the project, the kinds of content (Ships; the rest greyed out, "Soon"), Save and Exit;
+//   top bar      the project, the kinds of content (Ships, Items, Characters; the rest greyed out, "Soon"), Save and Exit;
+//                a kind swaps the two side panels (Items / Characters: ModBuilderViewItems / ModBuilderViewCharacters,
+//                partial parts of this class); Items keeps the hangar, its turntable ship and Test fly; Characters is
+//                edited in the station's Space Lounge (no ship, Test fly or Engines there);
 //   left         the project's ships: new ones from a .glb model (the system's file picker, ModImport.Pick) or changes
 //                to one of the game's ships (a picker of the originals), Remove;
 //   right        the selected ship's tabs: Ship (name, description, race, armor, cargo, handling, price, equipment
@@ -31,7 +34,7 @@ using UnityEngine.UIElements;
 
 namespace GoF2Remake.UI
 {
-    public class ModBuilderView
+    public partial class ModBuilderView
     {
         const float M = 0.05f;
         static string T(string key, string english) => Localization.Extra(key, english);
@@ -84,7 +87,7 @@ namespace GoF2Remake.UI
             viewport.RegisterCallback<PointerMoveEvent>(OnPointerMove);
             viewport.RegisterCallback<PointerUpEvent>(OnPointerUp);
             viewport.RegisterCallback<PointerCaptureOutEvent>(_ => EndDrag());
-            viewport.RegisterCallback<WheelEvent>(e => { level.Inspect.Zoom(Mathf.Pow(0.85f, -Mathf.Sign(e.delta.y))); e.StopPropagation(); });
+            viewport.RegisterCallback<WheelEvent>(e => { if (InHangar) level.Inspect.Zoom(Mathf.Pow(0.85f, -Mathf.Sign(e.delta.y))); e.StopPropagation(); });
             labels = Add(root, new VisualElement { pickingMode = PickingMode.Ignore }, "mbv-labels");
 
             // ---- top bar ----
@@ -98,15 +101,26 @@ namespace GoF2Remake.UI
             kindsScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             new DragScroll(kindsScroll);
             var kinds = Add(kindsScroll, new VisualElement(), "mbv-kinds");
-            KindTab(kinds, T("mbShips", "Ships"), true);
-            foreach (var (k, e) in new[] { ("mbItems", "Items"), ("mbFx", "Weapon fx"), ("mbSystems", "Systems"),
-                                           ("mbInteriors", "Hangars"), ("mbQuests", "Quests"), ("mbCharacters", "Characters"), ("mbAudio", "Audio"), ("mbSkins", "Skins"), ("mbCampaigns", "Campaigns"), ("mbBlueprints", "Blueprints") })
-                KindTab(kinds, T(k, e), false);
+            foreach (var (k, e, kind) in new (string, string, ModBuilder.Kind?)[]
+                     {
+                         ("mbShips", "Ships", ModBuilder.Kind.Ships), ("mbItems", "Items", ModBuilder.Kind.Items), ("mbFx", "Weapon fx", null),
+                         ("mbSystems", "Systems", null), ("mbInteriors", "Hangars", null), ("mbQuests", "Quests", null),
+                         ("mbCharacters", "Characters", ModBuilder.Kind.Characters), ("mbAudio", "Audio", null), ("mbSkins", "Skins", null),
+                         ("mbCampaigns", "Campaigns", null), ("mbBlueprints", "Blueprints", null),
+                     })
+                KindTab(kinds, T(k, e), kind);
             TopButton(top, T("mbSave", "Save"), () => { SaveNow(); Status(T("mbSaved", "Saved."), false); });
             TopButton(top, T("mbExit", "Exit"), () => { SaveNow(); ModBuilder.End(); }, "mbv-exit");
 
-            // ---- left: the ships ----
+            // ---- left: the ships (or the kind's list) ----
             var left = uiLeft = Add(root, new VisualElement(), "mbv-left", "mbv-panel");
+            var right = uiRight = Add(root, new VisualElement(), "mbv-right", "mbv-panel");
+            for (int k = 0; k < KindCount; k++)
+            {
+                leftGroups[k] = Add(left, new VisualElement(), "mbv-group");
+                rightGroups[k] = Add(right, new VisualElement(), "mbv-group");
+            }
+            left = leftGroups[(int)ModBuilder.Kind.Ships];
             Add(left, new Label(T("mbShips", "Ships").ToUpperInvariant()), "mbv-heading", "gof-semibold");
             var shipScroll = Add(left, new ScrollView(ScrollViewMode.Vertical), "mbv-ship-scroll");
             shipScroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
@@ -120,7 +134,7 @@ namespace GoF2Remake.UI
             Act(left, T("mbRemoveShip", "Remove ship"), AskRemove, "mbv-danger");
 
             // ---- right: the selected ship ----
-            var right = uiRight = Add(root, new VisualElement(), "mbv-right", "mbv-panel");
+            right = rightGroups[(int)ModBuilder.Kind.Ships];
             var tabRow = Add(right, new VisualElement(), "mbv-tabs");
             string[] tabNames = { T("mbTabShip", "Ship"), T("mbTabHardpoints", "Hardpoints"), T("mbTabLoadout", "Loadout") };
             for (int i = 0; i < 3; i++)
@@ -134,6 +148,8 @@ namespace GoF2Remake.UI
             ship = Add(scroll, new VisualElement(), "mbv-page");
             hardpoints = Add(scroll, new VisualElement(), "mbv-page");
             loadout = Add(scroll, new VisualElement(), "mbv-page");
+            BuildItemsPanels(leftGroups[(int)ModBuilder.Kind.Items], rightGroups[(int)ModBuilder.Kind.Items]);
+            BuildCharactersPanels(leftGroups[(int)ModBuilder.Kind.Characters], rightGroups[(int)ModBuilder.Kind.Characters]);
 
             // ---- bottom ----
             status = Add(root, new Label { pickingMode = PickingMode.Ignore }, "mbv-status");
@@ -166,6 +182,7 @@ namespace GoF2Remake.UI
             SelectTab(0);
             RebuildShips();
             RebuildPages();
+            SelectKind(ModBuilder.OpenKind);
             // The models of a project just opened may still be loading: the turntable shows the right one once they are.
             reloading = !ModShips.Ready;
             ShowProblems();
@@ -196,13 +213,18 @@ namespace GoF2Remake.UI
             if (extra != null) b.AddToClassList(extra);
         }
 
-        void KindTab(VisualElement parent, string text, bool on)
+        void KindTab(VisualElement parent, string text, ModBuilder.Kind? kind)
         {
             // The name and the badge as two labels: a Button with text of its own and children lays them over each other.
             var b = new Button { focusable = false };
             b.AddToClassList("mbv-kind");
             Add(b, new Label(text.ToUpperInvariant()) { pickingMode = PickingMode.Ignore }, "mbv-kind-name");
-            if (on) b.AddToClassList("mbv-kind--on");
+            if (kind != null)
+            {
+                var k = kind.Value;
+                b.clicked += () => { if (k != this.kind) { sound(false); SelectKind(k); } };
+                kindTabs[(int)k] = b;
+            }
             else
             {
                 b.SetEnabled(false);
@@ -234,6 +256,47 @@ namespace GoF2Remake.UI
                 set(v);
             });
             return f;
+        }
+
+        // ---- kinds of content ---------------------------------------------------------------------------------
+
+        const int KindCount = 3;
+        readonly Button[] kindTabs = new Button[KindCount];
+        readonly VisualElement[] leftGroups = new VisualElement[KindCount], rightGroups = new VisualElement[KindCount];
+        ModBuilder.Kind kind = (ModBuilder.Kind)(-1);
+        /// <summary>Things to do once the game has read the project again (an item's number to use, Update).</summary>
+        readonly List<Action> afterReload = new List<Action>();
+
+        /// <summary>The station shows its hangar (the turntable ship, its orbit camera); the Characters kind shows the bar.</summary>
+        bool InHangar => level.View == StationView.Hangar;
+
+        /// <summary>Shows a kind's panels; the hardpoint gizmo only with the ships; the characters in the Space Lounge.</summary>
+        void SelectKind(ModBuilder.Kind k)
+        {
+            var was = kind;
+            kind = k;
+            ModBuilder.OpenKind = k;
+            for (int i = 0; i < KindCount; i++)
+            {
+                leftGroups[i].style.display = i == (int)k ? DisplayStyle.Flex : DisplayStyle.None;
+                rightGroups[i].style.display = i == (int)k ? DisplayStyle.Flex : DisplayStyle.None;
+                kindTabs[i]?.EnableInClassList("mbv-kind--on", i == (int)k);
+            }
+            bool ships = k == ModBuilder.Kind.Ships;
+            placing = -1;
+            if (!ships && gizmo.Selected >= 0) { gizmo.Selected = -1; gizmo.Refresh(); }
+            gizmo.gameObject.SetActive(ships);
+            bool bar = k == ModBuilder.Kind.Characters;
+            level.SetView(bar ? StationView.Lounge : StationView.Hangar);
+            drag = Drag.None;
+            fling = Vector2.zero;
+            testFly.style.display = bar ? DisplayStyle.None : StyleKeyword.Null;
+            uiEngines.style.display = bar ? DisplayStyle.None : StyleKeyword.Null;
+            // Item changes reach the rest of the builder (the loadout's pickers) once the game has read them.
+            if (was == ModBuilder.Kind.Items && itemsChanged) { itemsChanged = false; RequestReload(true); }
+            if (k == ModBuilder.Kind.Items) { RebuildItems(); BuildItemPage(); }
+            if (k == ModBuilder.Kind.Characters) { RebuildCharacters(); BuildCharacterPage(); }
+            if (ships) { RebuildShips(); BuildHardpointsPage(); BuildLoadoutPage(); }
         }
 
         // ---- pages ----------------------------------------------------------------------------------------------
@@ -941,7 +1004,7 @@ namespace GoF2Remake.UI
         void ShowPicker(string title, List<(string name, Texture2D icon, Action pick)> choices)
         {
             modal.Clear();
-            var box = Add(modal, new VisualElement(), "mbv-modal-box", "mbv-panel");
+            var box = Add(modal, new VisualElement(), "mbv-modal-box", "mbv-modal-box--list", "mbv-panel");
             Heading(box, title);
             var scroll = Add(box, new ScrollView(ScrollViewMode.Vertical), "mbv-picker-scroll");
             scroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
@@ -1001,6 +1064,7 @@ namespace GoF2Remake.UI
         void StartTestFlight()
         {
             if (Current == null) { Status(T("mbNoShipToFly", "Add a ship first."), true); return; }
+            if (!InHangar) return;
             if (launchPending || level.PlayerFlying) return;
             sound(false);
             launchPending = true;
@@ -1069,6 +1133,10 @@ namespace GoF2Remake.UI
                     boundShip = -2;
                     ShowProblems();
                     RebuildShips();
+                    if (kind == ModBuilder.Kind.Items) { RebuildItems(); BuildItemPage(); }
+                    var queued = afterReload.ToArray();
+                    afterReload.Clear();
+                    foreach (var a in queued) a();
                 }
             }
             if (!reloading && !reloadPending && boundShip != Session.ShipIndex) BindShip();
@@ -1173,7 +1241,7 @@ namespace GoF2Remake.UI
             }
             var s = Current;
             gizmo.Bind(boundTransform, s?.Mounts ?? new List<WeaponMount>());
-            level.BeginInspect(0.55f);
+            if (InHangar) level.BeginInspect(0.55f);
             ApplyEngines();   // the rebuilt ship comes with its engines off
             // A new ship's first hardpoints (just imported, or never given any).
             if (s != null && !s.IsOverride && (s.NeedsLayout || s.Mounts.Count == 0) && ModBuilder.IndexOf(s) == index) AutoLayout(s);
@@ -1234,8 +1302,9 @@ namespace GoF2Remake.UI
                 return;
             }
             if (typing || ModalOpen) return;
-            if (kb.deleteKey.wasPressedThisFrame || kb.backspaceKey.wasPressedThisFrame) DeleteSelected();
-            if (kb.mKey.wasPressedThisFrame) Mirror();
+            if (kind == ModBuilder.Kind.Ships && (kb.deleteKey.wasPressedThisFrame || kb.backspaceKey.wasPressedThisFrame)) DeleteSelected();
+            if (kind == ModBuilder.Kind.Ships && kb.mKey.wasPressedThisFrame) Mirror();
+            if (!InHangar) return;   // the Space Lounge: no ship to fly or turn around
             if (kb.lKey.wasPressedThisFrame) StartTestFlight();
             float frames = dt / (1000f / 30f);
             float left = kb.leftArrowKey.isPressed || kb.aKey.isPressed ? 1f : 0f, right = kb.rightArrowKey.isPressed || kb.dKey.isPressed ? 1f : 0f;
@@ -1248,6 +1317,7 @@ namespace GoF2Remake.UI
 
         void UpdateCamera(float dt)
         {
+            if (!InHangar) return;
             if (!level.Inspect.Active && boundTransform != null && !level.PlayerFlying) level.BeginInspect(0.55f);
             var ts = Touchscreen.current;
             int down = 0;
@@ -1270,7 +1340,7 @@ namespace GoF2Remake.UI
                 fling *= Mathf.Pow(0.9f, frames);
                 if (fling.magnitude <= 0.5f) fling = Vector2.zero;
             }
-            if (drag == Drag.None && Pointer.current != null && !ModalOpen) gizmo.Hover(Pointer.current.position.ReadValue());
+            if (drag == Drag.None && Pointer.current != null && !ModalOpen && kind == ModBuilder.Kind.Ships) gizmo.Hover(Pointer.current.position.ReadValue());
         }
 
         /// <summary>A short tag by every hardpoint ("P1", "E2"...), where it shows on screen.</summary>
@@ -1278,7 +1348,7 @@ namespace GoF2Remake.UI
         {
             var s = Current;
             var cam = level.MainCamera;
-            int n = s != null && boundTransform != null && cam != null ? s.Mounts.Count : 0;
+            int n = s != null && boundTransform != null && cam != null && kind == ModBuilder.Kind.Ships ? s.Mounts.Count : 0;
             while (labels.childCount < n) Add(labels, new Label { pickingMode = PickingMode.Ignore }, "mbv-point-tag");
             while (labels.childCount > n) labels.RemoveAt(labels.childCount - 1);
             if (n == 0) return;
@@ -1308,12 +1378,13 @@ namespace GoF2Remake.UI
 
         void OnPointerDown(PointerDownEvent e)
         {
-            if (ModalOpen || boundTransform == null || reloading) return;
+            if (ModalOpen || boundTransform == null || reloading || !InHangar) return;
             var p = ScreenPos();
             downAt = last = p;
             travel = 0f;
             fling = Vector2.zero;
             viewport.CapturePointer(e.pointerId);
+            if (kind != ModBuilder.Kind.Ships) { drag = Drag.Camera; return; }   // the hardpoints are the Ships tab's
             if (e.button == 0 && placing >= 0)
             {
                 if (gizmo.RaycastHull(p, out var hit, out _)) { int type = placing; placing = -1; AddMount(type, hit); }

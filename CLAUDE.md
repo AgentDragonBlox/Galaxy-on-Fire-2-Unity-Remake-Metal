@@ -2024,12 +2024,13 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   phone (S24 Ultra): the 79 GoF3 ships cold in 9.5 s, nothing compressed on the main thread, the hulls
   checked up close. Texture2D.Compress stays for a GPU that reads neither; a phone's old "gpu" cache files are no longer read
   (nothing deletes them).
-- **Mod Builder** (remake, experimental; vertical slice: ships only): the main menu's Mods button opens a hub
+- **Mod Builder** (remake, experimental; ships, items and characters): the main menu's Mods button opens a hub
   (`MainMenu.BuildModsHub`, `modsHubPanel`: Mod Browser / Mod Builder; Back from either returns to it). The projects page
   (`ModBuilderProjects`, `modBuilderPanel`, styles `.mb-*` in MainMenu.uss): `persistentDataPath/ModProjects/<id>`
   (`Modding.ModProject`: a mod folder in the normal format, mod.json / ships.json / models / textures, plus builder.json
   (never exported): each ship's test loadout, the test cheats, the last ship), New / name / author / version / description,
-  the content kinds (Ships; the others greyed "Coming soon"), Open in hangar, Export as mod (zips it into the Mods folder,
+  the content kinds (Ships, Items, Characters open the builder on that kind, `ModBuilder.OpenKind`; the others greyed
+  "Coming soon"), Open in hangar, Export as mod (zips it into the Mods folder,
   replacing an installed mod of that id after asking, `ModImport.Delete`), Open folder, Delete. Opening one
   (`Modding.ModBuilder.Begin`): a throwaway free-play game (completed world) docked at Dis (70), the project the only active
   mod (`ModManager.SetBuilderProject`: Active = the project and its dependencies, the enabled mods aside), nothing saved
@@ -2062,7 +2063,19 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   flight's view-edge shrink is computed from the camera as it starts) into Dis' orbit: `SpaceLevel` passive (no traffic,
   wingmen), jumps / gate refused, no tutorial popups, `World.ModBuilderRange` keeps 3 hostile pirates coming (6 s after a
   death); docking, the pause menu's "Back to Mod Builder" or a death returns to the builder (`ModBuilder.EndTestFlight`).
-  Exit: `ModBuilder.End` (the menu's projects page). Verified in Play mode: projects, open, a .glb ship (auto hardpoints,
+  Exit: `ModBuilder.End` (the menu's projects page). The top bar's kinds swap the side panels (`ModBuilderView.SelectKind`;
+  the gizmo only with Ships): **Items** (`ModBuilderViewItems`, items.json as `ProjectItem`): new items from a game item
+  (a copy: type, category, look) or changes to one, name, description, its own icon PNG, tech level, occurrence, prices
+  and the base's stats by readable name (`ItemStats`; a new item's value equal to the base's isn't written), "Fit to the
+  test ship" (every slot of a weapon's kind, equipment in place of its category; a new item waits for the project to be
+  read and numbered: `afterReload`); item edits reach the game when the kind is left or at Test fly. **Characters**
+  (`ModBuilderViewCharacters`, characters.json as `ProjectCharacter`), edited in the station's Space Lounge (no ship,
+  Test fly or Engines there): a new one from a PNG portrait, the conversation-style preview (`Portrait.ShowCharacter`),
+  name, portrait, race, gender, mirrored / frame / background, and the optional story speaker it stands in for (a picker
+  of the speakers' own portraits, `Portrait.ShowSpeaker(..., original: true)`); without one it is the mod's own character
+  for its quests and events. Overrides missing stats or slots get the game ship's when a project opens
+  (`ProjectShip.FillFromGame`: a hand-written one had no slots). `ModProject.AddFile` never hands out a name twice in a
+  run (ModMaterials keeps textures by path until the project is read again). Verified in Play mode: projects, open, a .glb ship (auto hardpoints,
   textures), a Phantom override, placing / dragging points, the loadout, test flight, dock back, exit, export. Not yet: a
   real file-picker run, touch / controller use of the gizmo.
 - Orbit drags (remake, players' request): a vertical drag takes the camera down / up the other way round (a drag up tips the

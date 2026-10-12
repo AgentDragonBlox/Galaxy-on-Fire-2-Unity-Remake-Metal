@@ -2,7 +2,8 @@
 // Remake-only: the main menu's Mod Builder page (Mods > Mod Builder): the player's mod projects (Modding.ModProject,
 // Application.persistentDataPath/ModProjects). On the left the projects (the newest first) under a "new project" row
 // (a name and Create); on the right the selected project: its name, author, version and description (saved as they are
-// typed), what it holds by kind of content (Ships opens the hangar editor; the other kinds show "Coming soon" for now),
+// typed), what it holds by kind of content (Ships, Items and Characters open the hangar editor on that kind; the other
+// kinds show "Coming soon" for now),
 // and Open in hangar, Export as mod (zips it into the Mods folder, asks before replacing an installed mod with its id),
 // Open folder (desktop) and Delete (asks).
 // Plain C#: MainMenu creates it in its panel host and hands it its sound, focus, dialog hooks and the opening of a project
@@ -37,8 +38,10 @@ namespace GoF2Remake.UI
         bool filling;
 
         static string T(string key, string english) => Localization.Extra(key, english);
+        static string Count(int n, string oneKey, string one, string manyKey, string many) => n == 1 ? T(oneKey, one) : string.Format(T(manyKey, many), n);
 
-        /// <summary>The kinds of content a mod can hold, in the order the page shows them; only ships can be built so far.</summary>
+        /// <summary>The kinds of content a mod can hold, in the order the page shows them; ships, items and characters can be
+        /// built so far (their ModBuilder.Kind in Buildable).</summary>
         static readonly (string key, string english, string desc)[] Kinds =
         {
             ("mbShips", "Ships", "New ships from a .glb model, or changes to the game's ships: stats, hardpoints, test flights."),
@@ -52,6 +55,12 @@ namespace GoF2Remake.UI
             ("mbAudio", "Audio", "Replace or add music, sound effects and voices."),
             ("mbSkins", "Skins", "New looks for the game's ships, stations and planets."),
             ("mbBlueprints", "Blueprints", "Ships and items built from ingredients."),
+        };
+
+        /// <summary>The kinds the builder edits: their place in Kinds and the builder's tab.</summary>
+        static ModBuilder.Kind? Buildable(string key) => key switch
+        {
+            "mbShips" => ModBuilder.Kind.Ships, "mbItems" => ModBuilder.Kind.Items, "mbCharacters" => ModBuilder.Kind.Characters, _ => null,
         };
 
         public ModBuilderProjects(VisualElement host, Action back, Action<VisualElement> hookFocus, Action click, Action<ModProject> open,
@@ -240,17 +249,23 @@ namespace GoF2Remake.UI
             for (int i = 0; i < Kinds.Length; i++)
             {
                 var (key, english, desc) = Kinds[i];
-                bool ships = i == 0;
-                var tile = new Button(() => { if (ships && selected != null) { click(); selected.Save(); open(selected); } });
+                var kind = Buildable(key);
+                bool on = kind != null;
+                var tile = new Button(() => { if (on && selected != null) { click(); selected.Save(); ModBuilder.OpenKind = kind.Value; open(selected); } });
                 tile.AddToClassList("mb-kind");
-                tile.SetEnabled(ships);
-                if (!ships) tile.AddToClassList("mb-kind--soon");
+                tile.SetEnabled(on);
+                if (!on) tile.AddToClassList("mb-kind--soon");
                 Add(tile, new Label(T(key, english).ToUpperInvariant()) { pickingMode = PickingMode.Ignore }, "mb-kind-title", "gof-semibold");
-                string state = ships ? (selected.Ships.Count == 1 ? T("mbOneShip", "1 ship") : string.Format(T("mbShipsN", "{0} ships"), selected.Ships.Count))
-                                     : T("mbSoon", "Coming soon");
+                string state = kind switch
+                {
+                    ModBuilder.Kind.Ships => Count(selected.Ships.Count, "mbOneShip", "1 ship", "mbShipsN", "{0} ships"),
+                    ModBuilder.Kind.Items => Count(selected.Items.Count, "mbOneItem", "1 item", "mbItemsN", "{0} items"),
+                    ModBuilder.Kind.Characters => Count(selected.Characters.Count, "mbOneCharacter", "1 character", "mbCharactersN", "{0} characters"),
+                    _ => T("mbSoon", "Coming soon"),
+                };
                 Add(tile, new Label(state.ToUpperInvariant()) { pickingMode = PickingMode.Ignore }, "mb-kind-state");
                 tile.tooltip = T(key + "Desc", desc);
-                if (ships) hookFocus(tile);
+                if (on) hookFocus(tile);
                 content.Add(tile);
             }
             openButton.SetEnabled(selected.LoadError == null);
