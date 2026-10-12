@@ -90,6 +90,25 @@ namespace GoF2Remake.UI
             return l;
         }
 
+        /// <summary>Glyphs before a button's text: the text moves into a child Label (a Button measures its own text only
+        /// while it has no children: with a glyph child it shrank to its padding) laid out in a row with them
+        /// (.glyph-button in GoF2InputGlyphs.uss). Returns the label: set the text there from now on.</summary>
+        public static Label WithGlyphs(Button button, params VisualElement[] glyphs)
+        {
+            button.AddToClassList("glyph-button");
+            foreach (var g in glyphs)
+            {
+                g.pickingMode = PickingMode.Ignore;
+                g.AddToClassList("glyph-button-glyph");
+                button.Add(g);
+            }
+            var label = new Label(button.text) { pickingMode = PickingMode.Ignore };
+            label.AddToClassList("glyph-button-label");
+            button.text = "";
+            button.Add(label);
+            return label;
+        }
+
         static Label Text(string text, string cls)
         {
             var l = new Label(text) { pickingMode = PickingMode.Ignore };

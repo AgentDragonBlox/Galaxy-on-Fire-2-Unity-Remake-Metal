@@ -335,7 +335,8 @@ namespace GoF2Remake.UI
 
         void UpdateButtons(Navigation nav, bool touch, Mining.Phase miningPhase)
         {
-            bool approach = miningPhase == Mining.Phase.Approaching;
+            bool approach = miningPhase == Mining.Phase.Approaching
+                            || (nav != null && nav.Docking != null && nav.Docking.State == ObjectDocking.Phase.Approach);   // an object's docking point too
             bool active = nav != null && (nav.Autopilot || approach) && !nav.Jumping;
             // Hud::draw 10: not at campaign 0 / 1 (the prologue and the rescue).
             bool visible = touch && nav != null && !nav.Jumping && (miningPhase == Mining.Phase.Idle || approach)

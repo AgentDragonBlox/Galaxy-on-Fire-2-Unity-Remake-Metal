@@ -49,7 +49,7 @@ namespace GoF2Remake.Multiplayer
                           get = () => get() ? "on" : "off", apply = v => set(v == "on") };
 
         /// <summary>Every setting, in the window's order.</summary>
-        public static readonly List<Setting> All = new List<Setting>
+        public static readonly List<Setting> All = WithRules(new List<Setting>
         {
             new Setting { key = "name", option = "-name", label = "Name in the server browser", kind = Kind.Text, note = "after a restart",
                           get = () => DedicatedServer.ListName, apply = v => DedicatedServer.ListName = NetGame.Clean(v).Length > 0 ? v.Trim() : DedicatedServer.DefaultListName },
@@ -69,7 +69,19 @@ namespace GoF2Remake.Multiplayer
             new Setting { key = "toll", option = "-toll", label = "Toll at a faction's station: credits, or N% of the pilot's credits (0 = none)", kind = Kind.Text,
                           get = () => NetFactions.TollText(NetFactions.Toll),
                           apply = v => { int t = NetFactions.ParseToll(v) ?? throw new FormatException(); NetFactions.Toll = t; NetState.Instance?.SetToll(t); } },
-        };
+        });
+
+        /// <summary>NetRules: the session's gameplay options, after free PvP ("on" = the option on, whatever its flag).</summary>
+        static List<Setting> WithRules(List<Setting> list)
+        {
+            int at = list.FindIndex(x => x.key == "freepvp") + 1;
+            foreach (var r in NetRules.All)
+            {
+                int bit = r.bit;
+                list.Insert(at++, Flag(r.key, r.flag, r.label, () => (NetRules.Host & bit) != 0, v => NetRules.Set(bit, v)));
+            }
+            return list;
+        }
 
         static string PathOf => string.IsNullOrEmpty(NetProfiles.Folder) ? null : Path.Combine(NetProfiles.Folder, "server_settings.json");
 

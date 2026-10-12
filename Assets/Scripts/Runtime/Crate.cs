@@ -83,6 +83,14 @@ namespace GoF2Remake.Flight
             force = 50f + Random.Range(0, 50) * 0.01f;
         }
 
+        /// <summary>Remake: thrown off along 'direction' at 'scale' x the usual bomb force (a ship's several crates, NpcShip:
+        /// they burst apart in different directions; the slowdown is the usual x0.98 a frame).</summary>
+        public void Launch(Vector3 direction, float scale)
+        {
+            if (direction.sqrMagnitude > 1e-6f) drift = direction.normalized;
+            force *= scale;
+        }
+
         void Update()
         {
             float dtMs = Time.deltaTime * 1000f, frames = dtMs / 33.3f;

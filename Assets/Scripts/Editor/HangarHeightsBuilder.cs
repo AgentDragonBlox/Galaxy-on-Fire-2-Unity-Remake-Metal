@@ -26,8 +26,11 @@ namespace GoF2Remake.EditorTools
     {
         const string OutPath = "Assets/Resources/GoF2Data/hangar_heights.json";
         const int Ships = 64;
-        const float Cell = 0.6f;       // m, the hull-bottom grid
-        const float DropFrom = 12f;    // m above the table pivot where the drop starts
+        const float Cell = 0.1f;       // m, the hull-bottom grid (0.6 left up to 1 m of hull in the steep pad rims)
+        // m above the table pivot where the drop starts: past the tallest pad, except under the Vossk bays' roofs. 12 m
+        // everywhere started inside the Midorian / deep science raised pedestals for the tall hulls (they need ~12 m) or took
+        // them for a wall, so those ships had no lift there and sat deep in the pedestal (a player's report at Kaamo).
+        static float DropFrom(int hangar) => hangar == 1 ? 12f : 30f;
         const float MinLift = 0.02f;   // m; less is left at the table height
 
         [MenuItem("GoF2/Build/Hangar Heights", priority = 206)]
@@ -71,8 +74,8 @@ namespace GoF2Remake.EditorTools
                             bool any = false, wall = false;
                             for (int b = 0; b < lift.Length; b++)
                             {
-                                float rest = Rest(physics, floor, table, kv.Value, 360f * b / lift.Length);
-                                if (rest >= table + DropFrom - 0.5f) { wall = true; break; }   // under a wall or a roof: no pad
+                                float rest = Rest(physics, floor, table, DropFrom(h), kv.Value, 360f * b / lift.Length);
+                                if (rest >= table + DropFrom(h) - 0.5f) { wall = true; break; }   // under a wall or a roof: no pad
                                 lift[b] = Mathf.Max(0f, rest - table);
                                 if (lift[b] >= MinLift) any = true;
                             }
@@ -146,17 +149,17 @@ namespace GoF2Remake.EditorTools
             return list;
         }
 
-        /// <summary>The pivot height at which the hull at Unity yaw 'yawDeg', dropped from DropFrom above its table height,
+        /// <summary>The pivot height at which the hull at Unity yaw 'yawDeg', dropped from 'drop' above its table height,
         /// first touches the room; minus infinity when nothing is under it.</summary>
-        static float Rest(PhysicsScene physics, Vector3 floor, float table, Vector3[] bottom, float yawDeg)
+        static float Rest(PhysicsScene physics, Vector3 floor, float table, float drop, Vector3[] bottom, float yawDeg)
         {
-            float from = table + DropFrom, best = float.NegativeInfinity;
+            float from = table + drop, best = float.NegativeInfinity;
             var q = Quaternion.Euler(0f, yawDeg, 0f);
             foreach (var p in bottom)
             {
                 var w = q * p;
                 var origin = new Vector3(floor.x + w.x, from + w.y, floor.z + w.z);
-                if (physics.Raycast(origin, Vector3.down, out var hit, DropFrom + 40f)) best = Mathf.Max(best, hit.point.y - w.y);
+                if (physics.Raycast(origin, Vector3.down, out var hit, drop + 40f)) best = Mathf.Max(best, hit.point.y - w.y);
             }
             return best;
         }

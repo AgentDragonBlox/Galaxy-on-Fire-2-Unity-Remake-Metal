@@ -127,6 +127,10 @@ namespace GoF2Remake.Multiplayer
             return !string.IsNullOrEmpty(tag) && tag == owner ? price : NetFactions.VatMarkup(price, VatAt(station));
         }
 
+        /// <summary>What a sale at 'station' pays: the list price, never more than this player pays there (a member buying at
+        /// the member's cut and selling at the full price made 10 % on every round trip).</summary>
+        public static int SellPrice(int station, int price) => UnityEngine.Mathf.Min(price, BuyPrice(station, price));
+
         /// <summary>The toll for this station's holder: the credits go, the server banks them.</summary>
         /// <summary>What the local pilot pays for the toll now (the server's fixed amount, or its share of their credits; 0 = none).</summary>
         public static int TollAmount => NetState.Instance != null && NetState.Instance.Toll != 0 ? NetFactions.TollFor(NetState.Instance.Toll, Session.Credits) : 0;

@@ -60,6 +60,16 @@ namespace GoF2Remake.EditorTools
                 ti.anisoLevel = 8;
                 ti.wrapMode = FxRepeats(name) ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
             }
+            else if (name == "skybox_asteroid_belt_diffuse")
+            {
+                // The asteroid belt sky layer (systems 24-26, SkyLayers): uncompressed on UWP like the space skies (#20,
+                // SkyboxBaker.ApplyUwpOverride): the Xbox drew its compressed blocks as a checkerboard of squares.
+                var uwp = ti.GetPlatformTextureSettings("WindowsStoreApps");
+                uwp.overridden = true;
+                uwp.maxTextureSize = 2048;
+                uwp.format = TextureImporterFormat.RGBA32;
+                ti.SetPlatformTextureSettings(uwp);
+            }
             else if (assetPath.Contains("/Textures/textures/"))
             {
                 // 2D UI/HUD art (fonts, icons, portraits). Imported as sprites.
@@ -97,7 +107,21 @@ namespace GoF2Remake.EditorTools
             mi.importLights = false;
             mi.importNormals = ModelImporterNormals.Import;
             mi.importTangents = ModelImporterTangents.CalculateMikk;
-            mi.isReadable = false;
+            // Read/Write only where runtime code reads the mesh: Valkyrie 80 splits the deep science station's damaged
+            // thruster flames per engine (ValkyrieLevels.MakeFlamePieces80, #70), and the hulls get MeshColliders
+            // (HullCollision: a player build can't cook a collider from a mesh it can't read).
+            mi.isReadable = assetPath.EndsWith("/v_station_deep_science_damaged_emitters_anim_add.fbx") || IsHullModel(assetPath);
+        }
+
+        /// <summary>A model whose meshes become collision hulls (HullCollision): ships, stations, jumpgates, turrets and the
+        /// level objects (misc), not their additive / light layers or lower LODs.</summary>
+        public static bool IsHullModel(string path)
+        {
+            string p = path.Replace('\\', '/');
+            if (!(p.Contains("/ships/") || p.Contains("/stations/") || p.Contains("/jumpgates/") || p.Contains("/turrets/") || p.Contains("/misc/")))
+                return false;
+            string name = System.IO.Path.GetFileNameWithoutExtension(p);
+            return !name.Contains("_add") && !name.Contains("_lights") && !name.Contains("_lod_");
         }
 
         void OnPreprocessAudio()
@@ -290,6 +314,10 @@ namespace GoF2Remake.EditorTools
                     if (ms != null)
                     {
                         mat.SetTexture("_MetallicGlossMap", ms);
+                        // GoF2/Hull: the original's reflection and rim (BumpRimCubeShader), on the ships, stations and objects,
+                        // not the station interiors (hangar and bar rooms) or the sky props.
+                        bool interior = nrmRel.Contains("/hangars/") || nrmRel.Contains("/bars/") || nrmRel.Contains("/skyboxes/");
+                        if (urp && !interior) { mat.shader = Shader.Find("GoF2/Hull") ?? mat.shader; mat.SetShaderPassEnabled("MotionVectors", false); }   // as Lit's material setup
                         if (urp) { mat.EnableKeyword("_METALLICSPECGLOSSMAP"); mat.SetFloat("_Smoothness", 0.8f); }
                         else { mat.EnableKeyword("_METALLICGLOSSMAP"); mat.SetFloat("_GlossMapScale", 0.8f); }
                     }

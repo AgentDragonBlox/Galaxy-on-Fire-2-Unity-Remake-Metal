@@ -11,6 +11,10 @@
 // the portrait, name, "3226 Status: 3228 Alive / 3227 Deceased", "3225 Bounty: N$" and "3223 Departed from" /
 // "3224 Travelling to" (3229 N/A while inactive, " --" once dead) with its description (3174 + index); 424 Show on map
 // for an active one (the star map centred on where it is travelling to).
+// Remake (players' suggestion "Better Pirates"): the tab "Pirate activity" (PirateReports) while the pirate events are on:
+// the reported outposts and named bosses (the dangerous ones gold, the ones dealt with dim), for the selected one the
+// Pirate Boss face, its name, its status and bounty, the system it was seen in (never the station), its danger and how
+// long ago it was reported; Show on map routes to that system. It shares the Most Wanted tab's list and details panel.
 // Remake: the event graph quests under way (EventRunner.Quests: title and objective) follow the story's objective in the
 // Story panel, Show on map for the story's target, else the first quest's; a single-player event graph bar mission
 // (EventMissions.Active) fills the Freelance panel when there is no freelance mission, its Discard ends it.
@@ -32,13 +36,15 @@ namespace GoF2Remake.UI
         readonly Button close, storyMap, freelanceMap, discard;
         readonly Label storyText, freelanceText, freelanceClient, freelanceWhere;
         readonly ScrollView storyScroll, freelanceScroll;
-        readonly Button missionsTab, wantedTab, wantedMap;
+        readonly Button missionsTab, wantedTab, pirateTab, wantedMap;
         readonly VisualElement missionsBody, wantedBody, wantedPortrait;
         readonly ScrollView wantedList, wantedScroll;
         readonly Label wantedName, wantedStatus, wantedBounty, wantedText;
         readonly List<Button> wantedRows = new List<Button>();
-        bool wantedShown;
-        int wantedSelected = -1;
+        enum Tab { Missions, Wanted, Pirates }
+        Tab tab;
+        bool wantedShown => tab != Tab.Missions;   // the list-and-details panel (the Most Wanted's or the pirates')
+        int wantedSelected = -1, pirateSelected = -1;
 
         static string T(int id) => Localization.Get(id);
 
@@ -74,14 +80,14 @@ namespace GoF2Remake.UI
             wantedText = root.Q<Label>("wantedText");
             wantedList = Scroll("wantedList");
             wantedScroll = Scroll("wantedScroll");
-            missionsTab = Bind("missionsTab", () => ShowTab(false));
-            wantedTab = Bind("wantedTab", () => ShowTab(true));
-            wantedMap = Bind("wantedMap", ShowWantedOnMap);
+            missionsTab = Bind("missionsTab", () => ShowTab(Tab.Missions));
+            wantedTab = Bind("wantedTab", () => ShowTab(Tab.Wanted));
+            pirateTab = Bind("pirateTab", () => ShowTab(Tab.Pirates));
+            wantedMap = Bind("wantedMap", () => { if (tab == Tab.Pirates) ShowPirateOnMap(); else ShowWantedOnMap(); });
             missionsTab.text = T(129).ToUpperInvariant();
             wantedTab.text = T(3219).ToUpperInvariant();
+            pirateTab.text = Localization.Extra("pirateBoardTab", "Pirate activity").ToUpperInvariant();
             wantedMap.text = T(424).ToUpperInvariant();
-            root.Q<Label>("wantedListHeading").text = T(3221);
-            root.Q<Label>("wantedDetailsHeading").text = T(3222);
         }
 
         ScrollView Scroll(string name)
@@ -105,7 +111,7 @@ namespace GoF2Remake.UI
         public void Open()
         {
             root.AddToClassList("missions-open");
-            wantedShown = false;
+            tab = Tab.Missions;
             Fill();
         }
 
@@ -118,23 +124,36 @@ namespace GoF2Remake.UI
 
         bool BoardHere => level.Station != null && WantedBoard.Accessible(level.Database, level.Station.index);
 
-        void ShowTab(bool wanted)
+        /// <summary>The Pirate activity tab: the pirate events on (a session's rule) and they can happen for this pilot yet
+        /// (rank 2, campaign 0x10), or a session's board.</summary>
+        static bool PiratesHere => PirateReports.Enabled
+            && (GoF2Remake.Multiplayer.NetGame.Active || (Session.Rank >= 2 && (Session.FreePlay || Session.CampaignMission >= 0x10)));
+
+        void ShowTab(Tab t)
         {
-            wantedShown = wanted && BoardHere;
+            tab = t == Tab.Wanted && !BoardHere || t == Tab.Pirates && !PiratesHere ? Tab.Missions : t;
             Fill();
         }
 
         void Fill()
         {
             var db = level.Database;
-            bool board = BoardHere;
-            missionsTab.EnableInClassList("missions-tab--hidden", !board);
+            bool board = BoardHere, pirates = PiratesHere;
+            if (tab == Tab.Wanted && !board || tab == Tab.Pirates && !pirates) tab = Tab.Missions;
+            bool tabs = board || pirates;
+            missionsTab.EnableInClassList("missions-tab--hidden", !tabs);
             wantedTab.EnableInClassList("missions-tab--hidden", !board);
-            missionsTab.EnableInClassList("missions-tab--active", !wantedShown);
-            wantedTab.EnableInClassList("missions-tab--active", wantedShown);
-            root.Q<Label>("missionsTitle").text = (wantedShown ? T(3219) : T(129)).ToUpperInvariant();
+            pirateTab.EnableInClassList("missions-tab--hidden", !pirates);
+            missionsTab.EnableInClassList("missions-tab--active", tab == Tab.Missions);
+            wantedTab.EnableInClassList("missions-tab--active", tab == Tab.Wanted);
+            pirateTab.EnableInClassList("missions-tab--active", tab == Tab.Pirates);
+            root.Q<Label>("missionsTitle").text = (tab == Tab.Wanted ? T(3219) : tab == Tab.Pirates
+                ? Localization.Extra("pirateBoardTab", "Pirate activity") : T(129)).ToUpperInvariant();
             missionsBody.EnableInClassList("missions-body--hidden", wantedShown);
             wantedBody.EnableInClassList("missions-body--hidden", !wantedShown);
+            root.Q<Label>("wantedListHeading").text = tab == Tab.Pirates ? Localization.Extra("pirateListHeading", "Reported sightings") : T(3221);
+            root.Q<Label>("wantedDetailsHeading").text = tab == Tab.Pirates ? Localization.Extra("pirateDetailsHeading", "Report") : T(3222);
+            if (tab == Tab.Pirates) { FillPirates(); return; }
             if (wantedShown) { FillWanted(); return; }
             // Story: the objective text of every step (MissionsWindow::init 0x17a604: text DAT_00258f68[index] below 0xa4,
             // hidden and empty missions too: step 13's "find work in the Space Lounge" before the convoy); the map button only
@@ -235,7 +254,12 @@ namespace GoF2Remake.UI
         public VisualElement[] NavItems()
         {
             var l = new List<VisualElement>();
-            if (!missionsTab.ClassListContains("missions-tab--hidden")) { l.Add(missionsTab); l.Add(wantedTab); }
+            if (!missionsTab.ClassListContains("missions-tab--hidden"))
+            {
+                l.Add(missionsTab);
+                if (!wantedTab.ClassListContains("missions-tab--hidden")) l.Add(wantedTab);
+                if (!pirateTab.ClassListContains("missions-tab--hidden")) l.Add(pirateTab);
+            }
             if (wantedShown)
             {
                 l.AddRange(wantedRows);
@@ -309,6 +333,92 @@ namespace GoF2Remake.UI
             wantedText.text = $"{T(3223)}\n{from}\n\n{T(3224)}\n{to}\n\n{T(3174 + w.index)}";
             wantedScroll.scrollOffset = Vector2.zero;
             Show(wantedMap, st != null && st.active && !dead && st.travelsTo >= 0);
+        }
+
+        // ---- the Pirate activity board (PirateReports) --------------------------------------------------------------
+
+        void FillPirates()
+        {
+            wantedList.Clear();
+            wantedRows.Clear();
+            var list = PirateReports.Board();
+            if (pirateSelected < 0 || !list.Exists(s => s.id == pirateSelected))
+                pirateSelected = list.Count > 0 ? list[0].id : -1;
+            foreach (var s in list)
+            {
+                int id = s.id;
+                var b = new Button { text = $"{PirateTitle(s)} · {PirateReports.SystemName(level.Database, s.system)}" };
+                b.AddToClassList("wanted-row");
+                b.AddToClassList("gof-semibold");
+                b.EnableInClassList("wanted-row--active", !s.done);
+                b.EnableInClassList("wanted-row--dead", s.done);
+                b.EnableInClassList("wanted-row--story", s.tier == 4 && !s.done);
+                b.EnableInClassList("wanted-row--tier5", s.tier >= 5 && !s.done);
+                b.EnableInClassList("wanted-row--selected", id == pirateSelected);
+                b.RegisterCallback<PointerDownEvent>(_ => menu.PlayPush(), TrickleDown.TrickleDown);
+                b.clicked += () => { menu.PlayRelease(); pirateSelected = id; FillPirates(); };
+                b.RegisterCallback<FocusInEvent>(_ => { if (pirateSelected != id) { pirateSelected = id; ShowPirateDetails(); foreach (var r in wantedRows) r.EnableInClassList("wanted-row--selected", r == b); } });
+                wantedList.Add(b);
+                wantedRows.Add(b);
+            }
+            ShowPirateDetails();
+            menu.Focus(wantedRows.Count > 0 ? wantedRows[Mathf.Max(0, list.FindIndex(s => s.id == pirateSelected))] : close);
+        }
+
+        /// <summary>A boss by its name, an outpost as 441 "Pirate Outpost".</summary>
+        static string PirateTitle(PirateSighting s) => s.boss ? s.name : T(441);
+
+        void ShowPirateDetails()
+        {
+            var db = level.Database;
+            var s = PirateReports.Find(pirateSelected);
+            wantedPortrait.EnableInClassList("portrait-hidden", s == null);
+            if (s == null)
+            {
+                wantedName.text = wantedStatus.text = wantedBounty.text = "";
+                wantedText.text = Localization.Extra("pirateBoardEmpty", "No pirate activity has been reported. Check again after your next docking.");
+                Show(wantedMap, false);
+                return;
+            }
+            Portrait.ShowSpeaker(wantedPortrait, 9, false);   // the Pirate Boss face
+            wantedName.text = PirateTitle(s).ToUpperInvariant();
+            string status = s.done ? (s.boss ? T(3227) : Localization.Extra("pirateStatusDestroyed", "Destroyed"))
+                                   : Localization.Extra("pirateStatusReported", "Reported");
+            wantedStatus.text = $"{T(3226)} {status}";
+            wantedBounty.text = $"{T(3225)} {ItemInfo.Credits(s.bounty)}";
+            var sys = db.Systems.Find(x => x.index == s.system);
+            string security = sys != null && sys.securityLevel >= 0 && sys.securityLevel <= 3 ? T(402 + sys.securityLevel) : "";
+            float now = PirateReports.Now;
+            int ago = Mathf.Max(0, Mathf.RoundToInt((now - s.reportedAt) / 60f)), left = Mathf.Max(0, Mathf.RoundToInt((s.expiresAt - now) / 60f));
+            string what = (s.boss ? Localization.Extra("pirateBoss", "A pirate boss and their crew, preying on the traders here.")
+                                  : Localization.Extra("pirateOutpost", "A pirate outpost with its guards, hidden far out from a station."))
+                + " " + TierHint(s.tier);
+            wantedText.text = $"{Localization.Extra("pirateLastSeen", "Last seen in")}\n{PirateReports.SystemName(db, s.system)} ({security})\n\n"
+                + $"{string.Format(Localization.Extra("pirateThreat", "Threat: {0}"), PirateReports.TierName(s.tier))}\n"
+                + (s.done ? "" : string.Format(Localization.Extra("pirateReportedAgo", "Reported {0} min ago, off the board in {1} min."), ago, left) + "\n\n")
+                + what + "\n\n" + Localization.Extra("pirateSearchHint", "Its exact position is unknown: search the system's station orbits.");
+            wantedScroll.scrollOffset = Vector2.zero;
+            Show(wantedMap, !s.done);
+        }
+
+        static string TierHint(int tier)
+        {
+            switch (tier)
+            {
+                case 1: return Localization.Extra("pirateTierHint1", "Barely a threat: a lone ship or a handful of guards.");
+                case 2: return Localization.Extra("pirateTierHint2", "A small band. Expect light resistance.");
+                case 3: return Localization.Extra("pirateTierHint3", "A capable crew. Come prepared.");
+                case 4: return Localization.Extra("pirateTierHint4", "Heavily armed and well guarded. Bring a strong ship.");
+                default: return Localization.Extra("pirateTierHint5", "Extremely dangerous. Only the best-equipped pilots, or a squad, should take this on.");
+            }
+        }
+
+        /// <summary>The star map's route to the sighting's system (its station only routes there: no icon marks it).</summary>
+        void ShowPirateOnMap()
+        {
+            var s = PirateReports.Find(pirateSelected);
+            if (s == null || s.done) return;
+            ShowOnMap(s.station, wantedMap);
         }
 
         /// <summary>WantedWindow::OnTouchEnd 424: the star map on the criminal's destination (Mission(0, 0, travelsTo)).</summary>

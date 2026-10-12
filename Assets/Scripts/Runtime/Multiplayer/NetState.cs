@@ -55,7 +55,9 @@ namespace GoF2Remake.Multiplayer
         readonly NetworkVariable<bool> freePvp = new NetworkVariable<bool>();        // players may fight anywhere (else only in arenas)
         readonly NetworkVariable<FixedString4096Bytes> claims = new NetworkVariable<FixedString4096Bytes>();   // NetFactions' territory
         readonly NetworkVariable<FixedString4096Bytes> sieges = new NetworkVariable<FixedString4096Bytes>();   // NetFactions' sieges
+        readonly NetworkVariable<FixedString4096Bytes> pirateBoard = new NetworkVariable<FixedString4096Bytes>();   // PirateReports' board (JSON)
         readonly NetworkVariable<int> toll = new NetworkVariable<int>();   // NetFactions.Toll
+        readonly NetworkVariable<int> rules = new NetworkVariable<int>();   // NetRules: the session's gameplay options
         readonly NetworkVariable<FixedString64Bytes> serverId = new NetworkVariable<FixedString64Bytes>();   // their key on the client
         readonly NetworkVariable<bool> freeForAll = new NetworkVariable<bool>();     // /pvp, an event's Free For All: every player an enemy
         readonly NetworkVariable<Unity.Collections.FixedString4096Bytes> sessionMods = new NetworkVariable<Unity.Collections.FixedString4096Bytes>();   // NetMods.SessionList
@@ -85,9 +87,13 @@ namespace GoF2Remake.Multiplayer
         /// <summary>Players may shoot each other anywhere (NetGame.FreePvp, -freepvp); else only in an arena match.</summary>
         public bool FreePvp => freePvp.Value;
 
+        /// <summary>The session's gameplay rules (NetRules bits).</summary>
+        public int Rules => rules.Value;
+
         /// <summary>Server (NetServerSettings): the Debug menu / free PvP changed while running.</summary>
         internal void SetDebugAllowed(bool on) { if (IsServer && debugAllowed.Value != on) debugAllowed.Value = on; }
         internal void SetFreePvp(bool on) { if (IsServer && freePvp.Value != on) freePvp.Value = on; }
+        internal void SetRules(int mask) { if (IsServer && rules.Value != mask) rules.Value = mask; }
 
         /// <summary>The factions' claimed stations, "station|TAG|Name|VAT %" per line (NetFactions, NetFactionsClient).</summary>
         public string Claims => claims.Value.ToString();
@@ -153,13 +159,19 @@ namespace GoF2Remake.Multiplayer
                 profilesOn.Value = NetProfiles.Enabled;
                 serverId.Value = NetProfiles.ServerId;
                 freePvp.Value = NetGame.FreePvp;
+                rules.Value = NetRules.Host;
                 NetFactions.OnStateSpawned();   // the claims, now that this object exists
+                PirateReports.ServerReset();   // the Pirate activity board starts empty (filled by the next sweep)
                 sessionMods.Value = NetMods.SessionList;
                 proxyPrefab = Resources.Load<GameObject>($"{NetGame.PrefabFolder}/NetProxy");
                 cratePrefab = Resources.Load<GameObject>($"{NetGame.PrefabFolder}/NetCrate");
                 NetRateLimit.Reset();
+                NetTrade.Reset();
             }
-            else
+            // The session's Pirate activity board on every game (the host's too), now and whenever the server changes it.
+            pirateBoard.OnValueChanged += (_, now) => PirateReports.ApplyShared(now.ToString());
+            PirateReports.ApplyShared(pirateBoard.Value.ToString());
+            if (!IsServer)
             {
                 NetMods.ApplyFromServer(sessionMods.Value.ToString());   // the session's mods before the world is built
                 // A server with profiles: the world waits for this player's profile (NetProfileClient.Begin -> EnterWorld).
@@ -491,6 +503,105 @@ namespace GoF2Remake.Multiplayer
                 if (p != null && p.IsSpawned && p.SquadId != 0 && count[p.SquadId] < 2) p.SetSquad(0);
         }
 
+        // ---- trades between players (NetTrade on the server, NetTradeClient on each game) ---------------------------
+
+        /// <summary>A player asks another docked at the same station to trade (the pilot list's Trade, /trade).</summary>
+        [Rpc(SendTo.Server)]
+        public void TradeRequestRpc(ulong target, RpcParams rpc = default)
+        {
+            ulong client = rpc.Receive.SenderClientId;
+            if (!NetRateLimit.Allow(client, NetRateLimit.Kind.Invite)) return;
+            Notify(client, NetTrade.Request(NetSquad.Find(client), NetSquad.Find(target)));
+        }
+
+        internal void TradeRequested(ulong to, ulong from, string name)
+        {
+            if (IsServer) TradeRequestedRpc(from, name, RpcTarget.Single(to, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
+        void TradeRequestedRpc(ulong from, string name, RpcParams rpc = default) => NetTradeClient.OnRequested(from, name);
+
+        [Rpc(SendTo.Server)]
+        public void TradeAcceptRpc(ulong from, RpcParams rpc = default)
+        {
+            ulong client = rpc.Receive.SenderClientId;
+            if (NetRateLimit.Allow(client, NetRateLimit.Kind.PlayerTrade)) NetTrade.Accept(client, from);
+        }
+
+        [Rpc(SendTo.Server)]
+        public void TradeDeclineRpc(ulong from, RpcParams rpc = default)
+        {
+            ulong client = rpc.Receive.SenderClientId;
+            if (NetRateLimit.Allow(client, NetRateLimit.Kind.PlayerTrade)) NetTrade.Decline(client, from);
+        }
+
+        /// <summary>A side's whole offer: credits, then item / amount pairs (NetTrade checks it).</summary>
+        [Rpc(SendTo.Server)]
+        public void TradeOfferRpc(int id, int[] offer, RpcParams rpc = default)
+        {
+            ulong client = rpc.Receive.SenderClientId;
+            if (NetRateLimit.Allow(client, NetRateLimit.Kind.PlayerTrade)) NetTrade.SetOffer(client, id, offer);
+        }
+
+        [Rpc(SendTo.Server)]
+        public void TradeConfirmRpc(int id, int version, RpcParams rpc = default)
+        {
+            ulong client = rpc.Receive.SenderClientId;
+            if (NetRateLimit.Allow(client, NetRateLimit.Kind.PlayerTrade)) NetTrade.Confirm(client, id, version);
+        }
+
+        [Rpc(SendTo.Server)]
+        public void TradeCancelRpc(int id, RpcParams rpc = default)
+        {
+            ulong client = rpc.Receive.SenderClientId;
+            if (NetRateLimit.Allow(client, NetRateLimit.Kind.PlayerTrade)) NetTrade.Cancel(client, id);
+        }
+
+        /// <summary>The game paid its offer (or couldn't).</summary>
+        [Rpc(SendTo.Server)]
+        public void TradePaidRpc(int id, bool ok, RpcParams rpc = default)
+        {
+            ulong client = rpc.Receive.SenderClientId;
+            if (NetRateLimit.Allow(client, NetRateLimit.Kind.PlayerTrade)) NetTrade.Paid(client, id, ok);
+        }
+
+        internal void TradeState(ulong to, int id, ulong partner, string partnerName, int station, int version, int[] mine, int[] theirs,
+                                 bool myAccepted, bool theirAccepted, byte phase)
+        {
+            if (IsServer && NetSquad.Find(to) != null) TradeStateRpc(id, partner, partnerName, station, version, mine, theirs, myAccepted, theirAccepted, phase, RpcTarget.Single(to, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
+        void TradeStateRpc(int id, ulong partner, string partnerName, int station, int version, int[] mine, int[] theirs,
+                           bool myAccepted, bool theirAccepted, byte phase, RpcParams rpc = default) =>
+            NetTradeClient.OnState(id, partner, partnerName, station, version, mine, theirs, myAccepted, theirAccepted, phase);
+
+        internal void TradePay(ulong to, int id, int[] offer)
+        {
+            if (IsServer && NetSquad.Find(to) != null) TradePayRpc(id, offer, RpcTarget.Single(to, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
+        void TradePayRpc(int id, int[] offer, RpcParams rpc = default) => NetTradeClient.OnPay(id, offer);
+
+        internal void TradeDeliver(ulong to, int id, int[] offer, bool refund, string partnerName)
+        {
+            if (IsServer && NetSquad.Find(to) != null) TradeDeliverRpc(id, offer, refund, partnerName ?? "", RpcTarget.Single(to, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
+        void TradeDeliverRpc(int id, int[] offer, bool refund, string partnerName, RpcParams rpc = default) =>
+            NetTradeClient.OnDeliver(id, offer, refund, partnerName);
+
+        internal void TradeEnded(ulong to, int id, string reason)
+        {
+            if (IsServer && NetSquad.Find(to) != null) TradeEndedRpc(id, reason ?? "", RpcTarget.Single(to, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
+        void TradeEndedRpc(int id, string reason, RpcParams rpc = default) => NetTradeClient.OnEnded(id, reason);
+
         /// <summary>A player's ship was destroyed by another player: everyone hears of it (only of a player who hit them a
         /// moment ago: no notices blaming anyone at will).</summary>
         [Rpc(SendTo.Server)]
@@ -600,6 +711,61 @@ namespace GoF2Remake.Multiplayer
         public void ChargedRpc(int token, bool paid, RpcParams rpc = default)
         {
             if (NetRateLimit.Allow(rpc.Receive.SenderClientId, NetRateLimit.Kind.Mission)) NetFactions.OnCharged(rpc.Receive.SenderClientId, token, paid);
+        }
+
+        // ---- the Pirate activity board (PirateReports) ------------------------------------------------------------
+
+        const float PirateSeconds = 5f;
+        float pirateTimer;
+
+        /// <summary>The session's Pirate activity board as published (JSON; empty = none).</summary>
+        public string PirateBoardJson => pirateBoard.Value.ToString();
+
+        /// <summary>Server: the board as everyone's games read it (cut short only past 4096 bytes: 5 reports take ~1 KB).</summary>
+        void SetPirateBoard(string json)
+        {
+            if (!IsServer) return;
+            json ??= "";
+            if (System.Text.Encoding.UTF8.GetByteCount(json) > 4000) return;
+            if (pirateBoard.Value.ToString() != json) pirateBoard.Value = json;
+        }
+
+        /// <summary>The orbit's authority: report 'id' destroyed; 'killer' = the client whose kill it was (the sender itself
+        /// for its own kill or an NPC's). Checked against the server's board and the sender's orbit. The bounty is paid here,
+        /// never by the sender's game: to the killer, or split evenly across the killer's squad (every member online,
+        /// wherever they are; players' suggestion).</summary>
+        [Rpc(SendTo.Server)]
+        public void PirateSightingDoneRpc(int id, ulong killer, RpcParams rpc = default)
+        {
+            ulong client = rpc.Receive.SenderClientId;
+            if (!NetRateLimit.Allow(client, NetRateLimit.Kind.Kill)) return;
+            int bounty = PirateReports.ServerDone(id, station => NetGuard.InOrbit(client, station), SetPirateBoard);
+            if (bounty <= 0) return;
+            if (!NetworkManager.ConnectedClients.ContainsKey(killer)) killer = client;
+            var team = new List<ulong>();
+            var who = NetPlayer.All.Find(p => p != null && p.IsSpawned && p.OwnerClientId == killer);
+            if (who != null && who.SquadId != 0)
+                foreach (var p in NetPlayer.All)
+                    if (p != null && p.IsSpawned && p.SquadId == who.SquadId && NetworkManager.ConnectedClients.ContainsKey(p.OwnerClientId))
+                        team.Add(p.OwnerClientId);
+            if (team.Count == 0) team.Add(killer);
+            int share = Mathf.Max(1, bounty / team.Count);
+            foreach (ulong c in team) PirateBountyRpc(share, team.Count, RpcTarget.Single(c, RpcTargetUse.Temp));
+        }
+
+        /// <summary>A reported pirate's bounty (or this player's share of it, 'shares' > 1: the squad's): the flight HUD's bounty
+        /// line in flight, a chat notice for a share.</summary>
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
+        void PirateBountyRpc(int amount, int shares, RpcParams rpc = default)
+        {
+            if (amount <= 0) return;
+            var traffic = FindAnyObjectByType<GoF2Remake.World.Traffic>();
+            if (traffic != null) traffic.PayBounty(amount);
+            else { Session.Credits += amount; FindAnyObjectByType<GoF2Remake.UI.StationMenu>()?.RefreshCredits(); }
+            if (shares > 1)
+                NetChat.Notice(string.Format(Localization.Extra("pirateBountyShared", "Pirate bounty shared with your squad: +{0} each ({1} pilots)."),
+                                             GoF2Remake.UI.ItemInfo.Credits(amount), shares));
+            NetProfileClient.Upload();
         }
 
         /// <summary>Server: credits from the faction bank to the player's game.</summary>
@@ -1314,7 +1480,9 @@ namespace GoF2Remake.Multiplayer
         void Update()
         {
             NetStock.Flush();   // the shared stock that arrived, applied between frames (every player)
+            NetTradeClient.Tick();   // this player's trade offer goes out, kept within the hold
             if (!IsServer || !IsSpawned) return;
+            NetTrade.Tick();      // trade requests and trades that ran out, sides that left the hangar
             NetProfiles.Tick();   // link codes and handovers that ran out
             NetArena.Tick();      // queues, countdowns, time limits
             if (NetProfiles.Enabled) NetFactions.Tick();   // claims kept by docking members, lapses, stale deposits
@@ -1330,6 +1498,11 @@ namespace GoF2Remake.Multiplayer
             sweepTimer = SweepSeconds;
             NetRateLimit.Tick();   // the clients that kept flooding go
             NetStock.HostTick(this);   // the stock resets
+            if ((pirateTimer -= SweepSeconds) <= 0f)
+            {
+                pirateTimer = PirateSeconds;
+                PirateReports.ServerTick(Database.Shared, SetPirateBoard);   // the Pirate activity board kept full
+            }
             DissolveSingles();   // a squadmate who disconnected
             if ((pruneTimer -= SweepSeconds) <= 0f) { pruneTimer = PruneSeconds; Prune(); }
             // An orbit's objects go once their owner isn't in that orbit any more.

@@ -14,6 +14,7 @@ using UnityEngine;
 
 namespace GoF2Remake.Flight
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public class ShipBurn
     {
         readonly ParticleSystem burn, burst;
@@ -50,19 +51,32 @@ namespace GoF2Remake.Flight
         /// (PlayerJunk::update: 1000 ms, 1600 + rnd(200), +500/s).</summary>
         public static void ManualBurst(Vector3 at, float lifeS, float minSize, float maxSize, float growthPerS)
         {
-            var mat = CombatAssets.Load()?.explosionSpriteMaterial;
-            var holder = new GameObject("Burst");
-            holder.transform.position = at;
-            var ps = ShipSmoke.Create(holder.transform, "Burst", mat, lifeS, minSize, maxSize, 1, 0f, Vector3.zero, 0f, growthPerS, 3);
-            var em = ps.emission;
-            em.rateOverTime = 0f;
-            var sh = ps.shape;
-            sh.enabled = false;
-            var main = ps.main;
-            main.loop = false;
-            ps.Emit(1);
-            Object.Destroy(holder, lifeS + 0.5f);
+            // Remake: one emitter per kind of burst in the active scene (gone with it), each particle emitted where it went
+            // off (world space); every rocket hit built a particle system of its own and destroyed it again.
+            var key = (lifeS, minSize, maxSize, growthPerS);
+            if (!bursts.TryGetValue(key, out var ps) || ps == null)
+            {
+                if (burstHolder == null) { burstHolder = new GameObject("Bursts"); bursts.Clear(); }
+                var mat = CombatAssets.Load()?.explosionSpriteMaterial;
+                ps = ShipSmoke.Create(burstHolder.transform, "Burst", mat, lifeS, minSize, maxSize, BurstParticles - 1, 0f, Vector3.zero, 0f, growthPerS, 3);
+                var em = ps.emission;
+                em.rateOverTime = 0f;
+                var sh = ps.shape;
+                sh.enabled = false;
+                var main = ps.main;
+                main.loop = false;
+                bursts[key] = ps;
+            }
+            ps.Emit(new ParticleSystem.EmitParams { position = at, applyShapeToPosition = false }, 1);
         }
+
+        const int BurstParticles = 64;   // at once per kind (1.5 s each): a cluster salvo's hits and more
+        static readonly System.Collections.Generic.Dictionary<(float, float, float, float), ParticleSystem> bursts =
+            new System.Collections.Generic.Dictionary<(float, float, float, float), ParticleSystem>();
+        static GameObject burstHolder;   // null again once its scene is gone
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() { bursts.Clear(); burstHolder = null; }
 
         /// <summary>Record 11's emitManual burst at the explosion (it stays where it went off).</summary>
         public void Burst()

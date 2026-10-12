@@ -3,6 +3,15 @@
 A mod is a folder (or a `.zip`) of plain files: JSON for data, PNG for images. Mods contain no code, so a mod you download can't
 harm your computer. Players turn mods on and off in the main menu's **Mods** screen.
 
+**Making a mod in the game:** main menu > **Mods** > **Mod Builder** (experimental) makes projects in this same format
+without writing any JSON: new ships from a `.glb` model or changes to the game's ships, their stats and textures, their
+hardpoints placed on the hull in 3D, and test flights against pirates; new items made from a game item (or changes to one)
+with their own stats and icon, fitted to the ship to try them out; characters with their portraits, for your quests
+or standing in for a story character; and skins: a game ship's textures replaced, with its originals saved for you to paint
+over. A new ship's shop icon is rendered from its model
+(`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). **Export as mod** puts the finished project into your
+Mods folder. Ships, items, characters and skins can be built there so far; everything below can still be written by hand.
+
 **Making a mod with an AI assistant:** `Modding/ai/gof2-modding` is this guide condensed for Claude, ChatGPT and the like,
 with every original item, ship, system and station number in `reference.md`. See `Modding/ai/README.md` for how to use it.
 
@@ -30,6 +39,10 @@ What mods can do so far:
 - **Build on other mods**: a story mod can use the ships, items and systems of a mod it depends on.
 - **Make a whole new game**: a campaign of its own under New Game, with its own start, galaxy, shops and NPC ships.
 - **Translate** their own texts into any of the game's languages.
+
+**Image formats:** wherever this guide asks for a PNG (icons, portraits, textures and skins, planets, suns, skies, card art,
+the preview), JPG, TGA (uncompressed or RLE), BMP, DDS (DXT1, DXT3, DXT5 or uncompressed; not BC7) and the game's own `.aei`
+files work too. PNG stays the safe choice. The Mod Builder's pickers take all of them and store the picture as a PNG.
 
 ## Where mods go
 
@@ -202,6 +215,7 @@ earlier). Only the fields you give change. Giving `name` or `description` rename
 | `miningBeamRange` | 101 | Mining beam reach from the asteroid's surface (game units, 20 per metre; default 24000) |
 | `miningBeamLayerMs` | 102 | Mining beam: time to cut one rock layer (ms; default 6000, the drill minigame's) |
 | `miningBeamLook` | 103 | Mining beam: the beam laser whose beam and impact it shows (9, 10, 11 or 228; default 228) |
+| `phaseCloak` | 104 | 1 = a cloak that also phases the ship through objects, shots and explosions while cloaked (see [Phase cloaks](#phase-cloaks)) |
 
 Which stats an item uses depends on its category, so copy the stats its base item has (see `items.json` and
 `item_attributes.json` in `Assets/Resources/GoF2Data`). items.json's own stat names (`loadingTimeMs`, `range`,
@@ -232,6 +246,25 @@ of 100 and needs the landing and 6 s per layer.
 }
 ```
 
+### Phase cloaks
+
+A cloak (an item based on one of the cloaks, 94 to 96) with `"phaseCloak": 1` works like any cloak (the energy cells, the
+charge, the duration, the cooldown, the look) and while it is cloaked, its fades included, the ship is phased out: it flies
+straight through asteroids, stations, jumpgates, freighters and other players' ships without touching them, and shots,
+beams and explosions pass through it without doing any damage (in multiplayer too). The wormhole still pulls. When the cloak ends inside something, the ship collides as usual: pushed out of a station's or a freighter's
+volume, or the asteroid it sits in destroyed for 20 damage.
+
+```json
+{
+    "id": "pegaphase",
+    "base": 96,
+    "name": "PegaPhase",
+    "techLevel": 10,
+    "price": [540000, 580000],
+    "stats": { "cloakDurationMs": 80000, "cloakChargeMs": 7000, "energyCells": 5, "phaseCloak": 1 }
+}
+```
+
 ### Weapon effects
 
 A weapon (a new one or an `override` of an original) can look and sound like its own thing with `fx`. Anything it leaves out
@@ -253,6 +286,17 @@ stays its base item's. What the weapon *does* never changes: a beam stays a beam
 }
 ```
 
+The PNGs and sounds in this example are the mod's own files, in its `fx` folder (see `Modding/Examples/plasma_arsenal`):
+the game's effects aren't PNGs you can copy. To keep the original effect and only change its colour, leave out `sprite` /
+`model` and give just `color` (and `glow` if you like):
+
+```json
+{ "override": 0, "fx": { "projectile": { "color": [134, 59, 135] }, "impact": { "color": "#ff4020", "glow": 4 } } }
+```
+
+That recolours the base item's own projectile, muzzle flash or impact: its shape, animation and brightness stay, the
+original's hue is replaced by yours (the Nirai Impulse's orange bolt turns purple). Any colour picker's values work.
+
 | Field | |
 |---|---|
 | `projectile` | What flies. For a beam weapon the beam itself (stretched from the gun to what it hits along its length), for a missile the missile. |
@@ -262,14 +306,15 @@ stays its base item's. What the weapon *does* never changes: a beam stays a beam
 | `shotLoops` | `true`: the shot sound loops while the trigger is held (like the auto-cannons); `false`: one per shot. Default: the base item's. |
 | `explosionSound` | Bombs, mines and blast weapons: the sound of the blast (a file or a list). |
 
-Each of `projectile`, `muzzle` and `impact` is either `false` (none at all) or an object:
+Each of `projectile`, `muzzle` and `impact` is either `false` (none at all), an object with only `color` / `glow` (the
+original's, recoloured, above), or an object with a `sprite` or `model`:
 
 | Field | |
 |---|---|
 | `sprite` | A PNG drawn on a flat square that always faces the camera. Draw it white on black (or transparent): bright = visible, and `color` tints it. |
 | `model` | Or a glTF / GLB model. With `texture` it is drawn glowing like a sprite with that PNG; without, with the model's own materials (lit by the sun). |
 | `size` | Its size in game units (20 units = 1 m): the sprite's width, or the model's largest extent. Default 200. The game's own effects are big: a blaster bolt is about 1600 units across, an impact glow several thousand. |
-| `color` | A tint, `[r, g, b]` or `[r, g, b, a]` from 0 to 1, or `"#rrggbb"`. Default white. |
+| `color` | A tint: `[r, g, b]` or `[r, g, b, a]` from 0 to 1, or from 0 to 255 (`[134, 59, 135]`: any value above 1 means the 0-255 scale), or `"#rrggbb"`. Default white. Without a sprite or model: the colour the original effect is recoloured to. |
 | `glow` | How much it blooms; above 1 glows under the bloom option (the game's effects use 2.5). Default: as the game's effects. |
 | `additive` | `true` (default): light added to what is behind it, like fire, plasma and lasers. `false`: drawn over it, using the PNG's transparency (smoke, solid shells). |
 | `lifetime` | Milliseconds it lasts, for `muzzle` (default 100) and `impact` (default 300). A projectile lasts as long as it flies. |
@@ -321,8 +366,10 @@ A list of entries, like items.json: `"id"` adds a ship, `"override"` changes one
 | `armor`, `cargo`, `handling` | Hull points, hold size (t), handling (the originals use 60 to 160). |
 | `price`, `priceDefault` | The price, and the price in the Default Economy (0 = the same). |
 | `slots` | `primary`, `secondary`, `turret`, `equipment`. A ship may have several turret slots, one per turret mount. |
-| `model` | **Required.** The ship's model, a `.glb` (or `.gltf`) file in the mod. |
+| `model` | **Required.** The ship's model, a `.glb` (or `.gltf`) file in the mod. Shots hit its real shape, and the player's ship slides along it: every mesh counts except those with an additive / glow material, so keep invisible helper meshes out of the file. |
 | `modelLength`, `modelYaw` | Its length nose to tail in game units (the Phantom is about 1000; 20 units = 1 m), and a turn in degrees when the model's nose doesn't point forward (+Z). The model is scaled to that length. |
+| `modelPitch`, `modelRoll` | More turns in degrees (about the side axis and the length axis), for a model lying nose up or on its side in its file. |
+| `modelOffset` | `[x, y, z]` in game units (like the mounts): the sized model moved off the ship's centre, the point it turns, docks and flies around. |
 | `icon` | The shop icon, a PNG of 180 x 88 like the originals (the ship on the plate). None = the Phantom's. |
 | `hangarHeight` | How high its pivot sits above the hangar pad, in game units (the originals 140 to 400). |
 | `mounts` | Where guns and exhausts sit, in game units from the ship's centre (x right, y up, z forward): `slotType` 0 primary gun, 1 secondary, 2 turret (`"upsideDown": true` hangs it under the hull), 3 engine exhaust (the flame and its particles; `turretAngles[0]` sizes the particles; `"glowColor": [r, g, b]` (0 to 1) colours that exhaust's flame and its exhaust particles; `"glowSize": [halfWidth, halfHeight, length]` (game units) makes the flame an ellipse of that size, its flared ring `length` behind the nozzle). |
@@ -334,7 +381,13 @@ A list of entries, like items.json: `"id"` adds a ship, `"override"` changes one
 | `dealer` | Optional. The ordinary ship dealers may stock it: `{ "chance": 2, "systemRace": -1, "minTechLevel": 0 }`, `chance` % (decimals allowed) each time a station's dealer list is made, at stations of `systemRace` systems (-1 = any) with at least that tech level. Not the special yards (Kothar, Quineros, Thynome...). |
 | `available` | Optional. A [condition](#conditions) that must hold before it is sold anywhere (dealers and lounges). |
 
-The model's own materials (base colour, metallic-roughness, normal map, emission, transparency) are used as they are. glTF
+Ship and station materials get the original game's hull shine: the system's reflection and a rim light, stronger where
+the surface is smoother (the smoothness / alpha of the metallic map), like the game's own ships; metal parts reflect
+through the normal lighting instead. A custom hangar or bar (interiors.json) has none, like the game's rooms. A mod system
+reflects its template system's sky.
+
+The model's own materials (base colour, metallic-roughness with its metallic / roughness factors, normal map, emission,
+transparency) are used as they are. glTF
 from Blender works: File > Export > glTF 2.0, format glTF Binary (.glb), +Y up. Projects made in Unity can use the
 Project window's right-click **GoF2 > Export Model As GLB (Mods)**.
 
@@ -370,9 +423,20 @@ To set materials up in the mod instead (paths inside the mod), each entry applie
 ### Changing ships
 
 `override`: an original ship's number or another mod's `"mod_id:ship_id"`, with any of `armor`, `cargo`, `price`,
-`priceDefault`, `slots`, `handling`, `name`, `description` (and for mod ships `race`, `hangarHeight`).
+`priceDefault`, `slots`, `handling`, `name`, `description`, `mounts` (and for mod ships `race`, `hangarHeight`).
 
-An override of an original ship can also give it a new **model**: `model` with `modelLength`, `modelYaw`, `materials`,
+**More (or fewer) weapons:** `slots` sets how many primaries, secondaries, turrets and equipment the ship takes (give only the
+ones you change), and `mounts`
+where its guns sit (the same list as a new ship's; it replaces the ship's whole list, exhausts included, so copy the ones you
+keep). A ship with more weapon slots than gun mounts still fires every weapon: the extra ones share the mounts in turn. With
+fewer slots, what no longer fits moves to the hold the next time the player docks.
+
+```json
+[ { "override": 10, "slots": { "primary": 3, "secondary": 2 } } ]
+```
+
+An override of an original ship can also give it a new **model**: `model` with `modelLength`, `modelYaw` (and `modelPitch`,
+`modelRoll`, `modelOffset`), `materials`,
 `engineGlowRadius` / `engineGlowColor` and the glows, as for a new ship. Every ship of that number then uses it (yours, the
 NPCs', the hangar's). Its guns and exhausts stay at the original's mounts unless the entry has its own `mounts`.
 
@@ -478,7 +542,7 @@ nebula on black, not on a dark blue. The sky also lights the scene a little (its
 | `modelYaw` | Degrees to turn the model about its up axis. A launch leaves along the station's front (the model's +Z after the turn, toward the orbit's planet); arrivals come from there too. |
 | `modelCentre` | `true` (default): the middle of the model is the station's centre; `false`: the model's own origin is. |
 | `materials` | Replace the model's materials on parts it names, like [ships.json's materials](#materials). |
-| `collision` | What ships bump into: `"box"` (default, the model's bounds), `"sphere"`, or `"none"`. |
+| `collision` | What ships bump into: `"box"` (default, the model's bounds), `"sphere"`, or `"none"`. The player's ship collides with your model's real shape (its meshes, except additive / glow materials); the box or sphere is what NPC fighters steer around. `"none"` turns both off. |
 | `volumes` | Instead of `collision`, your own shapes in game units around the station's centre: `[{ "box": [x, y, z, half x, half y, half z] }, { "sphere": [x, y, z, radius] }]`. Boxes stay axis-aligned, like the originals'. |
 | `interior` | The hangar and bar you see when docked: `"terran"`, `"vossk"`, `"nivelian"`, `"midorian"` (or 0-3). Default: those of its system's race. |
 | `hangar`, `bar` | Your own hangar / bar room from `interiors.json` (see [Hangars and bars](#hangars-and-bars)): its id, or `"mod_id:interior_id"` for another mod's. `interior` still picks the race whose ships park there. |
@@ -854,8 +918,9 @@ named can use them: a **Dialog** page, a **Radio** call, an **Ask** / **Vote** q
 | `portrait` | **Required.** A PNG for the game's portrait box, 4:5 (320 x 400 stays sharp on big screens). It covers the box, its top kept. Leave it transparent around the character and the game's portrait background shows behind, like the game's own faces. |
 | `race`, `gender` | What the game draws by race: the figure standing in the Space Lounge when the character is a bar mission's client, the name's colour in the dialogue. Default `terran`, `male`. |
 | `mirrored` | `true`: drawn mirrored (the game mirrors Keith's portrait). |
-| `background`, `frame` | `false`: without the game's portrait background / frame. |
-| `replaces` | A story character (`"Gunant Breh"`, or a speaker number) whose portrait this one takes everywhere, the game's own story included. Their name and voice stay. |
+| `frame` | `false`: without the faint scanlines the game draws over every portrait (a light screen look, about 10 % dark lines). |
+| `background` | `false`: without the dark, half-transparent backdrop behind the picture. It only shows through transparent parts of your PNG (a cut-out character), so a full picture looks the same either way. |
+| `replaces` | A story character (`"Gunant Breh"`, `"Keith"`, or a speaker number) whose portrait this one takes everywhere, the game's own story included, and whose name too when this character has a `name` (the dialogue and radio headers, `%player%` for Keith). Other characters' lines that mention the old name, and the voices, stay. |
 
 Name the character in a speaker slot by `vega`, by `frontier_systems:vega` (always unique, also across mods) or by its name
 (`Captain Vega`). `vega as Harbour Master` shows another name over the same face, like the story characters. In typed
@@ -909,7 +974,7 @@ yours. Only a weapon's own shot can be set on the item instead (`fx` → `shot`,
 
 ## Textures (skins)
 
-Put images in the mod's `textures` folder (`.png` or `.jpg`), each named like one of the game's textures: it is used instead
+Put images in the mod's `textures` folder (`.png`, `.jpg`, `.tga`, `.bmp`, `.dds` or `.aei`), each named like one of the game's textures: it is used instead
 on every ship, station and object that uses it. The names are the file names in the game's `Assets/Textures` folders, for
 example `ship_028_terran_diffuse` (the Veteran's hull paint), `ship_028_terran_normal_specular` (its bumps and shine) or
 `ship_010_terran_diffuse` (the Phantom). A ship's hull texture is `ship_<number>_<race>_diffuse`; the race is the one in its
@@ -927,6 +992,47 @@ veteran_skin/
   textures/
     ship_028_terran_diffuse.png
 ```
+
+### One ship only
+
+Some textures are shared: `glow_terran` (the lights of every Terran ship), `ship_engine_glow` (every ship's engine glow), a
+race's freighter and wreck textures. To change one only on a single model, put it in a folder named after that model's
+assembly inside `textures` (the ship's model name, as in its hull texture: `ship_028_terran` for the Veteran). It is used on
+that model instead of the game's, and before a `textures/<name>` file of the same name, which every other ship keeps using.
+
+```
+veteran_skin/
+  textures/
+    ship_028_terran_diffuse.png
+    ship_028_terran/
+      glow_terran.png          (the Veteran's lights only)
+      ship_engine_glow.png     (its engine glow only)
+```
+
+The Mod Builder's Skins tab writes these for you: a shared texture has "This ship..." and "All ships..." buttons.
+
+### Planets, suns and rings
+
+The same goes for the planets, suns and rings in the sky: a texture named like the game's replaces it in every system that
+shows it. The planets are `planet_000_small` ... `planet_019_small` (the other stations' planets) and `planet_000_big` ...
+`planet_019_big` (the orbit's own big planet), `planet_void_small` / `_big`, and the Supernova add-on's `sn_planet_024_small`
+... `sn_planet_026_big`; the suns `sun_000` ... (and `sn_sun_011`, the supernova); the rings `sn_planet_ring`. Each is one
+whole image (a disc on a transparent background, not a wrapped map), so keep the original's size and keep the transparent
+edge: the sun swells when it is near the middle of the screen, and a glow reaching the image's edge then shows as a square.
+
+To draw your retextured planets as stars, add a `backdrop.json` to the mod (the last mod in the load order that has one wins):
+
+```json
+{ "planets": "star", "planetGlow": 2, "planetFlare": 0.35 }
+```
+
+| Field | Meaning |
+|---|---|
+| `planets` | `"star"`: the planets whose texture your mod replaces face the camera like the sun, aren't mirrored and have no ring |
+| `planetGlow` | How much their bright core glows with the game's bloom (default 2; 1 = no extra glow) |
+| `planetFlare` | The sun's flare at this share of its strength when you look at them: a slight swell and a horizontal streak (0..1, default 0.35; 0 = none) |
+
+Planets you don't retexture stay planets.
 
 ## Building on other mods
 

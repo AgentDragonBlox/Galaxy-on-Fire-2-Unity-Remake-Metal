@@ -213,6 +213,12 @@ namespace GoF2Remake.UI
             statusButton.text = T(169).ToUpperInvariant();
             inspectButton.text = Localization.Extra("stationInspect", "INSPECT SHIP");
             launchButton.text = Localization.Extra("stationLaunch", "LAUNCH");
+            // Remake: its key on the button, L with keys and mouse, X with a controller (the root's input-* class picks one).
+            var launchKey = InputGlyph.Key("L");
+            launchKey.AddToClassList("launch-glyph--key");
+            var launchPad = InputGlyph.Pad(PadButton.X);
+            launchPad.AddToClassList("launch-glyph--pad");
+            InputGlyph.WithGlyphs(launchButton, launchKey, launchPad);
             root.Q<Button>("loungeBack").text = Localization.Extra("hudBack", "BACK");
             dialogNo.text = T(135).ToUpperInvariant();
             root.Q<Button>("menuButton").text = Localization.Extra("hudMenu", "MENU");
@@ -236,7 +242,18 @@ namespace GoF2Remake.UI
             OnViewChanged();
             ApplyInputMode();
             UpdateLayout();
+
+            // Remake: the Mod Builder's hangar (Modding.ModBuilder): its own screen instead of the station menu's.
+            if (Modding.ModBuilder.Active && builderView == null)
+            {
+                foreach (var child in root.Children()) child.style.display = DisplayStyle.None;
+                builderView = new ModBuilderView(level, root, push => Play(push ? buttonPush : buttonRelease));
+            }
         }
+
+        /// <summary>The Mod Builder's screen while a project is open (it runs this scene; the station menu stays hidden).</summary>
+        ModBuilderView builderView;
+
 
         Button Bind(string name, System.Action action)
         {
@@ -331,7 +348,8 @@ namespace GoF2Remake.UI
             root.EnableInClassList("ticker-off", !shown);
             if (!shown) return;
             if (!newsOnly || tickerBase == null) tickerBase = NewsTicker.Build(level.Database, st.system, level.Layout.raceId) ?? "";
-            tickerSingle = GoF2Remake.Multiplayer.NetNews.Ticker(st.index) + tickerBase;
+            // Remake: the Pirate activity board's reports in this system and its gate neighbours, before the game's own.
+            tickerSingle = GoF2Remake.Multiplayer.NetNews.Ticker(st.index) + PirateReports.Ticker(level.Database, st.system) + tickerBase;
             tickerNewsDirty = false;
             tickerBuiltAt = Time.unscaledTime;
             tickerText.text = tickerSingle;
@@ -653,6 +671,13 @@ namespace GoF2Remake.UI
         /// <summary>Credits changed outside the hangar window (a deal in the lounge).</summary>
         public void RefreshCredits() => BuildHints(InputMode.Current);
 
+        /// <summary>Multiplayer: a trade with another player changed the hold and the credits (NetTradeClient).</summary>
+        public void CargoChanged()
+        {
+            hangarWindow?.StockChanged();
+            RefreshCredits();
+        }
+
         void OpenLounge()
         {
             if (level == null || ArrivalPending || !Story.LoungeUnlocked(level.Station != null ? level.Station.index : -1)) return;
@@ -763,6 +788,18 @@ namespace GoF2Remake.UI
             Select(dialogYes);
         }
 
+        /// <summary>Remake (#83): after "Keep" (331), whether the equipment mounted now moves to the new ship (true) or stays on
+        /// the old hull in the Kaamo Club (false); asked only while Settings.KaamoKeepsEquipment would keep it there and
+        /// something movable is mounted (Hangar.KeepAsksAboutEquipment), else 'then(false)' at once.</summary>
+        public void AskMoveEquipment(System.Action<bool> then)
+        {
+            if (!Hangar.KeepAsksAboutEquipment) { then(false); return; }
+            string text = string.Format(Localization.Extra("kaamoMoveEquipment",
+                "Move your equipment to the new ship?\n\nYes: it is mounted on the new ship (what doesn't fit goes to the cargo hold).\nNo: it stays on your {0} in the Kaamo Club."),
+                ItemInfo.ShipName(Session.ShipIndex));
+            ShowChoice(text, Localization.Get(134), Localization.Get(135), () => then(true), () => then(false));
+        }
+
         /// <summary>ChoiceWindow with its own two labels (327: 330 "Sell" / 331 "Keep").</summary>
         public void ShowChoice(string text, string yes, string no, System.Action onYes, System.Action onNo)
         {
@@ -826,6 +863,7 @@ namespace GoF2Remake.UI
         {
             GoF2Remake.Multiplayer.NetStock.Changed -= OnSharedStock;
             GoF2Remake.Multiplayer.NetNews.Changed -= OnNews;
+            builderView?.Dispose();
             if (runtimePanel != null) Destroy(runtimePanel);   // the per-scene clone: its panel (atlas, GPU buffers) goes with it
         }
 
@@ -1589,8 +1627,7 @@ namespace GoF2Remake.UI
             root.EnableInClassList("input-keyboard", kind == InputKind.KeyboardMouse);
             root.EnableInClassList("input-gamepad", kind == InputKind.Gamepad);
             SetTouchMode(kind == InputKind.Touch);
-            if (kind == InputKind.Gamepad && !HangarOpen && root.focusController?.focusedElement == null)
-                Select(DialogOpen ? dialogYes : SystemMenuOpen ? SystemMenuItems()[0] : level != null && level.View == StationView.Lounge ? loungeButton : hangarButton);
+            if (kind == InputKind.Gamepad && !HangarOpen && root.focusController?.focusedElement == null) Select(DefaultFocus());
             BuildHints(kind);
             BuildInspectHints(kind);
         }
@@ -1613,6 +1650,10 @@ namespace GoF2Remake.UI
             root.focusController?.IgnoreEvent(e);
         }
 
+
+        /// <summary>What a controller starts on: the dialog's Yes, the system menu's first entry, else the view's button.</summary>
+        VisualElement DefaultFocus() =>
+            DialogOpen ? dialogYes : SystemMenuOpen ? SystemMenuItems()[0] : level != null && level.View == StationView.Lounge ? loungeButton : hangarButton;
 
         void Select(VisualElement e)
         {
@@ -1696,12 +1737,22 @@ namespace GoF2Remake.UI
                 root.focusController?.IgnoreEvent(e);
                 return;
             }
-            if (!DialogOpen && SystemMenuOpen && DebugPage && horizontal)
+            if (!DialogOpen && SystemMenuOpen && DebugPage && (horizontal || vertical))
             {
-                // Left / right steps the focused option (OptionControl.Step, like the pause menu).
+                // Left / right step a value (a stepper, segments, a slider: OptionControl.Step, like the pause menu); else
+                // the keys move on screen (SpatialNav): the toggles stand two to a row, the Give items buttons side by side
+                // (a toggle flipped on left / right, and down went to the button beside).
                 var f = root.focusController?.focusedElement as VisualElement;
                 var c = stationOptions.Find(o => o.Field == f);
-                if (c != null) c.Step(e.direction == NavigationMoveEvent.Direction.Left ? -1 : 1);
+                if (horizontal && c != null && c.StepsSideways) c.Step(e.direction == NavigationMoveEvent.Direction.Left ? -1 : 1);
+                else if (vertical && CheatsCatalog.MoveVertical(f, e.direction == NavigationMoveEvent.Direction.Up ? -1 : 1)) { }
+                else if (System.Array.IndexOf(items, f) < 0) NextNavigable(items, -1, 1)?.Focus();
+                else
+                {
+                    int dx = !horizontal ? 0 : e.direction == NavigationMoveEvent.Direction.Left ? -1 : 1;
+                    int dy = !vertical ? 0 : e.direction == NavigationMoveEvent.Direction.Up ? -1 : 1;
+                    SpatialNav.Next(items, f, dx, dy, Navigable)?.Focus();
+                }
                 e.StopPropagation();
                 root.focusController?.IgnoreEvent(e);
                 return;
@@ -1760,11 +1811,14 @@ namespace GoF2Remake.UI
                                                                         : $"{T("shopSell", "SELL")} / {T("shopBuy", "BUY")}";   // ingredients: ADD
                 string tabs = $"{Localization.Get(183)} / {Localization.Get(store ? 186 : 185)} / {Localization.Get(272)}".ToUpperInvariant(), confirm = T("hudConfirm", "CONFIRM");
                 string sellShip = T("kaamoSellShip", "SELL SHIP");
+                string tradeAll = store ? $"{T("shopStoreAll", "STORE ALL")} / {T("shopTakeAll", "TAKE ALL")}"
+                                        : $"{T("shopSellAll", "SELL ALL")} / {T("shopBuyAll", "BUY ALL")}";
                 string info = Localization.Get(390).ToUpperInvariant();   // the details window's "Info" (ItemInfoWindow)
                 if (kind == InputKind.KeyboardMouse)
                 {
                     Hint(select, InputGlyph.Key("W"), InputGlyph.Key("S"));
                     Hint(trade, InputGlyph.Key("A"), InputGlyph.Key("D"));
+                    Hint(tradeAll, InputGlyph.Key("SHIFT", true), InputGlyph.Key("A"), InputGlyph.Key("D"));
                     Hint(confirm, InputGlyph.Key("ENTER", true));
                     Hint(tabs, InputGlyph.Key("Q"), InputGlyph.Key("E"));
                     Hint(info, InputGlyph.Key("I"));
@@ -1776,6 +1830,7 @@ namespace GoF2Remake.UI
                     Hint($"{select} / {trade}", InputGlyph.Pad(PadButton.DPad));
                     Hint(confirm, InputGlyph.Pad(PadButton.A));
                     Hint(trade, InputGlyph.Pad(PadButton.X), InputGlyph.Pad(PadButton.A));   // a shop row: X sells, A buys
+                    Hint(tradeAll, InputGlyph.Pad(PadButton.LeftTrigger), InputGlyph.Pad(PadButton.RightTrigger));
                     Hint(tabs, InputGlyph.Pad(PadButton.LeftBumper), InputGlyph.Pad(PadButton.RightBumper));
                     Hint(info, InputGlyph.Pad(PadButton.Y));
                     if (store) Hint(sellShip, InputGlyph.Pad(PadButton.X));
@@ -1968,6 +2023,7 @@ namespace GoF2Remake.UI
                 {
                     if (!inspectDragging) { inspectDragging = true; inspectLast = pos.Value; inspectDragTravel = 0f; }
                     delta = (pos.Value - inspectLast) * scale;
+                    delta.y = -delta.y;   // remake (players' request): a drag up takes the camera down, as in Action Freeze
                     inspectDragTravel += delta.magnitude;
                     inspectLast = pos.Value;
                     inspectFling = delta;
@@ -2124,6 +2180,7 @@ namespace GoF2Remake.UI
         void Update()
         {
             if (root == null || level == null) return;
+            if (builderView != null) { builderView.Update(); return; }   // the Mod Builder's hangar
             if (lastScreen != ScreenSize() || lastSafeArea != Screen.safeArea) UpdateLayout();
             UpdateTicker();   // scrolls on under dialogs and windows (it used to wait, then fly in again)
             // Remake hangar flights: the menu hides while the ship flies in or out; the conversations, windows and hints
@@ -2188,9 +2245,17 @@ namespace GoF2Remake.UI
                 return;
             }
             if (toastMs > 0f && (toastMs -= Time.unscaledDeltaTime * 1000f) <= 0f) toast.RemoveFromClassList("station-toast--shown");
+            // #74: the panel only sends a controller's navigation to a focused element. ApplyInputMode focuses the default
+            // button when the controller becomes the input, but a station loaded with the controller already in use (the menu
+            // still away behind the hangar flight) or a closed window can leave nothing focused: the D-pad then did nothing
+            // until a dialog, a menu or a touch set the focus again.
+            if (InputMode.Current == InputKind.Gamepad && !HangarOpen && root.focusController?.focusedElement == null
+                && !(missions != null && missions.IsOpen) && !(status != null && status.IsOpen) && !(lounge != null && lounge.ChatOpen))
+                Select(DefaultFocus());
             if (DialogOpen || SystemMenuOpen) return;
             if (missions != null && missions.IsOpen) return;
             if (status != null && status.IsOpen) return;
+            if (lounge != null && lounge.NumberKey(kb)) return;   // #75: in the lounge the number keys pick its visitors
             // The PC version's "Menu button 1 - 9" (3356) tap Globals::sub_menu_buttons: the main view's Hangar / Lounge / Map /
             // Missions / Status, the hangar window's three tabs (HangarWindow::initialize): 4 / 5 do nothing there.
             if (kb != null && kb.digit5Key.wasPressedThisFrame && !HangarOpen) { Play(buttonRelease); OpenStatus(); return; }
@@ -2225,6 +2290,11 @@ namespace GoF2Remake.UI
                     hangarWindow.Action();
                 else if ((kb != null && kb.xKey.wasPressedThisFrame) || (pad != null && pad.buttonWest.wasPressedThisFrame))
                     hangarWindow.SecondaryAction();   // Sell a stored hull (Kaamo Club)
+                // Remake: LT / RT = Sell all / Buy all (Store all / Take all), the keyboard's Shift + left / right.
+                else if (pad != null && pad.leftTrigger.wasPressedThisFrame)
+                    hangarWindow.TradeAll(-1);
+                else if (pad != null && pad.rightTrigger.wasPressedThisFrame)
+                    hangarWindow.TradeAll(1);
                 else if ((kb != null && kb.qKey.wasPressedThisFrame) || (pad != null && pad.leftShoulder.wasPressedThisFrame))
                 {
                     Play(buttonPush);

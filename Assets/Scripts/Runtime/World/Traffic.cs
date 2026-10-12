@@ -59,6 +59,8 @@ namespace GoF2Remake.World
             Player = player;
             assets = CombatAssets.Load();
             StationIndex = layout.stationIndex;
+            systemIndex = layout.systemIndex;
+            this.storyOrbit = storyOrbit;
             var sys = db.Systems.Find(s => s.index == layout.systemIndex);
             SystemRace = Mathf.Clamp(sys?.raceId ?? 0, 0, 3);
             AttackRace = Standing.EnemyRaceOf(SystemRace);
@@ -175,6 +177,7 @@ namespace GoF2Remake.World
             // Remake: no hit cube of its own (the +-1000 turret cube would soak up the shots at its host) and no lock.
             t.Target.radius = 0f;
             t.Target.untargetable = true;
+            HullCollision.Detach(t.Target);   // nor a mesh hull (it stopped the shots at the Rhino under it)
             t.SetGun(22, 0.5f);
             host.AttachedTurret = t;
         }
@@ -352,12 +355,13 @@ namespace GoF2Remake.World
 
         // ---- remake: pirate events (TrafficPlan.AddPirateEvent, GitHub #6) ----------------------------------------------
 
-        bool bossCalled;
+        bool bossCalled, warningChecked, warningSent, storyOrbit;
         float eventMs;
+        int systemIndex = -1;
 
         /// <summary>The event's outpost or boss destroyed (whoever did it): the pirates' "Nooooo!" for an outpost and its turrets
         /// going with it, and the bounty (outpost 10 000 + 1500 per rank, boss 4000 + 1500 per rank; x1.5 in a Dangerous
-        /// system).</summary>
+        /// system; a Pirate activity report's own bounty, set when it was reported, and the report marked done).</summary>
         public void PirateEventDone(NpcShip ship)
         {
             int rank = Mathf.Min(Session.Rank, 20);
@@ -367,27 +371,47 @@ namespace GoF2Remake.World
                 Radio(438, 440, Standing.Pirate);
                 foreach (var s in Ships.ToArray()) if (s.Spec.pirateEvent == SpawnSpec.EventTurret) s.DestroyAsTurret();
             }
-            int reward = (outpost ? 10000 : 4000) + 1500 * rank;
-            if (ship.Spec.eventDangerous) reward = reward * 3 / 2;
+            int reward = PirateReports.Bounty(outpost, rank, ship.Spec.eventTier, false);
+            int reported = PirateReports.Done(ship.Spec.sightingId);
+            if (reported >= 0)
+            {
+                reward = reported;
+                // Multiplayer: the session's board is the server's, and so is the payout: to the killer, or split across
+                // the killer's squad (NetState.PirateSightingDoneRpc).
+                if (GoF2Remake.Multiplayer.NetGame.Active && GoF2Remake.Multiplayer.NetState.Instance != null)
+                {
+                    var nm = Unity.Netcode.NetworkManager.Singleton;
+                    bool remote = ship.Target.killedByRemote && ship.Target.remoteKiller != ulong.MaxValue;
+                    ulong killer = remote ? ship.Target.remoteKiller : nm != null ? nm.LocalClientId : 0;
+                    GoF2Remake.Multiplayer.NetState.Instance.PirateSightingDoneRpc(ship.Spec.sightingId, killer);
+                    return;
+                }
+            }
             Session.Credits += reward;
             BountyCollected?.Invoke(reward);
         }
 
-        /// <summary>The boss calls the player 8 s into the orbit (the Pirate Boss face, speaker 9).</summary>
+        /// <summary>The boss calls the player 8 s into the orbit (the Pirate Boss face, speaker 9; a reported boss by its
+        /// name). Remake (the Pirate activity board): 5 s in, the system's authorities warn once of a reported outpost or boss
+        /// in this system (PirateReports.TakeWarning).</summary>
         void UpdatePirateEvent(float dtMs)
         {
-            if (bossCalled || RadioBlocked) return;
+            if (RadioBlocked || MenuBackdrop) return;
             eventMs += dtMs;
-            if (eventMs < 8000f) return;
+            if (!warningChecked && eventMs >= 5000f)
+            {
+                warningChecked = true;
+                if (!storyOrbit && PirateReports.TakeWarning(db, systemIndex) is string warning) { RaceRadio(warning, SystemRace); warningSent = true; }
+            }
+            if (bossCalled || eventMs < 8000f) return;
             var boss = Ships.Find(s => s.Spec.pirateEvent == SpawnSpec.EventBoss);
             if (boss == null || !boss.Target.Alive) { bossCalled = true; return; }
             bossCalled = true;
-            chatterQueue.Clear();
-            chatter = null;
+            if (!warningSent) { chatterQueue.Clear(); chatter = null; }   // after the authorities' warning, not over it
             chatterQueue.Enqueue(new Chatter
             {
                 text = Localization.Extra("pirateBossCall", "This orbit is mine now, pilot. Drop your cargo and turn around, or my boys turn you into scrap!"),
-                speakerId = 9, speaker = Localization.Get(1606),
+                speakerId = 9, speaker = !string.IsNullOrEmpty(boss.Spec.name) ? boss.Spec.name : Localization.Get(1606),
             });
         }
 
@@ -996,7 +1020,15 @@ namespace GoF2Remake.World
             if (MusicMuted) { if (music.isPlaying) music.Stop(); musicCategory = pendingCategory = -1; return; }
             // MGame::OnRender2D skips Radar::draw while LevelScript's cutscene flag is set, so nothing switches the music
             // during a story cutscene (index 14's arrest: the pirates vanish, the battle track plays on).
-            if (RadarHidden != null && RadarHidden() && musicCategory >= 0) { music.volume = fade * Settings.MusicVolume * Events.EventScreen.SceneMusic; return; }
+            // The track's fade-in goes on: a level in its cutscene from the start (the Supernova's "Meanwhile..." orbits,
+            // MGame::OnInitialize's playMusicAndFadeOutCurrent(1) playing 152 at Thynome) started its track at 0 and kept it
+            // there.
+            if (RadarHidden != null && RadarHidden() && musicCategory >= 0)
+            {
+                fade = Mathf.Min(1f, fade + dt / 1.5f);
+                music.volume = fade * Settings.MusicVolume * Events.EventScreen.SceneMusic;
+                return;
+            }
             // Radar::draw 0x157c6c: while 143 IntroAtmo plays nothing switches.
             var introAtmo = StoryAssets.Load()?.introAtmo;
             if (introAtmo != null && music.clip == introAtmo && music.isPlaying) { music.volume = fade * Settings.MusicVolume * Events.EventScreen.SceneMusic; return; }

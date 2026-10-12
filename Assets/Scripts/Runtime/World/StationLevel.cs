@@ -97,6 +97,7 @@ namespace GoF2Remake.World
         public bool IntroPlaying => introT < 1.25f && View == StationView.Lounge;
 
         Database db;
+        int dbRevision;                       // ModManager.Revision when db was loaded
         Transform hangarRoot, barRoot, playerShip;
         int shipIndex;
         Vector3 shipPivot;                    // Unity, the camera parent (0, Y[ship at entry], 0)
@@ -138,13 +139,13 @@ namespace GoF2Remake.World
         Action afterDeparture;
         bool departed;
         /// <summary>The player's ship is flying in or out (the station menu hides and waits).</summary>
-        public bool PlayerFlying => playerFlight != null || departed;
+        public bool PlayerFlying => playerFlight != null || departed || pendingDeparture != null;
         /// <summary>The player's ship on the turntable (VR: grabbed to turn it).</summary>
         public Transform PlayerShip => playerShip;
         /// <summary>VR: a visitor picked with the laser (the lounge opens their chat, LoungePanel).</summary>
         public System.Action<int> VisitorPicked;
         /// <summary>The player's ship is taking off or gone (multiplayer: the others in this hangar see it leave).</summary>
-        public bool PlayerDeparting => (playerFlight != null && !playerFlight.arriving) || departed;
+        public bool PlayerDeparting => (playerFlight != null && !playerFlight.arriving) || departed || pendingDeparture != null;
         /// <summary>The hangar's ship traffic (multiplayer: the other players' ships too, NetHangar), null = none.</summary>
         public HangarTraffic Traffic => traffic;
         /// <summary>This docking flew in from the orbit (multiplayer: the others see it land; else the ship just appears).</summary>
@@ -169,12 +170,16 @@ namespace GoF2Remake.World
             // saved, SaveGame.SessionGame).
             if (GoF2Remake.Multiplayer.NetGame.SessionLost) SceneManager.LoadScene("MainMenu");
             db = Database.Load();
+            dbRevision = Modding.ModManager.Revision;
             int station = stationOverride >= 0 ? stationOverride : Session.StationIndex;
+            Hangar.NewDocking();
             Stock = Shop.EnterStation(db, station);
+            PirateReports.Refresh(db);   // remake: the Pirate activity board's old reports off, new ones in
             Story.OnDocked(db, station, Stock);   // ModStation::OnInitialize's story tweaks (index 1: Betty ...)
             // Remake debug (PlayerHull): a hull the player can't normally fly never sits in a hangar (an old save from the
             // battleship toggle): back in the player's own ship.
             if (!PlayerHull.PlayerShip) PlayerHull.ForceOwnShip();
+            Hangar.FitToSlots(db);   // remake: no more mounted than the ship has slots (a mod's lower slot count, a debug swap)
             shipIndex = shipOverride >= 0 ? shipOverride : Session.ShipIndex;
             Station = db.Stations.Find(s => s.index == station);
             Layout = OrbitLayout.Build(db, station);
@@ -206,8 +211,8 @@ namespace GoF2Remake.World
             OrbitBuilder.SpawnBackdrop(Layout, mainCamera);
             BuildHangar();
             BuildBar();
-            // Remake: ships now and then flying past outside the bar's windows.
-            gameObject.AddComponent<BarFlybys>().Setup(this, barRoot, barPosB, barRotB, BarRace == 1, RandomParkedShip,
+            // Remake: ships now and then flying past outside the bar's windows (not at an evacuated station).
+            if (!Evacuated) gameObject.AddComponent<BarFlybys>().Setup(this, barRoot, barPosB, barRotB, BarRace == 1, RandomParkedShip,
                                                        ship => SpawnShip(ship, Vector3.zero, Quaternion.identity, barRoot, "Flyby"));
             Debug.Log($"StationLevel: station {station} {Station?.name} ({Station?.systemName}), hangar {HangarIndex}, " +
                       $"bar {BarRace}, ship {shipIndex}, {VisitorCount} visitors");
@@ -301,6 +306,7 @@ namespace GoF2Remake.World
                     a.pingPongRotation = true;
                     if (a.gameObject.name.Contains("_anim")) a.applyMaterialChannels = true;
                 }
+            CollectRoomHighlights(roomGo);
 
             shipPivot = PadPosition(shipIndex);   // clear of the pad (remake)
             var ship = SpawnShip(shipIndex, shipPivot, Quaternion.identity, hangarRoot, "Player ship");
@@ -323,12 +329,12 @@ namespace GoF2Remake.World
             // The others come and go (remake), except the club's stored hulls. Multiplayer: the other players docked here park
             // on the slots too (NetHangar), with or without the NPC traffic and the flights.
             bool slots = ParkedSlotCount > 0 && ParkedMaxCount > 0;
-            bool npcTraffic = Settings.HangarFlights && Lane != null && slots && !KaamoClub.StorageAt(Layout.stationIndex);
+            bool npcTraffic = Settings.HangarFlights && Lane != null && slots && !KaamoClub.StorageAt(Layout.stationIndex) && !Evacuated;
             if (npcTraffic || (slots && GoF2Remake.Multiplayer.NetGame.Active))
                 traffic = new HangarTraffic(Lane, ParkedSlotCount, ParkedMaxCount,
                                             parkedShips, db, NewParkedShip, ParkedPosition,
                                             (ship, pos, rot) => SpawnShip(ship, pos, rot, hangarRoot, "Visiting ship"),
-                                            npcTraffic, Settings.HangarFlights);
+                                            npcTraffic, Settings.HangarFlights, FitParkingYaw);
             if (traffic != null && GoF2Remake.Multiplayer.NetGame.Active)
             {
                 traffic.KeepOneFree = true;          // a pad for another player docking
@@ -345,6 +351,8 @@ namespace GoF2Remake.World
         /// (the camera keeps the pivot of the ship the hangar was entered with).</summary>
         public void ReplacePlayerShip(int index)
         {
+            // The Mod Builder changes the mods while docked: a ship added since the hangar opened isn't in the old tables.
+            if (dbRevision != Modding.ModManager.Revision) { db = Database.Load(); dbRevision = Modding.ModManager.Revision; }
             if (playerShip != null) Destroy(playerShip.gameObject);
             shipIndex = index;
             var ship = SpawnShip(index, PadPosition(index), Quaternion.identity, hangarRoot, "Player ship");
@@ -386,7 +394,7 @@ namespace GoF2Remake.World
         {
             int slotCount = ParkedSlotCount;
             int max = ParkedMaxCount;
-            if (slotCount <= 0 || max <= 0) return;
+            if (slotCount <= 0 || max <= 0 || Evacuated) return;   // remake: an evacuated station's hangar is empty
             bool club = KaamoClub.StorageAt(Layout.stationIndex);
             int count = Mathf.Min(club ? Mathf.Min(Session.KaamoShips.Count, max) : Random.Range(0, max + 1), slotCount);
             if (GoF2Remake.Multiplayer.NetGame.Active && !club) count = Mathf.Min(count, slotCount - 1);   // a pad for another player
@@ -398,12 +406,21 @@ namespace GoF2Remake.World
                 while (taken[slot] && ++tries < 100) slot = Random.Range(0, slotCount);
                 if (taken[slot]) break;
                 taken[slot] = true;
-                float yaw = Random.Range(0, 300) / 100f;
+                float yaw = FitParkingYaw(slot, ship, Random.Range(0, 300) / 100f);
                 var rot = OrbitLayout.RotationToUnity(new Vector3(0f, yaw, 0f));
                 var parked = SpawnShip(ship, ParkedPosition(slot, ship, rot), rot, hangarRoot, $"Parked ship {n}");
                 if (parked != null) parkedShips.Add(new HangarTraffic.Parked { go = parked, slot = slot, ship = ship, yaw = yaw });
             }
         }
+
+        /// <summary>A heading that fits the pad (StationTables.FitParkingYaw); a custom hangar's as it is.</summary>
+        float FitParkingYaw(int slot, int ship, float gameYaw) =>
+            customHangar != null ? gameYaw : StationTables.FitParkingYaw(HangarIndex, slot, ship, gameYaw);
+
+        /// <summary>The evacuated supernova system's stations (Shop.InSupernovaSystem, system 27 before campaign 158): an empty
+        /// lounge like the original's (AgentGenerator.CreateAgents), and (remake) no parked ships, hangar traffic or bar flybys
+        /// either.</summary>
+        bool Evacuated => Shop.InSupernovaSystem(Shop.SystemOf(db, Layout.stationIndex), Layout.stationIndex);
 
         int NewParkedShip() => Layout.stationIndex == 100 ? StationTables.DeepScienceShips[Random.Range(0, 3)] : RandomParkedShip();
 
@@ -574,6 +591,10 @@ namespace GoF2Remake.World
         {
             Settings.Changed -= ApplyAntialiasing;
             if (dofProfile != null) Destroy(dofProfile);
+            var copies = new HashSet<Material>();
+            foreach (var (_, _, matte) in roomHighlights) foreach (var m in matte) copies.Add(m);
+            foreach (var (_, lit, _) in roomHighlights) foreach (var m in lit) copies.Remove(m);
+            foreach (var m in copies) if (m != null) Destroy(m);
         }
 
         // ---- depth of field (remake option "Hangar depth of field", Settings.HangarDepthOfField) ---------------------------
@@ -589,6 +610,8 @@ namespace GoF2Remake.World
         /// ~130 m the hangar cameras keep from the turntable the ~60 m ship stays sharp, the room behind it goes soft),
         /// Gaussian on phones (cheaper; the background only). The focus follows the ship (the camera drifts, the hangar
         /// flights move it).</summary>
+        bool bokehDof;   // the hangar view's mode (Bokeh, phones Gaussian); the orbit always Gaussian (UpdateDepthOfField)
+
         void SetupDepthOfField()
         {
             if (mainCamera == null) return;
@@ -601,8 +624,8 @@ namespace GoF2Remake.World
             // Assets/Settings/HangarDepthOfFieldShaders.asset has it on (ShaderBuildPreprocessor scans the profile assets).
             dofProfile = ScriptableObject.CreateInstance<VolumeProfile>();
             dof = dofProfile.Add<UnityEngine.Rendering.Universal.DepthOfField>(true);
-            bool bokeh = !Application.isMobilePlatform;
-            dof.mode.Override(bokeh ? UnityEngine.Rendering.Universal.DepthOfFieldMode.Bokeh : UnityEngine.Rendering.Universal.DepthOfFieldMode.Gaussian);
+            bokehDof = !Application.isMobilePlatform;
+            dof.mode.Override(bokehDof ? UnityEngine.Rendering.Universal.DepthOfFieldMode.Bokeh : UnityEngine.Rendering.Universal.DepthOfFieldMode.Gaussian);
             dof.focalLength.Override(300f);
             dof.aperture.Override(2f);
             dof.gaussianMaxRadius.Override(1f);
@@ -613,21 +636,76 @@ namespace GoF2Remake.World
             if (data != null) data.volumeLayerMask |= 1 << DofLayer;
         }
 
+        // The room's URP Lit materials with and without their specular highlights (CollectRoomHighlights).
+        readonly List<(Renderer renderer, Material[] lit, Material[] matte)> roomHighlights = new List<(Renderer, Material[], Material[])>();
+        bool roomMatte;
+
+        /// <summary>Remake: under the hangar's depth of field the room's specular highlights are left out. The key light's
+        /// highlights on the room's glossy parts (the Terran forcefield's top beam) are tiny HDR glints that pop in and out as
+        /// the camera drifts a few centimetres; sharp they are a pixel's sparkle, but the blur spreads each into a bright
+        /// blob, which flickered, worst where the beam meets the screen's top edge (measured with the camera stepped like its
+        /// drift: 0.7-1 % of the top strip's pixels flickering, Bokeh or Gaussian, with or without DLSS; 0 with the
+        /// highlights off, as with the depth of field off). Under the blur the room looks the same without them.</summary>
+        void CollectRoomHighlights(GameObject room)
+        {
+            roomHighlights.Clear();
+            roomMatte = false;
+            if (room == null) return;
+            var copies = new Dictionary<Material, Material>();
+            foreach (var r in room.GetComponentsInChildren<Renderer>(true))
+            {
+                var mats = r.sharedMaterials;
+                Material[] matte = null;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    var m = mats[i];
+                    if (m == null || !m.HasProperty("_SpecularHighlights") || m.IsKeywordEnabled("_SPECULARHIGHLIGHTS_OFF")) continue;
+                    if (!copies.TryGetValue(m, out var c))
+                    {
+                        c = new Material(m) { name = m.name + " (no highlights)" };
+                        c.SetFloat("_SpecularHighlights", 0f);
+                        c.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
+                        copies[m] = c;
+                    }
+                    matte ??= (Material[])mats.Clone();
+                    matte[i] = c;
+                }
+                if (matte != null) roomHighlights.Add((r, mats, matte));
+            }
+        }
+
+        void SetRoomMatte(bool matte)
+        {
+            if (roomMatte == matte) return;
+            roomMatte = matte;
+            foreach (var (r, lit, m) in roomHighlights)
+                if (r != null) r.sharedMaterials = matte ? m : lit;
+        }
+
         void UpdateDepthOfField()
         {
             if (dofVolume == null) return;
             bool on = Settings.HangarDepthOfField && View == StationView.Hangar && playerShip != null && mainCamera != null
                       && !Vr.VrMode.Enabled && !UI.StarMap.IsOpen;
             if (dofVolume.enabled != on) dofVolume.enabled = on;
+            SetRoomMatte(on);
             if (!on) return;
             float focus = Mathf.Max(1f, Vector3.Distance(mainCamera.transform.position, playerShip.position));
-            // Inspect ship: focused on the ship's centre, through a wider lens (300 mm at f/2 kept only ~6 m sharp up close).
+            // Inspect ship / the Mod Builder: focused on the ship's centre, through a wider lens (300 mm at f/2 kept only ~6 m
+            // sharp up close).
             float inspect = Mathf.SmoothStep(0f, 1f, Inspect.Blend);
             if (inspect > 0f) focus = Mathf.Lerp(focus, Mathf.Max(1f, Vector3.Distance(mainCamera.transform.position, Inspect.Centre)), inspect);
             dof.focalLength.value = Mathf.Lerp(300f, 50f, inspect);
             dof.focusDistance.value = focus;
             dof.gaussianStart.value = focus + Mathf.Lerp(25f, Inspect.Radius * 1.2f + 10f, inspect);
             dof.gaussianEnd.value = focus + Mathf.Lerp(140f, Inspect.Radius * 3f + 60f, inspect);
+            // Orbiting, a physical lens can't both keep the whole hull sharp and blur the room: at ~80 m a 50 mm lens blurred
+            // nothing (the option seemed off in the Mod Builder), a longer one the hull's own far side. The orbit takes the
+            // Gaussian blur instead, which starts past the hull (gaussianStart above) and blurs the room behind it.
+            var mode = inspect > 0.5f || !bokehDof ? UnityEngine.Rendering.Universal.DepthOfFieldMode.Gaussian
+                                                   : UnityEngine.Rendering.Universal.DepthOfFieldMode.Bokeh;
+            if (dof.mode.value != mode) dof.mode.value = mode;
+            dof.gaussianMaxRadius.value = Mathf.Lerp(1f, 1.5f, inspect);
         }
 
         void ApplyAntialiasing()
@@ -677,6 +755,7 @@ namespace GoF2Remake.World
 
         void ApplyHangarLighting()
         {
+            SkyReflection.SetSystem(Layout);   // the hulls' reflection: the station's system's cubemap
             if (keyLight != null)
             {
                 keyLight.transform.rotation = Quaternion.LookRotation(-OrbitLayout.DirToUnity(StationTables.HangarTowardLight).normalized);
@@ -695,6 +774,7 @@ namespace GoF2Remake.World
 
         void ApplyLoungeLighting()
         {
+            SkyReflection.SetSystem(Layout);
             OrbitBuilder.SetupLights(Layout, keyLight, null, sunIntensityAt2);
             RenderSettings.ambientMode = AmbientMode.Skybox;
             DynamicGI.UpdateEnvironment();
@@ -758,7 +838,10 @@ namespace GoF2Remake.World
         public HangarInspect Inspect { get; } = new HangarInspect();
 
         /// <summary>Starts inspecting the player's ship: only in the hangar, with the ship on its pad (not flying), not in VR.</summary>
-        public bool BeginInspect()
+        public bool BeginInspect() => BeginInspect(1.15f);
+
+        /// <summary>Inspect ship's orbit, 'minRadii' ship radii at the closest (the Mod Builder's camera goes nearer).</summary>
+        public bool BeginInspect(float minRadii)
         {
             if (View != StationView.Hangar || playerShip == null || PlayerFlying || Vr.VrMode.Enabled || mainCamera == null) return false;
             // The hull's box in the ship's own frame (a world box around a ship turned 45 deg is ~1.3x too big), without the
@@ -769,7 +852,7 @@ namespace GoF2Remake.World
             var scale = playerShip.lossyScale;
             var world = new Bounds(playerShip.TransformPoint(local.center), Vector3.Scale(local.size, new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z))));
             flingVelocity = 0f;
-            Inspect.Begin(mainCamera.transform.position, world);   // its extents' length is the hull's radius
+            Inspect.Begin(mainCamera.transform.position, world, minRadii);   // its extents' length is the hull's radius
             return true;
         }
 
@@ -807,7 +890,16 @@ namespace GoF2Remake.World
 
         /// <summary>ModStation::leaveStation 0xec1ec after the "Depart the station?" confirmation: into space (after the
         /// remake's take-off).</summary>
-        public void Launch() => Depart(LaunchNow);
+        public void Launch()
+        {
+            // ModStation::OnTouchEnd, leaving at campaign 0x18 from Thynome (10): the AB-1 Retractor seller of index 23 has
+            // moved on (Agent::setEvent(1) + setOfferAccepted: 858 "I don't have anything left, sorry."), as step 23's Info
+            // page 192 warns.
+            if (!Session.FreePlay && Story.Index == 24 && Layout.stationIndex == 10 && Stock?.agents != null)
+                foreach (var a in Stock.agents)
+                    if (a.offer == AgentOffer.SellItem && a.sellItem == 68) a.accepted = a.known = true;   // known: no first-chat offer
+            Depart(LaunchNow);
+        }
 
         /// <summary>Remake: the player's ship takes off and flies out through the forcefield, then 'then' runs (loads the
         /// next scene); straight away with the flights off. It lifts off at once and holds over its pad while another
@@ -818,7 +910,15 @@ namespace GoF2Remake.World
             var lane = Lane;
             if (!Settings.HangarFlights || lane == null || playerShip == null) { then?.Invoke(); return; }
             SetView(StationView.Hangar);
-            Inspect.End();   // the camera eases back to the hangar's for the take-off
+            // The camera eases back to the hangar's for the take-off first: the flight works out where the ship leaves the
+            // view (HangarFlight's shrink) from the camera as it starts, and from the orbit's close-up (the Mod Builder's
+            // camera) it shrank away before it reached the forcefield.
+            if (Inspect.Shown)
+            {
+                Inspect.End();
+                pendingDeparture = then;
+                return;
+            }
             flingVelocity = 0f;
             afterDeparture = then;
             var engine = HangarFlight.AddEngine(playerShip.gameObject, true, db, shipIndex, out float volume);
@@ -835,6 +935,8 @@ namespace GoF2Remake.World
         }
 
         float playerFlightStart;
+        /// <summary>A take-off waiting for the camera's blend back from the orbit (Depart).</summary>
+        Action pendingDeparture;
 
         void LaunchNow()
         {
@@ -858,6 +960,12 @@ namespace GoF2Remake.World
         void Update()
         {
             float dtMs = Time.deltaTime * 1000f;
+            if (pendingDeparture != null && !Inspect.Shown)
+            {
+                var then = pendingDeparture;
+                pendingDeparture = null;
+                Depart(then);
+            }
             if (playerFlight != null)
             {
                 playerFlight.Hold = traffic != null && traffic.Busy;
@@ -970,10 +1078,48 @@ namespace GoF2Remake.World
                     pos = (customBar != null ? barPosB : yaw * barPosB) + new Vector3(0f, Mathf.Sin(bobPhase) * 3.5f * M, 0f);
                     rot = yaw * barRotB;
                 }
-                cam.SetPositionAndRotation(pos, rot);
+                // Remake: talking to a visitor, the view turns to them and zooms in a little (FocusVisitor), easing back
+                // when the chat closes. Only sideways, keeping the room camera's pitch and roll: they stand beside the chat
+                // window, in the middle of the room left of it (ChatFrameX, from LoungePanel; #82).
+                chatZoom = Mathf.MoveTowards(chatZoom, chatVisitor >= 0 ? 1f : 0f, dtMs / ChatZoomMs);
+                float z = chatZoom * chatZoom * (3f - 2f * chatZoom);   // smoothstep
                 if (customBar != null) SetCustomLens(customBar.def, StationTables.BarFov, StationTables.BarNear, StationTables.BarFar);
                 else SetLens(StationTables.BarFov, StationTables.BarNear, StationTables.BarFar);
+                if (z > 0f) mainCamera.fieldOfView *= 1f - ChatZoomIn * z;
+                if (z > 0f && chatTarget != Vector3.zero)
+                {
+                    var toVisitor = chatTarget - pos;
+                    toVisitor.y = 0f;
+                    if (toVisitor.sqrMagnitude > 0.01f)
+                    {
+                        // Turn past the visitor by the angle that puts them ChatFrameX of the width from the left.
+                        float halfTanX = Mathf.Tan(mainCamera.fieldOfView * 0.5f * Mathf.Deg2Rad) * mainCamera.aspect;
+                        float past = Mathf.Atan(halfTanX * (1f - 2f * ChatFrameX)) * Mathf.Rad2Deg;
+                        var e = rot.eulerAngles;
+                        float yaw = Mathf.Atan2(toVisitor.x, toVisitor.z) * Mathf.Rad2Deg + past;
+                        rot = Quaternion.Euler(e.x, Mathf.LerpAngle(e.y, yaw, z), e.z);
+                    }
+                }
+                cam.SetPositionAndRotation(pos, rot);
             }
+        }
+
+        /// <summary>Remake: the bar camera's zoom toward the visitor talked to (the share of the field of view taken off), eased
+        /// over ChatZoomMs.</summary>
+        const float ChatZoomIn = 0.25f, ChatZoomMs = 800f;
+        /// <summary>Where the visitor talked to stands across the screen, from the left (0) to the right (1): the middle of
+        /// the room left of the chat window (LoungePanel sets it from the window's place).</summary>
+        public float ChatFrameX = 0.24f;
+        int chatVisitor = -1;
+        Vector3 chatTarget;
+        float chatZoom;
+
+        /// <summary>The Space Lounge's chat opened with visitor 'index' (LoungePanel): the camera eases toward them; -1 = the
+        /// chat closed, back to the room's view.</summary>
+        public void FocusVisitor(int index)
+        {
+            chatVisitor = index >= 0 && index < visitors.Count ? index : -1;
+            if (chatVisitor >= 0) chatTarget = visitors[chatVisitor].feet + Vector3.up * visitors[chatVisitor].height * 0.5f;   // the figure's middle
         }
 
         /// <summary>VR: standing in the room, still (no drift, sway or intro). The hangar: on the floor beside the pad, between

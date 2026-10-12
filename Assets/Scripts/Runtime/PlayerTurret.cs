@@ -218,7 +218,9 @@ namespace GoF2Remake.Flight
             foreach (var a in anims) a.speed = 0f;   // still until the first shot
             if (IsCollector)
                 foreach (Transform t in model.GetComponentsInChildren<Transform>(true))
-                    if (t.name.Contains("plasma_stream")) { stream = t.gameObject; stream.SetActive(false); }
+                    // The stream node itself, not its mesh parts (their names contain it too): hiding every match and keeping
+                    // the last one switched only "_part1" back on in the turret view, under a parent still hidden.
+                    if (stream == null && t.name.Contains("plasma_stream")) { stream = t.gameObject; stream.SetActive(false); }
             var pivot = model.transform.Find("pivot");
             Transform gunNode = null;
             if (pivot != null) foreach (Transform c in pivot) if (c.name.Contains("_gun")) gunNode = c;
@@ -322,12 +324,13 @@ namespace GoF2Remake.Flight
             if (on) foreach (var other in On(gameObject)) if (other != this && other.InTurretView) other.SetTurretView(false);
             InTurretView = on;
             if (weapons != null) weapons.TurretView = on;
-            if (ship != null) ship.steeringLocked = on;
+            if (ship != null) { ship.steeringLocked = on; ship.CenterMouse(); }   // mouse steering's stick starts centred
             if (chase != null)
             {
                 // Docked at an object the chase camera is off (ObjectDocking's look-at camera): on for the turret's view.
                 if (docking == null) docking = GetComponent<ObjectDocking>();
-                if (docking != null && docking.Busy) chase.enabled = on;
+                if (docking != null && (docking.State == ObjectDocking.Phase.Entering || docking.State == ObjectDocking.Phase.Docked
+                                        || docking.State == ObjectDocking.Phase.Leaving)) chase.enabled = on;
                 chase.follow = on ? camAnchor : null;
                 // Under the hull the camera hangs below the turret (still upright: the anchor keeps the ship's up).
                 float side = UpsideDown ? -1f : 1f;
@@ -413,7 +416,7 @@ namespace GoF2Remake.Flight
         bool AutoAim(float dtMs)
         {
             pickMs += dtMs;
-            if (pickMs >= PickMs || target == null || !target.Alive || !target.isActiveAndEnabled)
+            if (pickMs >= PickMs || target == null || !target.Alive || !target.isActiveAndEnabled || target.cloaked)
             {
                 pickMs = 0f;
                 target = PickTarget();
@@ -432,7 +435,8 @@ namespace GoF2Remake.Flight
             foreach (var t in Target.All)
             {
                 if (t == null || !t.isShip || !t.hostileToPlayer || !t.Alive || t == unreachable || t.untargetable || !t.isActiveAndEnabled) continue;
-                if (t.GetComponent<World.NpcShip>() is World.NpcShip npc && npc.RadarHidden) continue;   // KIPlayer+0x70: cloaked too
+                if (t.cloaked) continue;   // a cloaked ship (Target.cloaked, NpcShip: a Specter past a quarter of its fade)
+                if (t.GetComponent<World.NpcShip>() is World.NpcShip npc && npc.RadarHidden) continue;   // KIPlayer+0x70
                 float d = (t.transform.position - transform.position).magnitude;
                 if (d < bestD) { bestD = d; best = t; }
             }

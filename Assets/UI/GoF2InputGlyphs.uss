@@ -122,3 +122,20 @@
     color: #0B1016;
     -unity-text-align: middle-center;
 }
+
+/* A button with glyphs before its text (InputGlyph.WithGlyphs): glyphs and label in a centred row. */
+.glyph-button {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.glyph-button-label {
+    margin: 0;
+    padding: 0;
+    -unity-text-align: middle-center;
+}
+
+.glyph-button-glyph {
+    margin: 0 12px 0 0;
+}

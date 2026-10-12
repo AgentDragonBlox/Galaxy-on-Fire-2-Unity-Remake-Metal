@@ -11,6 +11,8 @@
 //   -allowmods       the session runs every mod in this game's Mods folders (NetMods); off by default
 //   -port N          the local port (default 7777); -fps N the server's frame rate (default 60)
 //   -freepvp         players may fight anywhere (else only in arena matches, NetArena)
+//   -cloakhides -capitalships -informeroriginal -nopirateevents -nokaamostacking -nokaamoequipment -nocloakbay -noempcloak
+//                    the session's gameplay options (NetRules), each the other way from the game's default
 //   -noprofiles      no player profiles (NetProfiles; on by default: credits, ships, cargo, Kaamo Club, squad kept
 //                    per player between sessions; no limit, one unused for 30 days is pruned); -maxearn N (worth a profile may gain
 //                    per minute online without -allowdebug, default 1 000 000), -profiledir PATH (default
@@ -107,6 +109,8 @@ namespace GoF2Remake.Multiplayer
             NetGame.HostAllowsDebug = HasFlag("-allowdebug");
             NetMods.HostAllowsMods = HasFlag("-allowmods");
             NetGame.FreePvp = HasFlag("-freepvp");
+            NetRules.Host = NetRules.Defaults;   // the session's gameplay options: the defaults, a flag turns one the other way
+            foreach (var r in NetRules.All) if (HasFlag(r.flag)) NetRules.Host ^= r.bit;
             NetProfiles.Configure(!HasFlag("-noprofiles"),
                 int.TryParse(Value("-maxearn"), out int earn) ? earn : NetProfiles.DefaultEarnPerMinute,
                 Value("-profiledir"));
@@ -122,6 +126,8 @@ namespace GoF2Remake.Multiplayer
             Application.runInBackground = true;
 #if UNITY_STANDALONE_LINUX && !UNITY_EDITOR
             SaveTerminal();
+            Application.quitting += ExitNow;
+#elif UNITY_STANDALONE_WIN && !UNITY_EDITOR
             Application.quitting += ExitNow;
 #endif
 #if !UNITY_EDITOR
@@ -326,6 +332,21 @@ namespace GoF2Remake.Multiplayer
             try { LibcFlush(IntPtr.Zero); } catch (Exception) { }   // the native log's buffered stdout (_exit skips it)
             try { if (savedTerminal != null) TcSetAttr(0, 0, savedTerminal); } catch (Exception) { }   // TCSANOW: echo back
             LibcExit(exitCode);
+        }
+#elif UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        static extern void ExitProcess(uint exitCode);
+
+        /// <summary>Windows: the same hard exit as Linux. The console thread sits in ReadConsoleInputW (WinConsole.ReadKey)
+        /// and IL2CPP's shutdown (Runtime::Shutdown, AbortAllThreads -> Thread::Join) waited for it: the "Stopping the
+        /// server..." of a player's server ended as a native crash report (2026-10-11).</summary>
+        static void ExitNow()
+        {
+            try { WebAdmin.Stop(); } catch (Exception) { }
+            try { NetGame.ShutdownNow(); } catch (Exception) { }
+            Debug.Log($"Server: exiting ({exitCode}).");
+            try { Console.Out.Flush(); Console.Error.Flush(); } catch (Exception) { }
+            ExitProcess((uint)exitCode);
         }
 #endif
 

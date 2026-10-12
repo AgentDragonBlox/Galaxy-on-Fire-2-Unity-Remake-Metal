@@ -333,7 +333,8 @@ namespace GoF2Remake.Flight
             if (weapons != null && weapons.SecondaryItems().Count > 0) list.Add(new Target { kind = Kind.Secondary, name = Localization.Get(266) });
             if (HasWingmen != null && HasWingmen()) list.Add(new Target { kind = Kind.Wingmen, name = Localization.Get(306) });
             if (Cloak != null) list.Add(new Target { kind = Kind.Cloak, name = Cloak.ItemName, disabled = !Cloak.Rules.Available });
-            if (GalaxyMap.HasJumpDrive(db)) list.Add(new Target { kind = Kind.KhadorDrive, name = Localization.Get(1359) });
+            // Remake: not while docked at an object (it holds the ship: undock first).
+            if (GalaxyMap.HasJumpDrive(db) && (Docking == null || Docking.State == ObjectDocking.Phase.Idle || Docking.State == ObjectDocking.Phase.Approach)) list.Add(new Target { kind = Kind.KhadorDrive, name = Localization.Get(1359) });
             // Remake: the time extender too (the original has it only on its own touch slot), so one menu holds every
             // device: secondaries, wingmen, cloak, Khador Drive and the time extender (half-transparent while recharging).
             if (Extender != null)
@@ -357,8 +358,11 @@ namespace GoF2Remake.Flight
         /// <summary>MGame::OnTouchEnd, autopilot button: only while nothing else flies the ship; pauses the game.</summary>
         public bool CanOpenMenu => !Autopilot && !Jumping && !paused && (mining == null || mining.State == Mining.Phase.Idle) && (Docking == null || !Docking.Busy);
         /// <summary>MGame::OnTouchEnd, quick menu button (key 4): refused only while mining (PlayerEgo::isMining), so it opens
-        /// on the autopilot too (remake: not while jumping or docking at an object either).</summary>
-        public bool CanOpenActions => !Jumping && !paused && (mining == null || mining.State == Mining.Phase.Idle) && (Docking == null || !Docking.Busy);
+        /// on the autopilot and docked at an object too (remake: not while jumping, easing in or out of a docking or hacking;
+        /// docked it was refused until a player's report at 135's mining plant).</summary>
+        public bool CanOpenActions => !Jumping && !paused && (mining == null || mining.State == Mining.Phase.Idle)
+                                      && (Docking == null || ((Docking.State == ObjectDocking.Phase.Idle || Docking.State == ObjectDocking.Phase.Approach
+                                                               || Docking.State == ObjectDocking.Phase.Docked) && Docking.Hacking == null));
 
         /// <summary>The open menu is the quick (action) menu, not the autopilot's.</summary>
         public bool MenuIsActions { get; private set; }
@@ -421,8 +425,9 @@ namespace GoF2Remake.Flight
         /// <summary>Touch button / key held for fast-forward (checked every frame).</summary>
         public void SetFastForwardHeld(bool held) => fastForwardHeld = held;
 
-        /// <summary>MGame::OnTouchBegin key 0x100: allowed while the autopilot or an asteroid approach runs, not within
-        /// 20000 units of the target (and no hostile ships, none exist yet).</summary>
+        /// <summary>MGame::OnTouchBegin key 0x100: allowed while the autopilot, an asteroid approach or the approach to an
+        /// object's docking point runs (PlayerEgo::isDockingToDockingPoint; the remake left that one out, a player's report at
+        /// 135's mining plant), not within 20000 units of the target, and no hostile ships.</summary>
         public bool CanFastForward
         {
             get
@@ -431,6 +436,7 @@ namespace GoF2Remake.Flight
                 if (Autopilot) return !AboutToReach;
                 if (mining != null && mining.Target != null && mining.State == Mining.Phase.Approaching)
                     return (mining.Target.transform.position - ship.transform.position).magnitude / M >= AboutToReachUnits;
+                if (Docking != null && Docking.ApproachDistanceUnits >= AboutToReachUnits) return true;
                 return false;
             }
         }
@@ -459,6 +465,7 @@ namespace GoF2Remake.Flight
 
         void LateUpdate()
         {
+            if (InputHalted) lastHaltedFrame = Time.frameCount;
             // dockToPlanet: TargetFollowCamera look-at mode, the camera stays put and keeps looking at the ship.
             if (!Jumping) return;
             var cam = Camera.main;
@@ -469,12 +476,16 @@ namespace GoF2Remake.Flight
         /// its landmark with it.</summary>
         public GameObject StationObject;
 
+        /// <summary>Set by a level whose station a docking target stands in for (remake, 102: Tadram's pads): the station's own
+        /// landmark leaves the locks, markers and the autopilot menu, so the two don't sit on top of each other.</summary>
+        public bool StationReplaced;
+
         /// <summary>Level::getLandmarks' station hidden with its object (#49: the autopilot menu still offered the Valkyrie
         /// after it had jumped away, and flew to an empty spot): no lock, marker, menu entry or autopilot to it.</summary>
         void UpdateStationShown()
         {
             if (StationObject == null) return;
-            bool gone = !StationObject.activeInHierarchy;
+            bool gone = !StationObject.activeInHierarchy || StationReplaced;
             foreach (var t in Targets)
             {
                 if (t.kind != Kind.Station || t.hidden == gone) continue;
@@ -656,6 +667,12 @@ namespace GoF2Remake.Flight
         /// a menu, conversation or map is open (the world goes on there).</summary>
         public static bool InputHalted => Time.timeScale <= 0f || (GoF2Remake.Multiplayer.NetGame.Active && (halted || GoF2Remake.UI.MultiplayerWindow.IsOpenAny))
                                           || GoF2Remake.Events.EventScreen.QuestionOpen;   // an event's question (multiplayer)
+
+        /// <summary>Remake (#85): the flight controls' presses wait while a menu, conversation or map halts them and for the frame
+        /// after it closes: the press that closed it (A on Resume, a menu entry) went on to boost, as the ship's controls run
+        /// later in that frame. Steering reads the stick's state and needs no guard.</summary>
+        public static bool PressesBlocked => InputHalted || Time.frameCount - lastHaltedFrame <= 1;
+        static int lastHaltedFrame = -10;
 
         void OnDestroy() { halted = false; MusicPaused = false; if (!GoF2Remake.Multiplayer.NetGame.Active) AudioListener.pause = false; }
 

@@ -107,6 +107,9 @@ namespace GoF2Remake.Data
         public static List<Agent> CreateAgents(Database db, int station)
         {
             var agents = new List<Agent>();
+            // Generator::createAgents: nobody in the supernova system's lounges (Status::inSupernovaSystem, system 27 before
+            // campaign 0x9e): the evacuated Ginoya stations (Var Lupra had visitors in the remake until 2026-10).
+            if (Shop.InSupernovaSystem(SystemOf(db, station), station)) return agents;
             int campaign = Session.CampaignMission;
             var story = new List<StoryAgentData>();
             if (campaign > 16)

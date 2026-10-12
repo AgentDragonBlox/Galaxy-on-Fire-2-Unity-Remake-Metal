@@ -80,6 +80,9 @@ namespace GoF2Remake.Flight
         /// <summary>The player's cloak (Player+0x5e set by PlayerEgo::toggleCloaking): NPCs keep it as their target but don't
         /// fire, turrets don't aim at it, sleepers don't wake for it.</summary>
         [NonSerialized] public bool cloaked;
+        /// <summary>Remake: phased out by a phase cloak (PlayerCloak.Phasing, NetPlayer for the other players): shots fly
+        /// through it (Gun), blasts pass it and it takes no damage.</summary>
+        [NonSerialized] public bool phased;
         /// <summary>Remake: a player's ship boosting (ShipController for the local one, NetPlayer for the others): homing
         /// missiles locked on it lose their lock (Gun). NPC ships never set it.</summary>
         [NonSerialized] public bool boosting;
@@ -94,6 +97,10 @@ namespace GoF2Remake.Flight
         [NonSerialized] public bool invulnerable;
         [Tooltip("Local-space hit boxes (metres) instead of the cube (big ships).")]
         public Bounds[] boxes;
+        /// <summary>Remake: the hull of MeshColliders shots hit instead of the cube / boxes (HullCollision), null = none.</summary>
+        [NonSerialized] public HullBody hull;
+        /// <summary>Shots test the hull (HullCollision.Cast), not the cube / boxes.</summary>
+        public bool HasHull => hull != null && hull.Active;
 
         /// <summary>Shield / armor / hull pools; null = plain 'hp' (asteroids).</summary>
         [NonSerialized] public Hitpoints hitpoints;
@@ -127,7 +134,7 @@ namespace GoF2Remake.Flight
         /// <summary>Player::damage: 'byNpc' = an NPC gun fired it (friendGun); 'hitVector' = the bullet velocity.</summary>
         public void Damage(float amount, bool byNpc = false, Vector3 hitVector = default)
         {
-            if (!Alive || invulnerable) return;
+            if (!Alive || invulnerable || phased) return;
             if (isPlayer && Data.Cheats.GodMode) return;   // remake: the Debug panel's god mode
             if (playerProof && !byNpc) return;
             if (RemoteDamage != null) { RemoteDamage(amount, hitVector, byNpc); return; }

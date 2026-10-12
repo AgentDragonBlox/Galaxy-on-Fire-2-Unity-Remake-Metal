@@ -1,8 +1,9 @@
 // NetProxy.cs
 // An orbit authority's NPC ship shown to the other players in that orbit (NetOrbit asks NetState to spawn one per living
 // ship of its traffic; the host spawns it owned by that player). The owner follows the ship's model and writes its pose,
-// race, standing toward the player (hostile / friend / neutral), hull fraction, hit cube and whether it is hidden
-// (cloaked, a sleeping Most Wanted criminal); the others load the same assembled prefab (its Resources path) at that scale
+// race, standing toward the player (hostile / friend / neutral), hull fraction, hit cube, whether it is hidden (a
+// sleeping Most Wanted criminal, a level's hiding) and its cloak (a Specter's: drawn with NpcCloak's look, off the radar
+// from a quarter, still hit by shots and blasts, so another player's EMP breaks it); the others load the same assembled prefab (its Resources path) at that scale
 // and smooth its motion (NetSmoothing), but only while they are in that orbit themselves (else it is hidden). There it is a
 // Target in Target.NetShips, so the radar locks it and the HUD marks it like a traffic ship; hits on it (guns, missiles) go
 // to the owner's ship (Target.RemoteDamage), which takes them as its own player's hits. Its life follows the ship's state:
@@ -68,6 +69,7 @@ namespace GoF2Remake.Multiplayer
         readonly NetworkVariable<FixedString128Bytes> aggressors = new NetworkVariable<FixedString128Bytes>(default, Read, Owner);
         readonly NetworkVariable<bool> alwaysHostile = new NetworkVariable<bool>(false, Read, Owner);
         readonly NetworkVariable<bool> empDisabled = new NetworkVariable<bool>(false, Read, Owner);
+        readonly NetworkVariable<byte> cloakPct = new NetworkVariable<byte>(0, Read, Owner);   // its cloak, 0..100 (a Specter's)
         readonly NetworkVariable<int> junkKind = new NetworkVariable<int>(-1, Read, Owner);   // >= 0: a mission's space junk (CombatAssets.junk)
         readonly NetworkVariable<bool> missionShip = new NetworkVariable<bool>(false, Read, Owner);   // a freelance mission's (NpcShip.MissionShip)
         readonly NetworkVariable<int> roleFlags = new NetworkVariable<int>(0, Read, Owner);    // its mission role (FreelanceOrbit.RoleFlags)
@@ -88,6 +90,7 @@ namespace GoF2Remake.Multiplayer
         bool shown, viewer;
         int lastAggressors;
         EmpSparks sparks;
+        World.NpcCloak cloakLook;   // the cloak drawn on this copy (NpcCloak.Show), like another player's
 
         public int Station => station.Value;
         /// <summary>Its race (Standing ids; -1 unknown).</summary>
@@ -270,6 +273,8 @@ namespace GoF2Remake.Multiplayer
             sender?.Unhook();
             mirror?.Clear();
             sparks?.Clear();
+            cloakLook?.Dispose();
+            cloakLook = null;
         }
 
         /// <summary>The owner's NPC shot, through the server (only the ship's game sends its shots): checked and limited like
@@ -403,8 +408,12 @@ namespace GoF2Remake.Multiplayer
             float h = t.HullFraction;
             if (Mathf.Abs(hull.Value - h) > 0.004f) hull.Value = h;
             if (!Mathf.Approximately(radius.Value, t.radius)) radius.Value = t.radius;
-            bool hide = ship.Hidden || ship.RadarHidden;
+            // A cloaked ship isn't hidden here: the others draw its cloak and can still hit it (an EMP breaks it, a blind
+            // shot lands), as in its own game; only a level's or a sleeper's hiding hides the copy.
+            bool hide = ship.Hidden || ship.ScriptRadarHidden;
             if (hidden.Value != hide) hidden.Value = hide;
+            byte pct = (byte)Mathf.Clamp(Mathf.RoundToInt(ship.CloakPercent), 0, 100);
+            if (cloakPct.Value != pct) cloakPct.Value = pct;
             bool always = t.race == Standing.Pirate || t.race == Standing.Void || t.race == Standing.Specter;
             if (alwaysHostile.Value != always) alwaysHostile.Value = always;
             if (ship.aggressors.Count != lastAggressors)
@@ -424,6 +433,8 @@ namespace GoF2Remake.Multiplayer
         }
 
         /// <summary>The model arrives after the spawn when the owner is a client (its first values follow as a delta).</summary>
+        bool wreckDamaged;
+
         void BuildVisual()
         {
             if (visual != null || (IsJunk ? junkKind.Value < 0 : model.Value.Length == 0)) return;   // the owner's values first
@@ -458,6 +469,8 @@ namespace GoF2Remake.Multiplayer
                                   && asm.playerVariantParts[0] != null);
             name = $"NetProxy {model.Value}";
             visual.SetActive(shown);
+            if (target != null) HullCollision.Attach(visual, target, null);   // shots hit its real shape
+            if (prefab != null && junkKind.Value < 0 && wreck < 0) { cloakLook?.Dispose(); cloakLook = new World.NpcCloak(visual.transform); }
         }
 
         void SetShown(bool on)
@@ -495,7 +508,12 @@ namespace GoF2Remake.Multiplayer
                 target.boxes = v >= FreighterVolumes ? NpcShip.LocalBoxes(CollisionVolume.ForFreighter((v - FreighterVolumes) / 16, (v - FreighterVolumes) % 16))
                              : v >= 0 ? NpcShip.LocalBoxes(CollisionVolume.ForStaticObject(v)) : null;
             }
-            target.untargetable = hidden.Value || life.Value != Flying;
+            // Its cloak (a Specter's): drawn like the owner's, off the radar and the lock from a quarter (NpcCloak.Hidden),
+            // turrets and NPCs don't aim at it (Target.cloaked); still hit by shots and blasts.
+            float cloaked = life.Value == Flying ? cloakPct.Value : 0f;
+            cloakLook?.Show(cloaked, Time.deltaTime * 1000f);
+            target.cloaked = cloaked >= 25f;
+            target.untargetable = hidden.Value || life.Value != Flying || cloaked >= 25f;
             // A mission ship's name only for the mission's team (its owner and their squad).
             bool team = !missionShip.Value || NetSquad.SameClient(OwnerClientId, NetPlayer.Local);
             // The owner's game writes the label (a wingman's name comes from its save): no rich-text tags reach the others'
@@ -508,6 +526,9 @@ namespace GoF2Remake.Multiplayer
                 shownLife = life.Value;
             }
             bool show = !hidden.Value && (life.Value != Dead || leavesWreck.Value);
+            // A fixed object's or freighter's copy keeps its hull through the death (no wreck animation here): it takes the
+            // wreck's damaged material like the owner's wreck (CombatAssets.ApplyWreckDamage).
+            if (life.Value != Flying && leavesWreck.Value && !wreckDamaged && visual != null) { CombatAssets.ApplyWreckDamage(visual); wreckDamaged = true; }
             if (visual != null && visual.activeSelf != show) visual.SetActive(show);
         }
 

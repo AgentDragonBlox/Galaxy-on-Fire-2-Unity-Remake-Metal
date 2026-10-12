@@ -328,7 +328,8 @@ namespace GoF2Remake.UI
                 OpenPanel("optionsPanel");
                 SelectTab(OptionPages[0].page);
             });
-            modsButton = Bind("modsButton", () => { modBrowser?.Open(); OpenPanel("modsPanel"); });
+            // Remake: Mods opens a small hub, the Mod Browser (ModBrowser) and the Mod Builder (ModBuilderProjects).
+            modsButton = Bind("modsButton", () => OpenPanel(panels.ContainsKey("modsHubPanel") ? "modsHubPanel" : "modsPanel"));
             aboutButton = Bind("aboutButton", () => OpenPanel("aboutPanel"));
             debugButton = Bind("debugButton", OpenDebug);
             UpdateDebugButton();
@@ -380,6 +381,10 @@ namespace GoF2Remake.UI
                 modBrowser = new ModBrowser(modHost, Back, HookFocusSound, () => Play(buttonRelease), () => StartCoroutine(RebuildModCache()),
                                             ShowDialog, ShowNotice);
                 panels["modsPanel"] = modBrowser.Panel;
+                // The Mod Builder's projects (remake, Modding.ModBuilder): opening one starts its hangar behind the fade.
+                modProjects = new ModBuilderProjects(modHost, Back, HookFocusSound, () => Play(buttonRelease), OpenModProject, ShowDialog, ShowNotice);
+                panels[Modding.ModBuilder.ProjectsPanel] = modProjects.Panel;
+                panels["modsHubPanel"] = BuildModsHub(modHost);
             }
             SetupMultiplayerPanel();
             Bind("easyButton", () => PickDifficulty(Session.DifficultyEasy));
@@ -506,7 +511,25 @@ namespace GoF2Remake.UI
                 && !dialog.ClassListContains("dialog-backdrop--shown"))
                 modBrowser.ToggleSelected();
             if (lastScreen != ScreenSize() || lastSafeArea != Screen.safeArea) UpdateLayout();
+            KeepControllerFocus();
         }
+
+        /// <summary>#74: the panel only sends a controller's navigation to a focused element, and nothing focuses one when the
+        /// controller takes over from touch (Android starts in touch mode) or a closed panel took the focus with it: the
+        /// D-pad then did nothing until a touch. With the controller in use and nothing focused, the open dialog's Yes, the
+        /// open panel's first item or the main column's.</summary>
+        void KeepControllerFocus()
+        {
+            if (screen != MenuState.Menu || InputMode.Current != InputKind.Gamepad || root.focusController == null
+                || root.focusController.focusedElement != null) return;
+            if ((focusRetry -= Time.unscaledDeltaTime) > 0f) return;   // a page with nothing to focus: not every frame
+            focusRetry = 0.25f;
+            SetTouchMode(false);
+            if (dialog.ClassListContains("dialog-backdrop--shown")) Select(root.Q<Button>("dialogYes"));
+            else FocusFirst(openPanel ?? mainButtons);
+        }
+
+        float focusRetry;
 
         static int FingersDown()
         {
@@ -784,7 +807,9 @@ namespace GoF2Remake.UI
             var p = logo.parent.layout;
             var el = logo.layout;
             if (el.width <= 0f || el.height <= 0f || p.width <= 0f) return;
-            const float aspect = 449f / 155f;                           // logo_gof2_remake.png (the remake's title logo)
+            // logo_gof2_remake.png's own proportions (the remake's title logo; #67 redrew it at 953 x 360)
+            var logoTex = logo.resolvedStyle.backgroundImage.texture;
+            float aspect = logoTex != null && logoTex.height > 0 ? (float)logoTex.width / logoTex.height : 953f / 360f;
             float imgW = Mathf.Min(el.width, el.height * aspect);     // scale-to-fit, left aligned
             var imgCenter = new Vector2(el.x + imgW * 0.5f, el.y + el.height * 0.5f);
             float targetW = Mathf.Min(p.width * 0.56f, p.height * 0.34f * aspect);
@@ -845,6 +870,8 @@ namespace GoF2Remake.UI
             RefreshUpdateButton();
             p.schedule.Execute(() => FocusFirst(p)).ExecuteLater(30);
             if (name == "campaignPanel") { RefreshNgPlus(true); RefreshModCampaigns(); }
+            if (name == "modsPanel") modBrowser?.Open();
+            if (name == Modding.ModBuilder.ProjectsPanel) modProjects?.Open();
             if (name == "multiplayerPanel")
             {
                 RefreshAddresses();   // the adapters may have changed
@@ -867,6 +894,15 @@ namespace GoF2Remake.UI
             if (openPanel == panels["gameOptionsPanel"]) { OpenPanel("economyPanel"); return; }
             if (openPanel == panels["economyPanel"]) { OpenPanel("difficultyPanel"); return; }
             if (openPanel == panels["difficultyPanel"]) { OpenPanel(pendingStartIndex >= 0 && panels.ContainsKey("debugPanel") ? "debugPanel" : "campaignPanel"); return; }
+            // The Mod Browser and the Mod Builder go back to the Mods hub.
+            if (panels.TryGetValue(Modding.ModBuilder.ProjectsPanel, out var mbp) && openPanel == mbp) modProjects?.Close();
+            if (panels.ContainsKey("modsHubPanel") && (openPanel == panels["modsPanel"] || openPanel == mbp))
+            {
+                var from = openPanel == mbp ? modsHubBuilder : modsHubBrowser;
+                OpenPanel("modsHubPanel");
+                openPanel.schedule.Execute(() => Select(from)).ExecuteLater(60);
+                return;
+            }
             var closing = openPanel;
             HidePanel(closing);
             openPanel = null;
@@ -877,7 +913,7 @@ namespace GoF2Remake.UI
                 : closing == panels["loadPanel"] ? loadButton
                 : closing == panels["optionsPanel"] ? optionsButton
                 : closing == panels["multiplayerPanel"] ? multiplayerButton
-                : panels.TryGetValue("modsPanel", out var mp) && closing == mp ? modsButton : aboutButton;
+                : panels.TryGetValue("modsPanel", out var mp) && closing == mp || panels.TryGetValue("modsHubPanel", out var mh) && closing == mh ? modsButton : aboutButton;
             Select(target);
         }
 
@@ -1007,6 +1043,64 @@ namespace GoF2Remake.UI
             if (desc != null)
                 desc.text = Localization.Extra("capitalDesc",
                     "Battleships and carriers get escorts and stronger turrets; carriers and Vossk battleships can be destroyed for loot, carriers launch Inflicts and let trusted pilots dock to resupply. Also in Options > Gameplay.");
+        }
+
+        // ---- remake: the Mods hub and the Mod Builder ----
+
+        ModBuilderProjects modProjects;
+        Button modsHubBrowser, modsHubBuilder;
+
+        /// <summary>The Mods button's panel: the Mod Browser (installed mods) and the Mod Builder (your own projects).</summary>
+        VisualElement BuildModsHub(VisualElement host)
+        {
+            var p = new VisualElement { name = "modsHubPanel" };
+            p.AddToClassList("panel");
+            p.usageHints = UsageHints.DynamicTransform;
+            var title = new Label(Localization.Extra("modsButton", "Mods").ToUpperInvariant());
+            title.AddToClassList("panel-title");
+            title.AddToClassList("gof-semibold");
+            p.Add(title);
+            var accent = new VisualElement();
+            accent.AddToClassList("panel-accent");
+            p.Add(accent);
+            Button Choice(string heading, string desc, Action onClick)
+            {
+                var b = new Button();
+                b.AddToClassList("choice-button");
+                var t = new Label(heading.ToUpperInvariant()) { pickingMode = PickingMode.Ignore };
+                t.AddToClassList("choice-title");
+                t.AddToClassList("gof-semibold");
+                b.Add(t);
+                var d = new Label(desc) { pickingMode = PickingMode.Ignore };
+                d.AddToClassList("choice-desc");
+                b.Add(d);
+                b.clicked += () => { Play(buttonRelease); onClick(); };
+                HookFocusSound(b);
+                p.Add(b);
+                return b;
+            }
+            modsHubBrowser = Choice(Localization.Extra("modBrowser", "Mod Browser"),
+                Localization.Extra("modBrowserDesc", "The mods installed on this device: turn them on and off, set their order, import new ones."),
+                () => OpenPanel("modsPanel"));
+            modsHubBuilder = Choice(Localization.Extra("mbTitle", "Mod Builder"),
+                Localization.Extra("modBuilderDesc", "Make your own mods in the game: ships, items, characters and skins, tried out in the hangar and on a test flight, then exported for the Mod Browser."),
+                () => OpenPanel(Modding.ModBuilder.ProjectsPanel));
+            var back = new Button(Back) { text = "‹  " + Localization.Get(170).ToUpperInvariant() };
+            back.AddToClassList("menu-button");
+            back.AddToClassList("back-button");
+            back.AddToClassList("gof-semibold");
+            HookFocusSound(back);
+            p.Add(back);
+            host.Add(p);
+            return p;
+        }
+
+        /// <summary>A Mod Builder project opened: its hangar (Modding.ModBuilder), once the project's models have loaded.</summary>
+        void OpenModProject(Modding.ModProject project)
+        {
+            if (screen != MenuState.Menu) return;
+            Modding.ModBuilder.Begin(project);
+            StartCoroutine(Leave("Station"));
         }
 
         void BeginGame(Economy economy)
@@ -1895,8 +1989,13 @@ namespace GoF2Remake.UI
 
         // ---- dialog ----------------------------------------------------------------------------
 
+        /// <summary>What had the focus when the dialog opened: closing gives it back (CloseDialog). The panel's first item
+        /// got it instead, and in the Mod Browser focusing the top row selects it, so No on Delete moved the selection.</summary>
+        VisualElement dialogReturn;
+
         void ShowDialog(string title, string text, Action onYes)
         {
+            if (!dialog.ClassListContains("dialog-backdrop--shown")) dialogReturn = root.focusController?.focusedElement as VisualElement;
             dialogYes = onYes;
             root.Q<Label>("dialogTitle").text = title.ToUpperInvariant();
             root.Q<Label>("dialogText").text = text;
@@ -1973,7 +2072,12 @@ namespace GoF2Remake.UI
             dialog.RemoveFromClassList("dialog-backdrop--shown");
             dialogYes = dialogNo = null;
             dialogCheck = null;
-            if (openPanel != null) FocusFirst(openPanel); else Select(exitButton);
+            var back = dialogReturn;
+            dialogReturn = null;
+            if (back != null && back.panel != null && openPanel != null && openPanel.Contains(back) && back.enabledInHierarchy
+                && back.resolvedStyle.display != DisplayStyle.None) Select(back);
+            else if (openPanel != null) FocusFirst(openPanel);
+            else Select(exitButton);
         }
 
         // ---- save slots (RecordHandler: 12 slots, slot 0 = Auto-save; SaveGame) ------------

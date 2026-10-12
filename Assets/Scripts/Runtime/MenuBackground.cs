@@ -49,9 +49,14 @@ namespace GoF2Remake.Visuals
         public OrbitLayout Layout { get; private set; }
         public Traffic Traffic { get; private set; }
 
+        void OnDestroy() => GoF2Remake.Flight.HullCollision.Suppressed = false;
+
         void Awake()
         {
             if (Multiplayer.DedicatedServer.ShutOff(gameObject.scene)) return;   // a dedicated server has no backdrop
+            // Remake: no collision hulls for the backdrop's station and traffic (nobody flies here; cooking them only cost
+            // loading), until the menu scene goes (OnDestroy).
+            GoF2Remake.Flight.HullCollision.Suppressed = true;
             var db = Database.Load();
             bool ending = Session.EndingPending;
             if (!ending) Session.ResetNewGame();   // Status::resetGame
@@ -87,7 +92,10 @@ namespace GoF2Remake.Visuals
             float keepOut = cameraKeepOut + Layout.AsteroidMeshRadius * 2.2f * OrbitLayout.MetersPerUnit;
             OrbitBuilder.SpawnAsteroids(db, Layout, transform, p => (p - camPos).sqrMagnitude < keepOut * keepOut);
 
-            SpawnTraffic(db);
+            // A capital ship's point is rolled again while its hull would reach the camera (TrafficPlan.AtMenuCamera).
+            TrafficPlan.MenuCamera = camGame;
+            try { SpawnTraffic(db); }
+            finally { TrafficPlan.MenuCamera = null; }
             OrbitBuilder.SpawnDust(Layout, transform);
             var cam = menuCamera != null ? menuCamera.GetComponent<Camera>() : Camera.main;
             OrbitBuilder.SpawnBackdrop(Layout, cam, transform);

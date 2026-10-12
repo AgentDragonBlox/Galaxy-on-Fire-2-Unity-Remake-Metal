@@ -118,6 +118,13 @@ namespace GoF2Remake.Data
         public static void AddToCargo(int item, int amount)
         {
             if (amount <= 0) return;
+            // Remake: a number the item table doesn't have never goes into the hold (it ended up in a player's hold or stock
+            // and the hangar threw on every trade, 2026-10-12): refused, with the caller logged to find where it came from.
+            if (Database.Shared.Item(item) == null)
+            {
+                Debug.LogWarning($"Shop: {amount} t of item {item}, which isn't in the item table, not added to the hold\n{System.Environment.StackTrace}");
+                return;
+            }
             var stack = Session.Cargo.Find(s => s.item == item);
             if (stack != null) stack.amount += amount;
             else Session.Cargo.Add(new ItemStack(item, amount));
@@ -225,6 +232,8 @@ namespace GoF2Remake.Data
                 }
             }
             if (stock.agents == null || (stock.agents.Count == 0 && station != 108)) stock.agents = AgentGenerator.CreateAgents(db, station);   // saves from before the bar
+            // An evacuated supernova station's lounge is empty (AgentGenerator.CreateAgents): visitors a save kept from before go.
+            if (InSupernovaSystem(SystemOf(db, station), station)) stock.agents.Clear();
             // The Kaamo Club never has a dealer (getShipBuyList); a save from a test build that gave it one is cleared.
             if (station == 108 && stock.ships != null) stock.ships.Clear();
             // Status::departStation: at the owned club the storage is the station's stock (one shared list here).

@@ -194,6 +194,17 @@
     color: #0B1016;
 }
 
+/* Its key before the text (StationMenu, InputGlyph.WithGlyphs): L with keys and mouse, X with a controller, none on touch. */
+.launch-glyph--key,
+.launch-glyph--pad {
+    display: none;
+}
+
+.input-keyboard .launch-glyph--key,
+.input-gamepad .launch-glyph--pad {
+    display: flex;
+}
+
 /* ---- keyboard / controller hints (left of the launch button) ------------------------------ */
 
 .station-hints {
@@ -407,7 +418,7 @@
 /* The Debug page (StationMenu.BuildStationDebug): wider, the tabs over its rows; the list fills the menu's 92 % of the
    screen and scrolls (its fixed 480 px overflowed short screens and wasted tall ones). */
 .system-menu--wide {
-    max-width: 1100px;
+    max-width: 1180px;   /* the Give items grid: seven icons to a row */
     height: 92%;
 }
 

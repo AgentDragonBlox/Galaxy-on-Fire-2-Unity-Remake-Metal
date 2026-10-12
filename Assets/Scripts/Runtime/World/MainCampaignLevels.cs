@@ -334,7 +334,10 @@ namespace GoF2Remake.World
         public void Tick(int index, float dtMs)
         {
             stepMs += dtMs;
-            if (Ship.externalControl && !level.Health.Dead)
+            // Only while the level's own cutscene holds the ship: the mining approach and object docking set externalControl
+            // too, and this push (at the speed from the last cutscene, a boost's if the player was boosting) flew the ship
+            // through the asteroid it was landing on (step 29's Void crystals, a player's report).
+            if (c.Cutscene && Ship.externalControl && !level.Health.Dead)
             {
                 Player.position += Player.forward * playerSpeed * dtMs * M;
                 Ship.ExternalSpeedMetersPerSecond = playerSpeed * 1000f * M;
@@ -376,8 +379,10 @@ namespace GoF2Remake.World
                     if (Triggered(1))   // the first kill
                     {
                         S(0)?.Vanish();   // setHitpoints(0) + setDead: no explosion, no crate
-                        playerSparks = new EmpSparks(Ship.visualModel != null ? Ship.visualModel : Player);
-                        playerSparks.SetEmitting(true);
+                        // The EMP systems are put on the player's *reference* matrix (AEGeometry+0x84), a copy that
+                        // PlayerEgo never refreshes: they sit where the ship was made, away from it, until state 2's
+                        // updateReferenceMatrix each frame brings them onto the ship (#85: the original's chase view shows
+                        // no lightning, the cutscene does). So the sparks start with the cutscene; the hit sounds now.
                         Sfx.PlayAt(assets?.empHit, Player.position);
                         Step = 1;
                     }
@@ -385,8 +390,12 @@ namespace GoF2Remake.World
                 case 1:
                     if (Over(1))
                     {
-                        c.Fade(true, Color.white, 600f);   // Level::flashScreen(3)
+                        // Level::flashScreen(3): its colour is black, which Level::update keeps at the system's own
+                        // light colour (the larger wins), so no flash; only PlayerEgo::hitCamera, the chase camera's shake,
+                        // which the look-at camera taking over at once doesn't show (#85: the remake faded to white here).
                         EnterCutscene(false, false);
+                        playerSparks = new EmpSparks(Ship.visualModel != null ? Ship.visualModel : Player);
+                        playerSparks.SetEmitting(true);
                         cam.LookAtUnity(Player.position + ToUnity(new Vector3(1000, 700, 1000)), Player);
                         foreach (var s in c.Ships) if (s != null && s.Race == Standing.Pirate) s.Vanish();
                         Step = 2;

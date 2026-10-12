@@ -46,6 +46,9 @@ menu's **Mods** screen and turning it on. Problems show there with file and line
 
 ## Mod folder
 
+Images (icons, portraits, textures, skins, planets, suns, skies, card art, preview) may be PNG (safest), JPG, TGA, BMP, DDS
+(DXT1/3/5, uncompressed) or the game's .aei.
+
 ```
 my_mod/
   mod.json            required
@@ -119,7 +122,8 @@ boostDurationMs 27, agility 28 (steering nozzle), lockTimeMs 29 (scanner), showC
 drillSpeed 32, miningYield 33, cabins 34, cloakDurationMs 35, cloakChargeMs 36, energyCells 38 (per cloak), fireRateFactor 39,
 damageFactor 40 (weapon mods %), emergencyMs 41, timeExtenderMs 42, timeExtenderCooldownMs 43, collectorSpeed 49,
 collectorMagnitude 50, collectorRange 51, gammaShielding 52, beamRange 53, beamStrength 54, beamTargets 55, miningBeam 100 (a
-drill based on 86-90 that cuts while flying), miningBeamRange 101, miningBeamLayerMs 102, miningBeamLook 103 (9/10/11/228).
+drill based on 86-90 that cuts while flying), miningBeamRange 101, miningBeamLayerMs 102, miningBeamLook 103 (9/10/11/228), phaseCloak 104 (a
+cloak based on 94-96 whose ship passes through asteroids, stations, gates, ships, shots and explosions while cloaked).
 items.json's own names (`loadingTimeMs`, `range`, `projectileSpeed`...) work too. An unknown stat name is an error.
 
 ### Weapon fx
@@ -133,9 +137,11 @@ items.json's own names (`loadingTimeMs`, `range`, `projectileSpeed`...) work too
 }
 ```
 
-Each of projectile / muzzle / impact is `false` (none) or an object: `sprite` (PNG, white on black or transparent; `color`
-tints it) or `model` (GLB; with `texture` drawn glowing), `size` (game units; a blaster bolt is ~1600, an impact glow
-several thousand), `color` (`[r,g,b]` 0-1 or `"#rrggbb"`), `glow` (>1 blooms; game effects ~2.5), `additive` (default true),
+Each of projectile / muzzle / impact is `false` (none), `{ "color": ..., "glow": ... }` alone (the base item's own effect
+recoloured: shape, animation and brightness kept, hue replaced; the easy way to recolour an original weapon), or an object
+with the mod's own `sprite` (PNG in the mod, white on black or transparent; `color` tints it) or `model` (GLB; with
+`texture` drawn glowing), `size` (game units; a blaster bolt is ~1600, an impact glow several thousand), `color`
+(`[r,g,b]` 0-1, or 0-255 when a value is above 1, or `"#rrggbb"`), `glow` (>1 blooms; game effects ~2.5), `additive` (default true),
 `lifetime` ms (muzzle 100, impact 300), `grow`, `fade`, `spin` (deg/s), `alongFlight` + `stretch` (laser bolts), `rotate`
 (models). Sounds: `.ogg` / `.wav` / `.mp3`. Behaviour never changes (a beam stays a beam).
 
@@ -181,7 +187,9 @@ several thousand), `color` (`[r,g,b]` 0-1 or `"#rrggbb"`), `glow` (>1 blooms; ga
 | `available` | Condition before dealers / lounges sell it. |
 
 `override` changes an original (number) or another mod's ship (key): armor, cargo, price, priceDefault, slots, handling, name,
-description (mod ships also race, hangarHeight), and an original can get a new `model` (+ its fields and `mounts`).
+description, `mounts` (mod ships also race, hangarHeight), and an original can get a new `model` (+ its fields). `slots` merges
+(give only the changed counts); `mounts` replaces the ship's whole list (exhausts too). More weapon slots than gun mounts: the
+extra weapons share the mounts; fewer slots: what doesn't fit goes to the hold on the next docking.
 
 ## blueprints.json
 
@@ -296,7 +304,7 @@ the game.
 Systems: race 0-3, security 0 (lawless) - 3 (secure), map position (originals x 15-94, y 2-96, z 10-90), sky 0-18, gates
 both ways, up to 7 stations each. Skybox images: 2:1 panorama or 6:1 cube strip (right, left, up, down, front, back), light
 on black, 8192 x 4096 sharp. Stations: techLevel 0-10, planet 0-22 or 24-26, looksLike = an original station whose model
-it borrows, modelSize = largest extent in game units (default 40000), collision box/sphere/none or `volumes`, interior =
+it borrows, modelSize = largest extent in game units (default 40000), collision box/sphere/none or `volumes` (what NPC fighters steer around; the player and shots use the model's real meshes, `none` turns all off), interior =
 race of hangar and bar, or own rooms `hangar` / `bar` from interiors.json (GLB rooms with marker empties: hangar `pad`,
 `camera` required, `camera_target`, `parked_N`, `gate`, `gate_out`, `light`; bar `camera`, `camera_target`, `visitor_N`
 required). `override` changes originals (name, techLevel, looks, music...).
@@ -304,14 +312,21 @@ required). `override` changes originals (name, techLevel, looks, music...).
 ## characters.json, voices, music, sounds, textures
 
 - `characters.json`: `[{ "id", "name", "portrait": "portraits/x.png" (4:5, 320 x 400), "race", "gender", "mirrored",
-  "background", "frame", "replaces" }]`. Named in dialogs as `id`, `mod_id:id` or the name; `id as Other Name`.
+  "background", "frame", "replaces" }]`; `frame` = the game's faint scanline overlay, `background` = a dark backdrop
+  that only shows through transparent parts of the PNG (both on by default). Named in dialogs as `id`, `mod_id:id` or the name; `id as Other Name`.
+  `replaces` (a story speaker's name, e.g. `"Keith"`, or number) takes that speaker's portrait everywhere, and its name
+  in the headers when the character has a `name`; other lines' mentions of the old name and the voices stay.
 - Voice-over: `[voice <clip>]` in a Dialog page / Radio line; files `voices/<clip>.ogg` (or `voices/en/`, `voices/de/`).
 - `music/<name>.ogg`: a game track's name (`Space_Terraner`, `Station_Vossk`, `Space_Battle_Full`, `Space_NoCombat_Void`
   (main menu)...) replaces it; any other name is a new track for systems/stations (`spaceMusic`, `stationMusic`, `music`) and
   quests.
 - `sounds/<name>.ogg`: replaces the game sound with that file name (from the game's Assets/Audio folders).
 - `textures/<name>.png`: replaces that game texture everywhere (`ship_028_terran_diffuse`; keep the original UV layout,
-  2048 x 2048).
+  2048 x 2048). `textures/<model>/<name>.png` (e.g. `textures/ship_028_terran/glow_terran.png`) replaces a shared texture
+  (`glow_<race>` lights, `ship_engine_glow`) on that one model only, before the every-ship one. Also the sky's planets, suns and rings (`planet_000_small` ... `planet_019_big`, `planet_void_*`,
+  `sn_planet_024_*` ... `sn_planet_026_*`, `sun_000` ..., `sn_sun_011`, `sn_planet_ring`): one whole disc image each, keep the
+  transparent edge. `backdrop.json` `{ "planets": "star", "planetGlow": 2, "planetFlare": 0.35 }` draws the retextured planets
+  as stars (facing the camera, no ring, a core glow, a weaker copy of the sun's flare).
 
 ## Quests and bar missions (event graphs)
 

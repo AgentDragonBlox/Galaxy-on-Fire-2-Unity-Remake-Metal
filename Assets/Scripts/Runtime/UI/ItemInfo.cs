@@ -26,6 +26,10 @@ namespace GoF2Remake.UI
         public static Texture2D ShipIcon(int ship) =>
             Modding.ModContent.IsModShip(ship) ? Modding.ModShips.Icon(ship) ?? Icon("ship_010") : Icon($"ship_{ship:000}");
 
+        /// <summary>The icon of a hull with no shop image of its own (the Debug Ships tab's freighters and capital ships, by
+        /// World.PlayerHull's key; "GoF2 > Build > Hull Icons"), null without one.</summary>
+        public static Texture2D HullIcon(string key) => Icon("hull_" + key);
+
         static Texture2D Icon(string name)
         {
             if (!icons.TryGetValue(name, out var t)) icons[name] = t = Resources.Load<Texture2D>("GoF2Icons/" + name);
@@ -49,7 +53,7 @@ namespace GoF2Remake.UI
             int race = Shop.ShipMakerRace(ship);
             return race >= 0 && (race <= 3 || race == 7 || race == 8) ? Localization.Get(406 + race) : "";
         }
-        public static string Category(ItemData it) => Modding.ModBlueprints.ShipOf(it.index) >= 0
+        public static string Category(ItemData it) => it == null ? "" : Modding.ModBlueprints.ShipOf(it.index) >= 0
             ? Localization.Extra("bpShipBlueprint", "Ship blueprint")   // a mod's ship blueprint (its hidden item)
             : Localization.Get(221 + it.categoryId);
 

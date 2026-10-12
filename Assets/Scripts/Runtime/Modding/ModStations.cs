@@ -107,7 +107,7 @@ namespace GoF2Remake.Modding
         static async Task LoadBackdrop(int rev, string name)
         {
             try { await ModBackdrop.Preload(name); }
-            catch (System.Exception e) { Debug.LogException(e); }
+            catch (System.Exception e) { if (!ModFileException.IsFileError(e)) Debug.LogException(e); else Debug.LogWarning($"Mods: {name}: {e.Message}"); }
             finally { if (rev == ModManager.Revision) stepsDone++; }
         }
 
@@ -156,7 +156,8 @@ namespace GoF2Remake.Modding
                 templates[s.station] = template;
                 Debug.Log($"Mods: {s.mod.Id}: station {s.station} \"{label}\" built from {s.model}");
             }
-            catch (System.Exception e) { Warn(s.mod, $"{s.model}: {e.Message}"); Debug.LogException(e); }
+            catch (System.Exception e) when (rev == ModManager.Revision) { Warn(s.mod, $"{s.model}: {e.Message}"); if (!ModFileException.IsFileError(e)) Debug.LogException(e); }
+            catch (System.Exception) { }   // a stale load (the mods changed meanwhile)
             finally
             {
                 if (rev == ModManager.Revision) { stepsDone += 3 - counted; Done++; }
@@ -198,11 +199,13 @@ namespace GoF2Remake.Modding
                 var room = ModInteriors.Build(d, scene);
                 if (room != null)
                 {
+                    ModMaterials.PlainLit(room);   // a room: no hull reflection (the game's hangars and bars have none)
                     room.transform.SetParent(holder.transform, false);
                     Debug.Log($"Mods: {d.mod.Id}: {(d.hangar ? "hangar" : "bar")} \"{d.id}\" built from {d.model}");
                 }
             }
-            catch (System.Exception e) { Warn(d.mod, $"{d.model}: {e.Message}"); Debug.LogException(e); }
+            catch (System.Exception e) when (rev == ModManager.Revision) { Warn(d.mod, $"{d.model}: {e.Message}"); if (!ModFileException.IsFileError(e)) Debug.LogException(e); }
+            catch (System.Exception) { }   // a stale load (the mods changed meanwhile)
             finally
             {
                 if (rev == ModManager.Revision) { stepsDone += 3 - counted; Done++; }

@@ -1,11 +1,14 @@
 // CarrierShopWindow.cs
-// Remake (World.CapitalShips): the carrier's resupply window in the flight HUD while docked at it (ObjectDocking.Resupply),
-// built like the hangar's Shop tab (HangarWindow, its HangarWindow.uss) so it reads as the same shop:
-//   top      the "Carrier" tab and Undock (closing the window undocks)
+// Remake (World.CapitalShips): the resupply window of the carrier or the Vossk battleship in the flight HUD while docked at
+// it (ObjectDocking.Resupply), built like the hangar's Shop tab (HangarWindow, its HangarWindow.uss) so it reads as the same
+// shop:
+//   top      the ship's tab ("Carrier" / "Battleship") and Undock (closing the window undocks)
 //   list     headers and rows with the shop icons, a line under each name and the unit price: Repairs (hull and armor),
-//            266 "Secondary weapons" (each mounted secondary: its rounds), the energy cells' category (energy cells)
-//   details  icon, name, category and tech level; the trade box (Carrier ∞, the buy arrow, the unit price, Ship: what you
-//            have), Buy all; the item's stats and description; the repair's Repair button and hull / armor / shield
+//            266 "Secondary weapons" (each mounted secondary: its rounds; then the secondaries it sells), 265 / 267 / 269 the
+//            primary weapons, turrets and equipment it sells (its race's gear, into the hold), the energy cells' category
+//   details  icon, name, category and tech level; the trade box (what the ship has left in store, the buy arrow, the unit
+//            price, Ship: what you have), Buy all; the item's stats and description; the repair's Repair button and hull /
+//            armor / shield; rows it can't sell carry SOLD OUT / NOT STOCKED (a blueprint product, CapitalShips.Store)
 //   footer   the hold and the credits
 // Controls: tap / click a row, the buy arrow (held: repeats after 300 ms, every 90 ms), Buy all; up / down (W / S, the
 // D-pad, the left stick) select, right / D / Enter / A buy one (held repeats), Shift + right or X buy all, Esc / Backspace /
@@ -37,7 +40,10 @@ namespace GoF2Remake.UI
         readonly ScrollView list, detailScroll;
         readonly Label detailName, detailSub, detailText, tradeLeft, tradeRight, tradeNote, tradePrice, cargoLabel, creditsLabel;
         readonly VisualElement detailMods = ItemInfo.NewModBlock();   // the ship's Kaamo Club mods, under the repair's text
-        readonly Button buyAllButton, sellAllButton, actionButton;
+        readonly Button buyAllButton, sellAllButton, actionButton, tab;
+        readonly Label storeLabel;
+        NpcShip host;
+        CapitalShips.Store store;
 
         readonly List<(CapitalShips.Offer offer, VisualElement row)> rows = new List<(CapitalShips.Offer, VisualElement)>();
         int selected;
@@ -69,7 +75,7 @@ namespace GoF2Remake.UI
             window = El("hangar-window", "carrier-shop");
             window.style.display = DisplayStyle.None;
             var top = El("hangar-top");
-            var tab = new Button { text = CapitalShips.CarrierName.ToUpperInvariant(), focusable = false };
+            tab = new Button { text = CapitalShips.CarrierName.ToUpperInvariant(), focusable = false };
             tab.AddToClassList("hangar-tab");
             tab.AddToClassList("hangar-tab--active");
             tab.AddToClassList("gof-semibold");
@@ -101,11 +107,11 @@ namespace GoF2Remake.UI
 
             tradeBox = El("trade-box");
             var left = El("trade-side");
-            var leftLabel = Lbl("trade-side-label");
-            leftLabel.text = CapitalShips.CarrierName.ToUpperInvariant();
+            storeLabel = Lbl("trade-side-label");
+            storeLabel.text = CapitalShips.CarrierName.ToUpperInvariant();
             tradeLeft = Lbl("trade-side-value", true);
             tradeLeft.text = "∞";
-            left.Add(leftLabel);
+            left.Add(storeLabel);
             left.Add(tradeLeft);
             sellArrow = El("trade-arrow");
             sellArrow.style.visibility = Visibility.Hidden;   // the carrier only sells
@@ -199,8 +205,14 @@ namespace GoF2Remake.UI
 
         // ---- open / close ------------------------------------------------------------------------------------
 
-        public void Open()
+        /// <summary>Opens on the ship docked at ('ship': its name, its store).</summary>
+        public void Open(NpcShip ship)
         {
+            host = ship;
+            store = ship != null ? ship.GetComponent<CapitalShip>()?.store : null;
+            string name = CapitalShips.HostName(ship).ToUpperInvariant();
+            tab.text = name;
+            storeLabel.text = name;
             IsOpen = true;
             openedFrame = Time.frameCount;
             selected = -1;
@@ -235,16 +247,12 @@ namespace GoF2Remake.UI
             var keep = selected >= 0 && selected < rows.Count ? rows[selected].offer : null;
             list.Clear();
             rows.Clear();
-            var offers = CapitalShips.ResupplyOffers(db, health);
-            CapitalShips.OfferKind? group = null;
+            var offers = CapitalShips.ResupplyOffers(db, health, store);
+            string group = null;
             foreach (var o in offers)
             {
-                if (group != o.kind)
-                {
-                    group = o.kind;
-                    AddHeader(o.kind == CapitalShips.OfferKind.Repair ? X("resupplyRepairs", "Repairs")
-                            : o.kind == CapitalShips.OfferKind.Ammo ? T(266) : ItemInfo.Category(db.Item(o.item)));
-                }
+                string header = HeaderOf(o);
+                if (group != header) { group = header; AddHeader(header); }
                 AddRow(o);
             }
             selected = keep == null ? -1 : rows.FindIndex(r => r.offer.kind == keep.kind && r.offer.item == keep.item);
@@ -254,6 +262,16 @@ namespace GoF2Remake.UI
             ShowDetails();
             cargoLabel.text = $"{T(184).ToUpperInvariant()}  {Shop.CargoLoad()} / {Shop.MaxLoad(db)} t";
             creditsLabel.text = ItemInfo.Credits(Session.Credits);
+        }
+
+        /// <summary>The row's group: Repairs, the hangar's type headers (265-269) for the rounds and the gear, the energy
+        /// cells' category.</summary>
+        string HeaderOf(CapitalShips.Offer o)
+        {
+            if (o.kind == CapitalShips.OfferKind.Repair) return X("resupplyRepairs", "Repairs");
+            if (o.kind == CapitalShips.OfferKind.Cargo) return ItemInfo.Category(db.Item(o.item));
+            int type = db.Item(o.item)?.TypeId ?? 1;
+            return T(type == 0 ? 265 : type == 1 ? 266 : type == 2 ? 267 : 269);
         }
 
         void AddHeader(string text)
@@ -293,6 +311,8 @@ namespace GoF2Remake.UI
                 var it = db.Item(o.item);
                 tex = ItemInfo.ItemIcon(o.item);
                 name.text = ItemInfo.ItemName(o.item);
+                if (o.notStocked) sub.Add(Badge(X("resupplyBadgeNotStocked", "NOT STOCKED"), "row-badge--cargo"));
+                else if (o.stock == 0) sub.Add(Badge(X("resupplyBadgeSoldOut", "SOLD OUT"), "row-badge--cargo"));
                 if (o.kind == CapitalShips.OfferKind.Ammo)
                 {
                     sub.Add(Badge(X("shopMounted", "MOUNTED"), "row-badge--mounted"));
@@ -368,7 +388,9 @@ namespace GoF2Remake.UI
                     AddStat(X("statArmor", "Armor"), $"{hp.armor} / {hp.maxArmor}");
                     if (hp.maxShield > 0) AddStat(X("statShield", "Shield"), $"{Mathf.RoundToInt(hp.shield)} / {hp.maxShield}");
                 }
-                detailText.text = X("resupplyRepairText", "The carrier's deck crew patch your hull and replace the armor plating. The shield recharges by itself.");
+                detailText.text = host != null && host.Spec.capital == SpawnSpec.CapitalVossk
+                    ? X("resupplyRepairTextVossk", "The battleship's deck crew patch your hull and replace the armor plating. The shield recharges by itself.")
+                    : X("resupplyRepairText", "The carrier's deck crew patch your hull and replace the armor plating. The shield recharges by itself.");
                 ItemInfo.FillModLines(detailMods, Session.ShipMods);
                 return;
             }
@@ -379,7 +401,8 @@ namespace GoF2Remake.UI
             actionButton.style.display = DisplayStyle.None;
             tradeBox.style.display = DisplayStyle.Flex;
             tradeAllRow.style.display = DisplayStyle.Flex;
-            tradeRight.text = o.kind == CapitalShips.OfferKind.Cargo ? $"{o.have} t" : o.have.ToString();
+            tradeLeft.text = o.stock < 0 ? "∞" : o.kind != CapitalShips.OfferKind.Ammo ? $"{o.stock} t" : o.stock.ToString();
+            tradeRight.text = o.kind != CapitalShips.OfferKind.Ammo ? $"{o.have} t" : o.have.ToString();
             tradeNote.text = o.kind == CapitalShips.OfferKind.Ammo ? X("shopMounted", "MOUNTED").ToLowerInvariant() : "";
             tradePrice.text = ItemInfo.Credits(o.unitPrice);
             tradePrice.EnableInClassList("trade-price--expensive", o.unitPrice > Session.Credits);
@@ -410,7 +433,7 @@ namespace GoF2Remake.UI
         {
             if (selected < 0 || selected >= rows.Count) return;
             var o = rows[selected].offer;
-            string msg = CapitalShips.Buy(health, o, units, out int bought);
+            string msg = CapitalShips.Buy(db, health, store, o, units, out int bought);
             if (bought > 0) playUi?.Invoke(CombatAudio.Load()?.shopBuy);
             else ReleaseArrow();   // nothing more to buy: a held arrow stops
             if (!string.IsNullOrEmpty(msg) && (bought == 0 || heldPointer < 0 && !heldKey)) message?.Invoke(msg);

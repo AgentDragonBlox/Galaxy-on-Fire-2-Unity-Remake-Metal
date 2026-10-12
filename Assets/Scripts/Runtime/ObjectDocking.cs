@@ -64,6 +64,10 @@ namespace GoF2Remake.Flight
         /// <summary>Docked at a hackable object's won game (the generic hidden-blueprint wrecks use it).</summary>
         public event Action<NpcShip> HackWon;
 
+        /// <summary>While approaching: game units from the ship to the approach point, else -1 (Navigation.CanFastForward).</summary>
+        public float ApproachDistanceUnits => State == Phase.Approach && Target != null && ship != null
+            ? (Target.transform.TransformPoint(approachLocal) - ship.transform.position).magnitude / M : -1f;
+
         public string PromptText =>
             State == Phase.Docked ? Localization.Extra("hudUndock", "UNDOCK")
             : State == Phase.Approach ? Localization.Extra("hudAutopilotOff", "AUTOPILOT OFF")
@@ -141,6 +145,16 @@ namespace GoF2Remake.Flight
             fromRot = ship.transform.rotation;
             toPos = Target != null ? Target.transform.TransformPoint(approachLocal) : fromPos;
             toRot = fromRot;
+        }
+
+        /// <summary>A level script takes the ship back at once (a cutscene starting, the object leaving): an approach is
+        /// called off, a docked ship is put back on its approach point with the controls back.</summary>
+        public void Abort()
+        {
+            if (State == Phase.Idle) return;
+            if (State == Phase.Approach) { Cancel(); return; }
+            if (Target != null) ship.transform.position = Target.transform.TransformPoint(approachLocal);
+            Release();
         }
 
         void Cancel()
@@ -248,7 +262,7 @@ namespace GoF2Remake.Flight
             var q = Target.transform.rotation;
             var nose = q * dockDirLocal;
             toRot = Quaternion.LookRotation(nose.sqrMagnitude > 1e-6f ? nose : ship.transform.forward, q * upLocal);
-            if (chase != null) chase.enabled = false;
+            if (chase != null && !PlayerTurret.ViewActive(gameObject)) chase.enabled = false;   // the turret view keeps its camera
             SetExhaust(false);
             // Remake: no sound at the carrier (Docking_Landing sounded like mining there; nothing fitting yet).
             if (Target.DockingType != Resupply) Play(dockSound);
