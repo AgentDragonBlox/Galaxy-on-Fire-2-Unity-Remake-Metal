@@ -962,18 +962,24 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   respawns there (`NetPlayer.FactionHome`, `FlightHud.LoadLastSave`). Disbanding frees the faction's claims (the bank is
   lost).
   Phase 3, contest and benefits: **sieges** (`/faction siege`, officers of another faction in the orbit or docked there:
-  `-siegecost` (250 000) from the bank, one per faction, the faction needs room for a claim, not within 24 h of the station's
-  last siege; announced, starts 10 min later, lasts 15 min; meanwhile the two factions' pilots may fire at each other in
-  that orbit (`NetFactionsClient.SiegePvp` in `NetPlayer.PvpWith`); every 5 s the side with more pilots there moves the
-  control by 100/300 % per pilot more and second, 100 % = taken (the claim changes hands), the end = held; 24 h
-  protection either way; `NetState.Sieges` lines, `/faction sieges`, console `sieges`; `TerritoryView`'s banner);
+  `-siegecost` (250 000) from the bank as the stake, one per faction, the faction needs room for a claim, not within 24 h of
+  the station's last siege; announced, armed 10 min later; armed, it waits until pilots of both factions are alive in that
+  orbit's space at once (real players: NPCs never start it), then the fight runs 15 min and the two factions' pilots may fire
+  at each other there (`NetFactionsClient.SiegePvp` in `NetPlayer.PvpWith`); a defending pilot seen alive in the fight and
+  destroyed there = taken (the claim changes hands), the defenders all gone from the orbit 60 s = taken (fled), the
+  attackers all gone 60 s or the time out = held; the stake to the winner's bank; no meeting within 2 days of the arming,
+  the claim lapsing / given up or the defenders disbanding = called off, the stake back to the attacker (`CallOff`); 24 h
+  protection after a fought one; from the arming the orbit authority also flies 16 free level-4 station defenders on top of
+  the garrison (`NetOrbit.UpdateSiegeDefenders`, tag `SiegeDefenderTag`, the garrison's relation, back 30 s after each
+  death, `NetFactions.SiegeDefenders` / `SiegeDefenderLevel`); `NetState.Sieges` lines (phase 0 announced / 1 armed / 2
+  fighting, seconds left, stake, garrison), `/faction sieges`, console `sieges`; `TerritoryView`'s banner);
   **defence** (in a held orbit the fighters of the system's race treat the holder's members as friends and other factions'
   pilots as enemies unless they paid the toll this visit: `NpcShip.TerritoryToLocal`, `NetOrbit.HostileToRemote`,
   `NetFactionsClient.Relation`; pilots without a faction as always); **toll** (`-toll`, 10 000; `TerritoryView` asks on
   arrival through `Traffic.Ask`, `NetFactionsClient.PayToll` -> `TollPaidRpc`, the holder's bank, `NetPlayer.TollStation`
   for the others' NPCs); **trade cut** (`Hangar.Buy` through `NetFactionsClient.BuyPrice`: members -10 %, other factions +5 %;
   the server banks the tax from `StockItemRpc`'s price, `NetFactions.OnPurchase`; the list shows the plain price; ships
-  aren't cut). **Garrison** (players' request: offline holders lost a station to one attacker in 5 minutes): `/faction garrison <ships 0-12> <level 1-5> [station]` or the Faction tab's claim rows (officers, not during the station's siege); upkeep 300 x ships x level a day from the bank (`NetFactions.GarrisonCost`, the first day when set, unpaid = disbanded; reset when the station is taken). In a running siege the server counts it (`Siege.garrisonAlive`, out with `NetState.Sieges`' 7th / 8th fields): each live fighter = 1/3 defending pilot in the control tick, a dead one back after 90 s; the orbit authority flies that many (`NetOrbit.UpdateGarrison`, eventTag `NetOrbit.GarrisonTag`, system race, level 3+ strong fighters, hull x(1 + 0.5 (L - 1)), gun x(1 + 0.25 (L - 1)), no loot, swarming in front of the station; `NetFactionsClient.GarrisonRelation`: the attackers' enemy, the holders' friend) and reports each death (`NetState.GarrisonKillRpc`: the sender runs the orbit, at most 6 per 10 s); they jump out when the siege ends; the banner shows the count. Not yet: shared storage at the home. Not tested in a build yet.
+  aren't cut). **Garrison** (players' request: offline holders lost a station to one attacker in 5 minutes): `/faction garrison <ships 0-12> <level 1-5> [station]` or the Faction tab's claim rows (officers, not during the station's siege); upkeep 300 x ships x level a day from the bank (`NetFactions.GarrisonCost`, the first day when set, unpaid = disbanded; reset when the station is taken). In an armed siege the server counts it (`Siege.garrisonAlive`, out with `NetState.Sieges`' 7th / 8th fields), a dead one back after 90 s; the orbit authority flies that many (`NetOrbit.UpdateGarrison`, eventTag `NetOrbit.GarrisonTag`, system race, level 3+ strong fighters, hull x(1 + 0.5 (L - 1)), gun x(1 + 0.25 (L - 1)), no loot, swarming in front of the station; `NetFactionsClient.GarrisonRelation`: the attackers' enemy, the holders' friend) and reports each death (`NetState.GarrisonKillRpc`: the sender runs the orbit, at most 6 per 10 s); they jump out when the siege ends; the banner shows the count. Not yet: shared storage at the home. Not tested in a build yet.
   UI: the **multiplayer window** (`MultiplayerWindow`, code-built, Squad.uss buttons; in the station a "MULTIPLAYER" button in
   the top bar left of Menu; in flight its own button on the right under the HUD readout and the "Multiplayer window"
   binding, N (`FlightHud`: Esc / B / the binding close it, the flight controls and the mouse-steering cursor wait

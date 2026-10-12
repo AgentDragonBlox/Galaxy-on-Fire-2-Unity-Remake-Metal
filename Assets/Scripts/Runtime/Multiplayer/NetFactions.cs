@@ -25,14 +25,20 @@
 //     see the owner on the star map, the station's header and the orbit information.
 //   Home: a member signing in starts docked at the faction's home, and a destroyed member respawns there.
 // Phase 3, contest and benefits:
-//   Siege: "/faction siege" (officers of another faction, in the orbit or docked there; SiegeCost from the bank; one at a
-//     time; the faction needs room for another claim; not within ProtectionHours of the station's last siege) is announced
-//     and starts SiegeDelaySeconds later, lasting SiegeSeconds. Meanwhile the two factions' pilots may fire at each other
-//     in that orbit (NetFactionsClient.SiegePvp, NetPlayer.PvpWith; elsewhere free roam stays player-versus-environment).
-//     Every 5 s the side with more pilots in the orbit moves the control: SiegeRate % per pilot more and second, up for
-//     the attackers, down for the defenders; 100 % = the station changes hands; at the end the defenders keep it. Either
-//     way the station is protected for ProtectionHours. NetState.Sieges carries them to the players (the HUD banner,
-//     TerritoryView). "/faction sieges" lists them.
+//   Siege: "/faction siege" (officers of another faction, in the orbit or docked there; SiegeCost from the bank as the
+//     stake; one at a time; the faction needs room for another claim; not within ProtectionHours of the station's last
+//     siege) is announced and armed SiegeDelaySeconds later. Armed, it waits until pilots of both factions are alive in the
+//     orbit's space at once (real players only: the NPCs never start it); then the fight runs SiegeSeconds and the two
+//     factions' pilots may fire at each other there (NetFactionsClient.SiegePvp, NetPlayer.PvpWith; elsewhere free roam
+//     stays player-versus-environment). A defending pilot destroyed in the orbit during the fight = the station changes
+//     hands; the defenders all gone from the orbit for SiegeForfeitSeconds counts the same (fled); the attackers all gone
+//     that long, or the time running out = held. The stake goes to the winner's bank. No meeting within SiegeMeetSeconds
+//     of the arming = called off, the stake back to the attacker (also when the claim lapses, is given up or the
+//     defenders disband). Either way a fought siege leaves the station protected for ProtectionHours. From the arming on
+//     the orbit's authority also flies SiegeDefenders free station defenders (NetOrbit.UpdateSiegeDefenders: the
+//     garrison's relation, level SiegeDefenderLevel, back SiegeDefenderRespawnSeconds after each death) on top of the
+//     paid garrison. NetState.Sieges carries them to the players (the HUD banner, TerritoryView). "/faction sieges" lists
+//     them.
 //   Defence: in a held station's orbit its own race's NPC fighters treat the holder's members as friends and the
 //     members of other factions as enemies, unless that pilot paid the toll (Toll credits, asked on arrival by
 //     TerritoryView; NetPlayer.TollStation) for this visit. Pilots without a faction are treated as always.
@@ -42,9 +48,8 @@
 //     claim's garrison, "/faction garrison <ships> <level> [station]" or the Faction tab: 0..MaxGarrison fighters of the
 //     system's race at level 1..MaxGarrisonLevel (hull x(1 + 0.5 (level - 1)), gun x(1 + 0.25 (level - 1)), the dearer
 //     fighters from level 3). Upkeep GarrisonUpkeep x ships x level a day from the bank, the first day when it is set
-//     (not while the station's siege runs); a bank that can't pay disbands it. In a running siege the server counts the
-//     garrison (Siege.garrisonAlive): each living fighter counts GarrisonWeight of a pilot for the defenders; the orbit's
-//     authority flies that many (NetOrbit.UpdateGarrison: hostile to the attackers, friends of the holders, swarming in
+//     (not while the station's siege runs); a bank that can't pay disbands it. In an armed siege the server counts the
+//     garrison (Siege.garrisonAlive); the orbit's authority flies that many (NetOrbit.UpdateGarrison: hostile to the attackers, friends of the holders, swarming in
 //     front of the station) and reports each death (NetState.GarrisonKillRpc, OnGarrisonKill); a dead fighter comes back
 //     GarrisonRespawnSeconds later. Siege.garrisonAlive / level go out with the sieges (PublishSieges).
 
@@ -66,9 +71,12 @@ namespace GoF2Remake.Multiplayer
         public const int DefaultSiegeCost = 250_000, DefaultToll = 10_000;
         public const int MemberDiscountPercent = 10, TaxPercent = 5;
         const long SiegeDelaySeconds = 600, SiegeSeconds = 900, ProtectionHours = 24;
-        const float SiegeRate = 100f / 300f, SiegeTickSeconds = 5f;
+        const long SiegeMeetSeconds = 2 * 86400, SiegeForfeitSeconds = 60;
+        const float SiegeTickSeconds = 5f;
+        /// <summary>The free station defenders an armed siege's orbit gets on top of the garrison (NetOrbit).</summary>
+        public const int SiegeDefenders = 16, SiegeDefenderLevel = 4;
+        public const float SiegeDefenderRespawnSeconds = 30f;
         public const int MaxGarrison = 12, MaxGarrisonLevel = 5, GarrisonUpkeep = 300;
-        public const float GarrisonWeight = 1f / 3f;
         const long GarrisonRespawnSeconds = 90, DaySeconds = 86400;
         const float GarrisonKillWindow = 10f;   // at most GarrisonKillsPerWindow reports count in it (a modified game reporting a whole garrison)
         const int GarrisonKillsPerWindow = 6;
@@ -113,14 +121,18 @@ namespace GoF2Remake.Multiplayer
             public int garrisonSize, garrisonLevel = 1; public long garrisonPaidUntil;   // the garrison (0 = none) and its upkeep
         }
 
-        /// <summary>A siege: times in Unix seconds, control 0..100 (100 = the attackers take the station).</summary>
+        /// <summary>A siege: times in Unix seconds. armed = waiting for both sides (from startsAt until expiresAt), started =
+        /// the fight (until endsAt); stake = the attacker's SiegeCost, to the winner; noAttackersSince / noDefendersSince =
+        /// when that side was last seen gone from the orbit during the fight (0 = there).</summary>
         [Serializable] public class Siege
         {
-            public int station; public string attacker, defender; public long startsAt, endsAt; public float control; public bool started;
+            public int station; public string attacker, defender; public long startsAt, endsAt, expiresAt, stake; public bool armed, started;
+            public long noAttackersSince, noDefendersSince;
             public int garrisonAlive, garrisonLevel = 1;                  // the defenders' fighters alive now (server-side count)
             public List<long> garrisonBack = new List<long>();            // when each dead one comes back (Unix seconds)
             [NonSerialized] public float killWindowStart = -100f;
             [NonSerialized] public int killsInWindow;
+            [NonSerialized] public HashSet<ulong> defendersSeen = new HashSet<ulong>();   // defending pilots seen alive in the fight
         }
 
         [Serializable]
@@ -175,7 +187,14 @@ namespace GoF2Remake.Multiplayer
             if (list.sieges == null) list.sieges = new List<Siege>();
             foreach (var c in list.factions) { c.officers ??= new List<string>(); c.members ??= new List<string>(); }
             foreach (var c in list.claims) c.garrisonLevel = Mathf.Clamp(c.garrisonLevel, 1, MaxGarrisonLevel);
-            foreach (var x in list.sieges) { x.garrisonBack ??= new List<long>(); x.garrisonLevel = Mathf.Clamp(x.garrisonLevel, 1, MaxGarrisonLevel); }
+            foreach (var x in list.sieges)
+            {
+                x.garrisonBack ??= new List<long>();
+                x.defendersSeen ??= new HashSet<ulong>();
+                x.garrisonLevel = Mathf.Clamp(x.garrisonLevel, 1, MaxGarrisonLevel);
+                if (x.expiresAt == 0) x.expiresAt = x.startsAt + SiegeMeetSeconds;   // a siege from before the meeting rule
+                if (x.started) x.armed = true;
+            }
             charges.Clear();
             PublishClaims();
         }
@@ -382,7 +401,9 @@ namespace GoF2Remake.Multiplayer
             int claimsBefore = list.claims.Count;
             list.factions.Remove(faction);
             list.claims.RemoveAll(c => c.faction == faction.id);   // its territory is free again (the bank goes with it)
-            list.sieges.RemoveAll(s => s.attacker == faction.id || s.defender == faction.id);
+            foreach (var s in new List<Siege>(list.sieges))
+                if (s.defender == faction.id) CallOff(s, Localization.Extra("mpSiegeOffDisband", "[{0}] {1} is gone: the siege of {2} is off, the {3:N0} credits stake goes back to [{4}]."), faction.tag, faction.name);
+            list.sieges.RemoveAll(s => s.attacker == faction.id || s.defender == faction.id);   // an attacker's stake goes with its bank
             PublishClaims();
             PublishSieges();
             Save();
@@ -707,12 +728,13 @@ namespace GoF2Remake.Multiplayer
             var defender = list.factions.Find(c => c.id == held.faction);
             faction.bank -= SiegeCost;
             long now = UnixNow;
-            list.sieges.Add(new Siege { station = station, attacker = faction.id, defender = held.faction, startsAt = now + SiegeDelaySeconds, endsAt = now + SiegeDelaySeconds + SiegeSeconds });
+            list.sieges.Add(new Siege { station = station, attacker = faction.id, defender = held.faction, startsAt = now + SiegeDelaySeconds,
+                                        endsAt = now + SiegeDelaySeconds + SiegeSeconds, expiresAt = now + SiegeDelaySeconds + SiegeMeetSeconds, stake = SiegeCost });
             Save();
             PublishSieges();
-            NetState.Instance?.Announce(string.Format(Localization.Extra("mpSiegeDeclared",
-                "[{0}] {1} besieges {2}, held by [{3}] {4}: it starts in {5} minutes and lasts {6}."),
-                faction.tag, faction.name, StationName(station), defender?.tag, defender?.name, SiegeDelaySeconds / 60, SiegeSeconds / 60));
+            NetState.Instance?.Announce(string.Format(Localization.Extra("mpSiegeDeclared2",
+                "[{0}] {1} besieges {2}, held by [{3}] {4}: in {5} minutes the fight can begin, once pilots of both factions are in the orbit (within {6} days). A [{3}] pilot destroyed there loses the station; {7:N0} credits go to the winner."),
+                faction.tag, faction.name, StationName(station), defender?.tag, defender?.name, SiegeDelaySeconds / 60, SiegeMeetSeconds / 86400, SiegeCost));
             Debug.Log($"Server: [{faction.tag}] besieges {StationName(station)} ([{defender?.tag}]).");
             NetNews.Post(NetNews.Kind.War, $"{NetNews.FactionName(faction.tag, faction.name)} declares war on {NetNews.FactionName(defender?.tag, defender?.name)}: "
                 + $"siege of {NetNews.Place(station)} in {SiegeDelaySeconds / 60} minutes", station);
@@ -728,14 +750,17 @@ namespace GoF2Remake.Multiplayer
             {
                 var a = list.factions.Find(c => c.id == s.attacker);
                 var d = list.factions.Find(c => c.id == s.defender);
-                sb.Append($"\n{StationName(s.station)}: [{a?.tag}] against [{d?.tag}], ")
-                  .Append(now < s.startsAt ? $"starts in {(s.startsAt - now) / 60 + 1} min" : $"{s.control:0}% taken, {(s.endsAt - now) / 60 + 1} min left");
+                sb.Append($"\n{StationName(s.station)}: [{a?.tag}] against [{d?.tag}], {s.stake:N0} credits at stake, ")
+                  .Append(!s.armed ? $"armed in {(s.startsAt - now) / 60 + 1} min"
+                          : !s.started ? $"waiting for both sides ({(s.expiresAt - now) / 3600f:0.#} h left)"
+                          : $"fighting, {(s.endsAt - now) / 60 + 1} min left");
             }
             return sb.ToString();
         }
 
-        /// <summary>Every 5 s: a siege starts, the side with more pilots in the orbit moves the control (attackers up,
-        /// defenders down: SiegeRate per pilot more and second), 100 = taken; at its end the defenders keep the station.</summary>
+        /// <summary>Every 5 s: a siege arms, its fight starts once pilots of both factions are alive in the orbit, a destroyed
+        /// defending pilot (or the defenders gone) takes the station, the attackers gone or the time out keeps it; an armed
+        /// siege nobody fought in SiegeMeetSeconds is called off.</summary>
         static void TickSieges(float dt)
         {
             if (list.sieges.Count == 0) return;
@@ -745,45 +770,90 @@ namespace GoF2Remake.Multiplayer
             {
                 var held = ClaimAt(s.station);
                 var attacker = list.factions.Find(c => c.id == s.attacker);
-                if (held == null || held.faction != s.defender || attacker == null)
+                var defender = list.factions.Find(c => c.id == s.defender);
+                if (attacker == null) { list.sieges.Remove(s); changed = true; continue; }   // the attackers' faction ended: the stake with it
+                if (held == null || held.faction != s.defender || defender == null)
                 {
-                    list.sieges.Remove(s);   // the claim lapsed, was given up, or a faction ended: nothing to fight for
+                    // The claim lapsed or was given up: nothing to fight for, the stake back.
+                    CallOff(s, Localization.Extra("mpSiegeOffClaim", "{2} isn't held by [{0}] {1} any more: the siege is off, the {3:N0} credits stake goes back to [{4}]."),
+                            defender?.tag, defender?.name);
                     changed = true;
                     continue;
                 }
                 if (now < s.startsAt) continue;
-                if (!s.started)
+                if (!s.armed)
                 {
-                    s.started = true;
+                    s.armed = true;
                     s.garrisonAlive = held.garrisonSize;
                     s.garrisonLevel = Mathf.Clamp(held.garrisonLevel, 1, MaxGarrisonLevel);
                     s.garrisonBack.Clear();
                     changed = true;
-                    NetState.Instance?.Announce(string.Format(Localization.Extra("mpSiegeStarts", "The siege of {0} has begun: [{1}] and [{2}] may fire at each other there."),
-                        StationName(s.station), attacker.tag, list.factions.Find(c => c.id == s.defender)?.tag));
-                    NetNews.Post(NetNews.Kind.War, $"Fighting erupts at {NetNews.Place(s.station)}: [{NetNews.Safe(attacker.tag)}] against [{NetNews.Safe(list.factions.Find(c => c.id == s.defender)?.tag)}]", s.station);
+                    NetState.Instance?.Announce(string.Format(Localization.Extra("mpSiegeArmed",
+                        "The siege of {0} is armed: the fight begins once pilots of [{1}] and [{2}] are in its orbit."), StationName(s.station), attacker.tag, defender.tag));
                 }
                 // The garrison's dead come back after their cooldown.
                 for (int i = s.garrisonBack.Count - 1; i >= 0; i--)
                     if (now >= s.garrisonBack[i]) { s.garrisonBack.RemoveAt(i); s.garrisonAlive++; changed = true; }
-                float att = 0f, def = s.garrisonAlive * GarrisonWeight;
+                int att = 0, def = 0;
+                bool defenderDown = false;
                 foreach (var p in NetPlayer.All)
                 {
-                    if (p == null || !p.IsSpawned || !p.InSpace || p.Station != s.station || p.Hull <= 0f) continue;
+                    if (p == null || !p.IsSpawned || !p.InSpace || p.Station != s.station) continue;
                     var faction = OfClient(p.OwnerClientId);
                     if (faction == null) continue;
-                    if (faction.id == s.attacker) att++;
-                    else if (faction.id == s.defender) def++;
+                    bool alive = p.Hull > 0f;
+                    if (faction.id == s.attacker && alive) att++;
+                    else if (faction.id == s.defender)
+                    {
+                        // Destroyed counts only for a pilot seen alive in this fight (not one still wrecked from before it).
+                        if (alive) { def++; if (s.started) s.defendersSeen.Add(p.OwnerClientId); }
+                        else if (s.started && s.defendersSeen.Contains(p.OwnerClientId)) defenderDown = true;
+                    }
                 }
-                if (Mathf.Abs(att - def) > 0.01f)
+                if (!s.started)
                 {
-                    s.control = Mathf.Clamp(s.control + (att - def) * SiegeRate * dt, 0f, 100f);
-                    changed = true;
+                    if (att > 0 && def > 0)
+                    {
+                        s.started = true;
+                        s.endsAt = now + SiegeSeconds;
+                        s.noAttackersSince = s.noDefendersSince = 0;
+                        s.defendersSeen.Clear();
+                        changed = true;
+                        NetState.Instance?.Announce(string.Format(Localization.Extra("mpSiegeStarts2",
+                            "The siege of {0} has begun: [{1}] and [{2}] may fire at each other there. A [{2}] pilot destroyed there loses the station."),
+                            StationName(s.station), attacker.tag, defender.tag));
+                        NetNews.Post(NetNews.Kind.War, $"Fighting erupts at {NetNews.Place(s.station)}: [{NetNews.Safe(attacker.tag)}] against [{NetNews.Safe(defender.tag)}]", s.station);
+                    }
+                    else if (now >= s.expiresAt)
+                    {
+                        CallOff(s, Localization.Extra("mpSiegeOffNoMeet", "No pilots of [{0}] {1} and the attackers met at {2}: the siege is off, the {3:N0} credits stake goes back to [{4}]."),
+                                defender.tag, defender.name);
+                        changed = true;
+                    }
+                    continue;
                 }
-                if (s.control >= 100f) EndSiege(s, true);
+                // The fight: a side gone from the orbit since when (a side back resets it).
+                if (att > 0) s.noAttackersSince = 0; else if (s.noAttackersSince == 0) { s.noAttackersSince = now; changed = true; }
+                if (def > 0) s.noDefendersSince = 0; else if (s.noDefendersSince == 0) { s.noDefendersSince = now; changed = true; }
+                if (defenderDown) EndSiege(s, true);
+                else if (s.noDefendersSince > 0 && now - s.noDefendersSince >= SiegeForfeitSeconds) EndSiege(s, true);
+                else if (s.noAttackersSince > 0 && now - s.noAttackersSince >= SiegeForfeitSeconds) EndSiege(s, false);
                 else if (now >= s.endsAt) EndSiege(s, false);
             }
             if (changed) { Save(); PublishSieges(); }
+        }
+
+        /// <summary>A siege that wasn't fought out: gone, its stake back in the attacker's bank, announced ('format': {0} / {1}
+        /// the defenders' tag / name, {2} the station, {3} the stake, {4} the attackers' tag).</summary>
+        static void CallOff(Siege s, string format, string defenderTag, string defenderName)
+        {
+            list.sieges.Remove(s);
+            var attacker = list.factions.Find(c => c.id == s.attacker);
+            if (attacker != null) attacker.bank += Math.Max(0, s.stake);
+            NetState.Instance?.Announce(string.Format(format, defenderTag, defenderName, StationName(s.station), Math.Max(0, s.stake), attacker?.tag));
+            Debug.Log($"Server: the siege of {StationName(s.station)} is called off; {s.stake:N0} back to [{attacker?.tag}].");
+            Save();
+            PublishSieges();
         }
 
         static void EndSiege(Siege s, bool taken)
@@ -793,6 +863,8 @@ namespace GoF2Remake.Multiplayer
             var attacker = list.factions.Find(c => c.id == s.attacker);
             var defender = list.factions.Find(c => c.id == s.defender);
             if (held != null) held.protectedUntil = UnixNow + ProtectionHours * 3600L;
+            var winner = taken ? attacker : defender;
+            if (winner != null) winner.bank += Math.Max(0, s.stake);   // the stake to the winning side
             if (taken && held != null && attacker != null)
             {
                 held.faction = attacker.id;
@@ -807,8 +879,8 @@ namespace GoF2Remake.Multiplayer
                 RefreshHomes(attacker);
             }
             NetState.Instance?.Announce(taken
-                ? string.Format(Localization.Extra("mpSiegeTaken", "[{0}] {1} took {2} from [{3}]."), attacker?.tag, attacker?.name, StationName(s.station), defender?.tag)
-                : string.Format(Localization.Extra("mpSiegeHeld", "[{0}] held {1} against [{2}]."), defender?.tag, StationName(s.station), attacker?.tag));
+                ? string.Format(Localization.Extra("mpSiegeTaken2", "[{0}] {1} took {2} from [{3}] and wins the {4:N0} credits stake."), attacker?.tag, attacker?.name, StationName(s.station), defender?.tag, Math.Max(0, s.stake))
+                : string.Format(Localization.Extra("mpSiegeHeld2", "[{0}] held {1} against [{2}] and wins the {3:N0} credits stake."), defender?.tag, StationName(s.station), attacker?.tag, Math.Max(0, s.stake)));
             Debug.Log($"Server: the siege of {StationName(s.station)} is over: {(taken ? "taken" : "held")}.");
             NetNews.Post(taken ? NetNews.Kind.Breaking : NetNews.Kind.War, taken
                 ? $"{NetNews.Place(s.station)} has fallen! {NetNews.FactionName(attacker?.tag, attacker?.name)} seizes it from [{NetNews.Safe(defender?.tag)}]"
@@ -817,8 +889,9 @@ namespace GoF2Remake.Multiplayer
             PublishSieges();
         }
 
-        /// <summary>The sieges to the players (NetState.Sieges): "station|attacker TAG|defender TAG|started (0/1)|seconds
-        /// left (to the start, or to the end)|control %|garrison alive|garrison level" per line.</summary>
+        /// <summary>The sieges to the players (NetState.Sieges): "station|attacker TAG|defender TAG|phase (0 announced, 1 armed
+        /// and waiting for both sides, 2 fighting)|seconds left (to the arming, the call-off or the end)|stake|garrison
+        /// alive|garrison level" per line.</summary>
         static void PublishSieges()
         {
             if (list == null || NetState.Instance == null) return;
@@ -829,10 +902,10 @@ namespace GoF2Remake.Multiplayer
                 var a = list.factions.Find(c => c.id == s.attacker);
                 var d = list.factions.Find(c => c.id == s.defender);
                 if (a == null || d == null) continue;
-                long left = s.started ? s.endsAt - now : s.startsAt - now;
-                sb.Append(s.station).Append('|').Append(a.tag).Append('|').Append(d.tag).Append('|').Append(s.started ? 1 : 0)
-                  .Append('|').Append(Math.Max(0, left)).Append('|').Append(Mathf.RoundToInt(s.control))
-                  .Append('|').Append(s.started ? s.garrisonAlive : 0).Append('|').Append(s.garrisonLevel).Append('\n');
+                long left = s.started ? s.endsAt - now : s.armed ? s.expiresAt - now : s.startsAt - now;
+                sb.Append(s.station).Append('|').Append(a.tag).Append('|').Append(d.tag).Append('|').Append(s.started ? 2 : s.armed ? 1 : 0)
+                  .Append('|').Append(Math.Max(0, left)).Append('|').Append(Math.Max(0, s.stake))
+                  .Append('|').Append(s.armed ? s.garrisonAlive : 0).Append('|').Append(s.garrisonLevel).Append('\n');
             }
             NetState.Instance.SetSieges(sb.ToString());
         }
@@ -858,7 +931,7 @@ namespace GoF2Remake.Multiplayer
                 || ships < 0 || ships > MaxGarrison || level < 1 || level > MaxGarrisonLevel)
                 return string.Format(Localization.Extra("mpGarrisonUsage", "/faction garrison <ships 0-{0}> <level 1-{1}> [station]"), MaxGarrison, MaxGarrisonLevel);
             var siege = SiegeAt(station);
-            if (siege != null && siege.started) return Localization.Extra("mpGarrisonSiege", "The garrison can't change while the siege runs.");
+            if (siege != null && siege.armed) return Localization.Extra("mpGarrisonSiege", "The garrison can't change while the siege runs.");
             int cost = GarrisonCost(ships, level);
             long now = UnixNow;
             if (ships > 0 && (ships > held.garrisonSize || level > held.garrisonLevel || now >= held.garrisonPaidUntil))
@@ -906,7 +979,7 @@ namespace GoF2Remake.Multiplayer
         public static void OnGarrisonKill(ulong client, int station)
         {
             var s = SiegeAt(station);
-            if (s == null || !s.started || s.garrisonAlive <= 0) return;
+            if (s == null || !s.armed || s.garrisonAlive <= 0) return;
             var from = NetSquad.Find(client);
             if (from == null || !from.OrbitAuthority || !NetGuard.InOrbit(client, station)) return;
             float t = Time.realtimeSinceStartup;

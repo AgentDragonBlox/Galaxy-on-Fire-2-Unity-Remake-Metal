@@ -4,7 +4,8 @@
 //     arrival camera is over, the HUD's ChoiceWindow asks for the toll (NetState.Toll; Traffic.Ask). Paid: the station's
 //     fighters spare this pilot for the visit (NetFactionsClient.TollStation, reset on the next orbit); refused: they
 //     attack (NetOrbit's territory rule). Not in an arena;
-//   the siege banner: in a besieged orbit, top centre: the two factions, the time to the start or the end, the control;
+//   the siege banner: in a besieged orbit, top centre: the two factions, the phase (armed in, waiting for both sides with the
+//   time to the call-off, the fight with its time left);
 //   otherwise a squadmate's distress call (NetDistress): who, where, and how to answer (the actions menu's Help, the
 //     squad window's Help or /assist); pulsing.
 // Built in code with inline styles.
@@ -104,12 +105,14 @@ namespace GoF2Remake.UI
             var s = NetFactionsClient.SiegeAt(station);
             if (s == null) return null;
             int left = Mathf.Max(0, Mathf.CeilToInt(s.secondsLeft - (Time.unscaledTime - s.receivedAt)));
-            string time = $"{left / 60}:{left % 60:00}";
-            string garrison = s.started && s.garrisonAlive > 0
+            string time = left >= 3600 ? $"{left / 3600}:{left / 60 % 60:00}:{left % 60:00}" : $"{left / 60}:{left % 60:00}";
+            string garrison = s.armed && s.garrisonAlive > 0
                 ? "  ·  " + string.Format(Localization.Extra("mpSiegeGarrison", "garrison {0} (level {1})"), s.garrisonAlive, s.garrisonLevel) : "";
-            return s.started
-                ? string.Format(Localization.Extra("mpSiegeBanner", "SIEGE  [{0}] against [{1}]  ·  {2}% taken  ·  {3} left"), s.attacker, s.defender, s.control, time) + garrison
-                : string.Format(Localization.Extra("mpSiegeBannerSoon", "SIEGE  [{0}] against [{1}]  ·  starts in {2}"), s.attacker, s.defender, time);
+            if (s.started)
+                return string.Format(Localization.Extra("mpSiegeBanner2", "SIEGE  [{0}] against [{1}]  ·  a [{1}] pilot destroyed loses the station  ·  {2} left"), s.attacker, s.defender, time) + garrison;
+            if (s.armed)
+                return string.Format(Localization.Extra("mpSiegeBannerWait", "SIEGE  [{0}] against [{1}]  ·  waiting for pilots of both factions  ·  off in {2}"), s.attacker, s.defender, time) + garrison;
+            return string.Format(Localization.Extra("mpSiegeBannerSoon", "SIEGE  [{0}] against [{1}]  ·  starts in {2}"), s.attacker, s.defender, time);
         }
 
         void Show(string text)

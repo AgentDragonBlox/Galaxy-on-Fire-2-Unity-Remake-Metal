@@ -100,7 +100,7 @@ namespace GoF2Remake.Multiplayer
             if (claims.Value.ToString() != text) claims.Value = text;
         }
 
-        /// <summary>The sieges, "station|attacker|defender|started|seconds left|control" per line (NetFactions).</summary>
+        /// <summary>The sieges, "station|attacker|defender|phase|seconds left|stake|garrison alive|garrison level" per line (NetFactions).</summary>
         public string Sieges => sieges.Value.ToString();
 
         internal void SetSieges(string text)

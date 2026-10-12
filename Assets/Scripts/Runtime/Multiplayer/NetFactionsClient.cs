@@ -20,8 +20,9 @@ namespace GoF2Remake.Multiplayer
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() { parsedFrom = siegesFrom = null; owners.Clear(); sieges.Clear(); TollStation = -1; }
 
-        /// <summary>A siege as the players see it: the seconds left counted from when the line arrived.</summary>
-        public sealed class SiegeInfo { public int station, control, garrisonAlive, garrisonLevel = 1; public string attacker, defender; public bool started; public float secondsLeft, receivedAt; }
+        /// <summary>A siege as the players see it: the seconds left counted from when the line arrived (to the arming, the
+        /// call-off while armed, or the fight's end). armed = waiting for both sides or fighting, started = fighting.</summary>
+        public sealed class SiegeInfo { public int station, garrisonAlive, garrisonLevel = 1; public long stake; public string attacker, defender; public bool armed, started; public float secondsLeft, receivedAt; }
 
         static string siegesFrom;
         static readonly Dictionary<int, SiegeInfo> sieges = new Dictionary<int, SiegeInfo>();
@@ -37,11 +38,11 @@ namespace GoF2Remake.Multiplayer
                 var p = line.Split('|');
                 if (p.Length < 6 || !int.TryParse(p[0], out int station)) continue;
                 int.TryParse(p[4], out int left);
-                int.TryParse(p[5], out int control);
+                long.TryParse(p[5], out long stake);
                 int garrison = 0, level = 1;
                 if (p.Length >= 8) { int.TryParse(p[6], out garrison); int.TryParse(p[7], out level); }
-                sieges[station] = new SiegeInfo { station = station, attacker = p[1], defender = p[2], started = p[3] == "1",
-                                                  secondsLeft = left, control = control, receivedAt = UnityEngine.Time.unscaledTime,
+                sieges[station] = new SiegeInfo { station = station, attacker = p[1], defender = p[2], armed = p[3] != "0", started = p[3] == "2",
+                                                  secondsLeft = left, stake = stake, receivedAt = UnityEngine.Time.unscaledTime,
                                                   garrisonAlive = garrison, garrisonLevel = level };
             }
         }

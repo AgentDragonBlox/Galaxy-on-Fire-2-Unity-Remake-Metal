@@ -109,6 +109,12 @@ namespace GoF2Remake.Multiplayer
                 if (NetState.Instance != null && NetState.Instance.IsSpawned) NetState.Instance.GarrisonKillRpc(Station);
                 return;
             }
+            if (Authority && ship != null && ship.Spec.eventTag == SiegeDefenderTag)
+            {
+                // A siege's free defender: back after its cooldown (this game's own count, nothing to report).
+                defenderBack.Add(Time.unscaledTime + NetFactions.SiegeDefenderRespawnSeconds);
+                return;
+            }
             if (!Authority || ship == null || ship.Spec.group != NpcGroup.Raider || watchedTraffic == null) return;
             if (byPlayer && NetPlayer.Local != null) raidKillers.Add(NetPlayer.Local.OwnerClientId);
             else if (ship.Target.killedByRemote && ship.Target.remoteKiller != ulong.MaxValue) raidKillers.Add(ship.Target.remoteKiller);
@@ -184,7 +190,7 @@ namespace GoF2Remake.Multiplayer
         {
             var orbit = Current;
             if (orbit == null || orbit.level == null || orbit.level.Layout == null || ship.Race != orbit.level.Layout.raceId) return 0;
-            if (ship.Spec.eventTag == GarrisonTag) return NetFactionsClient.GarrisonRelation(station, tag);
+            if (ship.Spec.eventTag == GarrisonTag || ship.Spec.eventTag == SiegeDefenderTag) return NetFactionsClient.GarrisonRelation(station, tag);
             return NetFactionsClient.Relation(station, tag, tollAt);
         }
 
@@ -193,6 +199,9 @@ namespace GoF2Remake.Multiplayer
         /// <summary>SpawnSpec.eventTag of the garrison fighters (no event's batch tag reaches it; kept by a takeover's AdoptSpec,
         /// and like an event's ship never relaunched by the traffic).</summary>
         public const int GarrisonTag = 0x3FFFFFF0;
+        /// <summary>SpawnSpec.eventTag of an armed siege's free station defenders (UpdateSiegeDefenders).</summary>
+        public const int SiegeDefenderTag = 0x3FFFFFF1;
+        readonly List<float> defenderBack = new List<float>();   // when each dead siege defender may be flown in again
         const float GarrisonHoldSeconds = 3f;   // after a death: the server's count catches up before more are flown in
         const int GarrisonSpawnPerTick = 4;
         float garrisonHoldUntil, garrisonTimer;
@@ -206,7 +215,8 @@ namespace GoF2Remake.Multiplayer
             var traffic = level != null ? level.Traffic : null;
             if (!Authority || traffic == null || level.Layout == null) return;
             var siege = NetFactionsClient.SiegeAt(Station);
-            int want = siege != null && siege.started ? siege.garrisonAlive : 0;
+            UpdateSiegeDefenders(traffic, siege);
+            int want = siege != null && siege.armed ? siege.garrisonAlive : 0;
             var alive = traffic.Ships.FindAll(x => x != null && x.Spec.eventTag == GarrisonTag && !x.Gone && x.Target != null && x.Target.Alive);
             if (want == 0)
             {
@@ -227,6 +237,41 @@ namespace GoF2Remake.Multiplayer
                     hitpoints = Mathf.RoundToInt(NpcTables.Hull(0, ship) * (1f + 0.5f * (lvl - 1))),
                     gunItem = NpcTables.GunItem(race), gunFactor = 1f + 0.25f * (lvl - 1),
                     name = string.Format(Localization.Extra("mpGarrisonName", "[{0}] Garrison"), siege.defender),
+                });
+            }
+            traffic.ConnectPlayers();
+        }
+
+        /// <summary>An armed siege's orbit (waiting for both sides or fighting) gets NetFactions.SiegeDefenders fighters of the
+        /// system's race on top of the paid garrison, free for the holders: level NetFactions.SiegeDefenderLevel (the dearer
+        /// fighters, hull and gun as a garrison of that level), the garrison's relation (the attackers' enemy, the holders'
+        /// friend), each back NetFactions.SiegeDefenderRespawnSeconds after its death; they jump out when the siege ends.</summary>
+        void UpdateSiegeDefenders(Traffic traffic, NetFactionsClient.SiegeInfo siege)
+        {
+            var alive = traffic.Ships.FindAll(x => x != null && x.Spec.eventTag == SiegeDefenderTag && !x.Gone && x.Target != null && x.Target.Alive);
+            if (siege == null || !siege.armed)
+            {
+                foreach (var x in alive) x.JumpOut();
+                defenderBack.Clear();
+                return;
+            }
+            float now = Time.unscaledTime;
+            defenderBack.RemoveAll(t => now >= t);
+            int want = NetFactions.SiegeDefenders - defenderBack.Count;
+            if (alive.Count >= want) return;
+            int lvl = NetFactions.SiegeDefenderLevel;
+            int race = level.Layout.raceId;
+            int count = Mathf.Min(want - alive.Count, GarrisonSpawnPerTick);
+            for (int i = 0; i < count; i++)
+            {
+                int ship = NpcTables.StrongFighter(level.Database, race);
+                traffic.SpawnShip(new SpawnSpec
+                {
+                    group = NpcGroup.Local, race = race, ship = ship, eventTag = SiegeDefenderTag, noLoot = true,
+                    position = new Vector3(Random.Range(-30000f, 30000f), Random.Range(-12000f, 12000f), Random.Range(12000f, 60000f)),
+                    hitpoints = Mathf.RoundToInt(NpcTables.Hull(0, ship) * (1f + 0.5f * (lvl - 1))),
+                    gunItem = NpcTables.GunItem(race), gunFactor = 1f + 0.25f * (lvl - 1),
+                    name = string.Format(Localization.Extra("mpSiegeDefenderName", "[{0}] Defender"), siege.defender),
                 });
             }
             traffic.ConnectPlayers();
