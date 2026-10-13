@@ -15,6 +15,9 @@ on:
       tag:
         description: Release tag to build
         required: true
+      version:
+        description: Shown version (yyyy.MM.dd.HHmm, the release's other builds'); empty = the commit's time
+        required: false
 
 permissions:
   contents: read
@@ -57,9 +60,13 @@ jobs:
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          GOF2_BUILD_VERSION: ${{ inputs.version }}
         run: docker/build-server.sh && rm -rf Build/LinuxServer/*_BackUpThisFolder_ButDontShipItWithYourGame
 
       - name: Image
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
         run: |
           image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/gof2-server"
           docker build -t "$image:$TAG" -f docker/server.Dockerfile \
@@ -70,8 +77,8 @@ jobs:
           timeout 180 sh -c 'until docker logs smoke 2>&1 | grep -q "Type \"help\""; do sleep 2; done' || { docker logs smoke 2>&1 | tail -50; exit 1; }
           docker logs smoke 2>&1 | grep -m1 "dedicated server, build"
           docker rm -f smoke
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           docker push "$image:$TAG"
-          if [ "$GITHUB_EVENT_NAME" = release ] && [ "${{ github.event.release.prerelease }}" != true ]; then
+          if [ "$GITHUB_EVENT_NAME" = release ] && [ "$PRERELEASE" != true ]; then
             docker tag "$image:$TAG" "$image:latest" && docker push "$image:latest"
           fi
