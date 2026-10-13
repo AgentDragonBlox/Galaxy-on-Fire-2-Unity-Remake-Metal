@@ -72,7 +72,7 @@ namespace GoF2Remake.World
         bool partsRide, battleCalled;
         float battleMs;
         /// <summary>What it has to hand out this visit, all of its race (CapitalShips.Store; the resupply window).</summary>
-        public CapitalShips.Store store;
+        [System.NonSerialized] public CapitalShips.Store store;
 
         /// <summary>The ships it launched (the carrier's Inflicts).</summary>
         public int Launched => launched;

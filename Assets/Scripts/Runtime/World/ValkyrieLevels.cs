@@ -41,6 +41,7 @@ using UnityEngine;
 
 namespace GoF2Remake.World
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public class ValkyrieLevels
     {
         const float M = 0.05f;

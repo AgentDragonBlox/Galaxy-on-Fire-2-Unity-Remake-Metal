@@ -14,7 +14,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ai.navigation": {
-      "version": "2.0.15",
+      "version": "2.0.16",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -68,7 +68,7 @@
     },
     "com.unity.entities": {
       "version": "6.7.0",
-      "depth": 2,
+      "depth": 1,
       "source": "builtin",
       "dependencies": {
         "com.unity.nuget.mono-cecil": "1.11.6",
@@ -129,15 +129,14 @@
       "dependencies": {}
     },
     "com.unity.netcode": {
-      "version": "7.1.0",
-      "depth": 1,
-      "source": "registry",
+      "version": "file:com.unity.netcode",
+      "depth": 0,
+      "source": "embedded",
       "dependencies": {
-        "com.unity.entities": "6.7.0",
         "com.unity.transport": "6.7.0",
+        "com.unity.entities": "6.7.0",
         "com.unity.modules.animation": "1.0.0"
-      },
-      "url": "https://packages.unity.com"
+      }
     },
     "com.unity.netcode.gameobjects": {
       "version": "3.1.0",
@@ -215,8 +214,8 @@
       }
     },
     "com.unity.scriptablebuildpipeline": {
-      "version": "4.0.0",
-      "depth": 3,
+      "version": "4.0.1",
+      "depth": 2,
       "source": "registry",
       "dependencies": {
         "com.unity.test-framework": "1.4.5",
@@ -349,7 +348,7 @@
     },
     "com.unity.test-framework.performance": {
       "version": "6.7.0",
-      "depth": 3,
+      "depth": 2,
       "source": "builtin",
       "dependencies": {
         "com.unity.test-framework": "1.1.33",
@@ -507,7 +506,7 @@
     },
     "com.unity.modules.hierarchy": {
       "version": "1.0.0",
-      "depth": 3,
+      "depth": 2,
       "source": "builtin",
       "dependencies": {
         "com.unity.modules.hierarchycore": "1.0.0",
