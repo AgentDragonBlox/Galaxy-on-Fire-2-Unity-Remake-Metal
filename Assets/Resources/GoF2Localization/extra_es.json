@@ -1159,6 +1159,7 @@
  "resupplyRepaired": "Casco y blindaje intactos",
  "resupplyRepairs": "Reparaciones",
  "saveFailed": "No se pudo guardar la partida.",
+ "saveTransferFolder": "Las partidas exportadas se guardan en esta carpeta y se importan desde ella:",
  "shopBuy": "COMPRAR",
  "shopBuyAll": "COMPRAR TODO",
  "shopDoubleClickMount": "  ·  doble clic para montar",

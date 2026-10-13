@@ -321,6 +321,10 @@ namespace GoF2Remake.UI
             newGameButton = Bind("newGameButton", () => OpenPanel("campaignPanel"));
             multiplayerButton = Bind("multiplayerButton", OpenMultiplayer);
             loadButton = Bind("loadButton", () => { BuildSlots(); OpenPanel("loadPanel"); });
+            // Remake: every save to one file and back (SaveTransfer), under the Load game list; main menu only (no game is
+            // loaded here). After the click: the system's file dialog is modal.
+            Bind("exportSavesButton", () => root.schedule.Execute(ExportSaves).ExecuteLater(1));
+            Bind("importSavesButton", () => root.schedule.Execute(PickImport).ExecuteLater(1));
             optionsButton = Bind("optionsButton", () =>
             {
                 // The rows follow what is known now (DLSS / FSR only once URP has made its pipeline, after these rows were built).
@@ -2149,17 +2153,6 @@ namespace GoF2Remake.UI
                 optionControls.Add(c);
             }
 
-            // Remake: every save to one file and back (SaveTransfer), main menu only (no game is loaded here).
-            foreach (var def in SaveTransferOptions())
-            {
-                var c = new OptionControl(def);
-                c.Field.AddToClassList("option-row");
-                HookFocusSound(c.Field);
-                c.Changed += () => Play(buttonRelease);
-                root.Q(PageName(def.page)).Add(c.Root);
-                optionControls.Add(c);
-            }
-
             var langList = root.Q("languageList");
             for (int i = 0; i < languageCodes.Length && i < languageNames.Length; i++)
             {
@@ -2171,32 +2164,6 @@ namespace GoF2Remake.UI
                 HookFocusSound(b);
                 langList.Add(b);
             }
-        }
-
-        OptionDef[] SaveTransferOptions()
-        {
-            string where = SaveTransfer.HasFileDialog ? null : SaveTransfer.TransferFolder;
-            return new[]
-            {
-                new OptionDef
-                {
-                    id = "exportSaves", page = OptionPage.Gameplay, kind = OptionKind.Button,
-                    label = () => Localization.Extra("exportSaves", "Export saves"),
-                    description = () => where == null
-                        ? Localization.Extra("exportSavesHelp", "Every save slot into one file, to keep a copy or move your games to another device.")
-                        : Localization.Extra("exportSavesHelpFolder", "Every save slot into one file in this folder:") + " " + where,
-                    action = () => root.schedule.Execute(ExportSaves).ExecuteLater(1),   // after the click (the dialog is modal)
-                },
-                new OptionDef
-                {
-                    id = "importSaves", page = OptionPage.Gameplay, kind = OptionKind.Button,
-                    label = () => Localization.Extra("importSaves", "Import saves"),
-                    description = () => where == null
-                        ? Localization.Extra("importSavesHelp", "Replaces every save with the ones in an exported file.")
-                        : Localization.Extra("importSavesHelpFolder", "Replaces every save with the newest exported file in this folder:") + " " + where,
-                    action = () => root.schedule.Execute(PickImport).ExecuteLater(1),
-                },
-            };
         }
 
         string SaveTransferTitle(bool import) => (import ? Localization.Extra("importSaves", "Import saves") : Localization.Extra("exportSaves", "Export saves"));
@@ -2250,6 +2217,7 @@ namespace GoF2Remake.UI
         void ImportSaves(string path)
         {
             var r = SaveTransfer.Import(path);
+            BuildSlots();   // the Load game list shows the imported saves
             resumeButton.EnableInClassList("menu-button--gone", SaveGame.MostRecentSlot() < 0);
             UpdateColumnFit();
             if (r.outcome == SaveTransfer.Outcome.Done)
@@ -2365,6 +2333,16 @@ namespace GoF2Remake.UI
             Set("extremeLabel", T(25));
             Set("extremeDesc", Localization.Extra("extremeDesc", "For veterans who finished the game: tougher enemies and a harsher economy."));
             Set("loadTitle", T(29));
+            Set("exportSavesButton", Localization.Extra("exportSaves", "Export saves").ToUpperInvariant());
+            Set("importSavesButton", Localization.Extra("importSaves", "Import saves").ToUpperInvariant());
+            // Without a file dialog (Linux, Android) the files go to and come from the Transfer folder: shown under the buttons.
+            var transferNote = root.Q<Label>("saveTransferNote");
+            if (transferNote != null)
+            {
+                transferNote.text = SaveTransfer.HasFileDialog ? ""
+                    : Localization.Extra("saveTransferFolder", "Exported saves go to, and are imported from:") + " " + SaveTransfer.TransferFolder;
+                transferNote.style.display = SaveTransfer.HasFileDialog ? DisplayStyle.None : DisplayStyle.Flex;
+            }
             Set("optionsTitle", T(31));
             Set("tabSound", OptionsCatalog.PageTitle(OptionPage.Sound).ToUpperInvariant());
             Set("tabGraphics", OptionsCatalog.PageTitle(OptionPage.Graphics).ToUpperInvariant());

@@ -1345,5 +1345,6 @@
  "empBreaksCloak": "EMP przerywa kamuflaż",
  "empBreaksCloakHelp": "Trafienie EMP w zakamuflowany statek od razu zdejmuje kamuflaż, a ładujący się jeszcze kamuflaż zawodzi: twój, Specterów i innych graczy. Wyłączone: jak w oryginale nic nie przerywa kamuflażu przed czasem.",
  "cloakDisrupted": "Kamuflaż zakłócony!",
- "kaamoModMaxed": "Dalej już nie da rady: twój #SHIP_NAME ma to ulepszenie na poziomie {0}."
+ "kaamoModMaxed": "Dalej już nie da rady: twój #SHIP_NAME ma to ulepszenie na poziomie {0}.",
+ "saveTransferFolder": "Wyeksportowane zapisy trafiają do tego folderu i są z niego importowane:"
 }

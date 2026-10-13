@@ -1159,6 +1159,7 @@
  "resupplyRepaired": "Hülle und Panzerung intakt",
  "resupplyRepairs": "Reparaturen",
  "saveFailed": "Das Spiel konnte nicht gespeichert werden.",
+ "saveTransferFolder": "Exportierte Spielstände landen in diesem Ordner und werden von dort importiert:",
  "shopBuy": "KAUFEN",
  "shopBuyAll": "ALLES KAUFEN",
  "shopDoubleClickMount": "  ·  Doppelklick zum Einbauen",

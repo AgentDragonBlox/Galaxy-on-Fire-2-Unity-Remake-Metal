@@ -1345,5 +1345,6 @@
  "empBreaksCloak": "L'IEM rompe l'occultamento",
  "empBreaksCloakHelp": "Un colpo IEM su una nave occultata ne annulla subito l'occultamento, e un occultamento ancora in carica fallisce: il tuo, quello degli Specter e quello degli altri giocatori. Disattivato: come nell'originale, niente interrompe un occultamento.",
  "cloakDisrupted": "Occultamento disturbato!",
- "kaamoModMaxed": "Più di così non posso fare: la tua #SHIP_NAME ha già questo potenziamento al livello {0}."
+ "kaamoModMaxed": "Più di così non posso fare: la tua #SHIP_NAME ha già questo potenziamento al livello {0}.",
+ "saveTransferFolder": "I salvataggi esportati finiscono in questa cartella e vengono importati da qui:"
 }
