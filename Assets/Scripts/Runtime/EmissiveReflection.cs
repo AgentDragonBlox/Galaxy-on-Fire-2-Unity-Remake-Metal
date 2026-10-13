@@ -11,6 +11,7 @@ using UnityEngine;
 
 namespace GoF2Remake.Visuals
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class EmissiveReflection
     {
         const string ShaderPath = "GoF2Emissive/EmissiveCube";

@@ -20,6 +20,7 @@ using Random = UnityEngine.Random;
 
 namespace GoF2Remake.World
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class OrbitBuilder
     {
         const float M = OrbitLayout.MetersPerUnit;
