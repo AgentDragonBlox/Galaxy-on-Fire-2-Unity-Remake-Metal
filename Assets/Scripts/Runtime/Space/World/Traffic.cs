@@ -144,16 +144,34 @@ namespace GoF2Remake.World
                       : spec.freighter ? db.AssemblyByName(NpcTables.FreighterAssembly(spec.ship == 13 ? 1 : spec.race))
                                        : ShipAssembly(spec.ship, spec.race);
             var prefab = AssembledObject.LoadPrefab(entry);
+            // Remake: a turret object built from a turret item shows the item's turret (a mod's own model too).
+            var itemTurret = spec.turretAssembly != null && spec.turretItem >= 0 ? WeaponFx.Load(spec.turretItem)?.turretMounted : null;
+            if (itemTurret != null) prefab = itemTurret;
             var go = new GameObject($"NPC {spec.group} {spec.race}/{spec.ship}");
             go.transform.SetParent(transform, false);
             var ship = go.AddComponent<NpcShip>();
             Ships.Add(ship);
-            ship.ModelPath = AssembledObject.PrefabPath(entry);   // multiplayer: the clients' proxies load the same prefab
+            // Multiplayer: the clients' proxies load the same prefab (an item's turret by its item, NetProxy).
+            ship.ModelPath = itemTurret != null ? NpcShip.TurretModelPrefix + spec.turretItem : AssembledObject.PrefabPath(entry);
             ship.Setup(this, db, spec, prefab, fxRoot);
-            if (spec.turretAssembly == null && spec.fixedObject == null && !spec.freighter && (spec.ship == 45 || spec.ship == 51))
+            // Remake (generic turrets): turret items on its turret mount (SpawnSpec.turretItems, a mod's "npcTurrets") take the
+            // fighter turret's place, which sits on that mount.
+            if (spec.turretAssembly == null && spec.fixedObject == null && !spec.freighter && FighterTurretAssembly(spec.ship) != null
+                && ship.MountedTurrets == null)
                 AttachFighterTurret(ship);
             if (spec.capital != 0 && spec.capitalEnhanced) CapitalShip.Attach(ship, this, db);   // remake option (CapitalShips)
             return ship;
+        }
+
+        /// <summary>The fighter turret's assembly on ships 45 / 51 (Level::createFighterTurrets), null for the others.</summary>
+        public static string FighterTurretAssembly(int ship) => ship == 45 || ship == 51 ? "turret_002_static" : null;
+
+        /// <summary>Where the fighter turret of ship 45 / 51 sits in the ship's frame (Unity metres): the game's ship-relative
+        /// (0, 172.25, -460.7) / (0, 470, -83) as (-x, y, z) x 0.05.</summary>
+        public static Vector3 FighterTurretLocal(int ship)
+        {
+            var off = ship == 45 ? new Vector3(0f, 172.25f, -460.7f) : new Vector3(0f, 470f, -83f);
+            return new Vector3(-off.x, off.y, off.z) * M;
         }
 
         /// <summary>Level::createFighterTurrets 0xcb200: ship 45 (Qyrr Myfft's) and 51 (Hans') carry an invulnerable turret
@@ -169,9 +187,8 @@ namespace GoF2Remake.World
                 alwaysEnemy = host.Spec.alwaysEnemy, alwaysFriend = host.Spec.alwaysFriend, position = host.Spec.position,
             };
             var t = Create(spec);
-            var off = myfft ? new Vector3(0f, 172.25f, -460.7f) : new Vector3(0f, 470f, -83f);
             t.transform.SetParent(host.transform, false);
-            t.transform.localPosition = new Vector3(-off.x, off.y, off.z) * M;   // ship-relative offsets: (-x, y, z) x 0.05
+            t.transform.localPosition = FighterTurretLocal(host.Spec.ship);
             t.transform.localRotation = Quaternion.identity;
             t.Target.invulnerable = true;
             // Remake: no hit cube of its own (the +-1000 turret cube would soak up the shots at its host) and no lock.

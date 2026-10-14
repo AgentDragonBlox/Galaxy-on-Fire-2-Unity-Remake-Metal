@@ -33,6 +33,8 @@
 // Remake, for mods: a turret item with its own model (items.json fx "turret", WeaponFx.modTurret) shows it in flight and in
 // the hangar; "missiles" (attr 105) make its shots homing missiles on the target it aims at (an auto turret's pick, else
 // the radar's lock), with the smoke trail; "turretRange" (attr 109) is how far an auto turret looks for a target.
+// The turret's model, aim, gun and shots are TurretCore's, its auto pick TurretTargeting's (Retarget), shared with the NPC
+// turrets and the sentry guns; this keeps the player's own: the turret view, the auto switch, collectors, the loop sound.
 
 using System;
 using System.Collections.Generic;
@@ -44,11 +46,9 @@ namespace GoF2Remake.Flight
 {
     public class PlayerTurret : MonoBehaviour
     {
-        const float M = Gun.MetersPerUnit;
-        const float PickMs = 3000f, IdleStopMs = 500f, LeadUnits = 1500f;
+        const float IdleStopMs = 500f;
         /// <summary>How far an auto turret looks for a target (units) unless the item's attr 109 says otherwise (mods).</summary>
         public const float AutoRangeUnits = 60000f;
-        const float PitchUpUnits = 500f, PitchDownUnits = -70f;
 
         // The controls are GameControls' (rebindable): Camera (the turret view, T / D-pad up), AutoTurret (Y / D-pad down).
         static InputAction viewAction => GameControls.Camera;
@@ -62,9 +62,9 @@ namespace GoF2Remake.Flight
         public int PullSpeed { get; private set; }
         public int CollectRange { get; private set; }
         /// <summary>PlayerEgo::getTurretPosition: the gun's world position (Unity).</summary>
-        public Vector3 GunPosition => muzzle != null && muzzle.parent != null ? muzzle.parent.position : transform.position;
+        public Vector3 GunPosition => core != null && core.Valid ? core.GunPosition : transform.position;
         /// <summary>The turret's aim (world), for the collector's scope.</summary>
-        public Vector3 AimForward => aim != null ? aim.BarrelForward : transform.forward;
+        public Vector3 AimForward => core != null && core.Valid ? core.BarrelForward : transform.forward;
         public bool AutoEnabled { get; private set; } = true;
         public bool InTurretView { get; private set; }
         public int Item { get; private set; } = -1;
@@ -83,20 +83,18 @@ namespace GoF2Remake.Flight
         ShipController ship;
         WeaponSystem weapons;
         ChaseCamera chase;
-        Gun gun;
+        TurretCore core;
+        /// <summary>The turret's moving parts (TurretCore), null before it is set up.</summary>
+        public TurretCore Core => core;
         /// <summary>The turret's gun (multiplayer's shot mirrors), null before it is set up.</summary>
-        public Gun Gun => gun;
-        GunRig rig;
-        TurretAim aim;
-        Transform muzzle, camAnchor;
+        public Gun Gun => core?.Gun;
+        Gun gun => core.Gun;
+        TurretAim aim => core.Aim;
+        Transform camAnchor;
         AudioSource loop;
-        Target target, unreachable;
-        float pickMs = PickMs, idleMs;
-        /// <summary>How far the auto turret looks for a target (units): attr 109 (mods), else the original's 60000.</summary>
-        float rangeUnits = AutoRangeUnits;
-        bool alternate;
-        Vector3 bulletOffset;
-        Visuals.PartAnimation[] anims;
+        /// <summary>The auto turret's pick (PlayerEgo::handleAutoTurret): attr 109 (mods), else the original's 60000 units.</summary>
+        TurretTargeting picking;
+        Target target => picking?.Current;
         GameObject stream;
         AudioSource collectLoop;
 
@@ -171,47 +169,13 @@ namespace GoF2Remake.Flight
             return list;
         }
 
-        /// <summary>The turret's model on its mount: the mount's position, and the mount's turn (WeaponMount.TurretTurn: its
-        /// base facing turretUp, under the hull a half turn about the ship's length) on top of the model's own turn.</summary>
-        static void PlaceOnMount(Transform model, WeaponMount mount, Quaternion turn)
-        {
-            model.localPosition = WeaponSystem.MountToLocal(mount);
-            model.localRotation = mount.TurretTurn * turn;
-        }
-
         /// <summary>CutScene::checkForTurret 0xa4594 (the hangar): the item's hangar_turret_item_N assembly (base + gun, the gun
         /// raised by its per-item offset) on the ship's slot-2 mount, turned (0, pi, 0) against the ship except the plasma
         /// collectors 198-200; still. Re-run after equipment changes. Null without a mount or turret. Remake: every turret
-        /// item on its own mount (the n-th on the n-th, upside down where the mount says so), under one "Turrets" object.</summary>
-        public static GameObject BuildStatic(Database db, int shipIndex, IList<ItemStack> equipment, Transform shipModel)
-        {
-            var mounts = db.MountsOf(shipIndex, 2);
-            var items = TurretItems(db, equipment);
-            if (mounts.Count == 0 || items.Count == 0) return null;
-            GameObject root = null;
-            for (int m = 0; m < items.Count && m < mounts.Count; m++)
-            {
-                int item = items[m];
-                // A mod turret with its own model shows that model (as in flight), else the base item's hangar assembly.
-                var fx = WeaponFx.Load(item);
-                bool own = fx != null && fx.modTurret && fx.turretMounted != null;
-                var prefab = own ? fx.turretMounted : Visuals.AssembledObject.LoadPrefab(db.AssemblyByName("hangar_turret_item_" + Modding.ModContent.ItemLook(item)));
-                if (prefab == null) continue;
-                if (root == null)
-                {
-                    root = new GameObject("Turrets");
-                    root.transform.SetParent(shipModel, false);
-                }
-                var model = Instantiate(prefab, root.transform, false);
-                model.name = "Turret";
-                // A game-space turn relative to the ship: the import's 180 deg yaw cancels, (0, pi, 0) stays a half turn.
-                PlaceOnMount(model.transform, mounts[m], own ? prefab.transform.localRotation
-                    : Modding.ModContent.ItemLook(item) is >= 198 and <= 200 ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f));
-                if (own) GunRig.StripForFx(model);
-                foreach (var a in model.GetComponentsInChildren<Visuals.PartAnimation>(true)) a.speed = 0f;
-            }
-            return root;
-        }
+        /// item on its own mount (the n-th on the n-th, upside down where the mount says so), under one "Turrets" object.
+        /// Shared with the other players' ships and the NPC ships in the hangar (TurretCore.Display).</summary>
+        public static GameObject BuildStatic(Database db, int shipIndex, IList<ItemStack> equipment, Transform shipModel) =>
+            TurretCore.DisplayAll(db, shipIndex, TurretItems(db, equipment), shipModel);
 
         void Setup(ItemData item, WeaponFx fx, WeaponMount mount, int mountIndex, ChaseCamera chaseCamera)
         {
@@ -225,46 +189,26 @@ namespace GoF2Remake.Flight
             IsCollector = item.categoryId == 35;
             PullSpeed = item.Attr(49);
             CollectRange = item.Attr(51);
-            if (item.Attr(109) > 0) rangeUnits = item.Attr(109);
-            // On the ship's model, so it banks and tumbles (death) with the hull.
+            picking = new TurretTargeting(TurretTargeting.Rule.Retarget, item.Attr(109) > 0 ? item.Attr(109) : AutoRangeUnits, true)
+            {
+                Candidate = t => t.isShip && t.hostileToPlayer && t.Alive && !t.untargetable && t.isActiveAndEnabled
+                                 && !t.cloaked   // a cloaked ship (Target.cloaked, NpcShip: a Specter past a quarter of its fade)
+                                 && !(t.GetComponent<World.NpcShip>() is World.NpcShip npc && npc.RadarHidden),   // KIPlayer+0x70
+            };
+            // On the ship's model, so it banks and tumbles (death) with the hull. The gun faces backwards in the pivot (the
+            // assembly's (0, pi, 0)): it starts turned to the ship's nose (TurretCore.ForItem).
             var parent = ship != null && ship.visualModel != null ? ship.visualModel : transform;
-            var model = Instantiate(fx.turretMounted, parent, false);
-            model.name = mountIndex == 0 ? "Turret" : "Turret " + (mountIndex + 1);
-            PlaceOnMount(model.transform, mount, model.transform.localRotation);
-            mountRoot = model.transform;
-            GunRig.StripForFx(model);
-            anims = model.GetComponentsInChildren<Visuals.PartAnimation>(true);
-            foreach (var a in anims) a.speed = 0f;   // still until the first shot
+            string name = mountIndex == 0 ? "Turret" : "Turret " + (mountIndex + 1);
+            core = TurretCore.ForItem(item, fx, parent, mount, null, name, transform.forward);
+            mountRoot = core.Root;
             if (IsCollector)
-                foreach (Transform t in model.GetComponentsInChildren<Transform>(true))
+                foreach (Transform t in core.Root.GetComponentsInChildren<Transform>(true))
                     // The stream node itself, not its mesh parts (their names contain it too): hiding every match and keeping
                     // the last one switched only "_part1" back on in the turret view, under a parent still hidden.
                     if (stream == null && t.name.Contains("plasma_stream")) { stream = t.gameObject; stream.SetActive(false); }
-            var pivot = model.transform.Find("pivot");
-            Transform gunNode = null;
-            if (pivot != null) foreach (Transform c in pivot) if (c.name.Contains("_gun")) gunNode = c;
-            if (pivot == null || gunNode == null) { Debug.LogWarning("PlayerTurret: no pivot / gun in " + fx.turretMounted.name); enabled = false; return; }
-            // The gun faces backwards in the pivot (the assembly's (0, pi, 0)); start turned to the ship's nose.
-            bool backwards = Vector3.Dot(gunNode.forward, transform.forward) < 0f;
-            aim = new TurretAim(pivot, gunNode, backwards ? Mathf.PI : 0f)
-            {
-                yawRatePerMs = item.Attr(17, 100) * 1.5f / 200f * TurretAim.RadPerMs,
-                pitchRatePerMs = TurretAim.RadPerMs,
-                pitchMin = PitchDownUnits * TurretAim.RadPerMs,
-                pitchMax = PitchUpUnits * TurretAim.RadPerMs,
-            };
-            // Muzzle flash at the gun's muzzle offset; bullets from the gun + (0, 0, 300) (48: x 80, 181: z -300).
-            float muzzleZ = item.Look switch { 47 => 260f, 48 => 170f, 49 => 200f, 180 => 172f, 181 => 190f, 182 => 150f, 224 => 147f, _ => 200f };
-            if (fx.turretMuzzleUnits >= 0f) muzzleZ = fx.turretMuzzleUnits;   // a mod turret's own model
-            muzzle = new GameObject(model.name + " muzzle").transform;
-            muzzle.SetParent(gunNode, false);
-            muzzle.localPosition = new Vector3(0f, 0f, muzzleZ) * M;
-            bulletOffset = item.Look == 48 ? new Vector3(80f, 0f, 300f) : item.Look == 181 ? new Vector3(0f, 0f, -300f) : new Vector3(0f, 0f, 300f);
-            if (fx.turretShotUnits >= 0f) bulletOffset = new Vector3(0f, 0f, fx.turretShotUnits);
-            gun = new Gun(item, Vector3.zero, false) { owner = GetComponent<Target>(), Ignores = t => t.playerProof };   // multiplayer: through squadmates
-            var fxRoot = new GameObject(model.name + " fx").transform;
-            rig = new GunRig(gun, fx, fxRoot, muzzle);
-            rig.EnableTrails();   // only a mod turret firing missiles has one (RocketTrail.For)
+            if (!core.Valid) { enabled = false; return; }
+            gun.owner = GetComponent<Target>();
+            gun.Ignores = t => t.playerProof;   // multiplayer: through squadmates
             gun.Hit += OnHit;
             if (fx.shot != null)
             {
@@ -274,9 +218,9 @@ namespace GoF2Remake.Flight
                 loop.playOnAwake = false;
                 loop.spatialBlend = 0f;
             }
-            camAnchor = new GameObject(model.name + " camera").transform;
-            camAnchor.SetParent(pivot, false);
-            camAnchor.localPosition = gunNode.localPosition;
+            camAnchor = new GameObject(name + " camera").transform;
+            camAnchor.SetParent(core.Pivot, false);
+            camAnchor.localPosition = core.GunNode.localPosition;
         }
 
         void OnDestroy()
@@ -380,7 +324,7 @@ namespace GoF2Remake.Flight
 
         void Update()
         {
-            if (aim == null) return;
+            if (core == null || !core.Valid) return;
             float dtMs = Time.deltaTime * 1000f;
             if (gun.owner == null) gun.owner = GetComponent<Target>();   // the player's Target comes after the turret
             bool halted = Time.timeScale <= 0f || GunsBlocked;
@@ -397,7 +341,7 @@ namespace GoF2Remake.Flight
             }
             bool dead = GetComponent<Target>() is Target me && !me.Alive;
             if (InTurretView && (GunsBlocked || dead)) SetTurretView(false);
-            if (dead) { StopShooting(); foreach (var a in anims) if (a != null) a.speed = 0f; gun.Update(dtMs, Target.All, null); rig.UpdateVisuals(dtMs, Camera.main, aim.BarrelForward); return; }
+            if (dead) { StopShooting(); core.SetAnimating(false); core.Tick(dtMs, Target.All, null); return; }
 
             bool fire = false;
             if (!halted && InTurretView)
@@ -410,30 +354,18 @@ namespace GoF2Remake.Flight
                 camAnchor.rotation = Quaternion.LookRotation(Vector3.Slerp(Vector3.ProjectOnPlane(aim.BarrelForward, yawAxis), aim.BarrelForward, 0.5f),
                                                              Hangs ? -yawAxis : yawAxis);
                 fire = weapons != null && weapons.FireHeld && !IsCollector;   // a collector collects by aiming (GasCloudField)
-                if (IsCollector) foreach (var a in anims) if (a != null) a.speed = 1f;
+                if (IsCollector) core.SetAnimating(true);
             }
             else if (!halted && IsAuto && AutoEnabled && GetComponent<Target>() is Target self && self.Alive)
                 fire = AutoAim(dtMs);
 
-            if (fire)
-            {
-                var off = bulletOffset;
-                if (Item == 48) { off.x = alternate ? -80f : 80f; alternate = !alternate; }
-                int b = gun.TryFire(muzzle.parent.TransformPoint(new Vector3(-off.x, off.y, off.z) * M), Quaternion.LookRotation(aim.BarrelForward, aim.BarrelUp), false);
-                if (b >= 0)
-                {
-                    rig.OnShot();
-                    idleMs = 0f;
-                    if (loop != null && (!loop.isPlaying || !loop.loop)) { loop.volume = 0.7f * Settings.SfxVolume; loop.Play(); }
-                }
-            }
-            idleMs += dtMs;
-            if (idleMs > IdleStopMs && loop != null && loop.loop && loop.isPlaying) loop.Stop();
+            // Bullets from the gun + R * (0, 0, 300) (48: x +-80 alternating, 181: z -300), TurretCore.Fire.
+            if (fire && core.Fire() >= 0 && loop != null && (!loop.isPlaying || !loop.loop)) { loop.volume = 0.7f * Settings.SfxVolume; loop.Play(); }
+            core.SinceShotMs += dtMs;
+            if (core.SinceShotMs > IdleStopMs && loop != null && loop.loop && loop.isPlaying) loop.Stop();
             // The animations run only while shots are going out (within one reload of the last shot).
-            float animSpeed = idleMs <= gun.reloadMs + 50f || (IsCollector && InTurretView) ? 1f : 0f;
-            foreach (var a in anims) if (a != null) a.speed = animSpeed;
-            gun.Update(dtMs, Target.All, gun.missiles ? MissileLock() : null);
-            rig.UpdateVisuals(dtMs, Camera.main, aim.BarrelForward);
+            core.SetAnimating(core.RecentlyFired || (IsCollector && InTurretView));
+            core.Tick(dtMs, Target.All, gun.missiles ? MissileLock() : null);
         }
 
         /// <summary>Remake (mod turrets firing missiles): what they home on: the auto turret's target, else the radar's lock.</summary>
@@ -443,42 +375,22 @@ namespace GoF2Remake.Flight
             return t != null && t.Alive && !t.cloaked ? t : null;
         }
 
-        /// <summary>handleAutoTurret: re-pick every 3 s, turn toward the lead point, fire when aligned.</summary>
+        /// <summary>handleAutoTurret: re-pick every 3 s (TurretTargeting.Rule.Retarget), turn toward the lead point, fire when
+        /// aligned; a target out of the turret's pitch range is skipped at once.</summary>
         bool AutoAim(float dtMs)
         {
-            pickMs += dtMs;
-            if (pickMs >= PickMs || target == null || !target.Alive || !target.isActiveAndEnabled || target.cloaked)
-            {
-                pickMs = 0f;
-                target = PickTarget();
-            }
-            if (target == null) return false;
-            var at = target.transform.position + target.transform.forward * LeadUnits * M;
-            bool aligned = aim.Step(at, dtMs);
-            if (aim.LimitHit) { unreachable = target; target = null; pickMs = PickMs; return false; }
+            var t = picking.Update(dtMs, Target.All, transform.position);
+            if (t == null) return false;
+            bool aligned = core.StepToward(TurretTargeting.LeadPoint(t), dtMs);
+            if (aim.LimitHit) { picking.LimitHit(dtMs); return false; }
             return aligned;
         }
 
-        Target PickTarget()
-        {
-            Target best = null;
-            float bestD = rangeUnits * M;
-            foreach (var t in Target.All)
-            {
-                if (t == null || !t.isShip || !t.hostileToPlayer || !t.Alive || t == unreachable || t.untargetable || !t.isActiveAndEnabled) continue;
-                if (t.cloaked) continue;   // a cloaked ship (Target.cloaked, NpcShip: a Specter past a quarter of its fade)
-                if (t.GetComponent<World.NpcShip>() is World.NpcShip npc && npc.RadarHidden) continue;   // KIPlayer+0x70
-                float d = (t.transform.position - transform.position).magnitude;
-                if (d < bestD) { bestD = d; best = t; }
-            }
-            if (best == null) unreachable = null;
-            return best;
-        }
 
         void OnHit(int bullet, Target t, Vector3 point)
         {
             t.Damage(gun.damage, false, gun.bullets[bullet].velocity);
-            rig.ShowImpact(point);
+            core.Rig.ShowImpact(point);
             Hit?.Invoke();
         }
 

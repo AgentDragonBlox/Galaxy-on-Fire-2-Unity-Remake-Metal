@@ -340,6 +340,7 @@ namespace GoF2Remake.World
                                             parkedShips, db, NewParkedShip, ParkedPosition,
                                             (ship, pos, rot) => SpawnShip(ship, pos, rot, hangarRoot, "Visiting ship"),
                                             npcTraffic, Settings.HangarFlights, FitParkingYaw);
+            if (traffic != null) traffic.NpcSpawned = (go, ship) => AddNpcTurrets(go, ship, null);
             if (traffic != null && GoF2Remake.Data.NetSession.Active)
             {
                 traffic.KeepOneFree = true;          // a pad for another player docking
@@ -414,8 +415,31 @@ namespace GoF2Remake.World
                 float yaw = FitParkingYaw(slot, ship, Random.Range(0, 300) / 100f);
                 var rot = OrbitLayout.RotationToUnity(new Vector3(0f, yaw, 0f));
                 var parked = SpawnShip(ship, ParkedPosition(slot, ship, rot), rot, hangarRoot, $"Parked ship {n}");
+                // Remake: its turrets (a stored hull its own mounted ones, Settings.KaamoKeepsEquipment; an NPC's its type's).
+                AddNpcTurrets(parked, ship, club ? GoF2Remake.Flight.PlayerTurret.TurretItems(db, Session.KaamoShips[n].equipment) : null);
                 if (parked != null) parkedShips.Add(new HangarTraffic.Parked { go = parked, slot = slot, ship = ship, yaw = yaw });
             }
+        }
+
+        /// <summary>Remake (generic turrets): a ship parked or landing here shows its turrets still, like the player's ship
+        /// (Flight.TurretCore.Display): 'items' (a stored hull's mounted ones), else the turret items its type's NPCs carry in
+        /// space (Database.NpcTurrets, a mod's "npcTurrets"), else the fighter turret of ships 45 / 51 (Traffic, the
+        /// turret_002_static object Level::createFighterTurrets puts on them). Returns 'shipGo'.</summary>
+        GameObject AddNpcTurrets(GameObject shipGo, int ship, IList<int> items)
+        {
+            if (shipGo == null) return shipGo;
+            var shown = GoF2Remake.Flight.TurretCore.DisplayAll(db, ship, items ?? db.NpcTurretsOf(ship), shipGo.transform);
+            // Turret items take the fighter turret's place (Traffic.Create), which sits on that mount.
+            string fighterTurret = items == null && shown == null ? GoF2Remake.World.Traffic.FighterTurretAssembly(ship) : null;
+            var prefab = fighterTurret != null ? AssembledObject.LoadPrefab(db.AssemblyByName(fighterTurret)) : null;
+            if (prefab != null)
+            {
+                var t = Instantiate(prefab, shipGo.transform, false);
+                t.name = "Fighter turret";
+                t.transform.localPosition = GoF2Remake.World.Traffic.FighterTurretLocal(ship) + prefab.transform.localPosition;
+                foreach (var a in t.GetComponentsInChildren<PartAnimation>(true)) a.speed = 0f;
+            }
+            return shipGo;
         }
 
         /// <summary>A heading that fits the pad (StationTables.FitParkingYaw); a custom hangar's as it is.</summary>

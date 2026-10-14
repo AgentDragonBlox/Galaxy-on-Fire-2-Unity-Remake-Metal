@@ -7,7 +7,8 @@
 //   /give [players] <item> [amount] [mount] items into the hold (an item index or name; 1..1000, default 1); "mount" docked:
 //                                           mounted like the hangar does (Cheats.GiveAndMount)
 //   /credits [players] <amount>             credits added (negative: taken, never below 0)
-//   /spawn [players] <ship | object> [race] [count] [enemy | friendly | neutral | standing] [named <name>] [at x y z]
+//   /spawn [players] <ship | object> [race] [count] [enemy | friendly | neutral | standing] [turrets <item,item>]
+//          [named <name>] [at x y z]
 //                                           NPC ships 400 m ahead of each player as their orbit's traffic (DebugSpawner):
 //                                           a ship index or name, a race (terran, vossk, nivelian, midorian, pirate, void,
 //                                           specter; default the ship's maker, else pirates), 1..10 of them, enemy by
@@ -18,7 +19,10 @@
 //                                           as scenery, ahead of them (far enough out for its size) or there;
 //                                           "named <name>" (to the end, or up to "at x y z"; quotes optional): the ships'
 //                                           name on the lock plate (numbered "Name 1", "Name 2"... for several; the other
-//                                           players see it too, NetProxy's label), an object's name as a HUD marker
+//                                           players see it too, NetProxy's label), an object's name as a HUD marker;
+//                                           "turrets 48,182" (remake, generic turrets): turret items (numbers or mod:id) on
+//                                           the ships' turret mounts, aimed and fired by the NPC turrets' rules
+//                                           (World.NpcMountedTurrets; none = the type's, a mod's "npcTurrets")
 //   /mute <players> [minutes], /unmute <players>   their chat and whispers dropped on the server (default: the session)
 // The debug panel's tools (Cheats, PlayerHull, DebugSpawner), for one player:
 //   /ship [players] <ship | own>            fly any hull of the Ships tab (a ship's number or name, the capital ships by
@@ -64,6 +68,9 @@ namespace GoF2Remake.Multiplayer
         /// <summary>A /spawn name's length, and its separator in the order's text (taken out of names).</summary>
         const int MaxSpawnName = 32;
         const char NameSeparator = '|';
+        /// <summary>/spawn's turret items in the order's text: "at" + TurretSeparator + "48,182" + the name.</summary>
+        const char TurretSeparator = '~';
+        const int MaxSpawnTurrets = 4;
 
         static string X(string key, string english) => Localization.Extra(key, english);
 
@@ -185,7 +192,8 @@ namespace GoF2Remake.Multiplayer
             if (!t.InSpace) return NotInSpace(t);
             if (!TakeName(ref rest, out string name)) return Usage("spawn");
             if (!TakeAt(ref rest, out string at)) return Usage("spawn");
-            string named = name != null ? NameSeparator + name : "";
+            if (!TakeTurrets(ref rest, out var turrets, out string turretError)) return turretError ?? Usage("spawn");
+            string named = (turrets != null ? TurretSeparator + string.Join(",", turrets) : "") + (name != null ? NameSeparator + name : "");
             // From the end: the behaviour, the count and the race, in any order; the rest is the ship.
             var words = new List<string>(rest.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
             if (words.Count == 0) return Usage("spawn");
@@ -743,6 +751,49 @@ namespace GoF2Remake.Multiplayer
             return text.Substring(0, i);
         }
 
+        /// <summary>/spawn's "turrets 48,182": turret items (category 8 / 35, a number, "mod:id" or a one-word name) for the
+        /// ships' turret mounts; null when not given; false (with the reason when an item is wrong) = "turrets" with nothing
+        /// or something else after it.</summary>
+        static bool TakeTurrets(ref string rest, out List<int> turrets, out string error)
+        {
+            turrets = null;
+            error = null;
+            var words = new List<string>(rest.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
+            int i = words.FindIndex(w => string.Equals(w, "turrets", StringComparison.OrdinalIgnoreCase) || string.Equals(w, "turret", StringComparison.OrdinalIgnoreCase));
+            if (i < 0) return true;
+            if (i + 1 >= words.Count) return false;
+            turrets = new List<int>();
+            foreach (var part in words[i + 1].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                int item = FindItem(part, out error);
+                if (item < 0) return false;
+                var it = NetGame.Db.Item(item);
+                if (it == null || (it.categoryId != 8 && it.categoryId != 35))
+                {
+                    error = string.Format(X("mpAdmNoTurret", "{0} is no turret."), UI.ItemInfo.ItemName(item));
+                    return false;
+                }
+                if (turrets.Count < MaxSpawnTurrets) turrets.Add(item);
+            }
+            words.RemoveRange(i, 2);
+            rest = string.Join(" ", words);
+            return turrets.Count > 0;
+        }
+
+        /// <summary>The order text's turret items (TakeTurrets) taken off 'text' (the "at" part); null = none.</summary>
+        static List<int> SplitTurrets(ref string text)
+        {
+            if (string.IsNullOrEmpty(text)) return null;
+            int i = text.IndexOf(TurretSeparator);
+            if (i < 0) return null;
+            var list = new List<int>();
+            foreach (var part in text.Substring(i + 1).Split(','))
+                if (int.TryParse(part, out int item) && NetGuard.Item(item) && list.Count < MaxSpawnTurrets
+                    && NetGame.Db.Item(item) is ItemData it && (it.categoryId == 8 || it.categoryId == 35)) list.Add(item);
+            text = text.Substring(0, i);
+            return list.Count > 0 ? list : null;
+        }
+
         static bool TakeAt(ref string rest, out string at)
         {
             at = null;
@@ -942,8 +993,9 @@ namespace GoF2Remake.Multiplayer
                 {
                     if (level == null || NetGame.Db.Ship(a) == null || !CustomShips.Offered(a)) return;
                     string at = SplitName(text, out string shipName);
+                    var turrets = SplitTurrets(ref at);
                     Notice(by, DebugSpawner.SpawnShip(level, b, a, (DebugSpawner.Behaviour)Mathf.Clamp(c & 0xff, 0, 3), Mathf.Clamp((c >> 8) & 0xf, 1, MaxSpawn),
-                        ParseAt(at), c >> 12, shipName));
+                        ParseAt(at), c >> 12, shipName, turrets));
                     break;
                 }
                 case Order.Ship:

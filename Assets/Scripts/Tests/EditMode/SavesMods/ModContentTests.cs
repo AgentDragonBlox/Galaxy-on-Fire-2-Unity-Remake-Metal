@@ -459,6 +459,34 @@ namespace GoF2Remake.Tests
             Assert.IsTrue(ModContent.AnyShipModels());
         }
 
+        // ---- npcTurrets (remake, generic turrets: World.NpcMountedTurrets, the hangar's parked ships) ---------------------
+
+        [Test]
+        public void NpcTurretsGiveAShipTypesNpcsTurretItems()
+        {
+            Assert.IsEmpty(Database.Load().NpcTurretsOf(28), "the original's NPC ships carry none");
+            WriteMod("turrets", "t_turrets", "1.0", "", ("ships.json", "[ { 'override': 28, 'npcTurrets': [ 48 ] }, { 'override': 51, 'npcTurrets': [ '181' ] } ]"));
+            ScanAndEnable("t_turrets");
+            Assert.IsFalse(Installed("t_turrets").Broken, AllMessages(Installed("t_turrets")));
+            var db = Database.Load();
+            CollectionAssert.AreEqual(new[] { 48 }, db.NpcTurretsOf(28), "the Veteran's NPCs: a Hammerhead on its turret mount");
+            CollectionAssert.AreEqual(new[] { 181 }, db.NpcTurretsOf(51));
+            Assert.IsEmpty(db.NpcTurretsOf(22), "other ships none");
+        }
+
+        [Test]
+        public void NpcTurretsMustBeTurrets()
+        {
+            WriteMod("turrets", "t_turrets2", "1.0", "", ("ships.json", "[ { 'override': 28, 'npcTurrets': [ 12, 48, 47 ] } ]"));
+            ScanAndEnable("t_turrets2");
+            var db = Database.Load();
+            CollectionAssert.AreEqual(new[] { 48, 47 }, db.NpcTurretsOf(28), "the N'saan (a primary) is left out");
+            StringAssert.Contains("is no turret", AllMessages(Installed("t_turrets2")));
+            StringAssert.Contains("1 turret mounts", AllMessages(Installed("t_turrets2")), "more turrets than mounts: a warning");
+        }
+
+        [Test] public void NpcTurretsMustBeAList() => StringAssert.Contains("\"npcTurrets\" must be a list", ParseError("[ { 'override': 28, 'npcTurrets': 48 } ]", "ships.json"));
+
         [Test] public void ANewShipNeedsAModel() => StringAssert.Contains("needs \"model\"", ParseError("[ { 'id': 'x' } ]", "ships.json"));
         [Test] public void AShipsModelMustBeInTheMod() => StringAssert.Contains("isn't in the mod", ParseError("[ { 'id': 'x', 'model': 'nope.glb' } ]", "ships.json"));
         [Test] public void AShipNeedsIdOrOverride() => StringAssert.Contains("either \"id\"", ParseError("[ { 'armor': 5 } ]", "ships.json"));

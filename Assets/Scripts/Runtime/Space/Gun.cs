@@ -52,6 +52,7 @@ namespace GoF2Remake.Flight
 
         public const float MetersPerUnit = 0.05f;
         const float CoastMs = 2000f;          // rockets/missiles keep flying (and hitting) past their lifetime
+        const float TerminalHomingMs = 250f;  // remake: a homing missile this close (in flight time) to its goal turns straight at it
         const float SpawnForwardUnits = 100f; // offset = mount + (0, 0, 100)
         public const float BeamRangeUnits = 30000f;  // no target: the beam's bullet is parked this far ahead
         const float MineSpeedUnits = 2f, MineStopMs = 500f, MinePullUnitsPerFrame = 200f;
@@ -398,13 +399,20 @@ namespace GoF2Remake.Flight
                 if (dropShaken && !b.lockLost && (object)b.target == null) { b.lockLost = true; shaken = true; }
                 if (steer > 0f && !b.lockLost && homeOn.ShakesMissiles) { b.lockLost = true; shaken = true; }
                 if (steer > 0f && !b.lockLost && homeOn.isPlayer) IncomingMissiles.Report(this, i, b.position, b.velocity);
-                if (steer > 0f && !b.lockLost && b.age >= homingDelayMs)
+                bool homing = steer > 0f && !b.lockLost && b.age >= homingDelayMs;
+                var goal = homing ? (b.aimed ? homeOn.transform.TransformPoint(b.aim) : homeOn.transform.position) : Vector3.zero;
+                if (homing)
                 {
                     float speed = b.velocity.magnitude;
-                    var goal = b.aimed ? homeOn.transform.TransformPoint(b.aim) : homeOn.transform.position;
-                    var desired = (goal - b.position).normalized;
+                    var toGoal = goal - b.position;
+                    var desired = toGoal.normalized;
                     var cur = b.velocity / Mathf.Max(speed, 1e-6f);
-                    b.velocity = Vector3.Normalize(cur + (desired - cur) * steer) * speed;
+                    // Remake: within a quarter second of flight of its goal the missile turns straight at it. The original's
+                    // steering (RocketGun::seekEnemy: dir += (goal dir - dir) / k at a constant speed) can't turn tighter than
+                    // ~150 m at 18 u/ms, so a missile passing its target settles into an orbit around it; the original's
+                    // +-1000-unit hit cube caught those near misses, the remake's hull meshes don't (missiles circled ships).
+                    float s = toGoal.sqrMagnitude < (speed * TerminalHomingMs) * (speed * TerminalHomingMs) ? 1f : steer;
+                    b.velocity = Vector3.Normalize(cur + (desired - cur) * s) * speed;
                 }
                 b.timer -= dtMs;
                 b.age += dtMs;
@@ -415,6 +423,15 @@ namespace GoF2Remake.Flight
                 else b.position += b.velocity * dtMs;
                 if (kind == Kind.ClusterMissile) Corkscrew(i, ref b, dtMs);
                 if (IsBomb && b.timer < 1f) { Ignite(targets); continue; }   // end of life
+                // Remake: a homing missile that reaches its goal hits its target there. A salvo's spot on a big hull
+                // (CapitalShips.SpreadAim) is a random point in its hit boxes, which can be empty space beside the mesh: the
+                // missiles reached it, missed the hull and looped round it.
+                if (homing && targets != null && DistanceToSegment(goal, from, b.position) <= HullShotRadius && MayHit(homeOn, targets))
+                {
+                    b.timer = -1e9f;   // gone
+                    Hit?.Invoke(i, homeOn, goal);
+                    continue;
+                }
                 if (targets != null)
                 {
                     if (kind == Kind.Mine) TestMine(i, ref b, targets, dtMs);
@@ -485,6 +502,15 @@ namespace GoF2Remake.Flight
                 if (kind == Kind.ScatterGun) { AreaDamage(point, targets, false); Ignited?.Invoke(point); }   // + the burst around
                 return;
             }
+        }
+
+        /// <summary>How far 'p' is from the segment a..b (metres).</summary>
+        static float DistanceToSegment(Vector3 p, Vector3 a, Vector3 b)
+        {
+            var ab = b - a;
+            float len2 = ab.sqrMagnitude;
+            float t = len2 > 1e-12f ? Mathf.Clamp01(Vector3.Dot(p - a, ab) / len2) : 0f;
+            return Vector3.Distance(p, a + ab * t);
         }
 
         /// <summary>Metres: a shot's thickness for the hull test (HullCollision.Cast), so a shot grazing an edge hits it (the

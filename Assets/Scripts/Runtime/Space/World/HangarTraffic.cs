@@ -103,6 +103,7 @@ namespace GoF2Remake.World
             if (slot < 0) return;
             var rot = OrbitLayout.RotationToUnity(new Vector3(0f, yaw, 0f));
             var go = spawn(ship, padPosition(slot, ship, rot), rot);
+            if (go != null) NpcSpawned?.Invoke(go, ship);
             if (go != null) parked.Add(new Parked { go = go, slot = slot, ship = ship, yaw = yaw, key = key });
         }
 
@@ -116,6 +117,8 @@ namespace GoF2Remake.World
         readonly Func<int, int, float, float> fitYaw;                 // (slot, ship, game yaw) -> a yaw that fits the pad
         readonly Func<int, int, Quaternion, Vector3> padPosition;     // (slot, ship, parked rotation) -> the ship's parked pivot
         readonly Func<int, Vector3, Quaternion, GameObject> spawn;     // (ship, position, rotation) -> the ship
+        /// <summary>Remake: an NPC ship (not a guest) was spawned: (its object, its ship), StationLevel adds its turrets.</summary>
+        public Action<GameObject, int> NpcSpawned;
 
         HangarFlight flight;
         Parked flying;
@@ -304,6 +307,7 @@ namespace GoF2Remake.World
         {
             var go = spawn(ship, lane.gate, Quaternion.identity);
             if (go == null) return false;
+            NpcSpawned?.Invoke(go, ship);
             flying = new Parked { go = go, slot = slot, ship = ship, yaw = yaw, key = key };
             var engine = HangarFlight.AddEngine(go, false, db, ship, out float volume);
             var rot = OrbitLayout.RotationToUnity(new Vector3(0f, yaw, 0f));

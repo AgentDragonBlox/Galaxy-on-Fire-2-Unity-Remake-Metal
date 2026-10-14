@@ -179,7 +179,7 @@ namespace GoF2Remake.Modding
         {
             "id", "override", "name", "description", "race", "armor", "cargo", "price", "priceDefault", "slots", "handling",
             "hangarHeight", "mounts", "model", "icon", "modelLength", "modelYaw", "modelPitch", "modelRoll", "modelOffset", "engineGlowRadius", "engineGlowColor", "materials", "throttleGlow",
-            "extraGlows", "lounge", "dealer", "available",
+            "extraGlows", "lounge", "dealer", "available", "npcTurrets",
         };
 
         static void ParseShips(ModInfo mod, Parsed p)
@@ -200,6 +200,8 @@ namespace GoF2Remake.Modding
                 };
                 if ((d.localId == null) == (d.overrideRef == null))
                     throw new ModJsonException($"{where}: a ship needs either \"id\" (a new ship) or \"override\" (change an existing one)");
+                if (ModJson.Get(o, "npcTurrets") is JToken nt && !(nt is JArray))
+                    throw new ModJsonException($"{where}: \"npcTurrets\" must be a list of turret items [ 48, \"mod:id\" ]");
                 foreach (var prop in o.Properties())
                     if (!ShipFields.Contains(prop.Name)) mod.Warnings.Add($"{ModJson.Where(prop, ShipsFile)}: unknown field \"{prop.Name}\" (ignored)");
                 foreach (var f in new[] { "race", "armor", "cargo", "price", "priceDefault", "handling", "hangarHeight" }) ModJson.Int(o, f, 0, ShipsFile);
@@ -218,9 +220,9 @@ namespace GoF2Remake.Modding
                     string model = ModJson.Str(o, "model");
                     if (string.IsNullOrEmpty(model) || !mod.Source.Exists(model)) throw new ModJsonException($"{where}: the model \"{model}\" isn't in the mod");
                 }
-                // The rest as CustomShipData (JsonUtility reads it; the texts and ids are the mod's own).
+                // The rest as CustomShipData (JsonUtility reads it; the texts and ids are the mod's own; npcTurrets: ApplyShips).
                 var data = (JObject)o.DeepClone();
-                foreach (var k in new[] { "id", "override", "name", "description" }) data.Remove(k);
+                foreach (var k in new[] { "id", "override", "name", "description", "npcTurrets" }) data.Remove(k);
                 try { JsonUtility.FromJson<CustomShipData>(data.ToString()); }
                 catch (Exception e) { throw new ModJsonException($"{where}: {e.Message}"); }
                 d.data = data.ToString();
@@ -611,6 +613,7 @@ namespace GoF2Remake.Modding
 
         static void ApplyShips(Database db, bool dflt)
         {
+            db.NpcTurrets.Clear();
             foreach (var mod in ModManager.Active)
                 foreach (var d in Parse(mod).ships)
                 {
@@ -656,6 +659,7 @@ namespace GoF2Remake.Modding
                                     db.WeaponMounts.Add(new WeaponMountSet { ship = t, shipName = s.name, mounts = own.mounts });
                                 }
                             }
+                            ApplyNpcTurrets(db, mod, d, t);
                             continue;
                         }
                         int index = shipIndex[d.key];
@@ -665,6 +669,7 @@ namespace GoF2Remake.Modding
                         db.Assemblies.Add(new AssemblyData { name = c.assembly, pack = ModContent.Pack, category = "ships", origin = "mod " + mod.Id });
                         if (c.mounts != null && c.mounts.Count > 0)
                             db.WeaponMounts.Add(new WeaponMountSet { ship = index, shipName = c.name, mounts = c.mounts });
+                        ApplyNpcTurrets(db, mod, d, index);
                     }
                     catch (ModJsonException e) { Report(mod, e.Message); }
                 }
@@ -673,6 +678,27 @@ namespace GoF2Remake.Modding
             int max = db.Ships.Max(s => s.index);
             for (int i = originalShips; i <= max; i++) if (db.Ship(i) == null) db.Ships.Add(PlaceholderShip(i));
             db.Ships.Sort((a, c) => a.index.CompareTo(c.index));
+        }
+
+        /// <summary>Remake (generic turrets): ships.json "npcTurrets", the turret items (category 8 / 35, numbers or "mod:id") the
+        /// NPC ships of this type carry on its turret mounts in space (World.NpcMountedTurrets) and parked in the hangar; the
+        /// later mod wins, an empty list takes them off.</summary>
+        static void ApplyNpcTurrets(Database db, ModInfo mod, ShipDef d, int ship)
+        {
+            if (!(ModJson.Get(d.json, "npcTurrets") is JArray list)) return;
+            var items = new List<int>();
+            foreach (var e in list)
+            {
+                string reference = e.Type == JTokenType.Integer ? ((int)e).ToString() : e.Type == JTokenType.String ? (string)e : null;
+                if (reference == null || !TryResolveItem(reference, out int i) || db.Item(i) == null)
+                { Report(mod, $"{d.where}: \"npcTurrets\": {e} is no item"); continue; }
+                var it = db.Item(i);
+                if (it.categoryId != 8 && it.categoryId != 35) { Report(mod, $"{d.where}: \"npcTurrets\": {it.name} ({i}) is no turret"); continue; }
+                items.Add(i);
+            }
+            if (db.MountsOf(ship, 2).Count < items.Count)
+                Report(mod, $"{d.where}: \"npcTurrets\" lists {items.Count} turrets, the ship has {db.MountsOf(ship, 2).Count} turret mounts (the rest is left off)");
+            db.NpcTurrets[ship] = items;
         }
 
         /// <summary>A mod ship whose mod isn't on: never sold, can't be flown (ModSaves moves the player out of it).</summary>
