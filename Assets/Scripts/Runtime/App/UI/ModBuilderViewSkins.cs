@@ -47,7 +47,7 @@ namespace GoF2Remake.UI
             new DragScroll(scroll);
             skinList = scroll;
             Act(left, T("mbNewSkin", "+ Skin a game ship"), PickSkinShip, "mbv-add");
-            Act(left, T("mbRemoveSkin", "Remove skin"), AskRemoveSkin, "mbv-danger");
+            Act(left, T("mbRemoveSkin", "Remove skin"), AskRemoveSkin, "mbv-danger", "mbv-remove");
 
             var page = Add(right, new ScrollView(ScrollViewMode.Vertical), "mbv-right-scroll");
             page.verticalScrollerVisibility = ScrollerVisibility.Hidden;

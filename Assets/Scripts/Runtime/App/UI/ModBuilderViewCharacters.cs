@@ -34,7 +34,7 @@ namespace GoF2Remake.UI
             characterList = scroll;
             var add = Act(left, T("mbNewCharacter", "+ New character from a portrait…"), NewCharacter, "mbv-add");   // any image ImageImport reads
             add.SetEnabled(ModImport.Available);
-            Act(left, T("mbRemoveCharacter", "Remove character"), AskRemoveCharacter, "mbv-danger");
+            Act(left, T("mbRemoveCharacter", "Remove character"), AskRemoveCharacter, "mbv-danger", "mbv-remove");
 
             var page = Add(right, new ScrollView(ScrollViewMode.Vertical), "mbv-right-scroll");
             page.verticalScrollerVisibility = ScrollerVisibility.Hidden;

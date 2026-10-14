@@ -13,7 +13,9 @@ turret's or your own `.glb`), resized and moved on its mount, a weapon's project
 borrowed from the game's other weapons, fitted to the ship to try them out; characters with their portraits, for your quests
 or standing in for a story character; and skins: a game ship's textures replaced, with its originals saved for you to paint
 over. A new ship's shop icon is rendered from its model
-(`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). **Export as mod** puts the finished project into your
+(`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). **Undo** / **Redo** in the top bar (Ctrl+Z,
+Ctrl+Y or Ctrl+Shift+Z) step back and forth through your edits, files you replaced or removed included, until you close
+the project. **Export as mod** puts the finished project into your
 Mods folder. Ships, items, characters and skins can be built there so far; everything below can still be written by hand.
 
 **Making a mod with an AI assistant:** `Modding/ai/gof2-modding` is this guide condensed for Claude, ChatGPT and the like,

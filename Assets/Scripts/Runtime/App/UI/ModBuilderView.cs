@@ -115,6 +115,8 @@ namespace GoF2Remake.UI
                          ("mbCampaigns", "Campaigns", null), ("mbBlueprints", "Blueprints", null),
                      })
                 KindTab(kinds, T(k, e), kind);
+            undoButton = TopButton(top, T("mbUndo", "Undo"), () => UndoRedo(false), "mbv-undo-button");
+            redoButton = TopButton(top, T("mbRedo", "Redo"), () => UndoRedo(true), "mbv-redo-button");
             TopButton(top, $"{T("mbHangar", "Hangar")}: {HangarTypeName(Session.StationIndex)}", PickHangar, "mbv-hangar-button");
             TopButton(top, Localization.Get(172), ShowMenu, "mbv-menu-button");   // "Menu", like the station's
 
@@ -138,7 +140,7 @@ namespace GoF2Remake.UI
             newShip.SetEnabled(ModImport.Available);
             Act(left, T("mbNewShipGame", "+ New ship on a game model"), () => PickGameShip(T("mbNewShipGameTitle", "New ship on a game model"), NewShipOnGameModel), "mbv-add");
             Act(left, T("mbChangeShip", "+ Change a game ship"), PickOriginal, "mbv-add");
-            Act(left, T("mbRemoveShip", "Remove ship"), AskRemove, "mbv-danger");
+            Act(left, T("mbRemoveShip", "Remove ship"), AskRemove, "mbv-danger", "mbv-remove");
 
             // ---- right: the selected ship ----
             right = rightGroups[(int)ModBuilder.Kind.Ships];
@@ -215,10 +217,11 @@ namespace GoF2Remake.UI
             return b;
         }
 
-        void TopButton(VisualElement parent, string text, Action onClick, string extra = null)
+        Button TopButton(VisualElement parent, string text, Action onClick, string extra = null)
         {
             var b = Act(parent, text, onClick, "mbv-top-button");
             if (extra != null) b.AddToClassList(extra);
+            return b;
         }
 
         void KindTab(VisualElement parent, string text, ModBuilder.Kind? kind)
@@ -808,6 +811,51 @@ namespace GoF2Remake.UI
         {
             saveDirty = false;
             Project?.Save();
+            ModBuilder.History?.Commit();   // a save point is an undo step (when anything changed)
+        }
+
+        // ---- undo / redo (ModBuilder.History) --------------------------------------------------------------------
+
+        Button undoButton, redoButton;
+
+        /// <summary>The top bar's Undo / Redo follow what the history holds (an edit not saved yet can be undone too).</summary>
+        void UpdateUndoButtons()
+        {
+            var h = ModBuilder.History;
+            undoButton?.SetEnabled(h != null && (h.CanUndo || saveDirty));
+            redoButton?.SetEnabled(h != null && h.CanRedo && !saveDirty);
+        }
+
+        /// <summary>Back (or forward) one step: the project's files as they were, read again by the game; the ship, item and
+        /// character worked on stay picked when they still exist.</summary>
+        void UndoRedo(bool redo)
+        {
+            var h = ModBuilder.History;
+            if (h == null || Project == null || drag != Drag.None) return;
+            SaveNow();
+            string shipRef = Current?.Ref, itemRef = currentItem?.Ref, characterRef = currentCharacter?.Ref;
+            if (!(redo ? h.Redo() : h.Undo()))
+            {
+                Status(redo ? T("mbNothingToRedo", "Nothing to redo.") : T("mbNothingToUndo", "Nothing to undo."), false);
+                return;
+            }
+            ModBuilder.Ship = Project.Ships.FirstOrDefault(s => s.Ref == shipRef) ?? Project.Ships.FirstOrDefault();
+            currentItem = Project.Items.FirstOrDefault(i => i.Ref == itemRef) ?? Project.Items.FirstOrDefault();
+            currentCharacter = Project.Characters.FirstOrDefault(c => c.Ref == characterRef) ?? Project.Characters.FirstOrDefault();
+            var skins = Project.SkinShips();
+            if (!skins.Contains(ModBuilder.SkinShip)) ModBuilder.SkinShip = skins.Count > 0 ? skins[0] : -1;
+            gizmo.Selected = -1;
+            placing = -1;
+            ModBuilder.ApplyShip();
+            boundShip = -2;
+            RequestReload(false);
+            RebuildShips();
+            RebuildPages();
+            if (kind == ModBuilder.Kind.Items) { RebuildItems(); BuildItemPage(); }
+            if (kind == ModBuilder.Kind.Characters) { RebuildCharacters(); BuildCharacterPage(); }
+            if (kind == ModBuilder.Kind.Skins) { RebuildSkins(); BuildSkinPage(); }
+            gizmo.Refresh();
+            Status(redo ? T("mbRedone", "Redone.") : T("mbUndone", "Undone."), false);
         }
 
         /// <summary>The game reads the project again soon ('soon': a structural change, half a second after the last one).</summary>
@@ -1316,6 +1364,7 @@ namespace GoF2Remake.UI
             }
             if (uiShown < 1f) return;   // landed, the panels still flying in: no input until they are in place
             if (saveDirty && nowMs >= saveAtMs) SaveNow();
+            UpdateUndoButtons();
             if (reloadPending && nowMs >= reloadAtMs && drag != Drag.Gizmo)
             {
                 reloadPending = false;
@@ -1474,8 +1523,10 @@ namespace GoF2Remake.UI
             if (entry == null || !ModShips.Built.Any(b => b.ship == index)) return;   // not built: the Phantom would stand in
             var icon = ShipIconMaker.Make(ModShips.Template(entry.name));
             if (icon == null) return;
+            ModBuilder.History?.Commit();   // the edits so far are their own step: the icon joins it, not a step of its own
             Project.SetGeneratedIcon(s, icon.EncodeToPNG(), key);
             Project.Save();
+            ModBuilder.History?.Absorb();
             ModShips.SetIcon(index, icon);
             RebuildShips();
         }
@@ -1513,6 +1564,9 @@ namespace GoF2Remake.UI
                 return;
             }
             if (typing || ModalOpen) return;
+            // Ctrl+Z undo, Ctrl+Y / Ctrl+Shift+Z redo (a text field keeps its own).
+            if (kb.ctrlKey.isPressed && kb.zKey.wasPressedThisFrame) { UndoRedo(kb.shiftKey.isPressed); return; }
+            if (kb.ctrlKey.isPressed && kb.yKey.wasPressedThisFrame) { UndoRedo(true); return; }
             if (kind == ModBuilder.Kind.Ships && (kb.deleteKey.wasPressedThisFrame || kb.backspaceKey.wasPressedThisFrame)) DeleteSelected();
             if (kind == ModBuilder.Kind.Ships && kb.mKey.wasPressedThisFrame) Mirror();
             if (!InHangar) return;   // the Space Lounge: no ship to fly or turn around

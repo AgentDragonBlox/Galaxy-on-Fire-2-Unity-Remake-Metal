@@ -65,6 +65,8 @@ namespace GoF2Remake.Modding
         public static bool Active { get => ModManager.BuilderOpen; private set => ModManager.BuilderOpen = value; }
         /// <summary>The open project.</summary>
         public static ModProject Project { get; private set; }
+        /// <summary>The open project's undo / redo steps (null while none is open).</summary>
+        public static ModProjectHistory History { get; private set; }
         /// <summary>The ship being worked on (null = the project has none yet).</summary>
         public static ProjectShip Ship { get; set; }
         /// <summary>The kinds of content the builder edits (its top tabs).</summary>
@@ -80,7 +82,7 @@ namespace GoF2Remake.Modding
         public static bool TestFlying { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { Active = TestFlying = false; Project = null; Ship = null; OpenKind = Kind.Ships; SkinShip = -1; }
+        static void ResetStatics() { Active = TestFlying = false; Project = null; Ship = null; History = null; OpenKind = Kind.Ships; SkinShip = -1; }
 
         /// <summary>Opens 'project': the builder's game; the caller loads the Station scene (after the mods have loaded).</summary>
         public static void Begin(ModProject project)
@@ -104,6 +106,9 @@ namespace GoF2Remake.Modding
             var skins = project.SkinShips();
             SkinShip = skins.Count > 0 ? skins[0] : -1;
             ApplyShip();
+            History?.Dispose();
+            ModProjectHistory.PruneStores();
+            History = new ModProjectHistory(project);
             Debug.Log($"Mod Builder: opened \"{project.Name}\" ({project.Folder}), {project.Ships.Count} ship(s)");
         }
 
@@ -111,6 +116,8 @@ namespace GoF2Remake.Modding
         public static void End()
         {
             if (Project != null) Project.Save();
+            History?.Dispose();
+            History = null;
             Active = TestFlying = false;
             Project = null;
             Ship = null;
@@ -147,6 +154,7 @@ namespace GoF2Remake.Modding
         {
             if (Project == null) return;
             Project.Save();
+            History?.Commit();
             ModManager.SetBuilderProject(Project.Folder);
         }
 

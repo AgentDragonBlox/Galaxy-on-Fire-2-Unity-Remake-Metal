@@ -2192,6 +2192,16 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   flight's view-edge shrink is computed from the camera as it starts) into the builder station's orbit: `SpaceLevel` passive (no traffic,
   wingmen), jumps / gate refused, no tutorial popups, `World.ModBuilderRange` keeps 3 hostile pirates coming (6 s after a
   death); docking, the pause menu's "Back to Mod Builder" or a death returns to the builder (`ModBuilder.EndTestFlight`).
+  **Undo / redo** (`Modding.ModProjectHistory`, `ModBuilder.History`, made in `Begin`, gone in `End`): a step is the
+  project's JSON (`ModProject.CaptureState` / `RestoreState`: the manifest but its id, ships, items, characters,
+  builder.json but "station" / "lastShip" / "previousIds") and its models / textures / icons / portraits by content hash,
+  each content kept once in `persistentDataPath/ModBuilderHistory/<project>_<ticks>` (a crash's leftovers pruned at the next
+  Begin), so an overwritten skin texture or a removed model comes back; recorded at the save points (`SaveNow`'s debounced
+  save, `ModBuilder.Reload`; nothing while unchanged, 100 steps), a ship's generated icon joins the last step
+  (`Absorb`). The top bar's Undo / Redo (enabled by `CanUndo` / `CanRedo`; an unsaved edit counts) and Ctrl+Z / Ctrl+Y /
+  Ctrl+Shift+Z (not while typing: a text field keeps its own) put the step back, save it, re-pick the ship / item /
+  character by `Ref` and read the project again. Verified in Play mode (a Veteran override's name and a hardpoint, undone
+  and redone, on disk too); the keys not through simulated input.
   The top bar's Menu (`Localization.Get(172)`, also Esc with nothing else open; `ModBuilderView.ShowMenu`): Resume, Options
   (the game's `OptionsView` in the builder's modal, Q / E switch tabs, Esc back to the Menu), Save, Exit the Mod Builder
   (`ModBuilder.End`: the main menu's projects page). The orbit camera turns and pans while the preview rebuilds (only the

@@ -210,6 +210,12 @@
     -unity-text-align: middle-left;
 }
 
+/* A list's Remove button under its + buttons: their full width. */
+.mbv-remove {
+    margin-right: 0;
+    margin-top: 8px;
+}
+
 .mbv-heading {
     margin: 14px 0 6px 0;
     font-size: 15px;
@@ -898,6 +904,18 @@
 
 .mbv-hangar-button {
     min-width: 0;
+}
+
+/* Undo / Redo (Ctrl+Z / Ctrl+Y): small, before the Hangar button. */
+.mbv-undo-button,
+.mbv-redo-button {
+    min-width: 0;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.mbv-redo-button {
+    margin-left: 4px;
 }
 
 /* A skin texture other ships share (the lights, the engine glow). */

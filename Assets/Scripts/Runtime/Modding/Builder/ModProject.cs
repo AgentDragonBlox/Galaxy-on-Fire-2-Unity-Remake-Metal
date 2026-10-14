@@ -177,6 +177,46 @@ namespace GoF2Remake.Modding
             Modified = DateTime.UtcNow;
         }
 
+        // ---- undo / redo (ModProjectHistory) ----------------------------------------------------------------------
+
+        /// <summary>builder.json keys an undo never takes back: where the builder sits (its hangar: switching reloads the
+        /// scene), the ship last worked on, the ids this project had (a rename is done on the projects page).</summary>
+        static readonly string[] KeptBuilderKeys = { "station", "lastShip", "previousIds" };
+
+        /// <summary>Everything the project's JSON files hold, as it is in memory now (the mod, ships with their hardpoints,
+        /// items, characters, builder.json).</summary>
+        public JObject CaptureState()
+        {
+            var b = (JObject)builder.DeepClone();
+            foreach (var k in KeptBuilderKeys) b.Remove(k);
+            return new JObject
+            {
+                ["manifest"] = manifest.DeepClone(),
+                ["ships"] = new JArray(Ships.Select(s => s.ToJson())),
+                ["items"] = new JArray(Items.Select(i => i.ToJson())),
+                ["characters"] = new JArray(Characters.Select(c => c.ToJson())),
+                ["builder"] = b,
+            };
+        }
+
+        /// <summary>Puts a CaptureState back (new entry objects: look the current ones up again by their Ref); the project's
+        /// id and the builder.json keys in KeptBuilderKeys stay as they are now.</summary>
+        public void RestoreState(JObject state)
+        {
+            string id = (string)manifest["id"];
+            manifest = (JObject)state["manifest"].DeepClone();
+            if (id != null) manifest["id"] = id;
+            Ships.Clear();
+            foreach (var o in ((JArray)state["ships"]).OfType<JObject>()) Ships.Add(new ProjectShip((JObject)o.DeepClone()));
+            Items.Clear();
+            foreach (var o in ((JArray)state["items"]).OfType<JObject>()) Items.Add(new ProjectItem((JObject)o.DeepClone()));
+            Characters.Clear();
+            foreach (var o in ((JArray)state["characters"]).OfType<JObject>()) Characters.Add(new ProjectCharacter((JObject)o.DeepClone()));
+            var b = (JObject)state["builder"].DeepClone();
+            foreach (var k in KeptBuilderKeys) if (builder[k] != null) b[k] = builder[k].DeepClone();
+            builder = b;
+        }
+
         /// <summary>A content file, written once there is something in it or it was there already.</summary>
         void WriteList(string file, IEnumerable<JObject> entries)
         {
