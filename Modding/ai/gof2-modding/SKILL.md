@@ -6,9 +6,20 @@ description: Make mods for the Galaxy on Fire 2 Unity Remake - JSON data mods wi
 # Galaxy on Fire 2 Remake modding
 
 You help a player make a mod for the Galaxy on Fire 2 Unity Remake. A mod is a folder (or a .zip of it) of JSON files plus
-the PNG / GLB / OGG assets they name. Mods contain no code. This file is the complete format reference; `reference.md` next to
-it lists every original item, ship, system and station with its number and stats. If you can't open `reference.md`, ask the
-user to paste the part you need (or to attach it).
+the PNG / GLB / OGG assets they name. Mods contain no code. This file is the format reference with the rules; next to it:
+
+- `reference.md`: every number and name of the original game a mod can refer to: items (every stat and raw attribute),
+  item categories, attribute numbers, blueprint recipes, ships (hull size, hangar height, model name), every original
+  ship's hardpoints as `mounts` JSON, the Default economy's numbers, systems, skies (what each `sky` looks like), stations,
+  planets (what each `planet` looks like), story steps, story speakers, every model with the texture names a skin
+  replaces, backdrop textures, music tracks, sound effects, the event sound / music words, the built-in event graphs.
+- `voices.md`: every voice clip with its speaker and English line (for `[voice <clip>]`).
+- `events.md`: every event graph node with its options, ports, types, choices and defaults, the expression words, every
+  command with its syntax and the player selectors (for quest / bar mission / cutscene recipes).
+- `guide.md`: the full modders' guide, every field of every file with more detail and examples than this file. When a
+  field or behaviour isn't covered here, look it up there.
+
+If you can't open them, ask the user to paste the part you need (or to attach it).
 
 ## How to work
 
@@ -16,8 +27,8 @@ user to paste the part you need (or to attach it).
    when content should appear, which assets (models, images, sounds) the user has or will make.
 2. Write every file in full, each under its path inside the mod folder (`my_mod/items.json` ...). JSON only: no trailing
    commas. `//` comments are allowed but keep files plain unless the user wants notes.
-3. Use real numbers: an original item, ship, system or station is referred to by its number from `reference.md`; never
-   guess one. Content from a mod (this one or another) is referred to by its key `mod_id:id`.
+3. Use real numbers and names: an original item, ship, system, station, speaker, story step, texture, model, music track,
+   sound or voice clip is referred to by its number or name from `reference.md` / `voices.md`; never guess one. Content from a mod (this one or another) is referred to by its key `mod_id:id`.
 4. You can't make binary assets. For every PNG / GLB / OGG a file names, tell the user exactly what to provide (size, format,
    layout, where to put it). Paths in JSON are relative to the mod folder, with `/`.
 5. Event graphs (quests, bar missions, cutscenes) are made in the Unity Editor, not written by hand. For those, give the user
@@ -336,8 +347,8 @@ to the mod's `events/` folder; the file name is the graph's name. The Start node
 Nodes include Dialog, Radio, Spawn (named ships), Wait / Wait Until, On (docked, entered orbit, destroyed, cleared, near a
 point), Set Waypoint, Set Objective, Checkpoint, Quest Orbit, Give Item, Reward, Mission Complete / Failed, Start Quest, ship
 orders (Fly To, Fly Route, Follow, Attack, Ship Action), cutscene nodes (Start Cutscene, Camera Shot, Fade, End Cutscene),
-Play Music. You can't write the file; describe the graph as an ordered list of nodes with their settings for the user to
-build.
+Play Music. You can't write the file; describe the graph as an ordered list of nodes with their settings and wires for the
+user to build, using the exact node, option and port names (and option choices) from `events.md`.
 
 ## Balancing (the originals, Android economy)
 
@@ -383,7 +394,8 @@ ships.json entry for the weak GoF3D ship (no better than the worst originals):
 - Every entry has `id` (new) or `override` (change), never both; new items have `base`; new ships have `model`; blueprints
   have exactly one of `ship` / `item` and at least one ingredient.
 - Ids unique per file, lowercase `a-z0-9_-`. Cross-file references use `mod_id:id`; other mods are in `dependencies`.
-- Original numbers come from reference.md (items 0-232, ships 0-63, systems 0-33, stations 0-134).
+- Original numbers and names come from reference.md / voices.md (items 0-232, ships 0-63, systems 0-33, stations 0-134,
+  speakers, story steps, texture / model / music / sound / voice names).
 - Stat names from the list above; numbers are integers (except chances, colours, sizes).
 - Conditions use only the words above; option keys match gameoptions.json ids (`mod_id:option_id`).
 - Every file path named exists in the mod; images: card art 290 x 448 (or x2), icons 180 x 88, preview 16:9, portraits 4:5.
