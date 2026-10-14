@@ -113,7 +113,7 @@ namespace GoF2Remake.Data
         public const int SlotCount = 12;
         public const int AutoSaveSlot = 0;
 
-        static string Dir => Path.Combine(Application.persistentDataPath, "Saves");
+        static string Dir => Path.Combine(GoF2Remake.GamePaths.Data, "Saves");
         static string PathOf(int slot) => Path.Combine(Dir, $"slot_{slot:00}.json");
         /// <summary>The folder of the slot files (SaveTransfer).</summary>
         public static string Folder => Dir;

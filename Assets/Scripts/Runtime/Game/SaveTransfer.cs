@@ -56,9 +56,9 @@ namespace GoF2Remake.Data
         {
             get
             {
-                if (Application.isMobilePlatform) return Path.Combine(Application.persistentDataPath, "Transfer");
+                if (Application.isMobilePlatform) return Path.Combine(GoF2Remake.GamePaths.Data, "Transfer");
                 string docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                if (string.IsNullOrEmpty(docs)) return Path.Combine(Application.persistentDataPath, "Transfer");
+                if (string.IsNullOrEmpty(docs)) return Path.Combine(GoF2Remake.GamePaths.Data, "Transfer");
                 // Linux: MyDocuments is the home folder; use ~/Documents when it exists.
                 string sub = Path.Combine(docs, "Documents");
                 if (Application.platform == RuntimePlatform.LinuxPlayer && Directory.Exists(sub)) docs = sub;

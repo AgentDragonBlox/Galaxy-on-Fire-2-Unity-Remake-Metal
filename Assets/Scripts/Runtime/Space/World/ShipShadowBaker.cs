@@ -203,7 +203,7 @@ namespace GoF2Remake.World
         // ---- the disk cache of the mods' ships ------------------------------------------------------------------------
 
         /// <summary>persistentDataPath/ModCache/ShipShadows (main thread only: persistentDataPath).</summary>
-        static string CacheRoot => Path.Combine(Application.persistentDataPath, "ModCache", "ShipShadows");
+        static string CacheRoot => Path.Combine(GoF2Remake.GamePaths.Data, "ModCache", "ShipShadows");
 
         /// <summary>The installed mod a ship comes from (its template's origin "mod &lt;id&gt;"), else null.</summary>
         static Modding.ModInfo ModOf(GameObject ship)

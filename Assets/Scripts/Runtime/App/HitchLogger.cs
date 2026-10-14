@@ -47,7 +47,7 @@ namespace GoF2Remake
             GraphicsSettings.logWhenShaderIsCompiled = true;
             try
             {
-                file = new StreamWriter(Path.Combine(Application.persistentDataPath, "hitches.log"), false) { AutoFlush = true };
+                file = new StreamWriter(Path.Combine(GoF2Remake.GamePaths.Data, "hitches.log"), false) { AutoFlush = true };
                 file.WriteLine($"# {Application.productName} {Application.version} (Unity {Application.unityVersion}), {System.DateTime.Now:yyyy-MM-dd HH:mm}");
                 file.WriteLine($"# {SystemInfo.deviceModel}, {SystemInfo.operatingSystem}");
                 file.WriteLine($"# {SystemInfo.graphicsDeviceType}, {SystemInfo.graphicsDeviceName}, {Screen.width}x{Screen.height} @ {Screen.currentResolution.refreshRateRatio.value:0} Hz");

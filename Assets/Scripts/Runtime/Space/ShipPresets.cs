@@ -39,7 +39,7 @@ namespace GoF2Remake.Data
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => file = null;
 
-        static string FilePath => Path.Combine(Application.persistentDataPath, "ship_presets.json");
+        static string FilePath => Path.Combine(GoF2Remake.GamePaths.Data, "ship_presets.json");
 
         static PresetFile Data
         {

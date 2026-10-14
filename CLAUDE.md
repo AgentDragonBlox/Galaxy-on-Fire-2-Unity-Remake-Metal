@@ -129,6 +129,10 @@ Menu items (from `Scripts/Editor`), grouped in submenus; **GoF2 > Tools Overview
   (`RuntimeInitializeOnLoadMethod(SubsystemRegistration)`). Use `FindObjectsByType<T>()` / `(FindObjectsInactive)`, never the
   obsolete `FindObjectsSortMode` overloads.
 - Game time is in **milliseconds**. Convert with `Time.deltaTime * 1000f`.
+- **Tests** (`Scripts/Tests/README.md`): ~3000 edit-mode tests of the rules and data (`EditMode/<area>/`, ~30 s) and play-mode
+  smoke tests of the scenes, story levels and a hosted session (`PlayMode/`). Run the edit-mode suite after a change; add a
+  test with a new feature. Tests touching state derive from `SandboxTest` / `PlayModeTest` (`GamePaths.Override`: a
+  temporary data folder, never the player's saves or mods); code reaching persistentDataPath goes through `GamePaths.Data`.
 
 ## Coordinates and scale
 

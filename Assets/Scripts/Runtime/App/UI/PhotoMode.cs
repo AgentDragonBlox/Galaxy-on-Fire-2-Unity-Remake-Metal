@@ -308,7 +308,7 @@ namespace GoF2Remake.UI
                 return true;
             }
             catch (Exception e) { Debug.LogWarning("PhotoMode: MediaStore " + e.Message); }
-            string dir = Path.Combine(Application.persistentDataPath, "Screenshots");
+            string dir = Path.Combine(GoF2Remake.GamePaths.Data, "Screenshots");
 #else
             string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Galaxy on Fire 2");
 #endif

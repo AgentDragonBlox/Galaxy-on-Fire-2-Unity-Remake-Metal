@@ -29,7 +29,7 @@ namespace GoF2Remake.Modding
         public const string ModelsFolder = "models";
 
         /// <summary>Where the projects live (created on first use).</summary>
-        public static string Root => Path.Combine(Application.persistentDataPath, "ModProjects");
+        public static string Root => Path.Combine(GoF2Remake.GamePaths.Data, "ModProjects");
 
         public string Folder { get; private set; }
         public string Id { get; private set; }

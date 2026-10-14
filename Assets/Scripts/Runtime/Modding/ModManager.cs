@@ -61,7 +61,7 @@ namespace GoF2Remake.Modding
 #endif
 
         /// <summary>The folder every platform reads (created on first use).</summary>
-        public static string UserFolder => Path.Combine(Application.persistentDataPath, "Mods");
+        public static string UserFolder => Path.Combine(GoF2Remake.GamePaths.Data, "Mods");
 
         /// <summary>Every folder mods are read from, the user folder first.</summary>
         public static IEnumerable<string> Folders
@@ -69,6 +69,7 @@ namespace GoF2Remake.Modding
             get
             {
                 yield return UserFolder;
+                if (!string.IsNullOrEmpty(GoF2Remake.GamePaths.Override)) yield break;   // a test sandbox: its own folder only
 #if UNITY_EDITOR
                 yield return Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Mods"));
 #elif UNITY_STANDALONE

@@ -125,7 +125,7 @@ namespace GoF2Remake.Multiplayer
         {
             configured = on;
             EarnPerMinute = Mathf.Max(0, earnPerMinute);
-            folder = string.IsNullOrEmpty(profileDir) ? Path.Combine(Application.persistentDataPath, "ServerProfiles") : profileDir;
+            folder = string.IsNullOrEmpty(profileDir) ? Path.Combine(GoF2Remake.GamePaths.Data, "ServerProfiles") : profileDir;
         }
 
         /// <summary>NetGame.StartServer, before NetState spawns: the accounts loaded (and the server's id made once).</summary>

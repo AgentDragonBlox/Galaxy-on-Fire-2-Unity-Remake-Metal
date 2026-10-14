@@ -521,7 +521,7 @@ namespace GoF2Remake.Events
 
         static IEnumerable<string> Folders()
         {
-            yield return Path.Combine(Application.persistentDataPath, "Events");
+            yield return Path.Combine(GoF2Remake.GamePaths.Data, "Events");
             string exeDir = Path.GetDirectoryName(Application.dataPath);
             if (!string.IsNullOrEmpty(exeDir)) yield return Path.Combine(exeDir, "Events");
         }
@@ -613,7 +613,7 @@ namespace GoF2Remake.Events
                     shown.Add(set == null || set.Count == 0 ? n : n + " [" + string.Join(" ", set.ConvertAll(x => x.name + "=" + x.value)) + "]");
                 }
                 string list = names.Count == 0 ? X("mpEventNone", "No event graphs found.") : string.Join(", ", shown);
-                string folder = Path.Combine(Application.persistentDataPath, "Events");
+                string folder = Path.Combine(GoF2Remake.GamePaths.Data, "Events");
                 return string.Format(X("mpEventList", "Events: {0}{1}Event graphs (.gof2event) go in {2} (or an Events folder next to the game)."), list,
                     Running ? string.Format(X("mpEventRunningNow", " (running: {0})"), Global.running) + " " : " ", folder);
             }

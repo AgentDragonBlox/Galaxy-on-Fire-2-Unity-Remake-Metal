@@ -392,7 +392,7 @@ namespace GoF2Remake.Multiplayer
         public static bool PersistentHost { get; private set; }
 
         /// <summary>Where a persistent hosted world keeps its files (the dedicated server's ServerProfiles layout).</summary>
-        public static string HostedWorldFolder => System.IO.Path.Combine(Application.persistentDataPath, "HostedWorld");
+        public static string HostedWorldFolder => System.IO.Path.Combine(GoF2Remake.GamePaths.Data, "HostedWorld");
 
         /// <summary>StartHost, before the NetState spawns: the persistent world's profiles and settings, or none.</summary>
         static void SetUpHostedWorld()
