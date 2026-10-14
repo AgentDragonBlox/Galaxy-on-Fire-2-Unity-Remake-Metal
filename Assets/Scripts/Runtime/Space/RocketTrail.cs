@@ -63,7 +63,7 @@ namespace GoF2Remake.Flight
         public static Record For(Gun gun)
         {
             if (gun == null) return null;
-            if (gun.kind == Gun.Kind.Rocket || gun.kind == Gun.Kind.Missile) return Rocket;
+            if (gun.kind == Gun.Kind.Rocket || gun.kind == Gun.Kind.Missile || gun.missiles) return Rocket;   // + mod guns firing missiles
             if (gun.kind == Gun.Kind.ClusterMissile) return Thermo(0, 50f, true);
             if (gun.kind == Gun.Kind.Thermo)
                 return gun.lookIndex switch { 28 => Thermo(0, 50f, false), 29 => Thermo(1, 100f, false), 30 => Thermo(2, 150f, false),

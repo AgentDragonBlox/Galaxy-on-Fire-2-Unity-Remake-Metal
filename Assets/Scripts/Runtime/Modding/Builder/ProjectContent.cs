@@ -112,6 +112,77 @@ namespace GoF2Remake.Modding
             if (value != null) o[name] = value.Value;
             if (!o.HasValues) json.Remove("stats");
         }
+
+        /// <summary>fx "turret": the turret's own model (a GLB in the project, ModWeapons.BuildTurret), null = the base
+        /// item's. Read from either form ("file" or { "model": ... }), written as the object; the rest of "fx" stays. The
+        /// size, offset, muzzle and shot start apply to either model; a "turret" left empty is dropped.</summary>
+        public string TurretModel
+        {
+            get => Turret is JValue v && v.Type == JTokenType.String ? (string)v : Turret is JObject o ? (string)o["model"] : null;
+            set
+            {
+                var o = TurretObject();
+                if (string.IsNullOrEmpty(value)) o.Remove("model"); else o["model"] = value;
+                DropEmptyTurret();
+            }
+        }
+
+        /// <summary>fx "turret" "muzzle" / "shotStart": game units along the gun node, null = the base item's.</summary>
+        public float? TurretMuzzle { get => TurretNumber("muzzle"); set => SetTurretNumber("muzzle", value); }
+        public float? TurretShotStart { get => TurretNumber("shotStart"); set => SetTurretNumber("shotStart", value); }
+        /// <summary>fx "turret" "scale": the model's size factor, null = 1 (as made).</summary>
+        public float? TurretScale { get => TurretNumber("scale"); set => SetTurretNumber("scale", value); }
+
+        /// <summary>fx "turret" "offset": the model moved off its mount (game units: x toward the pilot's left, y up, z forward).</summary>
+        public Vector3Int TurretOffset
+        {
+            get => Turret is JObject o && o["offset"] is JArray a && a.Count >= 3
+                ? new Vector3Int(Mathf.RoundToInt((float)a[0]), Mathf.RoundToInt((float)a[1]), Mathf.RoundToInt((float)a[2])) : Vector3Int.zero;
+            set
+            {
+                var o = TurretObject();
+                if (value == Vector3Int.zero) o.Remove("offset"); else o["offset"] = new JArray(value.x, value.y, value.z);
+                DropEmptyTurret();
+            }
+        }
+
+        JToken Turret => json["fx"] is JObject fx ? fx["turret"] : null;
+
+        float? TurretNumber(string k) =>
+            Turret is JObject o && o[k] is JValue v && (v.Type == JTokenType.Integer || v.Type == JTokenType.Float) ? (float)v : (float?)null;
+
+        void SetTurretNumber(string k, float? value)
+        {
+            var o = TurretObject();
+            if (value == null) o.Remove(k); else o[k] = value.Value;
+            DropEmptyTurret();
+        }
+
+        void DropEmptyTurret()
+        {
+            if (Turret is JObject o && !o.HasValues) SetFx("turret", null);
+        }
+
+        /// <summary>fx "turret" as an object (a plain file name turned into { "model": file }).</summary>
+        JObject TurretObject()
+        {
+            if (Turret is JObject o) return o;
+            o = new JObject();
+            if (Turret is JValue v && v.Type == JTokenType.String) o["model"] = (string)v;
+            SetFx("turret", o);
+            return o;
+        }
+
+        void SetFx(string k, JToken value)
+        {
+            if (!(json["fx"] is JObject fx))
+            {
+                if (value == null) return;
+                json["fx"] = fx = new JObject();
+            }
+            if (value == null) fx.Remove(k); else fx[k] = value;
+            if (!fx.HasValues) json.Remove("fx");
+        }
     }
 
     /// <summary>One characters.json entry of a project.</summary>

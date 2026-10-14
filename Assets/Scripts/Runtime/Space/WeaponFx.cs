@@ -32,6 +32,10 @@ namespace GoF2Remake.Flight
         public AudioClip engineLoopExtra;
         [Tooltip("Turret items: the assembled *_ship_mounted prefab (pivot -> base + gun).")]
         public GameObject turretMounted;
+        /// <summary>A mod turret's own model (items.json fx "turret", Modding.ModWeapons): turretMounted is it, in flight and
+        /// in the hangar; its muzzle and where its shots start along the gun node (game units, -1 = the base item's).</summary>
+        [System.NonSerialized] public bool modTurret;
+        [System.NonSerialized] public float turretMuzzleUnits = -1f, turretShotUnits = -1f;
         [Tooltip("Sentry guns: the deployed object (Assembled/supernova/turrets/sn_sentry_gun_00X).")]
         public GameObject sentry;
 

@@ -5,8 +5,10 @@ harm your computer. Players turn mods on and off in the main menu's **Mods** scr
 
 **Making a mod in the game:** main menu > **Mods** > **Mod Builder** (experimental) makes projects in this same format
 without writing any JSON: new ships from a `.glb` model or changes to the game's ships, their stats and textures, their
-hardpoints placed on the hull in 3D, and test flights against pirates; new items made from a game item (or changes to one)
-with their own stats and icon, fitted to the ship to try them out; characters with their portraits, for your quests
+hardpoints placed on the hull in 3D (turrets facing out of the hull where they sit: top, sides, under it or any slant),
+and test flights against pirates; new items made from a game item (or changes to one) with their own stats and icon (the
+remake-only stats too: missiles and salvos, a turret's range, mining beams, phase cloaks), a turret's own `.glb` model,
+resized and moved on its mount, fitted to the ship to try them out; characters with their portraits, for your quests
 or standing in for a story character; and skins: a game ship's textures replaced, with its originals saved for you to paint
 over. A new ship's shop icon is rendered from its model
 (`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). **Export as mod** puts the finished project into your
@@ -218,6 +220,11 @@ earlier). Only the fields you give change. Giving `name` or `description` rename
 | `miningBeamLayerMs` | 102 | Mining beam: time to cut one rock layer (ms; default 6000, the drill minigame's) |
 | `miningBeamLook` | 103 | Mining beam: the beam laser whose beam and impact it shows (9, 10, 11 or 228; default 228) |
 | `phaseCloak` | 104 | 1 = a cloak that also phases the ship through objects, shots and explosions while cloaked (see [Phase cloaks](#phase-cloaks)) |
+| `missiles` | 105 | 1 = a gun or turret whose shots are homing missiles (see [Missile turrets and salvos](#missile-turrets-and-salvos)) |
+| `salvoShots` | 106 | Shots fired side by side per trigger (default 1) |
+| `salvoCount` | 107 | Salvos per magazine: after the last one comes `reloadMs` (default 1) |
+| `salvoGapMs` | 108 | Time between the salvos of one magazine (ms) |
+| `turretRange` | 109 | How far an automatic turret looks for a target (game units, 20 per metre; default 60000) |
 
 Which stats an item uses depends on its category, so copy the stats its base item has (see `items.json` and
 `item_attributes.json` in `Assets/Resources/GoF2Data`). items.json's own stat names (`loadingTimeMs`, `range`,
@@ -267,6 +274,38 @@ volume, or the asteroid it sits in destroyed for 20 damage.
 }
 ```
 
+### Missile turrets and salvos
+
+Any gun or turret that fires ordinary shots (not beam lasers, bombs, mines or cluster missiles) can fire homing missiles
+and salvos:
+
+- `"missiles": 1`: its shots are homing missiles. A turret's missiles home on the ship it is aiming at (an automatic
+  turret's target, else the ship the scanner has locked), a gun's on the scanner's lock like the game's missiles. They keep
+  their size, trail smoke and burst like a rocket on a hit; a boost or a cloak shakes them off.
+- `salvoShots` fires that many shots side by side (6 m apart) each time; `salvoCount` salvos make a magazine,
+  `salvoGapMs` apart, then the weapon waits `reloadMs` (`2`, `2`, `500`, `2000`: two missiles, half a second, two more, two
+  seconds' reload). A secondary uses one round per salvo.
+
+With the look of a missile, its own turret model and the missile's launch sound (see [Weapon effects](#weapon-effects)):
+
+```json
+{
+    "id": "hornet_mat4",
+    "base": 182,
+    "name": "Hornet MAT-4 Missile Turret",
+    "techLevel": 9,
+    "price": [900000, 950000],
+    "stats": { "damage": 30, "reloadMs": 2000, "speed": 56, "lifetimeMs": 1786, "automatic": 1, "turretTurnSpeed": 150,
+               "missiles": 1, "salvoShots": 2, "salvoCount": 2, "salvoGapMs": 500, "turretRange": 100000 },
+    "fx": {
+        "turret": { "model": "models/mat4_turret.glb", "muzzle": 28, "shotStart": 32 },
+        "projectile": { "item": 46, "scale": 0.35 },
+        "shot": 46,
+        "shotLoops": false
+    }
+}
+```
+
 ### Weapon effects
 
 A weapon (a new one or an `override` of an original) can look and sound like its own thing with `fx`. Anything it leaves out
@@ -304,12 +343,23 @@ original's hue is replaced by yours (the Nirai Impulse's orange bolt turns purpl
 | `projectile` | What flies. For a beam weapon the beam itself (stretched from the gun to what it hits along its length), for a missile the missile. |
 | `muzzle` | The flash at the gun on every shot. |
 | `impact` | What shows where a shot hits. |
-| `shot` | The sound of a shot: a file, or a list of files (one is picked at random each shot). `.ogg`, `.wav` or `.mp3`. |
-| `shotLoops` | `true`: the shot sound loops while the trigger is held (like the auto-cannons); `false`: one per shot. Default: the base item's. |
-| `explosionSound` | Bombs, mines and blast weapons: the sound of the blast (a file or a list). |
+| `shot` | The sound of a shot: a file, or a list of files (one is picked at random each shot). `.ogg`, `.wav` or `.mp3`. Or an item's number: that item's shot sound (`46`: the AMR Extinctor's launch). |
+| `shotLoops` | `true`: the shot sound loops while the trigger is held (like the auto-cannons); `false`: one per shot. Default: the base item's (or, with `shot` an item's number, that item's). |
+| `explosionSound` | Bombs, mines and blast weapons: the sound of the blast (a file, a list, or an item's number). |
+| `turret` | Turrets: the turret's own model, shown on the ship in flight, in the hangar and to other players. A glTF / GLB file, or `{ "model": "models/t.glb", "muzzle": 28, "shotStart": 32, "scale": 1.5, "offset": [0, 20, 0] }`. Its origin sits on the mount, 1 unit = 1 m as made. A node named `pivot` holding the base turns it left and right and, in it, a node whose name contains `_gun` tilts it up and down (the barrel along +Z); a model without them turns as one piece. `scale` resizes it; `offset` moves it off its mount (game units: x toward the pilot's left, y along the turret's up, z forward). Leave out `model` and give `scale` / `offset` to resize or move the base item's own turret. `muzzle` is where the muzzle flash shows and `shotStart` where the shots start, along the gun node in game units (20 per metre) on the model as made; default: the base turret's. |
 
-Each of `projectile`, `muzzle` and `impact` is either `false` (none at all), an object with only `color` / `glow` (the
-original's, recoloured, above), or an object with a `sprite` or `model`:
+Each of `projectile`, `muzzle` and `impact` is either `false` (none at all), an object without a `sprite` or `model` (the
+base item's own, or another item's, changed: below), or an object with a `sprite` or `model`.
+
+Without a sprite or model:
+
+| Field | |
+|---|---|
+| `item` | Another item's number: its projectile, muzzle flash or impact instead of the base item's (`46`: the AMR Extinctor's missile). |
+| `scale` | Its size, times the original's (`0.35`). Default 1. |
+| `color`, `glow` | Recolours it (above). |
+
+With a sprite or model:
 
 | Field | |
 |---|---|
@@ -374,7 +424,7 @@ A list of entries, like items.json: `"id"` adds a ship, `"override"` changes one
 | `modelOffset` | `[x, y, z]` in game units (like the mounts): the sized model moved off the ship's centre, the point it turns, docks and flies around. |
 | `icon` | The shop icon, a PNG of 180 x 88 like the originals (the ship on the plate). None = the Phantom's. |
 | `hangarHeight` | How high its pivot sits above the hangar pad, in game units (the originals 140 to 400). |
-| `mounts` | Where guns and exhausts sit, in game units from the ship's centre (x right, y up, z forward): `slotType` 0 primary gun, 1 secondary, 2 turret (`"upsideDown": true` hangs it under the hull), 3 engine exhaust (the flame and its particles; `turretAngles[0]` sizes the particles; `"glowColor": [r, g, b]` (0 to 1) colours that exhaust's flame and its exhaust particles; `"glowSize": [halfWidth, halfHeight, length]` (game units) makes the flame an ellipse of that size, its flared ring `length` behind the nozzle). |
+| `mounts` | Where guns and exhausts sit, in game units from the ship's centre (x toward the pilot's left, y up, z forward): `slotType` 0 primary gun, 1 secondary, 2 turret (`"turretUp": [x, y, z]` is the way its base faces, in the same axes: `[0, 1, 0]` on top (the default), `[0, -1, 0]` under the hull (or `"upsideDown": true`), `[1, 0, 0]` / `[-1, 0, 0]` the left / right side, `[0, 0, 1]` the nose, or any slant; the Mod Builder sets it from the hull's surface where you place the turret), 3 engine exhaust (the flame and its particles; `turretAngles[0]` sizes the particles; `"glowColor": [r, g, b]` (0 to 1) colours that exhaust's flame and its exhaust particles; `"glowSize": [halfWidth, halfHeight, length]` (game units) makes the flame an ellipse of that size, its flared ring `length` behind the nozzle). |
 | `engineGlowRadius` | Size of the engine flame at each exhaust mount (game units, default 24); a mount's `glowSize` replaces it. |
 | `engineGlowColor` | `[r, g, b]` (0 to 1): the flame colour of every exhaust without its own `glowColor`. None = the game's own blue-white flame. |
 | `materials` | Optional. Replace the model's own materials, see below. |

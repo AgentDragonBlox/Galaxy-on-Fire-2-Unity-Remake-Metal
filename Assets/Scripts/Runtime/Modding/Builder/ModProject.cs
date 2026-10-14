@@ -610,6 +610,7 @@ namespace GoF2Remake.Modding
             turretAngles = m.turretAngles != null ? (float[])m.turretAngles.Clone() : null,
             glowColor = m.glowColor != null ? (float[])m.glowColor.Clone() : null,
             glowSize = m.glowSize != null ? (float[])m.glowSize.Clone() : null,
+            turretUp = m.turretUp != null ? (float[])m.turretUp.Clone() : null,
         };
 
         public bool IsOverride => json["override"] != null;
@@ -711,7 +712,11 @@ namespace GoF2Remake.Modding
             {
                 var e = new JObject { ["slotType"] = m.slotType, ["position_engine"] = new JArray(m.position_engine ?? new int[3]) };
                 if (m.turretAngles != null && m.turretAngles.Length > 0) e["turretAngles"] = new JArray(m.turretAngles.Select(f => (float)Math.Round(f, 3)));
-                if (m.upsideDown) e["upsideDown"] = true;
+                // A turret's facing: turretUp, but a plain top / under-hull one as before (none / upsideDown).
+                var up = m.TurretUpLocal;
+                if (m.slotType == 2 && m.turretUp != null && m.turretUp.Length >= 3 && up.y < 0.9999f && up.y > -0.9999f)
+                    e["turretUp"] = new JArray(m.turretUp.Select(f => (float)Math.Round(f, 3)));
+                else if (m.slotType == 2 && up.y <= -0.9999f) e["upsideDown"] = true;
                 if (m.glowColor != null && m.glowColor.Length >= 3) e["glowColor"] = new JArray(m.glowColor.Select(f => (float)Math.Round(f, 3)));
                 if (m.glowSize != null && m.glowSize.Length >= 3) e["glowSize"] = new JArray(m.glowSize.Select(f => (float)Math.Round(f, 1)));
                 a.Add(e);

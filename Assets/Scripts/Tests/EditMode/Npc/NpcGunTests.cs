@@ -275,5 +275,92 @@ namespace GoF2Remake.Tests
             Assert.IsFalse(g.IsActive(0));
             Assert.IsTrue(g.Inject(Vector3.zero, Vector3.forward, Vector3.up, 100f));
         }
+
+        // ---- remake, for mods (Modding/README.md "Stats" 105-108): homing missiles and salvos -------------------------
+
+        /// <summary>An item of a fresh table (the shared one stays as it is) with these attributes set.</summary>
+        static ItemData WithAttrs(int item, params (int id, int value)[] attrs)
+        {
+            var it = Database.Load().Item(item);
+            var keys = it.attrKeys.ToList();
+            var values = it.attrValues.ToList();
+            foreach (var (id, v) in attrs)
+            {
+                int i = keys.IndexOf(id);
+                if (i >= 0) values[i] = v; else { keys.Add(id); values.Add(v); }
+            }
+            it.attrKeys = keys.ToArray();
+            it.attrValues = values.ToArray();
+            return it;
+        }
+
+        [Test]
+        public void SalvosFireSideBySideThenTheGapThenTheReload()
+        {
+            // 106 = 2 shots per salvo, 107 = 2 salvos per magazine, 108 = 500 ms between them, attr 11 = the reload after.
+            var g = new Gun(WithAttrs(182, (106, 2), (107, 2), (108, 500), (11, 2000)), Vector3.zero, false);
+            int fired = 0;
+            g.Fired += (_, _) => fired++;
+            Assert.GreaterOrEqual(g.TryFire(Vector3.zero, Quaternion.identity), 0);
+            Assert.AreEqual(2, fired, "each shot of a salvo is sent (multiplayer mirrors)");
+            var live = Enumerable.Range(0, g.bullets.Length).Where(g.IsActive).ToList();
+            Assert.AreEqual(2, live.Count);
+            Assert.AreEqual(120f * M, Mathf.Abs(g.bullets[live[0]].position.x - g.bullets[live[1]].position.x), 1e-4f, "120 units apart");
+            Assert.AreEqual(g.bullets[live[0]].velocity, g.bullets[live[1]].velocity, "both straight ahead");
+            Assert.AreEqual(500f, g.WaitMs, "the magazine's second salvo waits the gap");
+            g.Update(400f, null, null);
+            Assert.Less(g.TryFire(Vector3.zero, Quaternion.identity), 0);
+            g.Update(200f, null, null);
+            Assert.GreaterOrEqual(g.TryFire(Vector3.zero, Quaternion.identity), 0);
+            Assert.AreEqual(4, fired);
+            Assert.AreEqual(2000f, g.WaitMs, "then the reload");
+        }
+
+        [Test]
+        public void OneShotSalvosStillCountTheMagazine()
+        {
+            var g = new Gun(WithAttrs(0, (107, 3), (108, 100), (11, 1000)), Vector3.zero, false);
+            Assert.AreEqual(1, g.salvoShots);
+            Assert.GreaterOrEqual(g.TryFire(Vector3.zero, Quaternion.identity), 0);
+            Assert.AreEqual(100f, g.WaitMs);
+            g.Update(101f, null, null);
+            Assert.GreaterOrEqual(g.TryFire(Vector3.zero, Quaternion.identity), 0);
+            Assert.AreEqual(100f, g.WaitMs);
+            g.Update(101f, null, null);
+            Assert.GreaterOrEqual(g.TryFire(Vector3.zero, Quaternion.identity), 0);
+            Assert.AreEqual(1000f, g.WaitMs);
+        }
+
+        [Test]
+        public void MissileShotsHomeAndKeepTheirSize()
+        {
+            var g = new Gun(WithAttrs(180, (105, 1)), Vector3.zero, false);
+            Assert.IsTrue(g.missiles);
+            Assert.IsTrue(g.Homing);
+            Assert.IsTrue(g.IsMissile, "the rocket burst on a hit");
+            Assert.AreEqual(1f, g.VisualScale(0), "missiles don't shrink at the end of their life");
+            var plain = GunOf(180);
+            Assert.IsFalse(plain.missiles || plain.Homing || plain.IsMissile);
+            Assert.AreEqual(1, plain.salvoShots);
+            Assert.AreEqual(plain.reloadMs, plain.WaitMs);
+        }
+
+        [TestCase(46)]    // a nuke
+        [TestCase(9)]     // a beam laser
+        [TestCase(214)]   // a cluster missile
+        public void BombsBeamsAndClustersIgnoreMissilesAndSalvos(int item)
+        {
+            var g = new Gun(WithAttrs(item, (105, 1), (106, 3), (107, 2), (108, 100)), Vector3.zero, true);
+            Assert.IsFalse(g.missiles);
+            Assert.AreEqual(1, g.salvoShots);
+            Assert.AreEqual(1, g.salvoCount);
+            Assert.IsFalse(Gun.FiresPlainShots(Database.Shared.Item(item)), "the Mod Builder doesn't offer them either");
+        }
+
+        [TestCase(0)]     // a laser
+        [TestCase(180)]   // an auto turret
+        [TestCase(37)]    // a homing missile
+        public void PlainShotWeaponsTakeMissilesAndSalvos(int item) =>
+            Assert.IsTrue(Gun.FiresPlainShots(Database.Shared.Item(item)));
     }
 }

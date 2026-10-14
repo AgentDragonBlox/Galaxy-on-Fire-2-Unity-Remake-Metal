@@ -81,7 +81,7 @@ namespace GoF2Remake.Multiplayer
             if (m.gun.isBeam)
             {
                 m.gun.AutoAim = () => m.target != null && m.target.Alive ? m.target : null;
-                m.gun.reloadAcc = m.gun.reloadMs + 1f;
+                m.gun.reloadAcc = m.gun.WaitMs + 1f;
                 if (m.gun.TryFire(position, Quaternion.LookRotation(velocity, up), false) < 0) return;
             }
             else if (!m.gun.Inject(position, velocity, up, lifetimeMs)) return;

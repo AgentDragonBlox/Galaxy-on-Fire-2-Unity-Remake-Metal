@@ -619,9 +619,23 @@ namespace GoF2Remake.UI
             Act(acts, T("mbDelete", "Delete"), DeleteSelected, "mbv-danger");
             if (type == 2)
             {
-                var b = Act(selectedBox, m.upsideDown ? T("mbUpsideDownOn", "Hangs under the hull: on") : T("mbUpsideDownOff", "Hangs under the hull: off"),
-                            () => { m.upsideDown = !m.upsideDown; MarkDirty(); BuildHardpointsPage(); });
-                b.EnableInClassList("mbv-toggle--on", m.upsideDown);
+                // The way the turret's base faces (WeaponMount.turretUp): a preset, or the hull's surface at the point.
+                Add(selectedBox, new Label(T("mbTurretFaces", "Turret faces")), "mbv-inline-label");
+                var faces = Add(selectedBox, new VisualElement(), "mbv-row", "mbv-add-row");
+                var up = m.TurretUpLocal;
+                foreach (var (key, label, dir) in TurretFacings)
+                {
+                    var d = dir;
+                    var b = Act(faces, T(key, label), () => { SetTurretUp(m, d); OnMountEdited(2); BuildHardpointsPage(); }, "mbv-type-button");
+                    b.EnableInClassList("mbv-type-button--on", Vector3.Dot(up, new Vector3(-d.x, d.y, d.z)) > 0.999f);
+                }
+                Act(selectedBox, T("mbTurretMatchHull", "Match the hull here"), () =>
+                {
+                    if (gizmo.HullNormalAt(i, out var n)) { m.SetTurretUp(gizmo.GameDirOf(n), true); OnMountEdited(2); BuildHardpointsPage(); }
+                    else Status(T("mbTurretNoHull", "No hull found at that point."), true);
+                });
+                var g = new Vector3(-up.x, up.y, up.z);
+                Note(selectedBox, string.Format(T("mbTurretFacesNote", "Facing {0:0.##}, {1:0.##}, {2:0.##} (X left, Y up, Z forward). Placing or dragging it over the hull turns it to the surface."), g.x, g.y, g.z));
             }
             if (type == 3)
             {
@@ -792,15 +806,27 @@ namespace GoF2Remake.UI
             gizmo.Refresh();
             MarkDirty();
             if (type == 3 && !string.IsNullOrEmpty(Current?.Model)) RequestReload(true);   // the flame is built into the model
+            if (type == 2) RequestReload(true);   // the turntable's turrets sit on the mounts as the game reads them
         }
+
+        /// <summary>The turret facings offered (game frame: x toward the pilot's left, y up, z forward).</summary>
+        static readonly (string key, string label, Vector3 dir)[] TurretFacings =
+        {
+            ("mbFaceUp", "Up", Vector3.up), ("mbFaceDown", "Down", Vector3.down), ("mbFaceLeft", "Left", Vector3.right),
+            ("mbFaceRight", "Right", Vector3.left), ("mbFaceFront", "Front", Vector3.forward), ("mbFaceBack", "Back", Vector3.back),
+        };
+
+        static void SetTurretUp(WeaponMount m, Vector3 game) => m.SetTurretUp(game);
 
         void OnMountMoved() => RefreshSelectedFields();
 
-        void AddMount(int type, Vector3 world)
+        /// <summary>A new point where the hull was clicked; a turret faces out of the hull there ('normal', world).</summary>
+        void AddMount(int type, Vector3 world, Vector3 normal)
         {
             var s = Current;
             var g = gizmo.GameOf(world);
             var m = new WeaponMount { slotType = type, position_engine = new[] { g.x, g.y, g.z } };
+            if (type == 2) m.SetTurretUp(gizmo.GameDirOf(normal), true);
             if (type == 3)
             {
                 float r = Mathf.Clamp(Mathf.Round(Mathf.Min(gizmo.LocalBounds.size.x, gizmo.LocalBounds.size.y) / M * 0.05f), 8f, 200f);
@@ -842,6 +868,7 @@ namespace GoF2Remake.UI
             if (m.position_engine[0] == 0) { Status(T("mbMirrorCentre", "The point is on the centre line: move it sideways first."), true); return; }
             var c = ProjectShip.Copy(m);
             c.position_engine[0] = -c.position_engine[0];
+            if (c.turretUp != null && c.turretUp.Length >= 3) c.turretUp[0] = -c.turretUp[0];   // a side turret faces the other side
             s.Mounts.Insert(i + 1, c);
             if (c.slotType < 3 && s.SlotCount(c.slotType) < s.MountCount(c.slotType)) s.SetSlotCount(c.slotType, s.MountCount(c.slotType));
             gizmo.Selected = i + 1;
@@ -1515,7 +1542,7 @@ namespace GoF2Remake.UI
             if (kind != ModBuilder.Kind.Ships || !shipReady) { drag = Drag.Camera; return; }   // the hardpoints are the Ships tab's
             if (e.button == 0 && placing >= 0)
             {
-                if (gizmo.RaycastHull(p, out var hit, out _)) { int type = placing; placing = -1; AddMount(type, hit); }
+                if (gizmo.RaycastHull(p, out var hit, out var normal)) { int type = placing; placing = -1; AddMount(type, hit, normal); }
                 else Status(T("mbMissedHull", "Click on the ship's hull."), false);
                 drag = Drag.None;
                 return;

@@ -339,7 +339,7 @@ namespace GoF2Remake.Flight
             {
                 if (!r.gun.isSecondary || r.gun.itemIndex != SelectedSecondary || r.stack == null || r.stack.amount <= 0) continue;
                 if (r.gun.kind == Gun.Kind.Sentry && !SentryGun.CanDeploy) return false;   // Level+0x6c > 2: refused, no cost
-                if (Cheats.NoSecondaryCooldown) r.gun.reloadAcc = r.gun.reloadMs + 1f;   // remake debug: reloaded at once
+                if (Cheats.NoSecondaryCooldown) r.gun.reloadAcc = r.gun.WaitMs + 1f;   // remake debug: reloaded at once
                 int b = Fire(r.gun);
                 if (b < 0) continue;
                 if (r.gun.kind == Gun.Kind.Sentry)
@@ -426,7 +426,7 @@ namespace GoF2Remake.Flight
                 var gun = r.gun;
                 if (!gun.isSecondary && primaryHeld)
                 {
-                    if (Cheats.NoPrimaryCooldown) gun.reloadAcc = gun.reloadMs + 1f;   // remake debug: reloaded at once
+                    if (Cheats.NoPrimaryCooldown) gun.reloadAcc = gun.WaitMs + 1f;   // remake debug: reloaded at once
                     int b = Fire(gun);
                     if (b >= 0) OnShot(r, Sounds(r));
                 }

@@ -5,13 +5,18 @@
 // materials), the base item's recoloured (only "color" / "glow": its textures made grey and tinted, FxRecolor), or
 // false (none). "shot" / "explosionSound" are the mod's audio files (one at random per shot), "shotLoops"
 // whether the shot sound loops while the trigger is held. What the weapon does stays the base item's (a beam stays a
-// beam, a mine a mine): only what it looks and sounds like changes.
+// beam, a mine a mine): only what it looks and sounds like changes. A part may also be another item's ("item": its base's
+// part), recoloured or not, and any part without a sprite / model can be resized ("scale"); "shot" / "explosionSound" may
+// name an item whose sounds it takes. Turrets: "turret" is the turret's own model (a glTF / GLB with a "pivot" node holding
+// the base and a node named *_gun, the barrel along +Z; without them it turns as one piece), with "muzzle" / "shotStart"
+// along the gun node (game units, on the model as made), "scale" and "offset" (the model moved off its mount, game units).
 // Each item gets a WeaponFx of its own (a copy of the base item's, the parts and clips replaced), which WeaponFx.Load hands
 // to every gun (the player's, NPCs', turrets, sentry guns, other players' mirrored shots). The parts are built under a
 // hidden DontDestroyOnLoad holder (GunRig instantiates them); ModFxPart gives the sprites and models their lifetime,
 // growth, fade and camera facing. Loaded in the background with the ships when the mods change (Preload; ModLoading).
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using GoF2Remake.Flight;
 using Newtonsoft.Json.Linq;
@@ -29,7 +34,11 @@ namespace GoF2Remake.Modding
         /// <summary>One part of an "fx": a sprite or a model, the base item's recoloured, or removed.</summary>
         public class Part
         {
-            public bool remove, recolor;
+            /// <summary>copy: no sprite / model, the base item's part (or 'fromItem''s); recolor: with "color" / "glow".</summary>
+            public bool remove, copy, recolor;
+            /// <summary>Another item's part instead of the base item's (-1 = the base item's), and a size factor.</summary>
+            public int fromItem = -1;
+            public float scale = 1f;
             public string sprite, model, texture;
             public float size = 200f, glow = -1f, lifetimeMs, grow = 1f, spin;
             public Color color = Color.white;
@@ -45,7 +54,19 @@ namespace GoF2Remake.Modding
             public string label, where;
             public Part projectile, muzzle, impact;
             public List<string> shots, explosionSounds;
+            /// <summary>"shot" / "explosionSound" given as an item number: that item's sounds (-1 = none).</summary>
+            public int shotItem = -1, explosionItem = -1;
             public bool? shotLoops;
+            /// <summary>"turret": the turret's own model, its muzzle and where its shots start (game units, -1 = the base's).</summary>
+            public string turretModel;
+            public float turretMuzzle = -1f, turretShot = -1f;
+            /// <summary>"turret" "scale": the model's size factor (1 = as made, 1 unit = 1 m).</summary>
+            public float turretScale = 1f;
+            /// <summary>"turret" "offset": the model moved off its mount, game units in the turret's frame (x toward the
+            /// pilot's left, y along the turret's up, z forward).</summary>
+            public Vector3 turretOffset;
+            /// <summary>The turret model is resized or moved (its own or the base item's).</summary>
+            public bool TurretReshaped => !Mathf.Approximately(turretScale, 1f) || turretOffset != Vector3.zero;
         }
 
         static readonly Dictionary<int, WeaponFx> made = new Dictionary<int, WeaponFx>();
@@ -111,9 +132,12 @@ namespace GoF2Remake.Modding
         }
 
         static readonly HashSet<string> FxFields = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase)
-            { "projectile", "muzzle", "impact", "shot", "shotLoops", "explosionSound" };
+            { "projectile", "muzzle", "impact", "shot", "shotLoops", "explosionSound", "turret" };
         static readonly HashSet<string> PartFields = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase)
-            { "sprite", "model", "texture", "size", "color", "glow", "additive", "lifetime", "grow", "fade", "spin", "alongFlight", "stretch", "rotate" };
+            { "sprite", "model", "texture", "size", "color", "glow", "additive", "lifetime", "grow", "fade", "spin", "alongFlight", "stretch", "rotate",
+              "item", "scale" };
+        static readonly HashSet<string> CopyFields = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase) { "item", "scale", "color", "glow" };
+        static readonly HashSet<string> TurretFields = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase) { "model", "muzzle", "shotStart", "scale", "offset" };
 
         static Def Parse(ModInfo mod, JToken token, int item, string label)
         {
@@ -127,13 +151,45 @@ namespace GoF2Remake.Modding
                 projectile = ParsePart(mod, ModJson.Get(o, "projectile"), "projectile"),
                 muzzle = ParsePart(mod, ModJson.Get(o, "muzzle"), "muzzle"),
                 impact = ParsePart(mod, ModJson.Get(o, "impact"), "impact"),
-                shots = Files(o, "shot"),
-                explosionSounds = Files(o, "explosionSound"),
+                shots = Files(o, "shot", out int shotItem),
+                explosionSounds = Files(o, "explosionSound", out int explosionItem),
+                shotItem = shotItem, explosionItem = explosionItem,
             };
             if (ModJson.Has(o, "shotLoops")) d.shotLoops = ModJson.Bool(o, "shotLoops", false, File);
             foreach (var f in Concat(d.shots, d.explosionSounds))
                 if (!mod.Source.Exists(f)) throw new ModJsonException($"{where}: the sound {f} isn't in the mod");
+            ParseTurret(mod, d, ModJson.Get(o, "turret"));
             return d;
+        }
+
+        /// <summary>"turret": "models/x.glb" or { "model": ..., "muzzle": units, "shotStart": units, "scale": f, "offset": [x, y, z] };
+        /// without "model" the base item's turret, resized and / or moved.</summary>
+        static void ParseTurret(ModInfo mod, Def d, JToken t)
+        {
+            if (t == null) return;
+            string where = ModJson.Where(t, File);
+            if (t.Type == JTokenType.String) d.turretModel = (string)t;
+            else if (t is JObject o)
+            {
+                foreach (var p in o.Properties())
+                    if (!TurretFields.Contains(p.Name)) mod.Warnings.Add($"{ModJson.Where(p, File)}: unknown field \"{p.Name}\" in \"turret\" (ignored)");
+                d.turretModel = ModJson.Str(o, "model");
+                d.turretMuzzle = ModJson.Float(o, "muzzle", -1f, File);
+                d.turretShot = ModJson.Float(o, "shotStart", -1f, File);
+                d.turretScale = ModJson.Float(o, "scale", 1f, File);
+                if (d.turretScale <= 0f) throw new ModJsonException($"{where}: \"turret\": \"scale\" must be above 0");
+                if (ModJson.Get(o, "offset") is JToken off)
+                {
+                    if (!(off is JArray a) || a.Count != 3 || a.Any(v => v.Type != JTokenType.Integer && v.Type != JTokenType.Float))
+                        throw new ModJsonException($"{ModJson.Where(off, File)}: \"turret\": \"offset\" is [x, y, z] (game units)");
+                    d.turretOffset = new Vector3((float)a[0], (float)a[1], (float)a[2]);
+                }
+                if (d.turretModel == null && !d.TurretReshaped && d.turretMuzzle < 0f && d.turretShot < 0f)
+                    throw new ModJsonException($"{where}: \"turret\" needs \"model\" (a glTF / GLB), or \"scale\" / \"offset\" for the base item's");
+                if (d.turretModel == null) return;   // the base item's model, resized / moved
+            }
+            else throw new ModJsonException($"{where}: \"turret\" is a model file or {{ \"model\": ..., \"muzzle\": ..., \"shotStart\": ..., \"scale\": ..., \"offset\": [x, y, z] }}");
+            if (!mod.Source.Exists(d.turretModel)) throw new ModJsonException($"{where}: the turret model {d.turretModel} isn't in the mod");
         }
 
         static IEnumerable<string> Concat(List<string> a, List<string> b)
@@ -142,13 +198,21 @@ namespace GoF2Remake.Modding
             if (b != null) foreach (var s in b) yield return s;
         }
 
-        static List<string> Files(JObject o, string key)
+        /// <summary>A sound field: a file, a list of files, or an item's number (its sounds: 'item', the files null).</summary>
+        static List<string> Files(JObject o, string key, out int item)
         {
+            item = -1;
             var t = ModJson.Get(o, key);
             if (t == null) return null;
             if (t.Type == JTokenType.String) return new List<string> { (string)t };
+            if (t.Type == JTokenType.Integer)
+            {
+                if (!ModContent.TryResolveItem(t.ToString(), out item))
+                    throw new ModJsonException($"{ModJson.Where(t, File)}: \"{key}\": there is no item {t}");
+                return null;
+            }
             var list = ModJson.Strings(o, key);
-            if (list == null || list.Count == 0) throw new ModJsonException($"{ModJson.Where(t, File)}: \"{key}\" must be a file or a list of files");
+            if (list == null || list.Count == 0) throw new ModJsonException($"{ModJson.Where(t, File)}: \"{key}\" must be a file, a list of files or an item's number");
             return list;
         }
 
@@ -181,15 +245,24 @@ namespace GoF2Remake.Modding
                 throw new ModJsonException($"{where}: \"{name}\" has both \"sprite\" and \"model\"; give one of them");
             if (part.sprite == null && part.model == null)
             {
-                // Neither: the base item's own part, recoloured. Only "color" and "glow" mean something then.
-                if (!ModJson.Has(o, "color") && !ModJson.Has(o, "glow"))
-                    throw new ModJsonException($"{where}: \"{name}\" needs \"sprite\" (a PNG) or \"model\" (a glTF / GLB), or \"color\" to recolour the original's");
-                part.recolor = true;
+                // Neither: the base item's own part (or another item's, "item"), recoloured ("color" / "glow") and / or
+                // resized ("scale"). Only those four mean something then.
+                part.recolor = ModJson.Has(o, "color") || ModJson.Has(o, "glow");
+                if (!part.recolor && !ModJson.Has(o, "item") && !ModJson.Has(o, "scale"))
+                    throw new ModJsonException($"{where}: \"{name}\" needs \"sprite\" (a PNG) or \"model\" (a glTF / GLB), or \"color\" / \"item\" / \"scale\" to change the original's");
+                part.copy = true;
+                if (ModJson.Get(o, "item") is JToken it && (it.Type != JTokenType.Integer || !ModContent.TryResolveItem(it.ToString(), out part.fromItem)))
+                    throw new ModJsonException($"{ModJson.Where(it, File)}: \"{name}\": \"item\" is an item's number (there is no item {it})");
+                part.scale = ModJson.Float(o, "scale", 1f, File);
+                if (part.scale <= 0f) throw new ModJsonException($"{where}: \"{name}\": \"scale\" must be above 0");
                 foreach (var p in o.Properties())
-                    if (PartFields.Contains(p.Name) && !string.Equals(p.Name, "color", System.StringComparison.OrdinalIgnoreCase)
-                        && !string.Equals(p.Name, "glow", System.StringComparison.OrdinalIgnoreCase))
-                        mod.Warnings.Add($"{ModJson.Where(p, File)}: \"{p.Name}\" in \"{name}\" only applies with a sprite or model; recolouring the original's takes \"color\" and \"glow\" (ignored)");
+                    if (PartFields.Contains(p.Name) && !CopyFields.Contains(p.Name))
+                        mod.Warnings.Add($"{ModJson.Where(p, File)}: \"{p.Name}\" in \"{name}\" only applies with a sprite or model; the original's takes \"item\", \"scale\", \"color\" and \"glow\" (ignored)");
             }
+            else
+                foreach (var p in o.Properties())
+                    if (string.Equals(p.Name, "item", System.StringComparison.OrdinalIgnoreCase) || string.Equals(p.Name, "scale", System.StringComparison.OrdinalIgnoreCase))
+                        mod.Warnings.Add($"{ModJson.Where(p, File)}: \"{p.Name}\" in \"{name}\" only applies without a sprite or model (\"size\" sizes those; ignored)");
             if (part.size <= 0f) throw new ModJsonException($"{where}: \"{name}\": \"size\" must be above 0");
             if (ModJson.Get(o, "color") is JToken c) part.color = ParseColor(c);
             if (ModJson.Get(o, "rotate") is JArray r && r.Count == 3) part.rotate = new Vector3((float)r[0], (float)r[1], (float)r[2]);
@@ -267,22 +340,50 @@ namespace GoF2Remake.Modding
                 // Everything of the item at once: textures, models and sounds.
                 var parts = new[] { d.projectile, d.muzzle, d.impact };
                 var built = new Task<GameObject>[3];
-                for (int i = 0; i < 3; i++) built[i] = parts[i] == null || parts[i].remove || parts[i].recolor ? Task.FromResult<GameObject>(null) : BuildPart(rev, d, parts[i], i);
+                for (int i = 0; i < 3; i++) built[i] = parts[i] == null || parts[i].remove || parts[i].copy ? Task.FromResult<GameObject>(null) : BuildPart(rev, d, parts[i], i);
                 var shots = LoadClips(d.mod, d.shots);
                 var booms = LoadClips(d.mod, d.explosionSounds);
-                await Task.WhenAll(built[0], built[1], built[2], shots, booms);
+                var turret = d.turretModel != null ? BuildTurret(rev, d) : Task.FromResult<GameObject>(null);
+                await Task.WhenAll(built[0], built[1], built[2], shots, booms, turret);
                 if (rev != ModManager.Revision) return;
-                int look = ModContent.ItemLook(d.item);
-                var baseFx = Resources.Load<WeaponFx>($"{WeaponFx.ResourcesFolder}/item_{look:000}");
+                var baseFx = BaseFx(d.item);
                 var fx = baseFx != null ? Object.Instantiate(baseFx) : ScriptableObject.CreateInstance<WeaponFx>();
                 fx.name = $"mod fx {d.mod.Id}:{d.label}";
                 fx.item = d.item;
-                if (d.projectile != null) fx.projectile = d.projectile.recolor ? Recolor(d, d.projectile, fx.projectile, 0) : built[0].Result;
-                if (d.muzzle != null) fx.muzzleFlash = d.muzzle.recolor ? Recolor(d, d.muzzle, fx.muzzleFlash, 1) : built[1].Result;
-                if (d.impact != null) fx.impact = d.impact.recolor ? Recolor(d, d.impact, fx.impact, 2) : built[2].Result;
+                if (d.projectile != null) fx.projectile = d.projectile.copy ? Copy(d, d.projectile, fx.projectile, 0) : built[0].Result;
+                if (d.muzzle != null) fx.muzzleFlash = d.muzzle.copy ? Copy(d, d.muzzle, fx.muzzleFlash, 1) : built[1].Result;
+                if (d.impact != null) fx.impact = d.impact.copy ? Copy(d, d.impact, fx.impact, 2) : built[2].Result;
+                if (d.shotItem >= 0 && BaseFx(d.shotItem) is WeaponFx shotFx)
+                {
+                    // Another item's shot: its sounds, and whether they loop unless "shotLoops" says so.
+                    fx.shot = shotFx.shot; fx.shots = shotFx.shots; fx.shotLoops = shotFx.shotLoops;
+                }
+                if (d.explosionItem >= 0 && BaseFx(d.explosionItem) is WeaponFx boomFx)
+                {
+                    fx.explosionSound = boomFx.explosionSound; fx.explosionSounds = boomFx.explosionSounds;
+                }
                 if (shots.Result != null && shots.Result.Length > 0) { fx.shots = shots.Result; fx.shot = shots.Result[0]; }
                 if (booms.Result != null && booms.Result.Length > 0) { fx.explosionSounds = booms.Result; fx.explosionSound = booms.Result[0]; }
                 if (d.shotLoops.HasValue) fx.shotLoops = d.shotLoops.Value;
+                var turretModel = turret.Result;
+                if (turretModel == null && d.turretModel == null && d.TurretReshaped && fx.turretMounted != null)
+                {
+                    // The base item's turret, resized / moved: a copy of its ship-mounted model (also shown in the hangar).
+                    turretModel = Object.Instantiate(fx.turretMounted, holder.transform, false);
+                    turretModel.name = $"{d.mod.Id}:{d.label} turret (base, reshaped)";
+                    owned.Add(turretModel);
+                    var pivot = turretModel.transform.Find("pivot");
+                    if (pivot != null) Reshape(turretModel.transform, pivot, d);
+                    else { Warn(d.mod, $"{d.where}: the base item's turret has no pivot to move"); turretModel = null; }
+                }
+                if (turretModel != null)
+                {
+                    fx.turretMounted = turretModel;
+                    fx.modTurret = true;
+                }
+                // The muzzle and shot start apply to the base item's model as well (PlayerTurret reads them either way).
+                fx.turretMuzzleUnits = d.turretMuzzle;
+                fx.turretShotUnits = d.turretShot;
                 owned.Add(fx);
                 made[d.item] = fx;
                 Debug.Log($"Mods: {d.mod.Id}: weapon fx for \"{d.label}\" (item {d.item})");
@@ -306,6 +407,79 @@ namespace GoF2Remake.Modding
             var list = new List<AudioClip>();
             foreach (var c in clips) if (c != null) { list.Add(c); owned.Add(c); }
             return list.ToArray();
+        }
+
+        /// <summary>An item's game fx (its base's for a mod item): the source of borrowed parts and sounds.</summary>
+        static WeaponFx BaseFx(int item) =>
+            Resources.Load<WeaponFx>($"{WeaponFx.ResourcesFolder}/item_{ModContent.ItemLook(item):000}");
+
+        /// <summary>A turret's own model (fx "turret"), as PlayerTurret expects the game's *_ship_mounted prefabs: a "pivot"
+        /// node holding the base and a node whose name contains "_gun" (the barrel along +Z). Its size as made (1 = 1 m) times
+        /// "scale". A model without them turns as one piece: a "pivot" without a *_gun node gets one holding its children, a
+        /// model without "pivot" one holding the whole model (so a plain GLB from the Mod Builder works).</summary>
+        static async Task<GameObject> BuildTurret(int rev, Def d)
+        {
+            var bytes = await Task.Run(() => d.mod.Source.ReadBytes(d.turretModel));
+            if (rev != ModManager.Revision || holder == null) return null;
+            if (bytes == null) { Warn(d.mod, $"{d.where}: {d.turretModel} not found"); return null; }
+            var import = await ModGltf.Load(d.mod, bytes, agent);
+            bytes = null;
+            if (import == null) { Warn(d.mod, $"{d.turretModel}: not a glTF model glTFast can read"); return null; }
+            imports.Add(import);
+            if (rev != ModManager.Revision || holder == null) return null;
+            var root = new GameObject($"{d.mod.Id}:{d.label} turret");
+            root.transform.SetParent(holder.transform, false);
+            owned.Add(root);
+            if (!await import.InstantiateMainSceneAsync(root.transform)) { Warn(d.mod, $"{d.turretModel}: no scene to show"); return null; }
+            if (rev != ModManager.Revision || holder == null) return null;
+            // glTFast may put the scene under a node of its own: PlayerTurret looks for "pivot" right under the root.
+            var pivot = FindDeep(root.transform, "pivot");
+            if (pivot == null)
+            {
+                pivot = new GameObject("pivot").transform;
+                pivot.SetParent(root.transform, false);
+                foreach (var c in Children(root.transform)) if (c != pivot) c.SetParent(pivot, true);
+            }
+            else if (pivot.parent != root.transform) pivot.SetParent(root.transform, true);
+            Transform gun = null;
+            foreach (Transform c in pivot) if (c.name.Contains("_gun")) gun = c;
+            if (gun == null)
+            {
+                gun = new GameObject("model_gun").transform;
+                gun.SetParent(pivot, false);
+                foreach (var c in Children(pivot)) if (c != gun) c.SetParent(gun, true);
+            }
+            Reshape(root.transform, pivot, d);
+            return root;
+        }
+
+        /// <summary>A turret model's "scale" (on its root) and "offset": the offset moves the pivot (the root's own place is
+        /// the mount's), game units, x mirrored like the models, undone by the root's scale so it stays in game units.</summary>
+        static void Reshape(Transform root, Transform pivot, Def d)
+        {
+            root.localScale *= d.turretScale;
+            var o = d.turretOffset;
+            float scale = Mathf.Max(1e-4f, root.localScale.x);
+            // In the mount's frame: the root may carry the model's own turn (the game's turrets: a half turn).
+            pivot.localPosition += Quaternion.Inverse(root.localRotation) * new Vector3(-o.x, o.y, o.z) * (Flight.Gun.MetersPerUnit / scale);
+        }
+
+        static List<Transform> Children(Transform t)
+        {
+            var list = new List<Transform>();
+            foreach (Transform c in t) list.Add(c);
+            return list;
+        }
+
+        static Transform FindDeep(Transform t, string name)
+        {
+            foreach (Transform c in t)
+            {
+                if (c.name == name) return c;
+                var f = FindDeep(c, name);
+                if (f != null) return f;
+            }
+            return null;
         }
 
         static readonly string[] PartNames = { "projectile", "muzzle", "impact" };
@@ -402,20 +576,40 @@ namespace GoF2Remake.Modding
             return root;
         }
 
+        /// <summary>A part without a sprite / model: the base item's (or "item"'s) own, recoloured ("color" / "glow") and
+        /// resized ("scale"; on a node under a new root, since GunRig sets the root's scale).</summary>
+        static GameObject Copy(Def d, Part p, GameObject baseSource, int kind)
+        {
+            var source = p.fromItem >= 0 ? PartOf(BaseFx(p.fromItem), kind) : baseSource;
+            if (source == null)
+            {
+                Warn(d.mod, $"{d.where}: {(p.fromItem >= 0 ? $"item {p.fromItem}" : "the base item")} has no {PartNames[kind]} to use (give a sprite or model)");
+                return null;
+            }
+            var part = p.recolor ? Recolor(d, p, source, kind) : source;
+            if (part == null || Mathf.Approximately(p.scale, 1f)) return part;
+            var root = new GameObject($"{d.mod.Id}:{d.label} {PartNames[kind]} (x{p.scale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)})");
+            root.transform.SetParent(holder.transform, false);
+            owned.Add(root);
+            var scaler = new GameObject("scale").transform;
+            scaler.SetParent(root.transform, false);
+            scaler.localScale = Vector3.one * p.scale;
+            Object.Instantiate(part, scaler, false).name = part.name;
+            return root;
+        }
+
+        static GameObject PartOf(WeaponFx fx, int kind) =>
+            fx == null ? null : kind == 0 ? fx.projectile : kind == 1 ? fx.muzzleFlash : fx.impact;
+
         // The base items' effect textures made grey (FxRecolor), one per texture whatever the colours asked of it.
         static readonly Dictionary<Texture, Texture> greyed = new Dictionary<Texture, Texture>();
         static Material recolorBlit;
 
-        /// <summary>The base item's part (null: it has none) with its effect materials recoloured: their texture the grey
+        /// <summary>A part (the base item's or another's) with its effect materials recoloured: their texture the grey
         /// copy (each texel's brightest channel, so the bright core and soft edges stay), _Color the part's colour, _Glow
         /// its glow. Other materials (a missile's hull) keep theirs. PartAnimation's fades start from the copy's _Color.</summary>
         static GameObject Recolor(Def d, Part p, GameObject source, int kind)
         {
-            if (source == null)
-            {
-                Warn(d.mod, $"{d.where}: the base item has no {PartNames[kind]} to recolour (give a sprite or model)");
-                return null;
-            }
             var copy = Object.Instantiate(source, holder.transform, false);
             copy.name = $"{d.mod.Id}:{d.label} {PartNames[kind]} (recoloured)";
             owned.Add(copy);
