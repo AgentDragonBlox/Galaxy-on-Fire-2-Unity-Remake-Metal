@@ -26,18 +26,24 @@ A remake of the 2010 mobile game *Galaxy on Fire 2* (Fishlabs / Deep Silver) in 
 
 ```
 Assets/
-  Scripts/Runtime/   flight model, ship controller, chase camera, data loader, keyframe player
-  Scripts/Runtime/World/  station orbits: OrbitLayout (seeded layout), OrbitBuilder (layout -> scene, shared by
+  Scripts/Runtime/   the runtime code in layered assemblies, lowest first (Scripts/Runtime/README.md: the layers, the hooks):
+    Core/            GoF2.Core: pure rules / utilities (JavaRandom, MiningGame, Cloak, Hitpoints, CollisionVolume...)
+    Game/, Modding/  GoF2.Game: state and rules (Session, Database, Story, Shop, Freelance, saves, Settings), mod loading
+    Space/           GoF2.Space: ship controller, chase camera, combat, keyframe player (FlightModel is in Game); Space/UI: the
+                     helpers the screens share (ItemInfo, Portrait, StarMapTypes, UiHooks); Space/ModBuilding: mod models
+    Space/World/     station orbits: OrbitLayout (seeded layout, in Game), OrbitBuilder (layout -> scene, shared by
                      the flight level and the menu background), SpaceLevel, Backdrop, SpaceDust,
                      SystemJump (jumpgate / Khador travel), Traffic + NpcShip (NPC ships), Wormhole (the Void's wormhole);
                      story: StorySpace, CampaignLevel, IntroCutscenes (0 / 1), MainCampaignLevels (14-42),
                      ValkyrieLevels (48-81), SupernovaLevels (87-158), GasCloudField, NpcCloak;
-                     docked station: StationLevel + StationTables
-  Scripts/Runtime/Events/  the event graphs (single player quests / bar missions and multiplayer events alike):
+                     docked station: StationLevel + StationTables; SpaceHooks (what the levels need from Net / App)
+    Net/Multiplayer/ GoF2.Net: multiplayer (see "Multiplayer")
+    Net/Events/      the event graphs (single player quests / bar missions and multiplayer events alike):
                      EventRunner (runs them), EventGraphFile + EventGraphScript (read / compile a .gof2event),
                      EventHost / IPilot / LocalPilot / LocalEvents (session or single player), EventMissions, EventScreen
                      (titles, dialogues, rewards, questions), EventCutscene, EventWaypoint, EventRespawn, EventRules,
                      EventAudio, EventNames; the commands they run stay in Multiplayer (NetCommands, NetAdmin)
+    App/             GoF2.App: Bootstrap, AppHooksInstaller; App/UI the screens, App/Vr VR
   Scripts/Editor/    import settings, prefab builder, asset pack installer, menu items
   Models/            1,125 converted .fbx meshes, each with a .gof2mesh.json sidecar (pivots, keyframes)
   Textures/          1,281 .png (diffuse, *_normal_specular = normal map, *_metallic_smoothness generated)
@@ -107,6 +113,13 @@ Menu items (from `Scripts/Editor`), grouped in submenus; **GoF2 > Tools Overview
 
 ## Conventions
 
+- **Layered assemblies** (`Scripts/Runtime/README.md`): GoF2.Core <- GoF2.Game <- GoF2.Space <- GoF2.Net <- GoF2.App, each
+  referencing only the ones below. The folder decides the assembly, not the namespace. A lower layer never names a type of
+  a higher one: it adds a member to its hook class (`GameHooks`, `NetSession`, `SpaceHooks`, `UiHooks`) with a single-player
+  fallback, and the higher layer's installer (`SpaceHooksInstaller`, `NetHooksInstaller`, `AppHooksInstaller`) fills it
+  (`LayerHookTests` checks none is left unset). Only GoF2.Net and GoF2.App reference Netcode. New files in `Space/` keep the
+  `GoF2Remake.Flight` / `World` / `Visuals` / `UI` namespaces: never `GoF2Remake.Space` (see below), whatever an IDE derives
+  from the folder.
 - Namespaces: `GoF2Remake.Flight`, `GoF2Remake.Data`, `GoF2Remake.Visuals`, `GoF2Remake.World` (flight level), `GoF2Remake.UI`, `GoF2Remake.Events` (the event graphs), `GoF2Remake.Multiplayer`, `GoF2Remake.Modding`, `GoF2Remake.EditorTools`. Never a namespace segment that shadows a Unity type (`GoF2Remake.Space` broke `Space.Self`).
 - **One MonoBehaviour/ScriptableObject per file, and the file name must equal the class name.** Otherwise prefabs save it as a missing script.
 - Gameplay logic is a clean C# reimplementation of the behaviour in the decompiled code, not a line-by-line transliteration. Comment the original function names and constants you based it on.
@@ -730,7 +743,7 @@ The FMOD data comes from the FEV's LGCY chunk (`Reference/tools/audio/fev_lgcy.p
 
 ## UI and platforms
 
-- **UI Toolkit only** (runtime): shared theme `UI/GoF2Theme.tss`; per-screen UXML/USS; controllers in `Scripts/Runtime/UI` (`GoF2Remake.UI`). The theme doesn't include Unity's default runtime theme, so built-in controls are styled in `GoF2Common.uss` and the document root is stretched in code.
+- **UI Toolkit only** (runtime): shared theme `UI/GoF2Theme.tss`; per-screen UXML/USS; controllers in `Scripts/Runtime/App/UI` (`GoF2Remake.UI`). The theme doesn't include Unity's default runtime theme, so built-in controls are styled in `GoF2Common.uss` and the document root is stretched in code.
 - **Landscape only** (portrait disallowed in Player Settings). Supported from 4:3 to 32:9 and phones: the panel scales to screen height (reference 1920x1080, 1600x900 on phones), UI stays inside a centred max-21:9 safe area, `layout-narrow` / `layout-phone` classes adapt the layout, device safe-area insets are applied. Cameras use `Aspect.VerticalFov` (Hor+ on wide screens, never narrower than 16:9); the bars `Aspect.VerticalFovKeepWidth` (wider screens keep the 16:9 width and lose a little top and bottom: the bars are only modelled as far as the original's camera sees); the hangars are back on Hor+ (`StationLevel.SetLens(..., keepWidth: false)`): a new hangar model is being made, so their cut-off edges on 21:9 / 32:9 are left for it.
 - **Keyboard** (flight): the PC / Mac version's defaults (Galaxy on Fire 2 Full HD: the PCGameControls wiki list, and the PC help texts in the text table: 17 / 18, 587, 638, 1731 / 1732, 1752, 1754, 1879 with their `#KEY_*` tokens, `FlightHints.KeyTokens`): arrows steer, W booster, S brake (the PC version's "Brake" 3361: the engines stop while held, the throttle is kept; a boost overrides it), `]` / `/` (and the wheel) thrust, Space / LMB primary, R / RMB secondary, A / D strafe (held; the PC binding screen's 3350 / 3351 "Strafe left / right", `PlayerEgo::strafe` 0xad838, never called on the phone: sideways speed ramp x min(H' x 0.06, 2) u/ms, the ramp 0.1 x1.5 a frame, x0.7 a frame after release, the camera moves with it; the dodge keeps the touch swipe and the right-stick flick and can be bound), 1 / 3 roll ("Turn left / right", remake roll: the phone original only auto-levels; touch: the Level button slid sideways), F the action prompt (Dock: dock, the autopilot to a locked station, the planet jump; Enter too), Q autopilot (the target list, again = off) and E actions (the quick menu), 1-8 pick a menu entry, Tab fast-forward ("Speed up"), T view, V wingmen, K Khador Drive, C cloak, M / middle mouse toggle mouse steering, Esc pause. Strafe works on the autopilot too (remake). Remake keys: 2 level out, G switch secondary, X time extender, Y turret auto fire, F12 a screenshot anywhere (`ScreenshotKey`, saved like the photo mode's: PC Pictures/Galaxy on Fire 2, Android MediaStore). The phone binary has no flight keys (`MGame::OnKeyPress` is empty). These are the defaults: every flight
   control is rebindable (see **Key bindings**).
@@ -902,7 +915,7 @@ The FMOD data comes from the FEV's LGCY chunk (`Reference/tools/audio/fev_lgcy.p
 Netcode for GameObjects 3.0 (`com.unity.netcode.gameobjects`, which now also brings Netcode for Entities, Entities, Burst and
 Collections) over Unity Transport: online through Unity Relay with a join code and the Unity Lobby server browser
 (`com.unity.services.multiplayer`, project linked to Unity Cloud, Relay and Lobby on in the dashboard, anonymous Unity
-Authentication), or on the local network by direct IP, port 7777. Code in `Scripts/Runtime/Multiplayer` (`GoF2Remake.Multiplayer`);
+Authentication), or on the local network by direct IP, port 7777. Code in `Scripts/Runtime/Net/Multiplayer` (`GoF2Remake.Multiplayer`);
 the network prefabs in `Resources/GoF2Net` (**GoF2 > Build > Network Prefabs**: NetPlayer / NetProxy / NetState / NetCrate, each a
 NetworkObject; it re-saves them so each gets its own GlobalObjectIdHash, and switches Android's internet permission on).
 Single player is untouched: every multiplayer path runs only while `NetGame.Active`.
@@ -1263,7 +1276,7 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   everyone and every page), or "player" (the reader: speaker 0's face with their pilot name); %player% in a text or name is
   the reader's name; a page `reward [title]: <rewards>` pays when the dialogue closes (like a single-player mission's success page). `/reward [players] <credits | item [amount]> [+ ...] [| title]`: credits and / or up to 8 items into the hold, shown in the reward box (`EventScreen.ShowReward`, `Layout::showMissionRewardMessage` / `drawMissionRewardMessage` 0xe7684: the title, default 216 "Mission accomplished!", over "+ credits" and each item with its shop icon, centred, fades in 2 s, holds until 5 s, fades out until 7 s, sound 36). Typed commands may be 500 characters (`NetChat.MaxCommandLength`; chat lines stay 160).
 - **Where the event graphs live** (they began as multiplayer events and now run single player's quests and bar missions too):
-  `Scripts/Runtime/Events`, namespace `GoF2Remake.Events` (was `Multiplayer`: `NetEvents` is `EventRunner`, the `NetEvent*`
+  `Scripts/Runtime/Net/Events`, namespace `GoF2Remake.Events` (was `Multiplayer`: `NetEvents` is `EventRunner`, the `NetEvent*`
   helpers `Event*`, `NetScreen` `EventScreen`); graph files `.gof2event` (the old `.gof2netevent` is still read by the game:
   `EventRunner.LegacyExtension`, the Events folders and mods' `events/`; imported into the project, `EventGraphUpgrade`
   renames one with `AssetDatabase.MoveAsset` (its GUID kept) and rewrites its enum option types `GoF2Remake.Multiplayer.Event*`
@@ -2183,7 +2196,7 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
 
 Packages `com.unity.xr.openxr` (+ XR Plug-in Management, XR Core Utils). **GoF2 > Setup > Configure VR (OpenXR)** (`VrSetup`,
 idempotent): the OpenXR loader for Standalone with Initialize on Startup off, the controller profiles (Oculus / Meta Touch,
-Index, Vive, WMR, Reverb G2, Khronos simple). Code in `Scripts/Runtime/Vr` (`GoF2Remake.Vr`).
+Index, Vive, WMR, Reverb G2, Khronos simple). Code in `Scripts/Runtime/App/Vr` (`GoF2Remake.Vr`).
 
 - **Only when asked for** (`VrMode`): `-vr` starts OpenXR before the first scene (`InitializeLoaderSync`, seated: tracking
   origin Device, recentred); without a headset / runtime it logs why and runs flat. `-vrsim` is the same VR layout on the

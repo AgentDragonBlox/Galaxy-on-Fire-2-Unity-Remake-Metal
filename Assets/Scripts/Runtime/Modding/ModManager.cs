@@ -31,6 +31,9 @@ namespace GoF2Remake.Modding
         static List<string> sessionIds;   // null = single player (the enabled mods)
         static ModInfo builderProject;    // the Mod Builder's open project (ModBuilder), null = none
 
+        /// <summary>The Mod Builder has a project open and its throwaway game runs (ModBuilder.Active; never saved).</summary>
+        public static bool BuilderOpen { get; internal set; }
+
         /// <summary>Bumped whenever the active mods may have changed (a scan, a toggle, the order, a session).</summary>
         public static int Revision { get; private set; }
 
@@ -108,7 +111,7 @@ namespace GoF2Remake.Modding
             ModContent.ClearParsed();
             foreach (var m in installed) if (!m.Broken) ModContent.Parse(m);   // a broken content file shows in the browser
             SortInstalled();
-            World.ShipShadowBaker.PruneCache(installed.Where(m => m.Manifest != null).Select(m => m.Id));   // removed mods' hangar shadows
+            Data.GameHooks.ModsScanned?.Invoke(installed.Where(m => m.Manifest != null).Select(m => m.Id));   // removed mods' hangar shadows
             ModTextureCache.PruneCache(installed.Where(m => m.Manifest != null).Select(m => m.Id));   // and their cached textures
             Debug.Log($"Mods: {installed.Count} installed ({string.Join(", ", installed.Select(m => m.Id + (IsEnabled(m.Id) ? " on" : "")))})");
             Invalidate();
