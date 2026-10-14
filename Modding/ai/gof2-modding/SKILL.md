@@ -114,14 +114,14 @@ copied.
 |---|---|
 | `name`, `description` | String or per language. |
 | `techLevel` | 1-10: shops sell items up to their station's tech level. |
-| `occurrence` | How often shops stock it, 0-90 (0 = never randomly). |
+| `occurrence` | How often shops stock it and NPCs carry it as loot, 0-90 (0 = never: only `alwaysSoldAt`, blueprints, rewards). |
 | `price` / `minPrice`, `maxPrice` | `1500` or `[1200, 1500]`; a station's price lies in the range. |
 | `lowestPriceSystem`, `highestPriceSystem` | System numbers where it's cheapest / dearest. |
 | `vosskOnly` | `true`: only Vossk systems sell it. |
 | `alwaysSoldAt` | A station number that always stocks it (78 = Var Hastra, the start; -1 none). |
 | `stats` | Named stats (below); copy the base item's stats from `reference.md` and change them. |
 | `attributes` | Raw attribute numbers `{ "9": 14 }` for anything without a name (not 0-8). |
-| `defaultEconomy` | The same fields for the Default economy. |
+| `defaultEconomy` | The same fields, laid over the main ones in the Default economy only. The main fields apply in both economies, so give only what differs (usually the prices). |
 | `icon` | Own shop icon PNG, 180 x 88 (frame included). Default: the base's. |
 | `fx` | The weapon's own look and sound (below). |
 | `available` | A condition (see Conditions) before shops stock it or loot drops it. |
@@ -197,7 +197,8 @@ with the mod's own `sprite` (PNG in the mod, white on black or transparent; `col
 | `dealer` | Ordinary ship dealers stock it: chance % (decimals ok) per dealer list, systemRace, minTechLevel. Not the special yards. |
 | `available` | Condition before dealers / lounges sell it. |
 
-`override` changes an original (number) or another mod's ship (key): armor, cargo, price, priceDefault, slots, handling, name,
+`override` changes an original (number) or another mod's ship (key) in both economies (only the price has a Default twin,
+`priceDefault`): armor, cargo, price, priceDefault, slots, handling, name,
 description, `mounts` (mod ships also race, hangarHeight), and an original can get a new `model` (+ its fields). `slots` merges
 (give only the changed counts); `mounts` replaces the ship's whole list (exhausts too). More weapon slots than gun mounts: the
 extra weapons share the mounts; fewer slots: what doesn't fit goes to the hold on the next docking.
@@ -312,6 +313,10 @@ the game.
     "planetTexture": "textures/planet.png", "music": "kepler_bar" } ]
 ```
 
+`looksLike` borrows only an original station's model and collision (reference.md's Model column): its special rules (the
+Kaamo Club's storage and siege, a pirate base) stay with the original number. Stations have no hidden flag: every station of
+a visible system shows on the map.
+
 Systems: race 0-3, security 0 (lawless) - 3 (secure), map position (originals x 15-94, y 2-96, z 10-90), sky 0-18, gates
 both ways, up to 7 stations each. Skybox images: 2:1 panorama or 6:1 cube strip (right, left, up, down, front, back), light
 on black, 8192 x 4096 sharp. Stations: techLevel 0-10, planet 0-22 or 24-26, looksLike = an original station whose model
@@ -347,7 +352,9 @@ to the mod's `events/` folder; the file name is the graph's name. The Start node
 Nodes include Dialog, Radio, Spawn (named ships), Wait / Wait Until, On (docked, entered orbit, destroyed, cleared, near a
 point), Set Waypoint, Set Objective, Checkpoint, Quest Orbit, Give Item, Reward, Mission Complete / Failed, Start Quest, ship
 orders (Fly To, Fly Route, Follow, Attack, Ship Action), cutscene nodes (Start Cutscene, Camera Shot, Fade, End Cutscene),
-Play Music. You can't write the file; describe the graph as an ordered list of nodes with their settings and wires for the
+Play Music. A Checkpoint (and a quest's start) is kept by the game's next save: the auto-save at the next docking or a manual
+save; a quest started while docked isn't in that docking's auto-save. Quest Orbit takes effect the next time the orbit is built
+(launching from its station counts). You can't write the file; describe the graph as an ordered list of nodes with their settings and wires for the
 user to build, using the exact node, option and port names (and option choices) from `events.md`.
 
 ## Balancing (the originals, Android economy)

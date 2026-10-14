@@ -74,6 +74,23 @@ namespace GoF2Remake.EditorTools
             "dark blue-green ocean world with a bright atmosphere rim",
         };
 
+        /// <summary>The model a station's orbit shows (OrbitBuilder.StationAssembly without the story's states: the finished
+        /// game's), what a mod station's looksLike borrows.</summary>
+        static string StationModel(int station, int race, List<AssemblyData> stationModels)
+        {
+            switch (station)
+            {
+                case 100: return "v_station_deep_science_damaged (v_station_deep_science before the Valkyrie add-on is won)";
+                case 101: return "v_station_battlestation_anim";
+                case 108: return "station_kaamo_club";
+                case 109: case 110: return "sn_station_midorian_wrecked";
+                case 111: return "sn_station_midorian_wrecked (sn_burning_station_luur during the Supernova story)";
+            }
+            string prefix = $"station_{station:000}_";
+            var entry = stationModels.FirstOrDefault(a => a.name.StartsWith(prefix) || a.name.StartsWith("v_" + prefix) || a.name.StartsWith("sn_" + prefix));
+            return entry != null ? entry.name : race == 1 ? "station_vossk" : "";
+        }
+
         /// <summary>A model's hull size in game units (length x width x height), the additive glow layers left out.</summary>
         static string HullSize(AssemblyData a)
         {
@@ -374,17 +391,16 @@ namespace GoF2Remake.EditorTools
             sb.AppendLine();
             sb.AppendLine("78 Var Hastra (Mido) is where a new game starts. 108 is the Kaamo Club. Tech = which items its shop can sell. Planet = its");
             sb.AppendLine("planet texture in the other orbits (a mod station's `planet`). Race = its system's (the hangar and bar it docks into). Model =");
-            sb.AppendLine("its assembled model (what `looksLike` borrows); stations without one share their race's.");
+            sb.AppendLine("its assembled model: what `looksLike` borrows (only the model and its collision: a station's special rules, like the");
+            sb.AppendLine("Kaamo Club's storage and siege, belong to the original station's number and don't come with the look).");
             sb.AppendLine();
             sb.AppendLine("| # | Name | System | Race | Tech | Planet | Model |");
             sb.AppendLine("|---|---|---|---|---|---|---|");
             foreach (var t in db.Stations)
             {
                 if (t.index >= 135) break;
-                string tag = $"station_{t.index:000}";
-                var model = stationModels.FirstOrDefault(a => a.name.StartsWith(tag + "_") || a.name == tag || a.name.Contains("_" + tag + "_") || a.name.EndsWith("_" + tag));
                 int race = t.system >= 0 && t.system < db.Systems.Count ? db.Systems[t.system].raceId : -1;
-                sb.AppendLine($"| {t.index} | {Clean(t.name)} | {t.system} {Clean(t.systemName)} | {Race(race)} | {t.techLevel} | {t.textureIndex} | {model?.name ?? ""} |");
+                sb.AppendLine($"| {t.index} | {Clean(t.name)} | {t.system} {Clean(t.systemName)} | {Race(race)} | {t.techLevel} | {t.textureIndex} | {StationModel(t.index, race, stationModels)} |");
             }
             sb.AppendLine();
 

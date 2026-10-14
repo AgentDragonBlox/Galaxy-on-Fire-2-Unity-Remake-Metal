@@ -866,7 +866,8 @@ sun. A mod system can keep the sky and replace only the sun (`sunTexture`) or th
 
 78 Var Hastra (Mido) is where a new game starts. 108 is the Kaamo Club. Tech = which items its shop can sell. Planet = its
 planet texture in the other orbits (a mod station's `planet`). Race = its system's (the hangar and bar it docks into). Model =
-its assembled model (what `looksLike` borrows); stations without one share their race's.
+its assembled model: what `looksLike` borrows (only the model and its collision: a station's special rules, like the
+Kaamo Club's storage and siege, belong to the original station's number and don't come with the look).
 
 | # | Name | System | Race | Tech | Planet | Model |
 |---|---|---|---|---|---|---|
@@ -881,30 +882,30 @@ its assembled model (what `looksLike` borrows); stations without one share their
 | 8 | Taygete | 1 Pan | Terran | 9 | 13 | station_008_terran |
 | 9 | Coppolite | 1 Pan | Terran | 8 | 17 | station_009_terran |
 | 10 | Thynome | 6 Wolf-Reiser | Terran | 10 | 9 | station_010_terran |
-| 11 | S'porrk | 21 Ni'mrrod | Vossk | 3 | 16 |  |
-| 12 | Ukka N'ima | 21 Ni'mrrod | Vossk | 2 | 7 |  |
-| 13 | Ekrr U'rra | 21 Ni'mrrod | Vossk | 1 | 12 |  |
-| 14 | K'ane | 21 Ni'mrrod | Vossk | 3 | 2 |  |
-| 15 | T'rry T'rry | 3 V'ikka | Vossk | 3 | 17 |  |
-| 16 | N'arrki | 3 V'ikka | Vossk | 9 | 4 |  |
-| 17 | Me'tokka | 3 V'ikka | Vossk | 7 | 18 |  |
-| 18 | P'errka | 3 V'ikka | Vossk | 4 | 5 |  |
-| 19 | Ma'rrkka | 3 V'ikka | Vossk | 4 | 6 |  |
+| 11 | S'porrk | 21 Ni'mrrod | Vossk | 3 | 16 | station_vossk |
+| 12 | Ukka N'ima | 21 Ni'mrrod | Vossk | 2 | 7 | station_vossk |
+| 13 | Ekrr U'rra | 21 Ni'mrrod | Vossk | 1 | 12 | station_vossk |
+| 14 | K'ane | 21 Ni'mrrod | Vossk | 3 | 2 | station_vossk |
+| 15 | T'rry T'rry | 3 V'ikka | Vossk | 3 | 17 | station_vossk |
+| 16 | N'arrki | 3 V'ikka | Vossk | 9 | 4 | station_vossk |
+| 17 | Me'tokka | 3 V'ikka | Vossk | 7 | 18 | station_vossk |
+| 18 | P'errka | 3 V'ikka | Vossk | 4 | 5 | station_vossk |
+| 19 | Ma'rrkka | 3 V'ikka | Vossk | 4 | 6 | station_vossk |
 | 20 | Kallsta Omba | 4 Eanya | Midorian | 5 | 11 | station_020_midorian |
 | 21 | Euclades | 4 Eanya | Midorian | 1 | 14 | station_021_midorian |
 | 22 | Dekato | 4 Eanya | Midorian | 9 | 3 | station_022_midorian |
 | 23 | Psa Tori | 4 Eanya | Midorian | 8 | 5 | station_023_midorian |
 | 24 | Sao Noma | 4 Eanya | Midorian | 8 | 7 | station_024_midorian |
-| 25 | S'inokk | 5 S'kolptorr | Vossk | 5 | 0 |  |
-| 26 | F'err | 5 S'kolptorr | Vossk | 10 | 17 |  |
-| 27 | B'akka | 5 S'kolptorr | Vossk | 4 | 4 |  |
-| 28 | B'errokk | 5 S'kolptorr | Vossk | 9 | 10 |  |
-| 29 | Ga'kkrr | 5 S'kolptorr | Vossk | 6 | 18 |  |
+| 25 | S'inokk | 5 S'kolptorr | Vossk | 5 | 0 | station_vossk |
+| 26 | F'err | 5 S'kolptorr | Vossk | 10 | 17 | station_vossk |
+| 27 | B'akka | 5 S'kolptorr | Vossk | 4 | 4 | station_vossk |
+| 28 | B'errokk | 5 S'kolptorr | Vossk | 9 | 10 | station_vossk |
+| 29 | Ga'kkrr | 5 S'kolptorr | Vossk | 6 | 18 | station_vossk |
 | 30 | Néhma | 2 Behén | Nivelian | 6 | 1 | station_030_nivelian |
 | 31 | Neso Aehma | 2 Behén | Nivelian | 4 | 8 | station_031_nivelian |
 | 32 | Duhnu | 2 Behén | Nivelian | 6 | 13 | station_032_nivelian |
 | 33 | Néh Suhnu | 2 Behén | Nivelian | 4 | 9 | station_033_nivelian |
-| 34 | Narsaxa | 21 Ni'mrrod | Vossk | 3 | 1 |  |
+| 34 | Narsaxa | 21 Ni'mrrod | Vossk | 3 | 1 | station_vossk |
 | 35 | Io Ombak | 7 Aquila | Terran | 8 | 6 | station_035_terran |
 | 36 | Dendra Ekta | 7 Aquila | Terran | 3 | 16 | station_036_terran |
 | 37 | Carme | 7 Aquila | Terran | 10 | 11 | station_037_terran |
@@ -920,21 +921,21 @@ its assembled model (what `looksLike` borrows); stations without one share their
 | 47 | Bosméh | 9 Weymire | Nivelian | 7 | 17 | station_047_nivelian |
 | 48 | Sahi | 9 Weymire | Nivelian | 8 | 0 | station_048_nivelian |
 | 49 | Siaméh | 9 Weymire | Nivelian | 1 | 14 | station_049_nivelian |
-| 50 | P'arrenkk | 10 Y'mirr | Vossk | 10 | 1 |  |
-| 51 | Rr'ostam | 10 Y'mirr | Vossk | 10 | 15 |  |
-| 52 | G'ukkion | 10 Y'mirr | Vossk | 10 | 5 |  |
-| 53 | Ba'rrtu | 10 Y'mirr | Vossk | 9 | 7 |  |
-| 54 | K'mirkk | 10 Y'mirr | Vossk | 10 | 8 |  |
+| 50 | P'arrenkk | 10 Y'mirr | Vossk | 10 | 1 | station_vossk |
+| 51 | Rr'ostam | 10 Y'mirr | Vossk | 10 | 15 | station_vossk |
+| 52 | G'ukkion | 10 Y'mirr | Vossk | 10 | 5 | station_vossk |
+| 53 | Ba'rrtu | 10 Y'mirr | Vossk | 9 | 7 | station_vossk |
+| 54 | K'mirkk | 10 Y'mirr | Vossk | 10 | 8 | station_vossk |
 | 55 | Kappa | 11 Union | Terran | 5 | 4 | station_055_terran |
 | 56 | Suttnar | 11 Union | Terran | 2 | 15 | station_056_terran |
 | 57 | Tornard | 11 Union | Terran | 2 | 6 | station_057_terran |
-| 58 | B'akrram | 20 K'ontrr | Vossk | 10 | 1 |  |
-| 59 | E'kkide | 20 K'ontrr | Vossk | 3 | 11 |  |
-| 60 | Kkit S'ukk | 12 Oom'bak | Vossk | 6 | 6 |  |
-| 61 | L'ikirr | 12 Oom'bak | Vossk | 6 | 18 |  |
-| 62 | Makke S'ik | 20 K'ontrr | Vossk | 9 | 14 |  |
-| 63 | A'rk Oomk | 20 K'ontrr | Vossk | 6 | 3 |  |
-| 64 | Bak W'ok | 20 K'ontrr | Vossk | 8 | 12 |  |
+| 58 | B'akrram | 20 K'ontrr | Vossk | 10 | 1 | station_vossk |
+| 59 | E'kkide | 20 K'ontrr | Vossk | 3 | 11 | station_vossk |
+| 60 | Kkit S'ukk | 12 Oom'bak | Vossk | 6 | 6 | station_vossk |
+| 61 | L'ikirr | 12 Oom'bak | Vossk | 6 | 18 | station_vossk |
+| 62 | Makke S'ik | 20 K'ontrr | Vossk | 9 | 14 | station_vossk |
+| 63 | A'rk Oomk | 20 K'ontrr | Vossk | 6 | 3 | station_vossk |
+| 64 | Bak W'ok | 20 K'ontrr | Vossk | 8 | 12 | station_vossk |
 | 65 | Lopat | 13 Vulpes | Terran | 7 | 2 | station_065_terran |
 | 66 | Inari Onu | 13 Vulpes | Terran | 9 | 8 | station_066_terran |
 | 67 | Orcon | 13 Vulpes | Terran | 4 | 10 | station_067_terran |
@@ -970,18 +971,18 @@ its assembled model (what `looksLike` borrows); stations without one share their
 | 97 | Nyrand | 19 Augmenta | Terran | 6 | 14 | station_097_terran |
 | 98 | Alioth | 19 Augmenta | Terran | 6 | 12 | station_098_terran |
 | 99 | Damarque I | 19 Augmenta | Terran | 5 | 6 | station_099_terran |
-| 100 | Kothar | 22 Beidan | Terran | 10 | 0 |  |
-| 101 | Valkyrie | 23 Herjaza | Terran | 8 | 1 |  |
+| 100 | Kothar | 22 Beidan | Terran | 10 | 0 | v_station_deep_science_damaged (v_station_deep_science before the Valkyrie add-on is won) |
+| 101 | Valkyrie | 23 Herjaza | Terran | 8 | 1 | v_station_battlestation_anim |
 | 102 | Scion | 23 Herjaza | Terran | 0 | 2 |  |
 | 103 | Coromesk | 24 Skavac | Terran | 0 | 3 |  |
 | 104 | Nosdron | 24 Skavac | Terran | 0 | 4 |  |
 | 105 | Var Destro | 25 Loma | Midorian | 10 | 20 | v_station_105_loma |
 | 106 | Sao Perula | 25 Loma | Midorian | 10 | 21 | v_station_106_loma |
 | 107 | Quineros | 25 Loma | Midorian | 10 | 22 | v_station_107_loma |
-| 108 | Kaamo | 26 Shima | Midorian | 1 | 11 |  |
-| 109 | Naneroh | 27 Ginoya | Midorian | 4 | 14 |  |
-| 110 | Valpatro | 27 Ginoya | Midorian | 5 | 8 |  |
-| 111 | Luur | 27 Ginoya | Midorian | 5 | 12 | station_111_luur_mission_94 |
+| 108 | Kaamo | 26 Shima | Midorian | 1 | 11 | station_kaamo_club |
+| 109 | Naneroh | 27 Ginoya | Midorian | 4 | 14 | sn_station_midorian_wrecked |
+| 110 | Valpatro | 27 Ginoya | Midorian | 5 | 8 | sn_station_midorian_wrecked |
+| 111 | Luur | 27 Ginoya | Midorian | 5 | 12 | sn_station_midorian_wrecked (sn_burning_station_luur during the Supernova story) |
 | 112 | Var Lupra | 27 Ginoya | Midorian | 3 | 24 | sn_station_112_midorian |
 | 113 | Tadram | 27 Ginoya | Midorian | 6 | 9 | sn_station_113_midorian |
 | 114 | Midantha | 28 Talidor | Midorian | 4 | 25 | sn_station_114_midorian |
@@ -994,14 +995,14 @@ its assembled model (what `looksLike` borrows); stations without one share their
 | 121 | Névan | 29 Paréah | Nivelian | 7 | 9 | sn_station_121_nivelian |
 | 122 | Okana | 29 Paréah | Nivelian | 9 | 7 | sn_station_122_nivelian |
 | 123 | Shelén | 29 Paréah | Nivelian | 9 | 20 | sn_station_123_nivelian |
-| 124 | Vu's | 30 Me'enkk | Vossk | 6 | 3 |  |
-| 125 | Bor M'okk | 30 Me'enkk | Vossk | 9 | 11 |  |
-| 126 | Bak S'ondorr | 30 Me'enkk | Vossk | 6 | 22 |  |
-| 127 | Kan'Tarr | 30 Me'enkk | Vossk | 8 | 24 |  |
-| 128 | M'Ankk | 31 Wah'norr | Vossk | 6 | 18 |  |
-| 129 | Va'lerrm | 31 Wah'norr | Vossk | 9 | 14 |  |
-| 130 | O'muarkk | 31 Wah'norr | Vossk | 6 | 3 |  |
-| 131 | Bra'Murr | 31 Wah'norr | Vossk | 8 | 12 |  |
+| 124 | Vu's | 30 Me'enkk | Vossk | 6 | 3 | station_vossk |
+| 125 | Bor M'okk | 30 Me'enkk | Vossk | 9 | 11 | station_vossk |
+| 126 | Bak S'ondorr | 30 Me'enkk | Vossk | 6 | 22 | station_vossk |
+| 127 | Kan'Tarr | 30 Me'enkk | Vossk | 8 | 24 | station_vossk |
+| 128 | M'Ankk | 31 Wah'norr | Vossk | 6 | 18 | station_vossk |
+| 129 | Va'lerrm | 31 Wah'norr | Vossk | 9 | 14 | station_vossk |
+| 130 | O'muarkk | 31 Wah'norr | Vossk | 6 | 3 | station_vossk |
+| 131 | Bra'Murr | 31 Wah'norr | Vossk | 8 | 12 | station_vossk |
 | 132 | Bervegor | 32 Skor Terpa | Terran | 0 | 24 |  |
 | 133 | Merxde | 33 Alda | Terran | 0 | 6 |  |
 | 134 | Selbah | 33 Alda | Terran | 0 | 5 |  |

@@ -180,6 +180,9 @@ namespace GoF2Remake.EditorTools
         /// <summary>A string expression: literals and consts joined by '+', a number, true / false, an enum member's name.</summary>
         static string Eval(ClassInfo c, List<string> toks)
         {
+            // cond ? a : b, with a numeric comparison (a loop's counter already put in as a number)
+            int q = toks.IndexOf("?"), colon = q < 0 ? -1 : toks.IndexOf(":", q);
+            if (q > 0 && colon > q) return Compare(toks.GetRange(0, q)) ? Eval(c, toks.GetRange(q + 1, colon - q - 1)) : Eval(c, toks.GetRange(colon + 1, toks.Count - colon - 1));
             var sb = new StringBuilder();
             for (int i = 0; i < toks.Count; i++)
             {
@@ -195,6 +198,16 @@ namespace GoF2Remake.EditorTools
                 sb.Append(owner != null ? Eval(owner, owner.consts[tok]) : tok);
             }
             return sb.ToString();
+        }
+
+        static bool Compare(List<string> t)
+        {
+            int op = t.FindIndex(x => x == "<" || x == ">" || x == "=" || x == "!");
+            if (op <= 0) return false;
+            string o = t[op] + (op + 1 < t.Count && t[op + 1] == "=" ? "=" : "");
+            double.TryParse(t[op - 1], out double a);
+            double.TryParse(t[op + o.Length], out double b);
+            return o switch { "<" => a < b, "<=" => a <= b, ">" => a > b, ">=" => a >= b, "==" => a == b, "!=" => a != b, _ => false };
         }
 
         static List<List<string>> SplitArgs(List<string> t, int open, int close)
@@ -244,6 +257,29 @@ namespace GoF2Remake.EditorTools
             var list = new List<Entry>();
             for (int i = 0; i < t.Count; i++)
             {
+                if (t[i] == "for" && i + 1 < t.Count && t[i + 1] == "(")
+                {
+                    // for (int k = A; k <= B; k++) <statement or block>: the body once per value, the counter put in.
+                    int hClose = Match(t, i + 1);
+                    var h = t.GetRange(i + 2, hClose - i - 2);
+                    string var = h[1];
+                    int.TryParse(h[3], out int from);
+                    int lt = h.IndexOf("<");
+                    int to = from;
+                    if (lt >= 0)
+                    {
+                        bool inclusive = h[lt + 1] == "=";
+                        int.TryParse(h[lt + (inclusive ? 2 : 1)], out to);
+                        if (!inclusive) to--;
+                    }
+                    int bStart = hClose + 1, bEnd;
+                    if (t[bStart] == "{") { bEnd = Match(t, bStart); bStart++; }
+                    else { bEnd = bStart; int d = 0; while (bEnd < t.Count && !(d == 0 && t[bEnd] == ";")) { if (t[bEnd] == "(") d++; if (t[bEnd] == ")") d--; bEnd++; } }
+                    var body = t.GetRange(bStart, bEnd - bStart + (t[hClose + 1] == "{" ? 0 : 1));
+                    for (int v = from; v <= to; v++)
+                        list.AddRange(Interpret(leaf, owner, body.Select(x => x == var ? v.ToString() : x).ToList()));
+                    i = bEnd; continue;
+                }
                 if (t[i] == "base" && i + 2 < t.Count && t[i + 1] == ".")
                 {
                     var parent = Parent(owner);

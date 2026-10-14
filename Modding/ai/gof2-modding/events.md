@@ -464,7 +464,10 @@ Flow: in; out: Answer 1, Answer 2, Answer 3, Answer 4, Next.
 | input | Players | Text | `@a` | Who is asked (a selector, or wire Get Players in). |
 | input | Speaker | Text |  | Optional: who asks, with a portrait (a story character like Keith, a mod's character like "frontier_systems:vega", a race and a name like "vossk K'ekki", or player). |
 | input | Question | Text |  | The question on their screens (%player% = the reader's name). |
-| input | Answer k | Text |  | k<=2?An answer (2 at least).:Optional: another answer. |
+| input | Answer 1 | Text |  | An answer (2 at least). |
+| input | Answer 2 | Text |  | An answer (2 at least). |
+| input | Answer 3 | Text |  | Optional: another answer. |
+| input | Answer 4 | Text |  | Optional: another answer. |
 | input | Seconds | Number | `20` | How long they have (0 = no limit; Esc skips). Next goes on when all have answered or the time is up. |
 | output | Player | Players |  | In an answer's branch: the player who picked it (wire into Players). |
 | output | Name | Text |  | In an answer's branch: that player's name; or type %trigger% in a text. |
@@ -507,7 +510,10 @@ Flow: in; out: Option 1, Option 2, Option 3, Option 4, Next.
 
 | Kind | Name | Type | Default | What it is |
 |---|---|---|---|---|
-| input | Weight k | Number | `1` | How likely Option k is against the others (whole numbers); unwired options don't count. |
+| input | Weight 1 | Number | `1` | How likely Option 1 is against the others (whole numbers); unwired options don't count. |
+| input | Weight 2 | Number | `1` | How likely Option 2 is against the others (whole numbers); unwired options don't count. |
+| input | Weight 3 | Number | `1` | How likely Option 3 is against the others (whole numbers); unwired options don't count. |
+| input | Weight 4 | Number | `1` | How likely Option 4 is against the others (whole numbers); unwired options don't count. |
 
 ### Repeat
 
@@ -561,7 +567,10 @@ Flow: in; out: Choice 1, Choice 2, Choice 3, Choice 4, No Votes, Next.
 | input | Players | Text | `@a` | Who votes (a selector, or wire Get Players in). |
 | input | Speaker | Text |  | Optional: who asks, with a portrait (a story character like Keith, a mod's character like "frontier_systems:vega", a race and a name like "vossk K'ekki", or player). |
 | input | Question | Text |  | The question on their screens (%player% = the reader's name). |
-| input | Answer k | Text |  | k<=2?An answer (2 at least).:Optional: another answer. |
+| input | Answer 1 | Text |  | An answer (2 at least). |
+| input | Answer 2 | Text |  | An answer (2 at least). |
+| input | Answer 3 | Text |  | Optional: another answer. |
+| input | Answer 4 | Text |  | Optional: another answer. |
 | input | Seconds | Number | `20` | How long the vote lasts (0 = until all have voted). Then the most picked answer's Choice runs (a tie: one of them at random; nobody voted: No Votes), then Next. |
 
 ### Wait
