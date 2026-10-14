@@ -13,10 +13,26 @@ turret's or your own `.glb`), resized and moved on its mount, a weapon's project
 borrowed from the game's other weapons, fitted to the ship to try them out; characters with their portraits, for your quests
 or standing in for a story character; and skins: a game ship's textures replaced, with its originals saved for you to paint
 over. A new ship's shop icon is rendered from its model
-(`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). **Undo** / **Redo** in the top bar (Ctrl+Z,
-Ctrl+Y or Ctrl+Shift+Z) step back and forth through your edits, files you replaced or removed included, until you close
-the project. **Export as mod** puts the finished project into your
-Mods folder. Ships, items, characters and skins can be built there so far; everything below can still be written by hand.
+(`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). Each kind of content is edited where it lives
+in the game:
+
+| Kind | Where | |
+|---|---|---|
+| Ships, Items, Skins | the hangar | as above; **Test fly** flies them against pirates |
+| Blueprints | the hangar | the product (a ship stands on the turntable), ingredients, autocomplete, where it is found |
+| Campaign | the hangar | the card, the start (station, ship and its equipment, money, standings), its story quest, the galaxy / shops kept to mods; new-game options |
+| Characters, Quests, Audio | the Space Lounge | portraits; quests and bar missions as steps (below); music, sound effects and voice lines, each with ▶ |
+| Systems | the star map | every system shown: drag yours to their place, their gates, sky, sun, music, stations |
+| Stations, Weapon fx | in space | a station in its own orbit (model, size, turn, rooms, planet); weapons firing from one ship onto another |
+| Hangars & bars | the room itself | a `.glb` room or one of the game's (its markers filled in), the markers clicked into the room, light, fog, lens |
+
+Wherever content names other content (a quest's speaker, a station's system, a blueprint's product, a campaign's ship) the
+picker offers the game's, your project's own (your character can speak in your quest) and **every other installed mod's**:
+picking another mod's makes it a dependency of yours (Menu > Dependencies lists them). **Play** in the top bar starts a play
+test: the game as a player has it with your mod on, from the builder's station, from your campaign's start or with one of
+your quests under way; the pause menu's (or the station menu's) Back to Mod Builder ends it, and so does a death.
+**Undo** / **Redo** in the top bar (Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z) step back and forth through your edits, files you replaced
+or removed included, until you close the project. **Export as mod** puts the finished project into your Mods folder.
 
 **Making a mod with an AI assistant:** `Modding/ai/gof2-modding` is this guide condensed for Claude, ChatGPT and the like,
 with every number and name of the original game a mod refers to in `reference.md` (items, stats, blueprints, ships, systems,
@@ -350,6 +366,7 @@ original's hue is replaced by yours (the Nirai Impulse's orange bolt turns purpl
 | `shot` | The sound of a shot: a file, or a list of files (one is picked at random each shot). `.ogg`, `.wav` or `.mp3`. Or an item's number: that item's shot sound (`46`: the AMR Extinctor's launch). |
 | `shotLoops` | `true`: the shot sound loops while the trigger is held (like the auto-cannons); `false`: one per shot. Default: the base item's (or, with `shot` an item's number, that item's). |
 | `explosionSound` | Bombs, mines and blast weapons: the sound of the blast (a file, a list, or an item's number). |
+| `trail` | The smoke trail behind each shot: `false` for none, or `{ "color": [r, g, b], "width": 100, "length": 3000 }` (its colour at the start, fading to nothing; half its width in game units; how long each part lasts in ms). Rockets and missiles trail white smoke (100 / 3000), thermo guns a coloured flame; a weapon without a trail gets one. Your own ship's shots and other players' show it. |
 | `turret` | Turrets: the turret's own model, shown on the ship in flight, in the hangar and to other players. A glTF / GLB file, or `{ "model": "models/t.glb", "muzzle": 28, "shotStart": 32, "scale": 1.5, "offset": [0, 20, 0] }`. Its origin sits on the mount, 1 unit = 1 m as made. A node named `pivot` holding the base turns it left and right and, in it, a node whose name contains `_gun` tilts it up and down (the barrel along +Z); a model without them turns as one piece. `scale` resizes it; `offset` moves it off its mount (game units: x toward the pilot's left, y along the turret's up, z forward). Leave out `model` and give `scale` / `offset` to resize or move the base item's own turret; `"item": 48` instead of `model` takes that game turret's model (with its muzzle and shot start), and `model` may be one of the game's (`"gof2:turret_003_ship_mounted"`, see [The game's own models](#the-games-own-models)). `muzzle` is where the muzzle flash shows and `shotStart` where the shots start, along the gun node in game units (20 per metre) on the model as made; default: the base turret's. |
 
 Each of `projectile`, `muzzle` and `impact` is either `false` (none at all), an object without a `sprite` or `model` (the
@@ -712,6 +729,7 @@ the event graphs' expression language and is checked when it matters (a shop's s
 | `campaign` | The story step (-1 in free play and mod campaigns). |
 | `rank`, `credits`, `kills`, `station`, `system`, `ship` | The player's rank, credits, kills, where they are docked / flying, the ship they fly. |
 | `visited(station)`, `has(item)`, `cargo(item)`, `quest(name)` | A station docked at; how many of an item the player has (mounted too) / has in the hold; a quest under way (1) or done (2). |
+| `docked(station)`, `inorbit(station)` | How many of the players are docked at that station now / alive in its orbit (single player: 1 or 0). |
 
 Combine them with `and`, `or`, `not`, comparisons and arithmetic:
 
@@ -784,6 +802,11 @@ GLB model listed in `interiors.json`:
 ```
 
 and picked by the station: `"hangar": "kepler_hangar", "bar": "kepler_bar"` in stations.json.
+
+**Markers** can also be listed in `interiors.json` (`"markers": { "pad": [x, y, z], "parked_1": [x, y, z] }`, room metres;
+they win over the model's nodes of that name): the Mod Builder's Hangars & bars kind places them by clicking into the room. A
+room's `model` may be one of the game's rooms (`"gof2:hangar_terran"`, `"gof2:bar_vossk"`), which has no marker nodes: the
+builder fills its markers in from the game's own tables.
 
 **Markers.** Put empty objects (Blender: Add > Empty) into the room where things go, named like this; only their position
 counts, so their rotation and size don't matter. Names are matched without case; numbered ones by their start.
@@ -897,6 +920,33 @@ step, -1 without one), `credits`, `rank`, `station`, `system`, `ship`, `kills`, 
 name or number. In single player `%player%` is Keith T. Maxwell.
 
 Mod quests run beside the game's own story. A quest whose mod is turned off waits in the save until the mod is back.
+
+### Quests made in the Mod Builder
+
+The Mod Builder's Quests kind writes `events/<name>.gof2quest`, a list of steps the game turns into an event graph's script
+when it loads it (they run like any graph; the builder's **Show the script** shows it). No Unity Editor needed:
+
+```json
+{
+    "format": "gof2quest", "title": "The first signal", "kind": "quest", "startsWhen": "visited(78)", "reward": 5000,
+    "steps": [
+        { "type": "dialog", "pages": [ { "speaker": "Keith", "text": "A signal!", "voice": "signal_1" }, { "speaker": "my_mod:vega", "text": "Come." } ] },
+        { "type": "goto", "station": 78, "dock": false, "objective": "Fly to Var Hastra" },
+        { "type": "fight", "station": 78, "name": "Raider", "ships": [ { "ship": 2, "count": 3, "race": "pirate" } ] },
+        { "type": "checkpoint" },
+        { "type": "complete" }
+    ]
+}
+```
+
+`kind` is `quest` or `mission` (a bar mission: `offer`, `client`, `stations`, `players` [min, max] as the Start node's).
+The steps: `dialog` (pages: speaker, text, voice), `radio` (speaker, text, voice), `objective` (text, station), `goto`
+(station, `dock` true: docked there, false: in its orbit), `fight` (station, ships: ship / count / race / behaviour, name,
+`quiet`: no other traffic there; they come in front of the player and the step ends when none is left), `cargo` (item,
+amount, station), `reward` (credits, items, title), `give` (item, amount), `wait` (seconds), `waituntil` (condition),
+`checkpoint`, `music` (track), `title` (title, subtitle), `waypoint` (station, at "x y z"), `startquest` (quest),
+`complete` (reward, title), `fail` (title), `command` (line: any event command). A quest without `complete` / `fail`
+completes after its last step. Conditions also know `docked(<station>)` and `inorbit(<station>)`.
 
 ### Moving ships
 

@@ -32,7 +32,8 @@ If you can't open them, ask the user to paste the part you need (or to attach it
 4. You can't make binary assets. For every PNG / GLB / OGG a file names, tell the user exactly what to provide (size, format,
    layout, where to put it). Paths in JSON are relative to the mod folder, with `/`.
 5. Event graphs (quests, bar missions, cutscenes) are made in the Unity Editor, not written by hand. For those, give the user
-   a node-by-node recipe (see "Quests").
+   a node-by-node recipe (see "Quests"). A simple quest or bar mission can be written by hand instead as a step list,
+   `events/<name>.gof2quest` (see "Quests made as step lists"; the in-game Mod Builder writes the same).
 6. Check your output against the checklist at the end before giving it.
 
 The player installs the mod by copying the folder (or zip) into the game's `Mods` folder, pressing **Refresh** in the main
@@ -72,6 +73,7 @@ my_mod/
   systems.json, stations.json, interiors.json   new star systems, stations, hangars and bars
   characters.json     speakers with portraits
   events/*.gof2event  quests and bar missions (made in the Unity Editor)
+  events/*.gof2quest  quests and bar missions as step lists (by hand or the Mod Builder)
   text/<lang>.json    translations
   music/, sounds/, voices/, textures/          replacement / new audio and skins
 ```
@@ -160,7 +162,9 @@ with the mod's own `sprite` (PNG in the mod, white on black or transparent; `col
 `lifetime` ms (muzzle 100, impact 300), `grow`, `fade`, `spin` (deg/s), `alongFlight` + `stretch` (laser bolts), `rotate`
 (models). Without `sprite` / `model` a part may also take `item` (another item's number: its part instead of the base's,
 e.g. `{ "item": 46, "scale": 0.35 }` the AMR Extinctor's missile at 35 %) and `scale` (size factor). `shot` /
-`explosionSound` may be an item's number (its sounds; `shotLoops` then that item's unless given). Turrets: `"turret":
+`explosionSound` may be an item's number (its sounds; `shotLoops` then that item's unless given). `"trail"`: `false` (none)
+or `{ "color": [r, g, b], "width": units (half; a rocket's 100), "length": ms (3000) }`, the shots' smoke trail (any
+weapon). Turrets: `"turret":
 "models/t.glb"` or `{ "model": ..., "muzzle": units, "shotStart": units, "scale": f, "offset": [x, y, z] }` is the
 turret's own model (flight, hangar, other players): origin on the mount, 1 unit = 1 m, a node `pivot` (the base, turns)
 holding a node named `*_gun` (tilts; barrel along +Z), else it turns as one piece; muzzle / shotStart along the gun node in
@@ -358,6 +362,19 @@ required). `override` changes originals (name, techLevel, looks, music...).
   `sn_planet_024_*` ... `sn_planet_026_*`, `sun_000` ..., `sn_sun_011`, `sn_planet_ring`): one whole disc image each, keep the
   transparent edge. `backdrop.json` `{ "planets": "star", "planetGlow": 2, "planetFlare": 0.35 }` draws the retextured planets
   as stars (facing the camera, no ring, a core glow, a weaker copy of the sun's flare).
+
+## Quests made as step lists (.gof2quest)
+
+`events/<name>.gof2quest`, JSON the game turns into an event graph's script (no Unity Editor):
+`{ "format": "gof2quest", "title", "kind": "quest" | "mission", "startsWhen" (quests; an expression, "" at once, "never"),
+"reward", "offer", "client", "stations": [...], "players": [min, max] (missions), "steps": [...] }`. Steps (`type` + fields):
+`dialog` pages [{speaker, text, voice}], `radio` speaker text voice, `objective` text station, `goto` station dock(bool)
+objective, `fight` station ships [{ship, count, race, behaviour}] name quiet objective (waits in that orbit, spawns them,
+waits until none is left), `cargo` item amount station, `reward` credits items [{item, amount}] title, `give` item amount,
+`wait` seconds, `waituntil` condition, `checkpoint`, `music` track, `title` title subtitle, `waypoint` station at "x y z",
+`startquest` quest, `complete` reward title, `fail` title, `command` line. Speakers as in Dialog (`Keith`, `my_mod:vega`,
+`vossk K'ekki`, `player`); stations / ships / items by number or key. Without `complete` / `fail` it completes after the last
+step. Conditions also have `docked(station)` and `inorbit(station)`.
 
 ## Quests and bar missions (event graphs)
 

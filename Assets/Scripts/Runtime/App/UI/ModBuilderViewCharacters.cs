@@ -109,10 +109,10 @@ namespace GoF2Remake.UI
             Note(characterPage, T("mbPortraitNote", "4:5 like the game's portraits (320 x 400 stays sharp); a wider picture is cropped at the sides, a taller one keeps its top."));
             Note(characterPage, T("mbPortraitLayersNote", "Scanlines: the faint lines over every portrait in the game. Dark backdrop: shows only through transparent parts of the picture (a cut-out character)."));
             var toggles = Add(characterPage, new VisualElement(), "mbv-row");
-            FlagButton(toggles, T("mbMirrored", "Mirrored"), c.Mirrored, v => c.Mirrored = v);
+            CharacterFlag(toggles, T("mbMirrored", "Mirrored"), c.Mirrored, v => c.Mirrored = v);
             // characters.json "frame" / "background": the game's scanline overlay and the dark backdrop behind the picture.
-            FlagButton(toggles, T("mbScanlines", "Scanlines"), c.Frame, v => c.Frame = v);
-            FlagButton(toggles, T("mbBackdrop", "Dark backdrop"), c.Background, v => c.Background = v);
+            CharacterFlag(toggles, T("mbScanlines", "Scanlines"), c.Frame, v => c.Frame = v);
+            CharacterFlag(toggles, T("mbBackdrop", "Dark backdrop"), c.Background, v => c.Background = v);
 
             Add(characterPage, new Label(T("mbRace", "Race").ToUpperInvariant()), "mbv-label");
             var races = Add(characterPage, new VisualElement(), "mbv-seg-row");
@@ -136,7 +136,7 @@ namespace GoF2Remake.UI
             Note(characterPage, T("mbStandsInNote", "Leave it at Nobody for a character of your own. Pick a story character to replace them: their portrait everywhere, the story included, and their name in the conversation and radio headers. What other characters say and the voices stay as they are."));
         }
 
-        void FlagButton(VisualElement parent, string label, bool on, Action<bool> set)
+        void CharacterFlag(VisualElement parent, string label, bool on, Action<bool> set)
         {
             var b = Act(parent, $"{label}: {(on ? T("mbOn", "on") : T("mbOff", "off"))}", () => { set(!on); CharacterEdited(); RebuildCharacters(); BuildCharacterPage(); });
             b.EnableInClassList("mbv-toggle--on", on);
@@ -149,7 +149,7 @@ namespace GoF2Remake.UI
         void NewCharacter() => PickPng(path =>
         {
             string name = Pretty(System.IO.Path.GetFileNameWithoutExtension(pickedName ?? "character"));
-            if (name == "New ship") name = T("mbNewCharacterName", "New character");
+            if (name == "New") name = T("mbNewCharacterName", "New character");
             string id = Project.CharacterIdFor(name);
             var c = Project.AddCharacter(name, Project.AddFile(path, "portraits", id, ".png"));
             currentCharacter = c;

@@ -150,6 +150,8 @@ namespace GoF2Remake.UI
                     // Remake: a Mod Builder test flight goes back to the builder's hangar instead (Modding.ModBuilder).
                     if (Modding.ModBuilder.TestFlying)
                         Item(Localization.Extra("mbBackToBuilder", "Back to Mod Builder").ToUpperInvariant(), () => { Close(); Modding.ModBuilder.EndTestFlight(false); });
+                    else if (Modding.ModBuilder.PlayTesting)   // a play test: back to the builder's hangar
+                        Item(Localization.Extra("mbBackToBuilder", "Back to Mod Builder").ToUpperInvariant(), () => { Close(); ModBuilderPlay.End(); });
                     else Item(T(522), () => Show(Page.Quit));
                     break;
                 case Page.Photo:

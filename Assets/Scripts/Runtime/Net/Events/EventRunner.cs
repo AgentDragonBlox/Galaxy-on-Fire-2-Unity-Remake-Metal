@@ -561,7 +561,8 @@ namespace GoF2Remake.Events
         /// <summary>An event graph file's extension; LegacyExtension = the files from when the graphs were multiplayer only
         /// (read everywhere, the Editor renames them, EventGraphImporter).</summary>
         public const string GraphExtension = "gof2event", LegacyExtension = "gof2netevent";
-        static readonly string[] Extensions = { GraphExtension, LegacyExtension };
+        /// <summary>The graphs' file extensions, the Mod Builder's quests (QuestFile, .gof2quest) last.</summary>
+        static readonly string[] Extensions = { GraphExtension, LegacyExtension, QuestFile.Extension };
         /// <summary>The built-in events' Resources folder.</summary>
         const string BuiltIn = "GoF2Events";
 
@@ -569,6 +570,14 @@ namespace GoF2Remake.Events
         static string Script(string text, out string error)
         {
             error = null;
+            if (QuestFile.Is(text))
+            {
+                // A quest made in the Mod Builder: its steps as the script (QuestFile).
+                var issues = new List<string>();
+                string quest = QuestFile.Compile(text, issues);
+                if (issues.Count > 0) error = issues[0];
+                return quest;
+            }
             if (!EventGraphScript.IsGraph(text)) { error = X("mpEventNotGraph", "not an event graph."); return ""; }
             var problems = new List<EventGraphScript.Problem>();
             string script = EventGraphScript.FromFile(text, problems);
@@ -591,7 +600,7 @@ namespace GoF2Remake.Events
                 catch (Exception) { }
             }
             foreach (var mod in Modding.ModManager.Active)
-                foreach (string f in mod.Source.FilesIn("events", "." + GraphExtension, "." + LegacyExtension)) names.Add(Path.GetFileNameWithoutExtension(f));
+                foreach (string f in mod.Source.FilesIn("events", "." + GraphExtension, "." + LegacyExtension, "." + QuestFile.Extension)) names.Add(Path.GetFileNameWithoutExtension(f));
             foreach (var a in Resources.LoadAll<TextAsset>(BuiltIn)) names.Add(a.name);
             return new List<string>(names);
         }
@@ -1056,6 +1065,20 @@ namespace GoF2Remake.Events
 
             /// <summary>The run is about this player: a mission's team, else everyone.</summary>
             public bool InScope(IPilot p) => p != null && (team == null || team.Contains(p.OwnerClientId));
+
+            /// <summary>docked(station) / inorbit(station): the event's players docked there / alive in its orbit.</summary>
+            public double PilotsAt(string station, bool docked)
+            {
+                if (!NetTeleport.ParseStation(station, out int st, out string left) || left.Length > 0)
+                    throw new Exception(string.Format(X("mpSelNoStation", "No station \"{0}\" (a number, a name or void)."), station));
+                int n = 0;
+                foreach (var p in EventHost.Pilots)
+                {
+                    if (p == null || !p.IsSpawned || !InScope(p) || p.Station != st) continue;
+                    if (docked ? p.InHangar : p.InSpace && p.Hull > 0f) n++;
+                }
+                return n;
+            }
 
             /// <summary>The players in the session this run is about.</summary>
             List<IPilot> Players()
@@ -2100,6 +2123,18 @@ namespace GoF2Remake.Events
                             string arg = run.Fill(s.Substring(from, i - from).Trim());
                             i++;
                             return GameState(name, arg);
+                        }
+                        if ((name == "docked" || name == "inorbit") && Peek('('))
+                        {
+                            // docked(<station>) / inorbit(<station>): how many of the event's players are docked at that station
+                            // / alive in its orbit (the Mod Builder's quests: "go to", "fight there").
+                            Sym("(");
+                            int from = i, depth = 0;
+                            while (i < s.Length && (depth > 0 || s[i] != ')')) { if (s[i] == '{') depth++; else if (s[i] == '}') depth--; i++; }
+                            if (i >= s.Length) throw new Exception("\")\" missing.");
+                            string arg = run.Fill(s.Substring(from, i - from).Trim());
+                            i++;
+                            return run.PilotsAt(arg, name == "docked");
                         }
                         if ((name == "alive" || name == "distance") && Peek('('))
                         {

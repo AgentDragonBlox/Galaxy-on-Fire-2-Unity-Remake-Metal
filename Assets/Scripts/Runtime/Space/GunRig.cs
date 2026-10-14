@@ -111,12 +111,13 @@ namespace GoF2Remake.Flight
                 flames = new ParticleSystem[gun.bullets.Length];
                 for (int i = 0; i < flames.Length; i++) flames[i] = RocketTrail.MissileTrail(gun, fxRoot);
             }
-            var rec = RocketTrail.For(gun);
+            var look = fx != null ? fx.trail : null;   // a mod's trail (items.json fx "trail")
+            var rec = look != null && (look.none || look.width > 0f || look.lifeMs > 0f || look.color != Color.white) ? RocketTrail.For(gun, look) : RocketTrail.For(gun);
             if (rec == null || trails != null) return;
             var mat = RocketTrail.MaterialFor(gun);
             if (mat == null) return;
             trails = new RocketTrail[gun.bullets.Length];
-            for (int i = 0; i < trails.Length; i++) trails[i] = new RocketTrail(rec, fxRoot, mat);
+            for (int i = 0; i < trails.Length; i++) trails[i] = new RocketTrail(rec, fxRoot, mat, look != null ? look.color : (Color?)null);
         }
 
         // The muzzle's, each impact's and the beam's animated parts, collected once (PlayOnce per shot / hit walked them).

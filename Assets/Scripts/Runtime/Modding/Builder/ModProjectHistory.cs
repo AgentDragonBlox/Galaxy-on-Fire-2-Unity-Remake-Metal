@@ -1,7 +1,7 @@
 // ModProjectHistory.cs
 // Remake-only: the Mod Builder's undo / redo for an open project (ModBuilder.History). A step is the project's state: its
 // JSON (ModProject.CaptureState: the mod, ships with their hardpoints, items, characters, builder.json) and the asset files
-// the builder writes (models/, textures/, icons/, portraits/: path -> content hash). Each file's content is kept once, by
+// the builder writes (models/, textures/, icons/, portraits/, fx/, sky/, cards/, music/, sounds/, voices/: path -> content hash). Each file's content is kept once, by
 // its hash, in a store outside the project (persistentDataPath/ModBuilderHistory/<session>), so an undo can bring back a
 // file the builder deleted or overwrote (a replaced skin texture, a removed model). The builder records a step at its
 // save points (Commit: the 0.4 s debounced save after an edit, a reload), so a drag or a typed value is one step; nothing
@@ -22,7 +22,8 @@ namespace GoF2Remake.Modding
     public sealed class ModProjectHistory : IDisposable
     {
         /// <summary>The project folders whose files are part of a step (what the builder copies, writes and deletes).</summary>
-        public static readonly string[] TrackedFolders = { ModProject.ModelsFolder, ModContent.TexturesFolder, "icons", "portraits" };
+        public static readonly string[] TrackedFolders = { ModProject.ModelsFolder, ModContent.TexturesFolder, "icons", "portraits", "fx", "sky", "cards",
+                                                            ModProject.MusicFolder, ModProject.SoundsFolder, ModProject.VoicesFolder };
         /// <summary>The most steps kept back (the oldest go first).</summary>
         public const int MaxSteps = 100;
 

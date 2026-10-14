@@ -26,6 +26,30 @@ namespace GoF2Remake.Modding
         protected void SetN(string k, int? v) { if (v == null) json.Remove(k); else json[k] = v.Value; }
         /// <summary>A flag written only when it isn't the game's default.</summary>
         protected void SetB(string k, bool v, bool d) { if (v == d) json.Remove(k); else json[k] = v; }
+        protected float? F(string k) => json[k] is JValue v && (v.Type == JTokenType.Integer || v.Type == JTokenType.Float) ? (float)v : (float?)null;
+        protected void SetF(string k, float? v) { if (v == null) json.Remove(k); else json[k] = Mathf.Round(v.Value * 1000f) / 1000f; }
+
+        /// <summary>A reference to other content: a game number or a key ("mod_id:id"), as text (null = none).</summary>
+        protected string R(string k) => RefText(json[k]);
+        protected void SetR(string k, string v) { if (string.IsNullOrEmpty(v)) json.Remove(k); else json[k] = RefToken(v); }
+
+        /// <summary>A reference as written: a number stays a number, a key a string.</summary>
+        public static JToken RefToken(string v) => int.TryParse(v, out int n) ? new JValue(n) : new JValue(v);
+        public static string RefText(JToken t) =>
+            t is JValue v && (v.Type == JTokenType.Integer || v.Type == JTokenType.String) ? v.ToString() : null;
+
+        /// <summary>[x, y, z] numbers (null = none).</summary>
+        protected Vector3? V3(string k) => json[k] is JArray a && a.Count >= 3 ? new Vector3((float)a[0], (float)a[1], (float)a[2]) : (Vector3?)null;
+        protected void SetV3(string k, Vector3? v)
+        {
+            if (v == null) { json.Remove(k); return; }
+            float R3(float f) => Mathf.Round(f * 1000f) / 1000f;
+            json[k] = new JArray(R3(v.Value.x), R3(v.Value.y), R3(v.Value.z));
+        }
+
+        /// <summary>A field read as raw JSON (the builder's less common fields), null = none.</summary>
+        public JToken Get(string k) => json[k];
+        public void Set(string k, JToken v) { if (v == null || v.Type == JTokenType.Null) json.Remove(k); else json[k] = v; }
 
         /// <summary>A text field: a string, or one per language ({"en": ..., "de": ...}). The builder edits the English one
         /// (else the only one); a per-language field keeps its other languages.</summary>

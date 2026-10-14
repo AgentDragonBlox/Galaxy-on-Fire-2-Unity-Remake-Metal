@@ -283,7 +283,8 @@ namespace GoF2Remake.World
             // Remake: an event graph quest's orbit (questorbit): no normal traffic, like a story orbit (single player).
             bool questOrbit = !storyOrbit && !missionHere && !siege && arena == null && !GoF2Remake.Data.NetSession.Active && GoF2Remake.World.SpaceHooks.IsQuietOrbit(station);
             // Remake: a Mod Builder test flight (Modding.ModBuilder): a quiet orbit with its own pirates (ModBuilderRange).
-            bool builderTest = Modding.ModBuilder.TestFlying;
+            // The builder's own work in space (Stations, Weapon fx: ModBuilder.InSpace) too, with nothing flying at all.
+            bool builderTest = Modding.ModBuilder.TestFlying || Modding.ModBuilder.InSpace;
             // Level::assignGuns reads the level mission (Status+400): a campaign level or a freelance mission's type.
             NpcTables.InCampaignLevel = storyOrbit;
             NpcTables.LevelFreelanceType = freelanceOrbit ? Freelance.Mission.type : -1;
@@ -386,7 +387,19 @@ namespace GoF2Remake.World
             Session.ComingFromVoid = false;   // Level::init / LevelScript have used it (the Void raid, the closing wormhole)
             SpaceHooks.LevelBuilt?.Invoke(this);   // multiplayer: the shared orbit (NetOrbit)
             if (arena != null) GoF2Remake.World.SpaceHooks.ArenaLevelReady?.Invoke();
-            if (builderTest) gameObject.AddComponent<ModBuilderRange>().Setup(this);
+            if (Modding.ModBuilder.TestFlying) gameObject.AddComponent<ModBuilderRange>().Setup(this);
+            if (Modding.ModBuilder.InSpace) HoldForBuilder();
+        }
+
+        /// <summary>Remake (the Mod Builder in space, ModBuilder.InSpace): the player's ship parked where it came in, held
+        /// still, unharmed and unarmed; the builder's screen holds the camera (UI.ModBuilderSpaceView).</summary>
+        void HoldForBuilder()
+        {
+            Player.externalControl = true;
+            Player.inputLocked = true;
+            if (Health != null && Health.Target != null) Health.Target.invulnerable = true;
+            if (Weapons != null) Weapons.Blocked = true;
+            if (chase != null) chase.enabled = false;
         }
 
         /// <summary>Multiplayer: the orbit as the other players see it: the station's index, or an arena match's own id
@@ -925,6 +938,7 @@ namespace GoF2Remake.World
         /// <summary>The last save (auto-save slot) after a failed mission, or the main menu without one.</summary>
         public void LoadLastSave()
         {
+            if (Modding.ModBuilder.PlayTesting) { Modding.ModBuilder.EndPlayTest(); return; }   // a Mod Builder play test: back to the builder
             if (Session.LoadAutosave() && Application.CanStreamedLevelBeLoaded(stationScene)) SceneManager.LoadScene(stationScene);
             else SceneManager.LoadScene(0);
         }

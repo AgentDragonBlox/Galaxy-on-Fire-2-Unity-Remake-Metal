@@ -188,7 +188,11 @@ namespace GoF2Remake.UI
             saveSlotList.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             new DragScroll(saveSlotList);
             saveGameButton = Bind("saveGameButton", () => ShowSystemPage(SysPage.Save));
-            mainMenuButton = Bind("mainMenuButton", () => ShowDialog(Localization.Get(523), BackToMenu));
+            mainMenuButton = Bind("mainMenuButton", () =>
+            {
+                if (Modding.ModBuilder.PlayTesting) { ModBuilderPlay.End(); return; }   // a Mod Builder play test: back to the builder
+                ShowDialog(Localization.Get(523), BackToMenu);
+            });
             systemClose = Bind("systemMenuClose", CloseSystemMenu);
             saveBack = Bind("saveBack", () => ShowSystemPage(SysPage.Main));
             BuildSystemExtras();
@@ -225,7 +229,8 @@ namespace GoF2Remake.UI
             root.Q<Button>("menuButton").text = Localization.Extra("hudMenu", "MENU");
             root.Q<Label>("systemMenuTitle").text = T(172).ToUpperInvariant();       // Menu
             saveGameButton.text = T(30).ToUpperInvariant();                          // Save game
-            mainMenuButton.text = T(522).ToUpperInvariant();                         // Back to Main Menu
+            mainMenuButton.text = Modding.ModBuilder.PlayTesting ? Localization.Extra("mbBackToBuilder", "Back to Mod Builder").ToUpperInvariant()
+                                : T(522).ToUpperInvariant();                       // Back to Main Menu
             systemClose.text = saveBack.text = Localization.Extra("hudBack", "BACK");
 
             HookDrag();
@@ -245,7 +250,7 @@ namespace GoF2Remake.UI
             UpdateLayout();
 
             // Remake: the Mod Builder's hangar (Modding.ModBuilder): its own screen instead of the station menu's.
-            if (Modding.ModBuilder.Active && builderView == null)
+            if (Modding.ModBuilder.Active && !Modding.ModBuilder.PlayTesting && builderView == null)
             {
                 foreach (var child in root.Children()) child.style.display = DisplayStyle.None;
                 builderView = new ModBuilderView(level, root, push => Play(push ? buttonPush : buttonRelease));

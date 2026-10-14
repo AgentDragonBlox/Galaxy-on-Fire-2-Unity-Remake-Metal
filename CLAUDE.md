@@ -2147,7 +2147,7 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   phone (S24 Ultra): the 79 GoF3 ships cold in 9.5 s, nothing compressed on the main thread, the hulls
   checked up close. Texture2D.Compress stays for a GPU that reads neither; a phone's old "gpu" cache files are no longer read
   (nothing deletes them).
-- **Mod Builder** (remake, experimental; ships, items, characters and skins): the main menu's Mods button opens a hub
+- **Mod Builder** (remake, experimental; every kind of content, see "Its other kinds" below): the main menu's Mods button opens a hub
   (`MainMenu.BuildModsHub`, `modsHubPanel`: Mod Browser / Mod Builder; Back from either returns to it). The projects page
   (`ModBuilderProjects`, `modBuilderPanel`, styles `.mb-*` in MainMenu.uss): `persistentDataPath/ModProjects/<id>`
   (`Modding.ModProject`: a mod folder in the normal format, mod.json / ships.json / models / textures, plus builder.json
@@ -2228,6 +2228,45 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   run (ModMaterials keeps textures by path until the project is read again). Verified in Play mode: projects, open, a .glb ship (auto hardpoints,
   textures), a Phantom override, placing / dragging points, the loadout, test flight, dock back, exit, export. Not yet: a
   real file-picker run, touch / controller use of the gizmo.
+  **Its other kinds** (2026-10-15): the kinds are `ModBuilder.Kind` (12) and each is edited where it lives in the game
+  (`ModBuilder.PlaceOf`: Ships / Items / Skins / Blueprints / Campaign in the hangar, Characters / Quests / Audio in the Space
+  Lounge, Systems on the star map, Stations / Weapon fx in space, Hangars & bars in the room itself); a kind of the other
+  scene loads it (`ModBuilder.GoTo`, `ReloadSpace`, `ReloadStation`). The screens share `ModBuilderScreen` (top bar with all
+  kinds, Undo / Redo, Menu with Dependencies, the modal pickers, the save / reload cycle, the status line):
+  `ModBuilderView` over the Station scene (partials per kind: ...Blueprints, ...Campaign, ...Interiors, ...Quests, ...Audio,
+  ...Systems, ...Kinds the dispatch) and `ModBuilderSpaceView` over the Space scene (FlightHud hands it Update while
+  `ModBuilder.InSpace`; `SpaceLevel.HoldForBuilder`: the player's ship held, no traffic, the chase camera off; its own orbit
+  camera; ...SpaceViewFx). Project files: `ProjectSystem` / `ProjectStation` / `ProjectInterior` (ProjectWorld.cs),
+  `ProjectBlueprint` / `ProjectCampaign` / `ProjectGameOption` (ProjectGame.cs), `ProjectQuest` (events/*.gof2quest), audio as
+  files (music/, sounds/, voices/); all in the undo steps. **References** (`ModRefs`): every picker of other content
+  (`PickRef` / `RefField`) lists the game's, the project's own (by key) and every other installed mod's (read from its files,
+  on or off); another mod's pick makes it a dependency (`ModProject.AddDependency`, with the installed version as the lowest),
+  `ModsNamed` the mods the files name. **Test fly** only in Ships, Items and Skins (`ModBuilderView.Flies`); Blueprints /
+  Campaign show their ship on the turntable (`ModBuilder.PreviewShip` / `PreviewLoadout`). **Play** (`ModBuilderPlay`,
+  `ModBuilder.PlayTesting`): a play test, the game with the project on (the station menu, traffic, quests:
+  `LocalEvents` runs no quests in the builder otherwise), from the builder's station, the campaign's start or a quest under
+  way; the pause / station menu's Back to Mod Builder, a death or a failed quest end it (`EndPlayTest`: the builder's game
+  as it opened). Blueprints: product, ingredients, skin ship, autocomplete, condition, lounge / derelict / drops. Campaign:
+  the card, start, equipment, cargo, standing, story quest, mod-only galaxy / items / ships, traffic ships; new-game options.
+  Quests: `.gof2quest` step lists compiled by `Events.QuestFile` (EventRunner reads the extension; steps dialog, radio,
+  objective, goto, fight, cargo, reward, give, wait, waituntil, checkpoint, music, title, waypoint, startquest, complete,
+  fail, command; the expressions `docked(station)` / `inorbit(station)` added for them). Audio: game tracks / sounds
+  replaced (`Resources/GoF2ModBuilder/SoundNames.txt`, Assets/Audio's SFX folders), new tracks, voice lines, ▶ previews.
+  Systems: `StarMap.OpenBuilder` (every system, the builder's own amber and dragged: `MoveSun`, picks reported, no travel,
+  drawn under the builder's panels); name, owner, security, position, gates, gate station, sky, nebula / stars / sun images,
+  sunlight, music, its stations. Stations: system, tech level, planet, the look (like a game station, a .glb or a game model,
+  size, turn, centre), collision, interior race / own hangar / bar, planet image, music; Play docks there. Hangars & bars:
+  `ModBuilder.PreviewInterior` makes `StationLevel` build the project's room, `StationLevel.FreeCamera` the orbit camera,
+  markers as balls clicked into the room (MeshColliders on layer 21) into interiors.json "markers" (`ModInteriors`: they win
+  over the model's nodes); a room on a game room (`gof2:hangar_terran`, `ModStations.LoadInterior`) gets its markers from
+  `StationLevel.GameRoomMarkers`. Weapon fx: per part the base's, a game part (another item's, scale, recoloured), a sprite,
+  a model or none; shot / blast sounds; the trail (items.json fx "trail": none, or colour / width / length, also on a weapon
+  without one: `WeaponFx.trail` (`TrailLook`, not serialized), `RocketTrail.For(gun, look)`, `GunRig.EnableTrails`); a
+  range where the parked ship fires at a target ship 300-450 m off, seen from the side (Gun + GunRig like NetShotMirror; the
+  target's hit cube 35 m: at 900 m every shot hit as it left the gun). Tests: `ModBuilderKindsTests`. Verified in Play mode: every kind's page, a quest compiled and played (its
+  conversation in the station, back to the builder), a system on the map with its route, a game hangar as the project's
+  room with its markers, a project station in its own orbit, a laser recoloured and a project missile hitting the target
+  ship. Not yet: a system dragged by hand, a marker clicked by hand, the campaign play test.
 - Orbit drags (remake, players' request): a vertical drag takes the camera down / up the other way round (a drag up tips the
   ship up) in Inspect ship, Action Freeze (`PhotoMode`, the original's y flip dropped) and the Mod Builder; keys and sticks
   unchanged.

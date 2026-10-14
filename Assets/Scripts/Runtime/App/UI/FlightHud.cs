@@ -130,8 +130,13 @@ namespace GoF2Remake.UI
             if (runtimePanel != null) Destroy(runtimePanel);
         }
 
+        /// <summary>The Mod Builder's screen in space (ModBuilder.InSpace), null otherwise.</summary>
+        ModBuilderSpaceView builderSpace;
+
         void OnDisable()
         {
+            builderSpace?.Dispose();
+            builderSpace = null;
             pauseMenu?.Close();   // the scene is going: sounds and time back to normal
             UnityEngine.Cursor.lockState = CursorLockMode.None;   // the captured mouse (mouse steering) is released
             UnityEngine.Cursor.visible = true;
@@ -677,6 +682,19 @@ namespace GoF2Remake.UI
         void Update()
         {
             if (root == null) return;
+            // Remake: the Mod Builder's work in space (Stations, Weapon fx): its own screen instead of the HUD.
+            if (Modding.ModBuilder.InSpace)
+            {
+                if (builderSpace == null)
+                {
+                    level ??= FindAnyObjectByType<SpaceLevel>();
+                    if (level == null || level.Player == null) return;
+                    foreach (var child in root.Children()) child.style.display = DisplayStyle.None;
+                    builderSpace = new ModBuilderSpaceView(level, root, PlayButton);
+                }
+                builderSpace.Update();
+                return;
+            }
             missileWarning?.Hide();   // shown again below while missiles fly at the player and the HUD shows
             // The pause menu pauses the voice too: the shared voice source ignores the listener pause (it has to play while
             // a conversation pauses the game), so the radio's line kept talking over the menu. Multiplayer doesn't pause.
@@ -1317,7 +1335,7 @@ namespace GoF2Remake.UI
                 gameOverText.text = Localization.Extra("hardcoreDead", "Hardcore: your pilot is lost and this game's saves are deleted. Tap to return to the main menu.");
                 return;
             }
-            if (Modding.ModBuilder.TestFlying)   // a Mod Builder test flight: back to the builder's hangar
+            if (Modding.ModBuilder.TestFlying || Modding.ModBuilder.PlayTesting)   // a Mod Builder test flight / play test: back to the builder
             {
                 gameOverText.text = Localization.Extra("mbTestDead", "Tap to return to the Mod Builder.");
                 return;
@@ -1352,6 +1370,7 @@ namespace GoF2Remake.UI
             gameOverMs = -1f;
             if (hardcoreDead) { BackToMenu(); return; }   // hardcore: nothing to load
             if (Modding.ModBuilder.TestFlying) { Modding.ModBuilder.EndTestFlight(false); return; }
+            if (Modding.ModBuilder.PlayTesting) { ModBuilderPlay.End(); return; }
             // Multiplayer: back in this orbit's station (a faction member: the faction's home, NetFactions), repaired (docking
             // repairs), everything else kept.
             if (GoF2Remake.Multiplayer.NetGame.Active)

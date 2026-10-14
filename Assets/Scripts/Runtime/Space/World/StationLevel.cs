@@ -189,6 +189,11 @@ namespace GoF2Remake.World
             // Remake mods: a custom hangar / bar room (interiors.json, ModInteriors); the race's tables stay for the rest.
             customHangar = Modding.ModInteriors.HangarOf(station);
             customBar = Modding.ModInteriors.BarOf(station);
+            // The Mod Builder previews one of its project's rooms in place of the station's (ModBuilder.PreviewInterior).
+            if (Modding.ModBuilder.Active && Modding.ModInteriors.Built(Modding.ModBuilder.PreviewInterior) is Modding.ModInteriors.Room preview)
+            {
+                if (preview.def.hangar) customHangar = preview; else customBar = preview;
+            }
             Session.VisitedStations.Add(station);   // Galaxy::setVisited: the star map's "Already visited"
             // Docking repairs the ship (the original launches with Status hull / shield / armor = -1, "full", StarMap::
             // depart; assumed for every launch) and autosaves (ModStation::autosave).
@@ -298,6 +303,7 @@ namespace GoF2Remake.World
             GameObject roomGo;
             if (customHangar != null) { roomGo = Instantiate(customHangar.template, Vector3.zero, Quaternion.identity, hangarRoot); roomGo.name = "Room (" + customHangar.def.key + ")"; }
             else roomGo = Spawn(room, Vector3.zero, OrbitLayout.RotationToUnity(new Vector3(0f, Mathf.PI, 0f)), hangarRoot, "Room");
+            HangarRoom = roomGo != null ? roomGo.transform : null;
             // CutScene::process updates every geometry of the scene each frame, so the room's animated layers all run,
             // not only the *_anim meshes (the Terran hangar_terran_add lights run along the side gutters; at frame 0 they
             // sat on the player's pad). The loops skip their one-off first key (every part at the origin for 33 / 50 ms,
@@ -475,6 +481,7 @@ namespace GoF2Remake.World
             GameObject room;
             if (customBar != null) { room = Instantiate(customBar.template, Vector3.zero, Quaternion.identity, barRoot); room.name = "Room (" + customBar.def.key + ")"; }
             else room = Spawn(StationTables.BarRoom[BarRace], Vector3.zero, OrbitLayout.RotationToUnity(Vector3.zero), barRoot, "Room");
+            BarRoom = room != null ? room.transform : null;
             // As in the hangar: the loops (and the Midorian prop's replays) skip their one-off first key, where every part
             // sits at the origin for 33 / 50 ms; played, it flashed for a frame on every wrap (the Nivelian bar's 6.5 s
             // bar_nivelian_anim_add, the Midorian prop each time it replayed).
@@ -753,6 +760,49 @@ namespace GoF2Remake.World
         /// <summary>Game camera rotation, order 2 (Ry * Rx * Rz, looking down local -Z) -> Unity (looking down +Z).</summary>
         static Quaternion CameraRotation(float x, float y, float z) =>
             Quaternion.Euler(-x * Mathf.Rad2Deg, -y * Mathf.Rad2Deg, z * Mathf.Rad2Deg);
+
+        /// <summary>Remake (the Mod Builder's rooms on a game room, "gof2:hangar_terran"): the markers that room has in the
+        /// game's tables, room metres as interiors.json's "markers": the pad, the camera and where it looks, the parked pads,
+        /// the flights' gate; a bar's resting and first-visit cameras and its visitor spots. Null: not one of the game's rooms.</summary>
+        public static Dictionary<string, Vector3> GameRoomMarkers(string assembly)
+        {
+            var m = new Dictionary<string, Vector3>();
+            int h = System.Array.IndexOf(StationTables.HangarRoom, assembly);
+            if (h >= 0)
+            {
+                const int probe = 10;   // the Phantom: the pads' floor is the pivot less its height
+                float FloorY(int slot) => StationTables.PadPivotY(h, slot, probe, Quaternion.identity) - StationTables.ShipY(probe) * M;
+                var pad = new Vector3(0f, FloorY(-1), 0f);
+                m["pad"] = pad;
+                var pivot = pad + Vector3.up * (StationTables.ShipY(probe) * M);
+                var cam = pivot + OrbitLayout.ToUnity(StationTables.HangarCameraPos[h]);
+                m["camera"] = cam;
+                var r = StationTables.HangarCameraRot[h];
+                m["camera_target"] = cam + CameraRotation(r.x, r.y, StationTables.HangarCameraRoll) * Vector3.forward * Vector3.Distance(cam, pivot);
+                var slots = StationTables.ParkedSlots[h];
+                if (slots != null)
+                    for (int i = 0; i < slots.Length; i++)
+                        m["parked_" + (i + 1)] = Vector3.Scale(OrbitLayout.ToUnity(slots[i]), new Vector3(1f, 0f, 1f)) + Vector3.up * FloorY(i);
+                var lane = StationTables.HangarLanes[h];
+                if (lane != null && !lane.bays)
+                {
+                    m["gate"] = lane.gate;
+                    m["gate_out"] = lane.gate + lane.outward * 300f;
+                }
+                return m;
+            }
+            int b = System.Array.IndexOf(StationTables.BarRoom, assembly);
+            if (b < 0) return null;
+            var rest = OrbitLayout.ToUnity(StationTables.BarCameraRest[b]);
+            m["camera"] = rest;
+            m["camera_target"] = rest + CameraRotation(0f, StationTables.BarCameraRestYaw[b], 0f) * Vector3.forward * 60f;
+            var start = OrbitLayout.ToUnity(StationTables.BarCameraStart[b]);
+            m["camera_start"] = start;
+            m["camera_start_target"] = start + CameraRotation(0f, StationTables.BarCameraStartYaw[b], 0f) * Vector3.forward * 60f;
+            var spots = StationTables.VisitorSlots[b];
+            for (int i = 0; i < spots.Length; i++) m["visitor_" + (i + 1)] = OrbitLayout.ToUnity(spots[i]);
+            return m;
+        }
 
         // ---- view switching ----------------------------------------------------------------------------------
 
@@ -1042,10 +1092,32 @@ namespace GoF2Remake.World
             if (View == StationView.Lounge) UpdateBillboards();
         }
 
+        // ---- remake: the Mod Builder's free camera (its rooms' editor) ----
+
+        /// <summary>The rooms as built (the hangar's and the Space Lounge's), for the Mod Builder.</summary>
+        public Transform HangarRoom { get; private set; }
+        public Transform BarRoom { get; private set; }
+        /// <summary>The custom room shown (a mod's or the builder's preview), null = the race's.</summary>
+        public Modding.ModInteriors.Room CustomHangar => customHangar;
+        public Modding.ModInteriors.Room CustomBar => customBar;
+
+        /// <summary>The Mod Builder holds the camera (its room editor's orbit): this pose and lens instead of the room's.</summary>
+        public bool FreeCamera { get; set; }
+        public Pose FreeCameraPose { get; set; }
+        public float FreeCameraFov { get; set; } = 50f;
+
         void UpdateCamera(float dtMs)
         {
             if (mainCamera == null) return;
             var cam = mainCamera.transform;
+            if (FreeCamera)
+            {
+                cam.SetPositionAndRotation(FreeCameraPose.position, FreeCameraPose.rotation);
+                mainCamera.fieldOfView = Aspect.VerticalFov(FreeCameraFov, mainCamera.aspect);
+                mainCamera.nearClipPlane = 0.5f;
+                mainCamera.farClipPlane = 20000f;
+                return;
+            }
             if (GoF2Remake.Data.VrFlags.Enabled) { VrCamera(cam); return; }
             if (View == StationView.Hangar)
             {

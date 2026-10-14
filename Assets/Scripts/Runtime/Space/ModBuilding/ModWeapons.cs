@@ -59,6 +59,8 @@ namespace GoF2Remake.Modding
             /// <summary>"shot" / "explosionSound" given as an item number: that item's sounds (-1 = none).</summary>
             public int shotItem = -1, explosionItem = -1;
             public bool? shotLoops;
+            /// <summary>"trail": the shots' smoke trail (false: none), null = the base item's.</summary>
+            public TrailLook trail;
             /// <summary>"turret": the turret's own model, its muzzle and where its shots start (game units, -1 = the base's).</summary>
             public string turretModel;
             public float turretMuzzle = -1f, turretShot = -1f;
@@ -136,7 +138,7 @@ namespace GoF2Remake.Modding
         }
 
         static readonly HashSet<string> FxFields = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase)
-            { "projectile", "muzzle", "impact", "shot", "shotLoops", "explosionSound", "turret" };
+            { "projectile", "muzzle", "impact", "shot", "shotLoops", "explosionSound", "turret", "trail" };
         static readonly HashSet<string> PartFields = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase)
             { "sprite", "model", "texture", "size", "color", "glow", "additive", "lifetime", "grow", "fade", "spin", "alongFlight", "stretch", "rotate",
               "item", "scale" };
@@ -160,10 +162,39 @@ namespace GoF2Remake.Modding
                 shotItem = shotItem, explosionItem = explosionItem,
             };
             if (ModJson.Has(o, "shotLoops")) d.shotLoops = ModJson.Bool(o, "shotLoops", false, File);
+            d.trail = ParseTrail(mod, ModJson.Get(o, "trail"));
             foreach (var f in Concat(d.shots, d.explosionSounds))
                 if (!mod.Source.Exists(f)) throw new ModJsonException($"{where}: the sound {f} isn't in the mod");
             ParseTurret(mod, d, ModJson.Get(o, "turret"));
             return d;
+        }
+
+        /// <summary>"trail": false (none) or { "color": [r, g, b] (0..1 / 0..255 / "#rrggbb"), "width": game units (half the
+        /// ribbon's width; a rocket's 100), "length": ms it lasts (a rocket's 3000) }.</summary>
+        static TrailLook ParseTrail(ModInfo mod, JToken t)
+        {
+            if (t == null) return null;
+            if (t.Type == JTokenType.Boolean) return (bool)t ? new TrailLook() : new TrailLook { none = true };
+            if (!(t is JObject o)) throw new ModJsonException($"{ModJson.Where(t, File)}: \"trail\" is false or {{ \"color\", \"width\", \"length\" }}");
+            var look = new TrailLook
+            {
+                width = ModJson.Float(o, "width", -1f, File),
+                lifeMs = ModJson.Float(o, "length", -1f, File),
+            };
+            if (ModJson.Get(o, "color") is JToken c) look.color = TrailColour(c);
+            return look;
+        }
+
+        static Color TrailColour(JToken c)
+        {
+            if (c.Type == JTokenType.String && ColorUtility.TryParseHtmlString((string)c, out var html)) return html;
+            if (c is JArray a && a.Count >= 3)
+            {
+                float r = (float)a[0], g = (float)a[1], b = (float)a[2], al = a.Count > 3 ? (float)a[3] : 1f;
+                if (r > 1f || g > 1f || b > 1f || al > 1f) { r /= 255f; g /= 255f; b /= 255f; if (al > 1f) al /= 255f; }
+                return new Color(r, g, b, al);
+            }
+            return Color.white;
         }
 
         /// <summary>"turret": "models/x.glb" or { "model": ..., "muzzle": units, "shotStart": units, "scale": f, "offset": [x, y, z] };
@@ -378,6 +409,7 @@ namespace GoF2Remake.Modding
                 if (shots.Result != null && shots.Result.Length > 0) { fx.shots = shots.Result; fx.shot = shots.Result[0]; }
                 if (booms.Result != null && booms.Result.Length > 0) { fx.explosionSounds = booms.Result; fx.explosionSound = booms.Result[0]; }
                 if (d.shotLoops.HasValue) fx.shotLoops = d.shotLoops.Value;
+                if (d.trail != null) fx.trail = d.trail;
                 var turretModel = turret.Result;
                 float muzzle = d.turretMuzzle, shotStart = d.turretShot;
                 // A game turret's model ("item"), else the base item's when resized / moved: a copy of its ship-mounted model

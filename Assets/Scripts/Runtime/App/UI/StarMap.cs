@@ -30,6 +30,9 @@
 // Remake: the full-map overview, one zoom level further out that fits every visible system (the Full map button, Q, the
 // controller's X, the mouse wheel or a pinch): no panning there; a tap or Enter on a system zooms back in on it. The zoom
 // takes the galaxy <-> system zoom's 2184.5 ms, its sounds' length.
+// Remake (the Mod Builder's Systems kind, OpenBuilder / Builder): every system is shown, a tap reports the system (and in its
+// view the station) to the builder, the builder's own systems are dragged to another place (moved), nothing is travelled to;
+// the map draws under the builder's panels (a lower panel sort order) and its own header and footer hide.
 // Remake choices: hidden systems' suns aren't drawn (the original draws all 34, uncertainty 3); the galaxy sun shrinks to
 // the system-view sun size while zooming instead of a second sun with the flight sun texture; the reveal's sun grows to
 // the normal 0.012 (the original's 0.002 literal, uncertainty 10); the reveal map is view only.
@@ -54,6 +57,61 @@ namespace GoF2Remake.UI
         const float HeaderBottom = 58f, FooterHeight = 74f;
 
         public static StarMap Current { get; private set; }
+
+        /// <summary>The Mod Builder's map (OpenBuilder): what it is told and what it may move.</summary>
+        public sealed class Builder
+        {
+            /// <summary>A system the builder's project owns: it can be dragged.</summary>
+            public Func<int, bool> movable;
+            /// <summary>A system tapped (-1: none).</summary>
+            public Action<int> picked;
+            /// <summary>A system dragged to a new place: its star map position (systems.json "position").</summary>
+            public Action<int, Vector3> moved;
+            /// <summary>A station's planet tapped in a system's view.</summary>
+            public Action<int> stationPicked;
+        }
+
+        Builder builder;
+
+        /// <summary>The Mod Builder's map over the station (its Systems kind): the galaxy with every system, no travel. 'db' is a
+        /// copy of the tables (the drags move its systems).</summary>
+        public static StarMap OpenBuilder(Database db, Builder hooks)
+        {
+            var map = Open(db, StarMapMode.Mission, true, null);
+            if (map != null) map.builder = hooks;
+            return map;
+        }
+
+        /// <summary>The builder's map centres a system (picked in the builder's list).</summary>
+        public void FocusSystem(int system)
+        {
+            if (cam == null) { pendingFocus = system; return; }   // not built yet: once it is (Update)
+            if (system < 0 || system >= suns.Length || suns[system] == null) return;
+            if (systemView || zoomDir != 0) return;
+            if (overview) SetOverview(false);
+            Select(system);
+            autoCentre = true;
+            centred = -1;
+        }
+
+        /// <summary>The galaxy view's centre as a star map position (where a new system goes).</summary>
+        public Vector3 CentrePosition()
+        {
+            var g = GalaxyCameraGame;
+            return MapPositionOf(new Vector3(g.x, g.y, 3000f));
+        }
+
+        /// <summary>GalaxyMap.SunPosition the other way: a sun's game position to the systems' map position.</summary>
+        static Vector3 MapPositionOf(Vector3 sun) =>
+            new Vector3(100f - (sun.x + 10000f) / 14000f * 100f, 100f - (sun.y + 9000f) / 13000f * 100f, 100f - (sun.z - 1000f) / 6000f * 100f);
+
+        int draggingSystem = -1, pendingFocus = -1;
+
+        /// <summary>The builder closes its map.</summary>
+        public void CloseBuilder() => Close(new StarMapResult { station = -1 });
+
+        /// <summary>A system's view is shown (or the zoom runs): Esc / B is the map's (back to the galaxy).</summary>
+        public bool InSystemView => systemView || zoomDir != 0 || overview || DialogOpen;
         public static bool IsOpen => Current != null;
         /// <summary>The map's own camera (VR draws it into a texture on the floating screen).</summary>
         public Camera MapCamera => cam;
@@ -276,6 +334,15 @@ namespace GoF2Remake.UI
                 currentSystem = db.Stations.Find(s => s.index == currentStation)?.system ?? 0;
                 current = db.Systems.Find(s => s.index == currentSystem);
                 visible = GalaxyMap.Visibility(db);
+                if (builder != null)
+                {
+                    // The Mod Builder's map: every system, under the builder's panels, without the map's own header / footer.
+                    for (int i = 0; i < visible.Length; i++) visible[i] = true;
+                    if (runtimePanel != null) runtimePanel.sortingOrder = panelRenderer.panelSettings.sortingOrder - 1;
+                    root.AddToClassList("map-builder");
+                    foreach (var n in new[] { "mapTitle", "backButton", "keyButton", "zoomButton", "hints" })
+                        if (root.Q(n) is VisualElement el) el.style.display = DisplayStyle.None;
+                }
                 if (askVoid)
                 {
                     root.AddToClassList("map-dialog-only");
@@ -779,6 +846,7 @@ namespace GoF2Remake.UI
                 it.pulse.style.display = s.index == currentSystem ? DisplayStyle.Flex : DisplayStyle.None;
                 it.story.style.display = s.stations.Exists(StoryMarked) ? DisplayStyle.Flex : DisplayStyle.None;
                 it.freelance.style.display = FreelanceTarget >= 0 && SystemOf(FreelanceTarget) == s.index ? DisplayStyle.Flex : DisplayStyle.None;
+                if (builder?.movable != null && builder.movable(s.index)) it.name.style.color = new Color(1f, 0.78f, 0.35f);   // the builder's own
                 systemItems[s.index] = it;
             }
         }
@@ -1159,13 +1227,14 @@ namespace GoF2Remake.UI
             if (zoomDir != 0) return;
             if (overview) { SetOverview(false); return; }
             if (systemView && GalaxyAllowed) ZoomOut();
-            else Close(new StarMapResult { station = -1 });
+            else if (builder == null) Close(new StarMapResult { station = -1 });
         }
 
         /// <summary>StarMap::OnTouchEnd mode 3, the second tap on the front planet.</summary>
         void Confirm(int k)
         {
             int station = planets[k].station;
+            if (builder != null) { builder.stationPicked?.Invoke(station); return; }
             if (mode == StarMapMode.Mission && !travel) { ShowDialog(StationName(station), null, null, true); return; }   // view only
             if (station == currentStation) { ShowDialog(T(419), null, null, true); return; }
             bool otherSystem = SystemOf(station) != currentSystem;
@@ -1279,6 +1348,11 @@ namespace GoF2Remake.UI
             {
                 vel = Vector2.zero;
                 Select(SystemAt(p));
+                if (builder != null)
+                {
+                    builder.picked?.Invoke(selected);
+                    draggingSystem = selected >= 0 && builder.movable != null && builder.movable(selected) && !InOverview ? selected : -1;
+                }
             }
             else
             {
@@ -1296,6 +1370,13 @@ namespace GoF2Remake.UI
             lastPos = p;
             bool far = Mathf.Abs(p.x - downPos.x) > 3f || Mathf.Abs(p.y - downPos.y) > 3f;
             if (!systemView && (InOverview || pinch.Count > 1)) { if (far) dragged = true; return; }
+            if (!systemView && draggingSystem >= 0)
+            {
+                // The builder's own system follows the pointer on its depth's plane.
+                if (far) dragged = true;
+                if (dragged) MoveSun(draggingSystem, p);
+                return;
+            }
             if (!systemView)
             {
                 pan += d * DragScale;
@@ -1319,6 +1400,18 @@ namespace GoF2Remake.UI
             if (id != pointer) return;
             if (touch.HasPointerCapture(pointer)) touch.ReleasePointer(pointer);
             pointer = -1;
+            if (draggingSystem >= 0)
+            {
+                int moved = draggingSystem;
+                draggingSystem = -1;
+                if (dragged)
+                {
+                    var sys = db.Systems.Find(x => x.index == moved);
+                    if (sys != null) builder?.moved?.Invoke(moved, new Vector3(sys.mapPosition.x, sys.mapPosition.y, sys.mapPosition.z));
+                    selected = centred = moved;
+                    return;
+                }
+            }
             if (!release) return;
             if (!systemView && InOverview)
             {
@@ -1346,11 +1439,31 @@ namespace GoF2Remake.UI
             }
         }
 
+        /// <summary>The builder's drag: the sun at the pointer on the plane of its depth, the system's map position from it
+        /// (whole numbers, as systems.json writes them).</summary>
+        void MoveSun(int system, Vector2 panel)
+        {
+            var sys = db.Systems.Find(x => x.index == system);
+            if (sys == null || cam == null || suns[system] == null) return;
+            var size = PanelSize;
+            var ray = cam.ViewportPointToRay(new Vector3(panel.x / size.x, 1f - panel.y / size.y, 0f));
+            var plane = new Plane(cam.transform.forward, suns[system].position);
+            if (!plane.Raycast(ray, out float d)) return;
+            var w = ray.GetPoint(d);
+            var game = new Vector3(w.x / M, w.y / M, -w.z / M);
+            var map = MapPositionOf(game);
+            sys.mapPosition.x = Mathf.RoundToInt(map.x);
+            sys.mapPosition.y = Mathf.RoundToInt(map.y);
+            suns[system].localPosition = U(GalaxyMap.SunPosition(sys));
+            touch.MarkDirtyRepaint();
+        }
+
         // ---- per frame (StarMap::update) -------------------------------------------------------------------
 
         void Update()
         {
             if (root == null) return;
+            if (pendingFocus >= 0 && cam != null) { int focus = pendingFocus; pendingFocus = -1; FocusSystem(focus); }
             float dtMs = Time.unscaledDeltaTime * 1000f;
             float f = dtMs / (1000f / 60f);   // the original's per-frame factors, at 60 fps
             timeMs += dtMs;
@@ -1444,7 +1557,9 @@ namespace GoF2Remake.UI
             var pad = Gamepad.current;
             bool Pressed(Func<Keyboard, bool> k, Func<Gamepad, bool> g) => (kb != null && k(kb)) || (pad != null && g(pad));
 
-            if (Pressed(k => k.escapeKey.wasPressedThisFrame, g => g.buttonEast.wasPressedThisFrame)) { Play(assets.buttonRelease); Back(); return; }
+            if (Pressed(k => k.escapeKey.wasPressedThisFrame, g => g.buttonEast.wasPressedThisFrame) && (builder == null || systemView || overview || DialogOpen))
+            { Play(assets.buttonRelease); Back(); return; }
+            if (builder != null) return;   // the builder's keys are its own (typing in its fields)
             int padDir = 0;
             Vector2 dpad = pad != null ? pad.dpad.ReadValue() : Vector2.zero;
             if (dpad.x < -0.5f) padDir = 1; else if (dpad.x > 0.5f) padDir = 2; else if (dpad.y > 0.5f) padDir = 3; else if (dpad.y < -0.5f) padDir = 4;
@@ -1618,7 +1733,7 @@ namespace GoF2Remake.UI
             if (zoomButton != null)
             {
                 zoomButton.text = fullMap;
-                bool zoomShown = !sys && !revealing;
+                bool zoomShown = !sys && !revealing && builder == null;   // the builder's map: none of the map's own buttons
                 zoomButton.style.display = zoomShown ? DisplayStyle.Flex : DisplayStyle.None;
                 // Both push to the right edge: the Key button sits right after the Full map button while that shows.
                 keyButton.style.marginLeft = zoomShown ? new StyleLength(0f) : new StyleLength(StyleKeyword.Null);
