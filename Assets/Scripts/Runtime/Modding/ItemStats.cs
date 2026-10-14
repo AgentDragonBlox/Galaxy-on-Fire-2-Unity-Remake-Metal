@@ -27,6 +27,10 @@ namespace GoF2Remake.Modding
             ["miningBeam"] = 100, ["miningBeamRange"] = 101, ["miningBeamLayerMs"] = 102, ["miningBeamLook"] = 103,
             // A cloak (sort 21) with phaseCloak 1 also phases the ship through objects while cloaked (PlayerCloak.Phasing).
             ["phaseCloak"] = 104,
+            // A gun or turret with missiles 1 fires homing missiles (Flight.Gun.missiles); salvoShots / salvoCount /
+            // salvoGapMs fire several shots at once and several salvos per reload (Gun.TryFire); turretRange is how far an
+            // auto turret looks for a target (PlayerTurret.PickTarget).
+            ["missiles"] = 105, ["salvoShots"] = 106, ["salvoCount"] = 107, ["salvoGapMs"] = 108, ["turretRange"] = 109,
             // items.json's statList names
             ["steerable"] = 15, ["handling"] = 17,
             ["loadingTimeMs"] = 11, ["range"] = 12, ["projectileSpeed"] = 13, ["magnitude"] = 14, ["shieldRegenTime"] = 19,

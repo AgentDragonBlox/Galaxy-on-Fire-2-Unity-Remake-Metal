@@ -361,6 +361,11 @@ remake's own. The original's attributes without a name: 37, 56, 57, 58, 59 (set 
 | 102 | miningBeamLayerMs |  |
 | 103 | miningBeamLook |  |
 | 104 | phaseCloak |  |
+| 105 | missiles |  |
+| 106 | salvoShots |  |
+| 107 | salvoCount |  |
+| 108 | salvoGapMs |  |
+| 109 | turretRange |  |
 
 ## Blueprints
 

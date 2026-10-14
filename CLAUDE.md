@@ -1902,6 +1902,18 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   to the camera at once) and `GunRig.MaxLength` counts its lifetime. Loaded in the background with the rest
   (`ModLoading`, the menu's `Preload`). Verified in Play mode: the example's Plasma Lance (fired: violet bolts stretched
   along their flight, the flash at the gun, the ring impact, its own shot sound).
+- **Missile turrets and salvos** (remake, for mods; a modder's missile turret, 2026-10-14, whose own source patch was
+  folded in this way): stats `missiles` 105 (a plain gun's / turret's shots are homing missiles, `Gun.missiles`: `Homing`,
+  `IsMissile` = the rocket burst on a hit (`GunRig.ShowImpact`) and the rocket smoke trail (`RocketTrail.For`), no shrink;
+  a turret's home on its auto target, else the radar lock, `PlayerTurret.MissileLock`), `salvoShots` 106 (side by side, 120
+  units apart, each shot its own `Fired` for the multiplayer mirrors), `salvoCount` 107 / `salvoGapMs` 108 (a magazine:
+  `Gun.WaitMs` is the gap inside it, else the reload; the cheats and mirrors reset to `WaitMs`), `turretRange` 109 (the auto
+  turret's search range); not for beams, bombs, mines, cluster missiles, sentries, collectors. fx `"turret"`: the turret's
+  own GLB (`ModWeapons.BuildTurret`: a `pivot` node holding a `*_gun` node, 1 unit = 1 m; `WeaponFx.modTurret`,
+  `turretMuzzleUnits` / `turretShotUnits` for its `muzzle` / `shotStart`), used in flight and by `PlayerTurret.BuildStatic`
+  (the hangar, other players' ships); a part without sprite / model takes `item` (another item's part, `ModWeapons.Copy`)
+  and `scale` (on a node under a new root: GunRig sets the root's scale); `shot` / `explosionSound` an item's number (its
+  sounds and shot looping).
 - **Sound effects** (`ModSounds`, a mod's `sounds/<clip name>.ogg | .wav | .mp3`): replaces the game's clip of that name
   everywhere; `ModSounds.Get(clip)` wraps every `PlayOneShot` and `.clip =` site (57, not the music sources: ModMusic's),
   memoised per clip (AudioClip.name allocates), a no-op without mod sounds; later mods win; loaded decoded

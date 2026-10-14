@@ -134,7 +134,11 @@ drillSpeed 32, miningYield 33, cabins 34, cloakDurationMs 35, cloakChargeMs 36, 
 damageFactor 40 (weapon mods %), emergencyMs 41, timeExtenderMs 42, timeExtenderCooldownMs 43, collectorSpeed 49,
 collectorMagnitude 50, collectorRange 51, gammaShielding 52, beamRange 53, beamStrength 54, beamTargets 55, miningBeam 100 (a
 drill based on 86-90 that cuts while flying), miningBeamRange 101, miningBeamLayerMs 102, miningBeamLook 103 (9/10/11/228), phaseCloak 104 (a
-cloak based on 94-96 whose ship passes through asteroids, stations, gates, ships, shots and explosions while cloaked).
+cloak based on 94-96 whose ship passes through asteroids, stations, gates, ships, shots and explosions while cloaked),
+missiles 105 (1 = a gun's or turret's shots are homing missiles: a turret's home on its target, else on the scanner lock;
+smoke trail, rocket burst; not for beams, bombs, mines or cluster missiles), salvoShots 106 (shots side by side per trigger),
+salvoCount 107 (salvos per magazine, then reloadMs), salvoGapMs 108 (ms between them), turretRange 109 (auto turret search
+range, units, default 60000).
 items.json's own names (`loadingTimeMs`, `range`, `projectileSpeed`...) work too. An unknown stat name is an error.
 
 ### Weapon fx
@@ -154,7 +158,13 @@ with the mod's own `sprite` (PNG in the mod, white on black or transparent; `col
 `texture` drawn glowing), `size` (game units; a blaster bolt is ~1600, an impact glow several thousand), `color`
 (`[r,g,b]` 0-1, or 0-255 when a value is above 1, or `"#rrggbb"`), `glow` (>1 blooms; game effects ~2.5), `additive` (default true),
 `lifetime` ms (muzzle 100, impact 300), `grow`, `fade`, `spin` (deg/s), `alongFlight` + `stretch` (laser bolts), `rotate`
-(models). Sounds: `.ogg` / `.wav` / `.mp3`. Behaviour never changes (a beam stays a beam).
+(models). Without `sprite` / `model` a part may also take `item` (another item's number: its part instead of the base's,
+e.g. `{ "item": 46, "scale": 0.35 }` the AMR Extinctor's missile at 35 %) and `scale` (size factor). `shot` /
+`explosionSound` may be an item's number (its sounds; `shotLoops` then that item's unless given). Turrets: `"turret":
+"models/t.glb"` or `{ "model": ..., "muzzle": units, "shotStart": units }` is the turret's own model (flight, hangar,
+other players): a node `pivot` (the base, turns) holding a node named `*_gun` (tilts; barrel along +Z), 1 unit = 1 m;
+muzzle / shotStart along the gun node in game units. Sounds: `.ogg` / `.wav` / `.mp3`. Behaviour never changes (a beam
+stays a beam) except through the stats above.
 
 ## ships.json
 

@@ -81,6 +81,17 @@ namespace GoF2Remake.Flight
         /// <summary>RocketGun::update: homing only once the bullet is this old (NPC rockets 1000 ms, the player's at once).</summary>
         public float homingDelayMs;
 
+        // Remake, for mods (ItemStats 105-108): a gun or turret whose shots are homing missiles, and salvos.
+        /// <summary>Attr 105 = 1: the shots are homing missiles (they home on the lock / the turret's target, keep their size,
+        /// trail smoke and burst like a rocket on a hit), whatever the item's category.</summary>
+        public readonly bool missiles;
+        /// <summary>Attr 106: shots side by side per trigger; attr 107: salvos per magazine, attr 108 ms apart (the reload,
+        /// attr 11, comes after the last).</summary>
+        public readonly int salvoShots = 1, salvoCount = 1;
+        public readonly float salvoGapMs;
+        int salvoIndex;
+        const float SalvoSpreadUnits = 120f;   // sideways between the shots of one salvo
+
         /// <summary>Multiplayer: targets this gun's bullets pass straight through (a squadmate of the shooter), null = none.</summary>
         public Func<Target, bool> Ignores;
 
@@ -111,14 +122,18 @@ namespace GoF2Remake.Flight
         /// ship's salvo is mirrored at its own target, not the ship's).</summary>
         public Target LastLock { get; private set; }
 
-        public bool Homing => kind == Kind.Missile || kind == Kind.ClusterMissile || kind == Kind.Thermo;
+        public bool Homing => kind == Kind.Missile || kind == Kind.ClusterMissile || kind == Kind.Thermo || missiles;
+        /// <summary>Rockets and missiles: no impact mesh, a rocket burst on a hit (GunRig.ShowImpact), a smoke trail.</summary>
+        public bool IsMissile => kind == Kind.Rocket || kind == Kind.Missile || kind == Kind.ClusterMissile || missiles;
         bool Coasts => kind == Kind.Rocket || kind == Kind.Missile || kind == Kind.ClusterMissile;
         /// <summary>Sorts 6 / 7 / 34: slow bombs that go off at the end of life, on contact or on the next press.</summary>
         public bool IsBomb => kind == Kind.EmpBomb || kind == Kind.Nuke || kind == Kind.Ionizing;
         /// <summary>Rockets, missiles and bombs kill asteroids outright (9999) and keep flying.</summary>
         bool KillsAsteroids => Coasts || IsBomb || kind == Kind.ShockBlast;
         float FreeLimit => Coasts ? -CoastMs : 0f;
-        public bool Ready => reloadAcc > reloadMs && (!isBeam || bullets[0].timer <= 0f);
+        /// <summary>The wait before the next shot: the reload, or inside a magazine the gap between its salvos.</summary>
+        public float WaitMs => salvoCount > 1 && salvoIndex > 0 ? salvoGapMs : reloadMs;
+        public bool Ready => reloadAcc > WaitMs && (!isBeam || bullets[0].timer <= 0f);
 
         IReadOnlyList<Target> lastTargets;
 
@@ -137,6 +152,16 @@ namespace GoF2Remake.Flight
             lifetimeMs = kind == Kind.ShockBlast ? 1f : item.Attr(12, 2000);
             speedUnitsPerMs = kind == Kind.Mine ? MineSpeedUnits : kind == Kind.ShockBlast ? 0f : item.Attr(13, 20);
             magnitude = kind == Kind.ShockBlast ? ShockBlastRadiusUnits : item.Attr(14);
+            // Missiles and salvos only for guns that fire plain shots (not beams, bombs, mines, cluster salvos, sentries).
+            bool plainShots = !isBeam && kind is not (Kind.EmpBomb or Kind.Nuke or Kind.Ionizing or Kind.Mine or Kind.ClusterMissile
+                                                      or Kind.ShockBlast or Kind.Sentry or Kind.PlasmaCollector);
+            if (plainShots)
+            {
+                missiles = item.Attr(105) == 1;
+                salvoShots = Mathf.Max(1, item.Attr(106, 1));
+                salvoCount = Mathf.Max(1, item.Attr(107, 1));
+                salvoGapMs = Mathf.Max(0, item.Attr(108));
+            }
             this.mountLocal = mountLocal;
             // Level::createGun: pool sizes and spread per sort.
             int pool = kind switch
@@ -252,6 +277,28 @@ namespace GoF2Remake.Flight
                 return free;
             }
 
+            if (salvoShots > 1)
+            {
+                // Remake (mods): salvoShots shots side by side, each sent on its own (multiplayer mirrors them all).
+                int made = 0;
+                for (int i = 0; i < bullets.Length && made < salvoShots; i++)
+                {
+                    if (bullets[i].timer > FreeLimit) continue;
+                    ref var c = ref bullets[i];
+                    float side = (made - (salvoShots - 1) * 0.5f) * SalvoSpreadUnits * MetersPerUnit;
+                    c.position = Spawn() + rotation * Vector3.right * side;
+                    c.velocity = fwd * speedUnitsPerMs * MetersPerUnit;
+                    c.up = up;
+                    c.timer = lifetimeMs;
+                    c.age = 0f;
+                    c.lockLost = false; c.aimed = false; c.target = null;
+                    made++;
+                    Fired?.Invoke(this, i);
+                }
+                NextSalvo();
+                return free;
+            }
+
             var dir = Vector3.forward;
             if (spreadError > 0f)
             {
@@ -268,9 +315,16 @@ namespace GoF2Remake.Flight
             b.timer = lifetimeMs;
             b.age = 0f;
             b.lockLost = false; b.aimed = false; b.target = null;
-            reloadAcc = 0f;
+            NextSalvo();
             Fired?.Invoke(this, free);
             return free;
+        }
+
+        /// <summary>The reload starts over; with salvos the next one waits salvoGapMs inside the magazine (WaitMs).</summary>
+        void NextSalvo()
+        {
+            reloadAcc = 0f;
+            if (salvoCount > 1) salvoIndex = (salvoIndex + 1) % salvoCount;
         }
 
         /// <summary>Multiplayer: another player's shot drawn by this (visual-only) gun (NetShotMirror): a free bullet at
@@ -569,6 +623,6 @@ namespace GoF2Remake.Flight
 
         /// <summary>Render scale: projectiles shrink linearly over their last 1000 ms (ObjectGun); rockets, missiles, bombs
         /// and mines keep their size (the original's scale goes negative while coasting).</summary>
-        public float VisualScale(int i) => Coasts || IsBomb || kind == Kind.Mine || isBeam ? 1f : Mathf.Clamp01(bullets[i].timer / 1000f);
+        public float VisualScale(int i) => Coasts || missiles || IsBomb || kind == Kind.Mine || isBeam ? 1f : Mathf.Clamp01(bullets[i].timer / 1000f);
     }
 }

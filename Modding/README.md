@@ -218,6 +218,11 @@ earlier). Only the fields you give change. Giving `name` or `description` rename
 | `miningBeamLayerMs` | 102 | Mining beam: time to cut one rock layer (ms; default 6000, the drill minigame's) |
 | `miningBeamLook` | 103 | Mining beam: the beam laser whose beam and impact it shows (9, 10, 11 or 228; default 228) |
 | `phaseCloak` | 104 | 1 = a cloak that also phases the ship through objects, shots and explosions while cloaked (see [Phase cloaks](#phase-cloaks)) |
+| `missiles` | 105 | 1 = a gun or turret whose shots are homing missiles (see [Missile turrets and salvos](#missile-turrets-and-salvos)) |
+| `salvoShots` | 106 | Shots fired side by side per trigger (default 1) |
+| `salvoCount` | 107 | Salvos per magazine: after the last one comes `reloadMs` (default 1) |
+| `salvoGapMs` | 108 | Time between the salvos of one magazine (ms) |
+| `turretRange` | 109 | How far an automatic turret looks for a target (game units, 20 per metre; default 60000) |
 
 Which stats an item uses depends on its category, so copy the stats its base item has (see `items.json` and
 `item_attributes.json` in `Assets/Resources/GoF2Data`). items.json's own stat names (`loadingTimeMs`, `range`,
@@ -267,6 +272,38 @@ volume, or the asteroid it sits in destroyed for 20 damage.
 }
 ```
 
+### Missile turrets and salvos
+
+Any gun or turret that fires ordinary shots (not beam lasers, bombs, mines or cluster missiles) can fire homing missiles
+and salvos:
+
+- `"missiles": 1`: its shots are homing missiles. A turret's missiles home on the ship it is aiming at (an automatic
+  turret's target, else the ship the scanner has locked), a gun's on the scanner's lock like the game's missiles. They keep
+  their size, trail smoke and burst like a rocket on a hit; a boost or a cloak shakes them off.
+- `salvoShots` fires that many shots side by side (6 m apart) each time; `salvoCount` salvos make a magazine,
+  `salvoGapMs` apart, then the weapon waits `reloadMs` (`2`, `2`, `500`, `2000`: two missiles, half a second, two more, two
+  seconds' reload). A secondary uses one round per salvo.
+
+With the look of a missile, its own turret model and the missile's launch sound (see [Weapon effects](#weapon-effects)):
+
+```json
+{
+    "id": "hornet_mat4",
+    "base": 182,
+    "name": "Hornet MAT-4 Missile Turret",
+    "techLevel": 9,
+    "price": [900000, 950000],
+    "stats": { "damage": 30, "reloadMs": 2000, "speed": 56, "lifetimeMs": 1786, "automatic": 1, "turretTurnSpeed": 150,
+               "missiles": 1, "salvoShots": 2, "salvoCount": 2, "salvoGapMs": 500, "turretRange": 100000 },
+    "fx": {
+        "turret": { "model": "models/mat4_turret.glb", "muzzle": 28, "shotStart": 32 },
+        "projectile": { "item": 46, "scale": 0.35 },
+        "shot": 46,
+        "shotLoops": false
+    }
+}
+```
+
 ### Weapon effects
 
 A weapon (a new one or an `override` of an original) can look and sound like its own thing with `fx`. Anything it leaves out
@@ -304,12 +341,23 @@ original's hue is replaced by yours (the Nirai Impulse's orange bolt turns purpl
 | `projectile` | What flies. For a beam weapon the beam itself (stretched from the gun to what it hits along its length), for a missile the missile. |
 | `muzzle` | The flash at the gun on every shot. |
 | `impact` | What shows where a shot hits. |
-| `shot` | The sound of a shot: a file, or a list of files (one is picked at random each shot). `.ogg`, `.wav` or `.mp3`. |
-| `shotLoops` | `true`: the shot sound loops while the trigger is held (like the auto-cannons); `false`: one per shot. Default: the base item's. |
-| `explosionSound` | Bombs, mines and blast weapons: the sound of the blast (a file or a list). |
+| `shot` | The sound of a shot: a file, or a list of files (one is picked at random each shot). `.ogg`, `.wav` or `.mp3`. Or an item's number: that item's shot sound (`46`: the AMR Extinctor's launch). |
+| `shotLoops` | `true`: the shot sound loops while the trigger is held (like the auto-cannons); `false`: one per shot. Default: the base item's (or, with `shot` an item's number, that item's). |
+| `explosionSound` | Bombs, mines and blast weapons: the sound of the blast (a file, a list, or an item's number). |
+| `turret` | Turrets: the turret's own model, shown on the ship in flight, in the hangar and to other players. A glTF / GLB file, or `{ "model": "models/t.glb", "muzzle": 28, "shotStart": 32 }`. The model needs a node named `pivot` holding the base (it turns left and right) and, in it, a node whose name contains `_gun` (it tilts up and down; the barrel along +Z). Its size as made: 1 = 1 m. `muzzle` is where the muzzle flash shows and `shotStart` where the shots start, along the gun node in game units (20 per metre); default: the base turret's. |
 
-Each of `projectile`, `muzzle` and `impact` is either `false` (none at all), an object with only `color` / `glow` (the
-original's, recoloured, above), or an object with a `sprite` or `model`:
+Each of `projectile`, `muzzle` and `impact` is either `false` (none at all), an object without a `sprite` or `model` (the
+base item's own, or another item's, changed: below), or an object with a `sprite` or `model`.
+
+Without a sprite or model:
+
+| Field | |
+|---|---|
+| `item` | Another item's number: its projectile, muzzle flash or impact instead of the base item's (`46`: the AMR Extinctor's missile). |
+| `scale` | Its size, times the original's (`0.35`). Default 1. |
+| `color`, `glow` | Recolours it (above). |
+
+With a sprite or model:
 
 | Field | |
 |---|---|

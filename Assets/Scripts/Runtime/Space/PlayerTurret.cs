@@ -28,6 +28,9 @@
 // the HUD's announcement on the first turret) and one turret view at a time (the camera button steps through the manual
 // ones, FreeLookCamera). A mount with 'upsideDown' hangs its turret under the hull (turned 180 deg about the ship's length):
 // its turret camera stays upright and sits under it, and the stick is mirrored so it aims as seen in that view.
+// Remake, for mods: a turret item with its own model (items.json fx "turret", WeaponFx.modTurret) shows it in flight and in
+// the hangar; "missiles" (attr 105) make its shots homing missiles on the target it aims at (an auto turret's pick, else
+// the radar's lock), with the smoke trail; "turretRange" (attr 109) is how far an auto turret looks for a target.
 
 using System;
 using System.Collections.Generic;
@@ -82,6 +85,8 @@ namespace GoF2Remake.Flight
         AudioSource loop;
         Target target, unreachable;
         float pickMs = PickMs, idleMs;
+        /// <summary>How far the auto turret looks for a target (units): attr 109 (mods), else the original's 60000.</summary>
+        float rangeUnits = AutoRangeUnits;
         bool alternate;
         Vector3 bulletOffset;
         Visuals.PartAnimation[] anims;
@@ -180,7 +185,10 @@ namespace GoF2Remake.Flight
             for (int m = 0; m < items.Count && m < mounts.Count; m++)
             {
                 int item = items[m];
-                var prefab = Visuals.AssembledObject.LoadPrefab(db.AssemblyByName("hangar_turret_item_" + Modding.ModContent.ItemLook(item)));
+                // A mod turret with its own model shows that model (as in flight), else the base item's hangar assembly.
+                var fx = WeaponFx.Load(item);
+                bool own = fx != null && fx.modTurret && fx.turretMounted != null;
+                var prefab = own ? fx.turretMounted : Visuals.AssembledObject.LoadPrefab(db.AssemblyByName("hangar_turret_item_" + Modding.ModContent.ItemLook(item)));
                 if (prefab == null) continue;
                 if (root == null)
                 {
@@ -190,7 +198,9 @@ namespace GoF2Remake.Flight
                 var model = Instantiate(prefab, root.transform, false);
                 model.name = "Turret";
                 // A game-space turn relative to the ship: the import's 180 deg yaw cancels, (0, pi, 0) stays a half turn.
-                PlaceOnMount(model.transform, mounts[m], Modding.ModContent.ItemLook(item) is >= 198 and <= 200 ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f));
+                PlaceOnMount(model.transform, mounts[m], own ? prefab.transform.localRotation
+                    : Modding.ModContent.ItemLook(item) is >= 198 and <= 200 ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f));
+                if (own) GunRig.StripForFx(model);
                 foreach (var a in model.GetComponentsInChildren<Visuals.PartAnimation>(true)) a.speed = 0f;
             }
             return root;
@@ -208,6 +218,7 @@ namespace GoF2Remake.Flight
             IsCollector = item.categoryId == 35;
             PullSpeed = item.Attr(49);
             CollectRange = item.Attr(51);
+            if (item.Attr(109) > 0) rangeUnits = item.Attr(109);
             // On the ship's model, so it banks and tumbles (death) with the hull.
             var parent = ship != null && ship.visualModel != null ? ship.visualModel : transform;
             var model = Instantiate(fx.turretMounted, parent, false);
@@ -236,13 +247,16 @@ namespace GoF2Remake.Flight
             };
             // Muzzle flash at the gun's muzzle offset; bullets from the gun + (0, 0, 300) (48: x 80, 181: z -300).
             float muzzleZ = item.Look switch { 47 => 260f, 48 => 170f, 49 => 200f, 180 => 172f, 181 => 190f, 182 => 150f, 224 => 147f, _ => 200f };
+            if (fx.turretMuzzleUnits >= 0f) muzzleZ = fx.turretMuzzleUnits;   // a mod turret's own model
             muzzle = new GameObject(model.name + " muzzle").transform;
             muzzle.SetParent(gunNode, false);
             muzzle.localPosition = new Vector3(0f, 0f, muzzleZ) * M;
             bulletOffset = item.Look == 48 ? new Vector3(80f, 0f, 300f) : item.Look == 181 ? new Vector3(0f, 0f, -300f) : new Vector3(0f, 0f, 300f);
+            if (fx.turretShotUnits >= 0f) bulletOffset = new Vector3(0f, 0f, fx.turretShotUnits);
             gun = new Gun(item, Vector3.zero, false) { owner = GetComponent<Target>(), Ignores = t => t.playerProof };   // multiplayer: through squadmates
             var fxRoot = new GameObject(model.name + " fx").transform;
             rig = new GunRig(gun, fx, fxRoot, muzzle);
+            rig.EnableTrails();   // only a mod turret firing missiles has one (RocketTrail.For)
             gun.Hit += OnHit;
             if (fx.shot != null)
             {
@@ -408,8 +422,15 @@ namespace GoF2Remake.Flight
             // The animations run only while shots are going out (within one reload of the last shot).
             float animSpeed = idleMs <= gun.reloadMs + 50f || (IsCollector && InTurretView) ? 1f : 0f;
             foreach (var a in anims) if (a != null) a.speed = animSpeed;
-            gun.Update(dtMs, Target.All, null);
+            gun.Update(dtMs, Target.All, gun.missiles ? MissileLock() : null);
             rig.UpdateVisuals(dtMs, Camera.main, aim.BarrelForward);
+        }
+
+        /// <summary>Remake (mod turrets firing missiles): what they home on: the auto turret's target, else the radar's lock.</summary>
+        Target MissileLock()
+        {
+            var t = IsAuto && !InTurretView ? target : weapons != null ? weapons.LockTarget : null;
+            return t != null && t.Alive && !t.cloaked ? t : null;
         }
 
         /// <summary>handleAutoTurret: re-pick every 3 s, turn toward the lead point, fire when aligned.</summary>
@@ -431,7 +452,7 @@ namespace GoF2Remake.Flight
         Target PickTarget()
         {
             Target best = null;
-            float bestD = AutoRangeUnits * M;
+            float bestD = rangeUnits * M;
             foreach (var t in Target.All)
             {
                 if (t == null || !t.isShip || !t.hostileToPlayer || !t.Alive || t == unreachable || t.untargetable || !t.isActiveAndEnabled) continue;
