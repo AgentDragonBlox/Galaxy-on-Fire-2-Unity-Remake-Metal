@@ -66,14 +66,19 @@ terminal.
 
 ## Linux server-only build
 
-A smaller Linux build that can only be a server: Unity's Dedicated Server build with the game's textures and shaders
-left out (about 0.5 GB instead of 3.3 GB; the sounds stay in). It runs the same server code as the full game's `-server` mode, keeps the same files and serves the
+A smaller Linux build that can only be a server: Unity's Dedicated Server build with the game's textures, shaders and
+sounds left out (about 330 MB unpacked, a 126 MB zip, instead of 3.3 GB). It runs the same server code as the full game's `-server` mode, keeps the same files and serves the
 same game builds (players see no difference).
 
-Making it (in the Unity Editor, once the Unity Hub module **Linux Dedicated Server Build Support** is installed for the
+Releases have it ready to download: `GoF2Remake-LinuxServer-<version>.zip` on the release page, next to the game's
+files. Unzip it on the server machine (`unzip GoF2Remake-LinuxServer-<version>.zip`, the files keep their execute
+permission) and run `GoF2Server/start-server.sh`.
+
+Making it yourself (in the Unity Editor, once the Unity Hub module **Linux Dedicated Server Build Support** is installed for the
 Editor version): **GoF2 > Build > Linux Dedicated Server**. It builds into `Build/LinuxServer/` with
 `GoF2Server.x86_64` and a `start-server.sh` beside it; the Editor switches to the Linux server target for the build and
-back afterwards. Copy the folder to the server machine.
+back afterwards. Copy the folder to the server machine. **GoF2 > Build > Linux Dedicated Server (Release Zip)** builds
+the same and zips it as `Build/Release/GoF2Remake-LinuxServer-<version>.zip`, the file a release carries.
 
 Running it is as above: edit and run `start-server.sh`, or start `./GoF2Server.x86_64` with the same options. It starts
 as a server without `-server`; `-batchmode -nographics` are implied.
@@ -81,7 +86,8 @@ as a server without `-server`; `-batchmode -nographics` are implied.
 ## Docker
 
 Every release is also a Docker image of the Linux server-only build: `ghcr.io/joppietoppie/gof2-server`, tagged with
-the release and `latest`. With Docker Compose, copy [`docker/compose.yaml`](docker/compose.yaml) and start it in its
+the release and `latest`. It is the release's own `GoF2Remake-LinuxServer` zip (the same build as the release's game
+files), or, for a release without one, a build of the release's commit, which the release then gets as that zip. With Docker Compose, copy [`docker/compose.yaml`](docker/compose.yaml) and start it in its
 folder:
 
 ```
