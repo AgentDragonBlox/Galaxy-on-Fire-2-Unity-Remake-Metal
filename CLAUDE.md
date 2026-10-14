@@ -1946,6 +1946,29 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   edits reload the project. Verified in Play mode (the builder on a Veteran override): an exported turret_002 GLB and a
   plain ship GLB at 15 % on the turntable after the reload, the new sections, a mount faced Left sitting on the hull's left
   side (its up the pilot's left). Not tested: the turret view on a side mount in flight, a hand-picked file (the picker).
+- **The game's own models** (remake, 2026-10-14, players' request; `Modding.GameModels`): wherever a mod takes a 3D model it
+  may name a game assembly instead of a file, `"gof2:<assembly name>"` (reference.md's "Models and their textures"); also a
+  game shop icon, `"icon": "gof2:item_046"` / `"gof2:ship_028"` (`GameModels.Icon`, Resources/GoF2Icons). Ships (new or
+  override): no mod assembly or `ModShips` build (it only loads the icon), `Database.ShipModels[ship]` = the game assembly,
+  which `ShipAssembly` hands out first (not with `original: true`, the stand-in); the model ship's hardpoints from
+  `Database.GameMounts` (weapons_hd.json as shipped, cached; `ModContent.CopyModelMounts`) unless the entry has `mounts`;
+  a new one's `CustomShipData.gameModelShip` (`GameModels.ShipOf`: "ship_NNN_*", v_ / sn_ too) gives its hangar height
+  (`hangarHeight` -1 = that ship's, `StationTables.ModelShip` for `ShipY` and the pad lifts) and icon (`ItemInfo.ShipIcon`);
+  `modelLength` / turns / offset / materials don't apply. Stations (`ModStations.LoadOne`): a copy of the prefab into
+  `Build`, at its own size unless `modelSize` (`StationModel.size` 0). Turrets (`ModWeapons`): `"turret": "gof2:<name>"`
+  (any model; `TurretRig` makes the missing `pivot` / `*_gun`, as for a plain GLB) or `"turret": { "item": n }` (that
+  item's `*_ship_mounted` model and its `TurretCore.MuzzleUnits` / `ShotOffsetUnits`); `scale` / `offset` on both. Fx parts:
+  `"model": "gof2:<name>"` (`GameModel`; with `texture` the meshes get copies for the white vertex colours, the game's
+  own mesh assets untouched). Mod Builder: **+ New ship on a game model** and the Ship tab's **Game model…**
+  (`PickGameShip`, `NewShipOnGameModel` / `UseGameShipModel`, `ProjectShip.UseGameModel`: the model ship's stats, slots,
+  race and hardpoints copied, the file-model fields dropped, no box-guessed first hardpoints (`NeedsLayout` false; the
+  builder had put two guns, a secondary and an engine over the copied set), no auto hangar height or rendered icon; the
+  model controls hidden; an override's Original model takes its own hardpoints back); the Items page's **Game item…** icon,
+  **Game turret…** model (`ProjectItem.TurretItem`) and **Look and sound** (`BuildLook`: projectile / muzzle flash / impact
+  from any game weapon with a size %, shot / blast sound; `ProjectItem.FxPartItem` / `FxPartScale` / `SoundItem`; parts a
+  hand edit gave a sprite / model shown as "your own"). Tests `GameModelsTests`. Verified in Play mode: a new ship on the
+  Veteran's model (its 12 hardpoints on the hull, slots 3 / 4 / 1 / 12, the hangar), an item with item 48's turret model,
+  item 46's projectile and launch sound. Not tested: a `gof2:` station or fx part in flight.
 - **Sound effects** (`ModSounds`, a mod's `sounds/<clip name>.ogg | .wav | .mp3`): replaces the game's clip of that name
   everywhere; `ModSounds.Get(clip)` wraps every `PlayOneShot` and `.clip =` site (57, not the music sources: ModMusic's),
   memoised per clip (AudioClip.name allocates), a no-op without mod sounds; later mods win; loaded decoded

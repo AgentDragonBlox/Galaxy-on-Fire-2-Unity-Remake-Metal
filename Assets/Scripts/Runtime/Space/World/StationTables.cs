@@ -34,8 +34,26 @@ namespace GoF2Remake.World
             440, 340, 170, 470, 170, 170, 170, 170, 200, 170, 250, 150, 170, 250, 270, 170,
         };
 
-        public static float ShipY(int ship) => ship >= 0 && ship < ShipHeight.Length ? ShipHeight[ship]
-                                              : GoF2Remake.Data.CustomShips.Get(ship)?.hangarHeight ?? 250f;   // remake: custom_ships.json
+        public static float ShipY(int ship)
+        {
+            ship = ModelShip(ship);
+            return ship >= 0 && ship < ShipHeight.Length ? ShipHeight[ship]
+                 : Mathf.Max(0, GoF2Remake.Data.CustomShips.Get(ship)?.hangarHeight ?? 250);   // remake: custom_ships.json
+        }
+
+        /// <summary>Remake (Modding.GameModels): a ship flying one of the game's ship models sits on the pads like that
+        /// ship (its height and lifts), unless a mod ship's entry gives its own hangar height.</summary>
+        static int ModelShip(int ship)
+        {
+            var c = GoF2Remake.Data.CustomShips.Get(ship);
+            if (c != null) return c.gameModelShip >= 0 && c.hangarHeight < 0 ? c.gameModelShip : ship;
+            if (ship >= 0 && ship < ShipHeight.Length && GoF2Remake.Data.Database.Shared.ShipModels.TryGetValue(ship, out var model))
+            {
+                int s = GoF2Remake.Modding.GameModels.ShipOf(model);
+                if (s >= 0) return s;
+            }
+            return ship;
+        }
 
         // ---- remake: lifted off the pad where the hull would cut into it (hangar_heights.json, GoF2 > Build > Hangar Heights) ----
 
@@ -76,7 +94,7 @@ namespace GoF2Remake.World
                 var file = ta != null ? JsonUtility.FromJson<HangarLiftFile>(ta.text) : null;
                 if (file?.entries != null) foreach (var e in file.entries) lifts[(e.hangar, e.slot, e.ship)] = e.lift;
             }
-            return lifts.TryGetValue((hangar, slot, ship), out var l) && l != null && l.Length > 0 ? l : null;
+            return lifts.TryGetValue((hangar, slot, ModelShip(ship)), out var l) && l != null && l.Length > 0 ? l : null;
         }
 
         static bool HasLift(int hangar, int slot, int ship) => Lift(hangar, slot, ship) != null;

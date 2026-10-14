@@ -4,11 +4,13 @@ A mod is a folder (or a `.zip`) of plain files: JSON for data, PNG for images. M
 harm your computer. Players turn mods on and off in the main menu's **Mods** screen.
 
 **Making a mod in the game:** main menu > **Mods** > **Mod Builder** (experimental) makes projects in this same format
-without writing any JSON: new ships from a `.glb` model or changes to the game's ships, their stats and textures, their
+without writing any JSON: new ships from a `.glb` model or on one of the game's ship models (no 3D file needed), or
+changes to the game's ships, their stats and textures, their
 hardpoints placed on the hull in 3D (turrets facing out of the hull where they sit: top, sides, under it or any slant),
 and test flights against pirates; new items made from a game item (or changes to one) with their own stats and icon (the
-remake-only stats too: missiles and salvos, a turret's range, mining beams, phase cloaks), a turret's own `.glb` model,
-resized and moved on its mount, fitted to the ship to try them out; characters with their portraits, for your quests
+remake-only stats too: missiles and salvos, a turret's range, mining beams, phase cloaks), a turret's model (a game
+turret's or your own `.glb`), resized and moved on its mount, a weapon's projectile, muzzle flash, impact and sounds
+borrowed from the game's other weapons, fitted to the ship to try them out; characters with their portraits, for your quests
 or standing in for a story character; and skins: a game ship's textures replaced, with its originals saved for you to paint
 over. A new ship's shop icon is rendered from its model
 (`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). **Export as mod** puts the finished project into your
@@ -172,7 +174,7 @@ earlier). Only the fields you give change. Giving `name` or `description` rename
 | `attributes` | The original game's attribute numbers directly: `{ "9": 14 }`. For anything `stats` has no name for. |
 | `defaultEconomy` | The same fields again, used when the player picked the Default Economy (the PC / Mac prices) for their game. |
 | `fx` | A weapon's own look and sound, see [Weapon effects](#weapon-effects). |
-| `icon` | Its own shop icon: a PNG in the mod, 180 x 88 like the originals (frame and background included; copy one from `Assets/Resources/GoF2Icons` to start from). Without it the item shows its base item's icon. An `override` with `icon` gives an original item a new one. |
+| `icon` | Its own shop icon: a PNG in the mod, 180 x 88 like the originals (frame and background included; copy one from `Assets/Resources/GoF2Icons` to start from), or one of the game's: `"gof2:item_046"`. Without it the item shows its base item's icon. An `override` with `icon` gives an original item a new one. |
 | `available` | A [condition](#conditions) that must hold before shops stock it or it turns up in loot (an `override` can hold back an original item too). |
 
 ### Stats
@@ -346,7 +348,7 @@ original's hue is replaced by yours (the Nirai Impulse's orange bolt turns purpl
 | `shot` | The sound of a shot: a file, or a list of files (one is picked at random each shot). `.ogg`, `.wav` or `.mp3`. Or an item's number: that item's shot sound (`46`: the AMR Extinctor's launch). |
 | `shotLoops` | `true`: the shot sound loops while the trigger is held (like the auto-cannons); `false`: one per shot. Default: the base item's (or, with `shot` an item's number, that item's). |
 | `explosionSound` | Bombs, mines and blast weapons: the sound of the blast (a file, a list, or an item's number). |
-| `turret` | Turrets: the turret's own model, shown on the ship in flight, in the hangar and to other players. A glTF / GLB file, or `{ "model": "models/t.glb", "muzzle": 28, "shotStart": 32, "scale": 1.5, "offset": [0, 20, 0] }`. Its origin sits on the mount, 1 unit = 1 m as made. A node named `pivot` holding the base turns it left and right and, in it, a node whose name contains `_gun` tilts it up and down (the barrel along +Z); a model without them turns as one piece. `scale` resizes it; `offset` moves it off its mount (game units: x toward the pilot's left, y along the turret's up, z forward). Leave out `model` and give `scale` / `offset` to resize or move the base item's own turret. `muzzle` is where the muzzle flash shows and `shotStart` where the shots start, along the gun node in game units (20 per metre) on the model as made; default: the base turret's. |
+| `turret` | Turrets: the turret's own model, shown on the ship in flight, in the hangar and to other players. A glTF / GLB file, or `{ "model": "models/t.glb", "muzzle": 28, "shotStart": 32, "scale": 1.5, "offset": [0, 20, 0] }`. Its origin sits on the mount, 1 unit = 1 m as made. A node named `pivot` holding the base turns it left and right and, in it, a node whose name contains `_gun` tilts it up and down (the barrel along +Z); a model without them turns as one piece. `scale` resizes it; `offset` moves it off its mount (game units: x toward the pilot's left, y along the turret's up, z forward). Leave out `model` and give `scale` / `offset` to resize or move the base item's own turret; `"item": 48` instead of `model` takes that game turret's model (with its muzzle and shot start), and `model` may be one of the game's (`"gof2:turret_003_ship_mounted"`, see [The game's own models](#the-games-own-models)). `muzzle` is where the muzzle flash shows and `shotStart` where the shots start, along the gun node in game units (20 per metre) on the model as made; default: the base turret's. |
 
 Each of `projectile`, `muzzle` and `impact` is either `false` (none at all), an object without a `sprite` or `model` (the
 base item's own, or another item's, changed: below), or an object with a `sprite` or `model`.
@@ -364,7 +366,7 @@ With a sprite or model:
 | Field | |
 |---|---|
 | `sprite` | A PNG drawn on a flat square that always faces the camera. Draw it white on black (or transparent): bright = visible, and `color` tints it. |
-| `model` | Or a glTF / GLB model. With `texture` it is drawn glowing like a sprite with that PNG; without, with the model's own materials (lit by the sun). |
+| `model` | Or a glTF / GLB model, or one of the game's (`"gof2:<name>"`, see [The game's own models](#the-games-own-models)). With `texture` it is drawn glowing like a sprite with that PNG; without, with the model's own materials (lit by the sun). |
 | `size` | Its size in game units (20 units = 1 m): the sprite's width, or the model's largest extent. Default 200. The game's own effects are big: a blaster bolt is about 1600 units across, an impact glow several thousand. |
 | `color` | A tint: `[r, g, b]` or `[r, g, b, a]` from 0 to 1, or from 0 to 255 (`[134, 59, 135]`: any value above 1 means the 0-255 scale), or `"#rrggbb"`. Default white. Without a sprite or model: the colour the original effect is recoloured to. |
 | `glow` | How much it blooms; above 1 glows under the bloom option (the game's effects use 2.5). Default: as the game's effects. |
@@ -418,11 +420,11 @@ A list of entries, like items.json: `"id"` adds a ship, `"override"` changes one
 | `armor`, `cargo`, `handling` | Hull points, hold size (t), handling (the originals use 60 to 160). |
 | `price`, `priceDefault` | The price, and the price in the Default Economy (0 = the same). |
 | `slots` | `primary`, `secondary`, `turret`, `equipment`. A ship may have several turret slots, one per turret mount. |
-| `model` | **Required.** The ship's model, a `.glb` (or `.gltf`) file in the mod. Shots hit its real shape, and the player's ship slides along it: every mesh counts except those with an additive / glow material, so keep invisible helper meshes out of the file. |
+| `model` | **Required.** The ship's model, a `.glb` (or `.gltf`) file in the mod, or one of the game's (`"gof2:ship_028_terran"`, see [The game's own models](#the-games-own-models)). Shots hit its real shape, and the player's ship slides along it: every mesh counts except those with an additive / glow material, so keep invisible helper meshes out of the file. |
 | `modelLength`, `modelYaw` | Its length nose to tail in game units (the Phantom is about 1000; 20 units = 1 m), and a turn in degrees when the model's nose doesn't point forward (+Z). The model is scaled to that length. |
 | `modelPitch`, `modelRoll` | More turns in degrees (about the side axis and the length axis), for a model lying nose up or on its side in its file. |
 | `modelOffset` | `[x, y, z]` in game units (like the mounts): the sized model moved off the ship's centre, the point it turns, docks and flies around. |
-| `icon` | The shop icon, a PNG of 180 x 88 like the originals (the ship on the plate). None = the Phantom's. |
+| `icon` | The shop icon, a PNG of 180 x 88 like the originals (the ship on the plate), or one of the game's (`"gof2:ship_028"`). None = the Phantom's (on a game model: that ship's). |
 | `hangarHeight` | How high its pivot sits above the hangar pad, in game units (the originals 140 to 400). |
 | `mounts` | Where guns and exhausts sit, in game units from the ship's centre (x toward the pilot's left, y up, z forward): `slotType` 0 primary gun, 1 secondary, 2 turret (`"turretUp": [x, y, z]` is the way its base faces, in the same axes: `[0, 1, 0]` on top (the default), `[0, -1, 0]` under the hull (or `"upsideDown": true`), `[1, 0, 0]` / `[-1, 0, 0]` the left / right side, `[0, 0, 1]` the nose, or any slant; the Mod Builder sets it from the hull's surface where you place the turret), 3 engine exhaust (the flame and its particles; `turretAngles[0]` sizes the particles; `"glowColor": [r, g, b]` (0 to 1) colours that exhaust's flame and its exhaust particles; `"glowSize": [halfWidth, halfHeight, length]` (game units) makes the flame an ellipse of that size, its flared ring `length` behind the nozzle). |
 | `engineGlowRadius` | Size of the engine flame at each exhaust mount (game units, default 24); a mount's `glowSize` replaces it. |
@@ -596,7 +598,7 @@ nebula on black, not on a dark blue. The sky also lights the scene a little (its
 | `techLevel` | 0 to 10: which items its shop sells. |
 | `planet` | The planet it orbits: one of the game's planet textures, 0 to 22 or 24 to 26. |
 | `looksLike` | An original station whose model and docking shape it uses. Default: the first original station of its system's race. With a `model` it stands in while the model loads, or when it can't be read. |
-| `model` | Its own 3D model: a glTF / GLB file in the mod (made like a ship's, see [Ship models](#new-ships)). |
+| `model` | Its own 3D model: a glTF / GLB file in the mod (made like a ship's, see [Ship models](#new-ships)), or one of the game's (`"gof2:station_078_midorian"`, as made unless `modelSize` is given). |
 | `modelSize` | The model's largest extent in game units (20 units = 1 m). Default 40000 (2 km); the original stations are 20000-100000. |
 | `modelYaw` | Degrees to turn the model about its up axis. A launch leaves along the station's front (the model's +Z after the turn, toward the orbit's planet); arrivals come from there too. |
 | `modelCentre` | `true` (default): the middle of the model is the station's centre; `false`: the model's own origin is. |
@@ -1092,6 +1094,24 @@ To draw your retextured planets as stars, add a `backdrop.json` to the mod (the 
 | `planetFlare` | The sun's flare at this share of its strength when you look at them: a slight swell and a horizontal streak (0..1, default 0.35; 0 = none) |
 
 Planets you don't retexture stay planets.
+
+## The game's own models
+
+Anywhere a mod takes a 3D model, it can name one of the game's own models instead of a `.glb` file: `"gof2:<model name>"`,
+with the names in `Modding/ai/gof2-modding/reference.md` ("Models and their textures"). No 3D file is needed, and the game's
+model comes with everything it has: its textures, lights, engine glows, animations and level of detail.
+
+| Where | |
+|---|---|
+| ships.json `model` | A new ship on a game ship's model: `"model": "gof2:ship_028_terran"`. It gets that ship's hardpoints (unless the entry has its own `mounts`), sits on the hangar pads like that ship (unless it gives `hangarHeight`) and uses its shop icon (unless it gives `icon`). On an `override` it gives an original ship another ship's model. `modelLength`, `modelYaw` and the other model fields don't apply: the model is used as made. |
+| stations.json `model` | A station on any game model, at its own size unless `modelSize` is given: `"model": "gof2:station_078_midorian"`. |
+| items.json fx `turret` | A turret on any game model: `"turret": "gof2:turret_003_ship_mounted"` (a model without the turret's `pivot` / `*_gun` nodes turns as one piece), or `"turret": { "item": 48 }` for that game turret's model with its own muzzle and shot start. `scale` and `offset` work on both. |
+| items.json fx parts | A projectile, muzzle flash or impact on a game model: `{ "model": "gof2:rocket_002", "size": 300 }`; or another item's own part with `{ "item": 46 }` (see [Weapon effects](#weapon-effects)). |
+| items.json / ships.json `icon` | One of the game's shop icons: `"icon": "gof2:item_046"`, `"icon": "gof2:ship_028"`. |
+
+The Mod Builder offers the same without typing names: **+ New ship on a game model** and **Game model…** on the Ship tab,
+**Game item…** for an item's icon, **Game turret…** for a turret's model, and the **Look and sound** section for a weapon's
+projectile, muzzle flash, impact, shot sound and blast sound from any of the game's weapons.
 
 ## Building on other mods
 

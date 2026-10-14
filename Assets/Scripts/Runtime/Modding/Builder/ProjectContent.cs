@@ -122,10 +122,55 @@ namespace GoF2Remake.Modding
             set
             {
                 var o = TurretObject();
-                if (string.IsNullOrEmpty(value)) o.Remove("model"); else o["model"] = value;
+                if (string.IsNullOrEmpty(value)) o.Remove("model"); else { o["model"] = value; o.Remove("item"); }
                 DropEmptyTurret();
             }
         }
+
+        /// <summary>fx "turret" "item": another item's turret model (a game turret's: no file), null = none.</summary>
+        public int? TurretItem
+        {
+            get => Turret is JObject o && o["item"] is JValue v && v.Type == JTokenType.Integer ? (int)v : (int?)null;
+            set
+            {
+                var o = TurretObject();
+                if (value == null) o.Remove("item"); else { o["item"] = value.Value; o.Remove("model"); }
+                DropEmptyTurret();
+            }
+        }
+
+        // ---- the look: another item's projectile / muzzle flash / impact and sounds (ModWeapons: no files needed) ----
+
+        /// <summary>The fx part names the builder edits.</summary>
+        public static readonly string[] FxParts = { "projectile", "muzzle", "impact" };
+
+        /// <summary>A part with a sprite or model of its own (a hand edit): the builder leaves it alone.</summary>
+        public bool FxPartIsCustom(string part) => json["fx"] is JObject fx && fx[part] is JObject p && (p["sprite"] != null || p["model"] != null);
+
+        /// <summary>fx part "item": another item's part (the base item's own when null).</summary>
+        public int? FxPartItem(string part) =>
+            json["fx"] is JObject fx && fx[part] is JObject p && p["item"] is JValue v && v.Type == JTokenType.Integer ? (int)v : (int?)null;
+
+        /// <summary>fx part "scale": its size against the original's (null = 1).</summary>
+        public float? FxPartScale(string part) =>
+            json["fx"] is JObject fx && fx[part] is JObject p && p["scale"] is JValue v && (v.Type == JTokenType.Integer || v.Type == JTokenType.Float) ? (float)v : (float?)null;
+
+        public void SetFxPartItem(string part, int? item) => SetFxPartValue(part, "item", item.HasValue ? new JValue(item.Value) : null);
+        public void SetFxPartScale(string part, float? scale) => SetFxPartValue(part, "scale", scale.HasValue && !Mathf.Approximately(scale.Value, 1f) ? new JValue(scale.Value) : null);
+
+        void SetFxPartValue(string part, string key, JToken value)
+        {
+            if (FxPartIsCustom(part)) return;
+            var p = json["fx"] is JObject fx && fx[part] is JObject o ? o : new JObject();
+            if (value == null) p.Remove(key); else p[key] = value;
+            SetFx(part, p.HasValues ? p : null);
+        }
+
+        /// <summary>fx "shot" / "explosionSound" given as an item's number: that item's sounds (null = the base item's, or files
+        /// a hand edit gave: SoundIsCustom).</summary>
+        public int? SoundItem(string key) => json["fx"] is JObject fx && fx[key] is JValue v && v.Type == JTokenType.Integer ? (int)v : (int?)null;
+        public bool SoundIsCustom(string key) => json["fx"] is JObject fx && fx[key] != null && SoundItem(key) == null;
+        public void SetSoundItem(string key, int? item) { if (!SoundIsCustom(key)) SetFx(key, item.HasValue ? new JValue(item.Value) : null); }
 
         /// <summary>fx "turret" "muzzle" / "shotStart": game units along the gun node, null = the base item's.</summary>
         public float? TurretMuzzle { get => TurretNumber("muzzle"); set => SetTurretNumber("muzzle", value); }

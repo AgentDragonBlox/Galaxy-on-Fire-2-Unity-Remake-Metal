@@ -135,6 +135,22 @@ namespace GoF2Remake.Modding
             {
                 var textures = new List<Task>();
                 foreach (var (path, linear, normal) in TexturesOf(s)) textures.Add(ModMaterials.PreloadTexture(s.mod, path, linear, normal: normal));
+                if (GameModels.Is(s.model, out string gameModel))
+                {
+                    // One of the game's own models ("gof2:<name>"): a copy of its prefab instead of a file.
+                    await Task.WhenAll(textures);
+                    counted += 2; stepsDone += 2;
+                    if (rev != ModManager.Revision || holder == null) return;
+                    var asmData = GameModels.Find(Data.Database.Shared, gameModel);
+                    var prefab = asmData != null ? AssembledObject.LoadPrefab(asmData) : null;
+                    if (prefab == null) { Warn(s.mod, $"stations.json: \"{label}\": the game has no model \"{gameModel}\""); return; }
+                    var copy = Object.Instantiate(prefab, holder.transform, false);
+                    var built = Build(s, copy);
+                    built.transform.SetParent(holder.transform, false);
+                    templates[s.station] = built;
+                    Debug.Log($"Mods: {s.mod.Id}: station {s.station} \"{label}\" on the game's {gameModel}");
+                    return;
+                }
                 var file = Task.Run(() => s.mod.Source.ReadBytes(s.model));
                 await Task.WhenAll(textures);
                 var bytes = await file;
@@ -248,7 +264,7 @@ namespace GoF2Remake.Modding
             // Scale: the largest extent to modelSize game units; then the bounds' centre onto the origin.
             var b = ModShipBuilder.BoundsIn(root.transform, renderers);
             float largest = Mathf.Max(b.size.x, Mathf.Max(b.size.y, b.size.z));
-            if (largest > 0f) model.transform.localScale *= s.size * M / largest;
+            if (largest > 0f && s.size > 0f) model.transform.localScale *= s.size * M / largest;   // 0: as made (a game model)
             if (s.centre)
             {
                 b = ModShipBuilder.BoundsIn(root.transform, renderers);

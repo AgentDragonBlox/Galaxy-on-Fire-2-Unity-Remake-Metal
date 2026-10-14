@@ -124,7 +124,7 @@ namespace GoF2Remake.Modding
         /// <summary>The PNGs a ship's entry uses, with how they are read (ModMaterials.FromSpec, the throttle glow masks).</summary>
         static IEnumerable<(string path, bool linear, bool readable, bool normal)> TexturesOf(CustomShipData c)
         {
-            if (!string.IsNullOrEmpty(c.icon)) yield return (c.icon, false, false, false);
+            if (!string.IsNullOrEmpty(c.icon) && !GameModels.Is(c.icon)) yield return (c.icon, false, false, false);
             if (c.materials != null)
                 foreach (var m in c.materials)
                 {
@@ -155,14 +155,17 @@ namespace GoF2Remake.Modding
                 if (rev != ModManager.Revision) return;
                 var textures = new List<Task>();
                 foreach (var (path, linear, readable, normal) in TexturesOf(c)) textures.Add(ModMaterials.PreloadTexture(mod, path, linear, readable, normal));
-                var file = string.IsNullOrEmpty(c.model) ? Task.FromResult<byte[]>(null) : Task.Run(() => mod.Source.ReadBytes(c.model));
+                bool gameModel = GameModels.Is(c.model);
+                var file = string.IsNullOrEmpty(c.model) || gameModel ? Task.FromResult<byte[]>(null) : Task.Run(() => mod.Source.ReadBytes(c.model));
                 await Task.WhenAll(textures);
                 Step();
                 var bytes = await file;
                 Step();
                 if (rev != ModManager.Revision) return;
-                var icon = ModMaterials.Texture(mod, c.icon, false);
+                var icon = GameModels.Is(c.icon) ? GameModels.Icon(c.icon) : ModMaterials.Texture(mod, c.icon, false);   // "gof2:ship_005": the game's
                 if (icon != null) icons[c.index] = icon;
+                // One of the game's own models (GameModels): nothing to build, Database.ShipAssembly hands the game's out.
+                if (gameModel) return;
                 if (bytes == null) { Warn(mod, $"ships.json: \"{c.name}\": model {c.model} not found"); return; }
                 var import = await ModGltf.Load(mod, bytes, agent);
                 bytes = null;

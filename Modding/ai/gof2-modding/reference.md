@@ -1294,6 +1294,8 @@ Every assembled object of the game (the names `/spawn` and the Spawn node take f
 one-model skins), with the textures it draws: a mod's `textures/<texture>.png` replaces that texture on every model using
 it, `textures/<model>/<texture>.png` on that model only. Keep the original's UV layout. `_normal_specular` = normal map,
 `_metallic_smoothness` = the remake's metallic map; `glow_<race>` / `ship_engine_glow` and the like are shared lights.
+Any of them is also a model a mod can use without a file: `"model": "gof2:<name>"` in ships.json, stations.json and
+items.json fx (see the guide's "The game's own models").
 
 ### ships
 

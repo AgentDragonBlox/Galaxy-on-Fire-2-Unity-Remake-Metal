@@ -24,7 +24,11 @@ namespace GoF2Remake.UI
         }
         /// <summary>The ship's shop icon; a mod's ship its own ("icon" in ships.json), else the Phantom's.</summary>
         public static Texture2D ShipIcon(int ship) =>
-            Modding.ModContent.IsModShip(ship) ? Modding.ModShips.Icon(ship) ?? Icon("ship_010") : Icon($"ship_{ship:000}");
+            Modding.ModContent.IsModShip(ship) ? Modding.ModShips.Icon(ship) ?? ModelShipIcon(ship) ?? Icon("ship_010") : Icon($"ship_{ship:000}");
+
+        /// <summary>A mod ship on one of the game's ship models (Modding.GameModels) without an icon of its own: that ship's.</summary>
+        static Texture2D ModelShipIcon(int ship) =>
+            CustomShips.Get(ship) is CustomShipData c && c.gameModelShip >= 0 ? Icon($"ship_{c.gameModelShip:000}") : null;
 
         /// <summary>The icon of a hull with no shop image of its own (the Debug Ships tab's freighters and capital ships, by
         /// World.PlayerHull's key; "GoF2 > Build > Hull Icons"), null without one.</summary>

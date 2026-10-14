@@ -798,7 +798,7 @@ leading `/`, the dedicated server's console without it. `[players]` is a player'
 | /heal | [players] | admins: repairs hull, shield and armor (yourself by default) |
 | /give | [players] <item> [amount] [mount] | admins: items into the hold (an item's number or name) |
 | /credits | [players] <amount> | admins: gives credits (negative: takes them) |
-| /spawn | [players] <ship / object> [race] [count] [enemy / friendly / neutral / standing] [named <name>] [at x y z] | admins: NPC ships (a number or name; enemy by default) or an object (assemblies.json name), ahead or at x y z; named: their name on the HUD |
+| /spawn | [players] <ship / object> [race] [count] [enemy / friendly / neutral / standing] [turrets <item,item>] [named <name>] [at x y z] | admins: NPC ships (a number or name; enemy by default) or an object (assemblies.json name), ahead or at x y z; named: their name on the HUD |
 | /ship | [players] <ship / own> | admins: flies any ship of the debug Ships tab (its number or name; own = back) |
 | /ammo | [players] | admins: every mounted secondary to 50 |
 | /reveal | [players] | admins: every system on the star map |

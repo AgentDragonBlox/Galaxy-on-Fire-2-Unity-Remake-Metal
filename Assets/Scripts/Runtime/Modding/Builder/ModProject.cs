@@ -689,6 +689,31 @@ namespace GoF2Remake.Modding
 
         public int MountCount(int slotType) => Mounts.Count(m => m.slotType == slotType);
 
+        /// <summary>The ship flies one of the game's own models ("gof2:<name>", GameModels), not a file.</summary>
+        public bool HasGameModel => GameModels.Is(Model);
+
+        /// <summary>Remake (GameModels): the ship flies one of the game's models ('assembly', no file): the file model's sizing,
+        /// turns, offset, hull textures and hangar height go (the game model sits as made, on the pads like its ship), and
+        /// the hardpoints become 'mounts' (that ship's, copied; empty for a model that is no ship's). 'from': that ship's
+        /// stats, slots and race for a new ship (null = keep them).</summary>
+        public void UseGameModel(string assembly, ShipData from, IEnumerable<WeaponMount> mounts, int race = -1)
+        {
+            Model = GameModels.Ref(assembly);
+            foreach (var k in new[] { "modelLength", "modelYaw", "modelPitch", "modelRoll", "modelOffset", "materials", "hangarHeight", "engineGlowRadius" })
+                json.Remove(k);
+            Mounts.Clear();
+            if (mounts != null) Mounts.AddRange(mounts.Select(Copy));
+            NeedsLayout = false;   // the model's own hardpoints, not the builder's first guess from its box
+            if (from == null) return;
+            Armor = from.armor;
+            Cargo = from.cargo;
+            Handling = Mathf.RoundToInt(from.handling);
+            Price = from.price;
+            int[] counts = { from.slots?.primary ?? 0, from.slots?.secondary ?? 0, from.slots?.turret ?? 0, from.slots?.equipment ?? 0 };
+            for (int k = 0; k < 4; k++) SetSlotCount(k, counts[k]);
+            if (race >= 0) Race = race;
+        }
+
         /// <summary>An override's stats and slots the entry doesn't give, from the game's ship (they are the game's anyway):
         /// the builder shows and counts what the ship really has (a hand-written override without "slots" had none).</summary>
         public void FillFromGame(ShipData d)

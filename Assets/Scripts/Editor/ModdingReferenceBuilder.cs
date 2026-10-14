@@ -453,6 +453,8 @@ namespace GoF2Remake.EditorTools
             sb.AppendLine("one-model skins), with the textures it draws: a mod's `textures/<texture>.png` replaces that texture on every model using");
             sb.AppendLine("it, `textures/<model>/<texture>.png` on that model only. Keep the original's UV layout. `_normal_specular` = normal map,");
             sb.AppendLine("`_metallic_smoothness` = the remake's metallic map; `glow_<race>` / `ship_engine_glow` and the like are shared lights.");
+            sb.AppendLine("Any of them is also a model a mod can use without a file: `\"model\": \"gof2:<name>\"` in ships.json, stations.json and");
+            sb.AppendLine("items.json fx (see the guide's \"The game's own models\").");
             sb.AppendLine();
             var cats = db.Assemblies.Where(a => a.pack != Modding.ModContent.Pack).GroupBy(a => a.category).ToList();
             int done = 0, total = cats.Sum(g => g.Count());

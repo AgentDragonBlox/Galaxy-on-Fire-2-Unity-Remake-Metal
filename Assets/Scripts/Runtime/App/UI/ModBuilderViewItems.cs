@@ -55,7 +55,8 @@ namespace GoF2Remake.UI
         /// (a new item's once numbered), else its base's.</summary>
         Texture2D ItemIconOf(ProjectItem it)
         {
-            if (!string.IsNullOrEmpty(it.Icon) && ModManager.BuilderProject != null)
+            if (GameModels.Is(it.Icon) && GameModels.Icon(it.Icon) is Texture2D game) return game;
+            if (!string.IsNullOrEmpty(it.Icon) && !GameModels.Is(it.Icon) && ModManager.BuilderProject != null)
             {
                 var own = ModMaterials.Texture(ModManager.BuilderProject, it.Icon, false);
                 if (own != null) return own;
@@ -127,13 +128,25 @@ namespace GoF2Remake.UI
             int? Opt(int v, int baseValue) => isNew && v == baseValue ? (int?)null : v;
             Heading(itemPage, T("mbShop", "Shop"));
             var irow = Add(itemPage, new VisualElement(), "mbv-row");
-            Add(irow, new Label($"{T("mbIcon", "Icon")}: {(it.Icon != null ? System.IO.Path.GetFileName(it.Icon) : T("mbBaseIcon", "the base item's"))}"), "mbv-inline-label");
+            string iconText = it.Icon == null ? T("mbBaseIcon", "the base item's")
+                            : GameModels.Is(it.Icon) ? T("mbGameIcon", "a game item's") : System.IO.Path.GetFileName(it.Icon);
+            Add(irow, new Label($"{T("mbIcon", "Icon")}: {iconText}"), "mbv-inline-label");
+            // Any game item's icon, no file needed (items.json "icon": "gof2:item_NNN", GameModels.Icon).
+            Act(irow, T("mbGameItemButton", "Game item…"), () => ShowPicker(T("mbPickGameIcon", "Use a game item's icon"), GameItemChoices(index =>
+            {
+                string old = GameModels.Is(it.Icon) ? null : it.Icon;
+                it.Icon = GameModels.Ref($"item_{ModContent.ItemLook(index):000}");
+                if (old != null) Project.DeleteFile(old, Project.Items.Any(o => o != it && o.Icon == old));
+                ItemEdited();
+                RebuildItems();
+                BuildItemPage();
+            })));
             if (ModImport.Available)
                 Act(irow, T("mbChoose", "Choose…"), () => PickImage(T("mbPickIcon", "Choose a shop icon (180 x 88)"), path =>
                     {
                         string old = it.Icon;
                         it.Icon = Project.AddFile(path, "icons", it.IsOverride ? "item_" + it.OverrideIndex : it.LocalId, ".png");
-                        Project.DeleteFile(old, Project.Items.Any(o => o != it && o.Icon == old));
+                        if (!GameModels.Is(old)) Project.DeleteFile(old, Project.Items.Any(o => o != it && o.Icon == old));
                         ItemEdited();
                         RebuildItems();
                         BuildItemPage();
@@ -143,7 +156,7 @@ namespace GoF2Remake.UI
                 {
                     string old = it.Icon;
                     it.Icon = null;
-                    Project.DeleteFile(old, Project.Items.Any(o => o != it && o.Icon == old));
+                    if (!GameModels.Is(old)) Project.DeleteFile(old, Project.Items.Any(o => o != it && o.Icon == old));
                     ItemEdited();
                     RebuildItems();
                     BuildItemPage();
@@ -183,6 +196,7 @@ namespace GoF2Remake.UI
 
             BuildExtraStats(it, original);
             if (original.categoryId == 8) BuildTurretModel(it);
+            if (original.TypeId <= 2) BuildLook(it, original);
 
             Heading(itemPage, T("mbTry", "Try it"));
             var tryRow = Add(itemPage, new VisualElement(), "mbv-row");
@@ -289,23 +303,37 @@ namespace GoF2Remake.UI
             Heading(itemPage, T("mbTurretModel", "Turret model"));
             var row = Add(itemPage, new VisualElement(), "mbv-row");
             string model = it.TurretModel;
-            Add(row, new Label($"{T("mbModel", "Model")}: {(model != null ? System.IO.Path.GetFileName(model) : T("mbBaseModel", "the base item's"))}"), "mbv-inline-label");
+            int? fromItem = it.TurretItem;
+            string modelText = fromItem != null ? string.Format(T("mbModelOfItem", "{0}'s"), GameNames.Item(fromItem.Value))
+                             : model == null ? T("mbBaseModel", "the base item's")
+                             : GameModels.Is(model, out string gameName) ? gameName : System.IO.Path.GetFileName(model);
+            Add(row, new Label($"{T("mbModel", "Model")}: {modelText}"), "mbv-inline-label");
+            // A game turret's model, no file needed (fx "turret" "item": ModWeapons copies its ship-mounted model).
+            Act(row, T("mbGameTurret", "Game turret…"), () => ShowPicker(T("mbPickGameTurret", "Use a game turret's model"),
+                GameItemChoices(index =>
+                {
+                    string old = it.TurretModel;
+                    it.TurretItem = index;
+                    if (old != null && !GameModels.Is(old)) Project.DeleteFile(old, Project.Items.Any(o => o != it && o.TurretModel == old));
+                    TurretEdited();
+                }, index => Database.Shared.Item(index) is ItemData d && d.categoryId != 8 && d.categoryId != 35)));
             if (ModImport.Available)
-                Act(row, T("mbChoose", "Choose…"), () => PickFile(T("mbPickTurret", "Choose a turret model"), "glTF binary model", "glb",
+                Act(row, T("mbOwnGlb", "Your .glb…"), () => PickFile(T("mbPickTurret", "Choose a turret model"), "glTF binary model", "glb",
                     new byte[] { (byte)'g', (byte)'l', (byte)'T', (byte)'F' },
                     T("mbNotGlb", "That isn't a .glb model (glTF binary). In Blender: File > Export > glTF 2.0, format glTF Binary."), path =>
                     {
                         string old = it.TurretModel;
                         it.TurretModel = Project.AddFile(path, "models", (it.IsOverride ? "item_" + it.OverrideIndex : it.LocalId) + "_turret", ".glb");
-                        if (old != null) Project.DeleteFile(old, Project.Items.Any(o => o != it && o.TurretModel == old));
+                        if (old != null && !GameModels.Is(old)) Project.DeleteFile(old, Project.Items.Any(o => o != it && o.TurretModel == old));
                         TurretEdited();
                         Status(T("mbLoadingModel", "Loading the model…"), false);
                     }));
-            if (model != null)
+            if (model != null || fromItem != null)
                 Act(row, "✕", () =>
                 {
                     it.TurretModel = null;
-                    Project.DeleteFile(model, Project.Items.Any(o => o != it && o.TurretModel == model));
+                    it.TurretItem = null;
+                    if (model != null && !GameModels.Is(model)) Project.DeleteFile(model, Project.Items.Any(o => o != it && o.TurretModel == model));
                     TurretEdited();
                 }, "mbv-step");
             // Size and place work for the base item's model too (ModWeapons copies it).
@@ -320,7 +348,7 @@ namespace GoF2Remake.UI
             Int(xyz, "Y", off.y, -100000, 100000, v => { var o = it.TurretOffset; o.y = v; it.TurretOffset = o; TurretEdited(); });
             Int(xyz, "Z", off.z, -100000, 100000, v => { var o = it.TurretOffset; o.z = v; it.TurretOffset = o; TurretEdited(); });
             Note(itemPage, T("mbTurretOffsetNote", "Moves the model off its mount: game units (20 = 1 m), X toward the pilot's left, Y along the turret's up, Z forward."));
-            if (model != null)
+            if (model != null && !GameModels.Is(model))
             {
                 Int(itemPage, T("mbTurretMuzzle", "Muzzle flash, along the barrel"), Mathf.RoundToInt(it.TurretMuzzle ?? 200f), 0, 100000, v =>
                 {
@@ -333,7 +361,69 @@ namespace GoF2Remake.UI
                     TurretEdited();
                 });
             }
-            Note(itemPage, T("mbTurretNote", "A .glb, 1 unit = 1 m, its origin on the mount, the barrel along +Z. A node named \"pivot\" holding the base turns it left and right and a node named *_gun under it (the barrel) tilts up and down; without them the whole model turns. The distances are game units (20 = 1 m) on the model as made. Fit it to the test ship to see it on the turntable."));
+            Note(itemPage, T("mbTurretGameNote", "Game turret: any of the game's turrets' models, with its own muzzle and shot start, no file needed."));
+            Note(itemPage, T("mbTurretNote", "Your .glb: 1 unit = 1 m, its origin on the mount, the barrel along +Z. A node named \"pivot\" holding the base turns it left and right and a node named *_gun under it (the barrel) tilts up and down; without them the whole model turns. The distances are game units (20 = 1 m) on the model as made. Fit it to the test ship to see it on the turntable."));
+        }
+
+        static readonly string[] PartLabels = { "Projectile", "Muzzle flash", "Impact" };
+
+        /// <summary>A weapon's look and sound from the game's other weapons, no files needed (items.json fx parts' "item" /
+        /// "scale", "shot" / "explosionSound" as an item's number; ModWeapons): what flies, the flash at the gun, the hit, and
+        /// the shot and blast sounds, each the base item's unless picked. Parts a hand edit gave a sprite or model are left.</summary>
+        void BuildLook(ProjectItem it, ItemData original)
+        {
+            Heading(itemPage, T("mbLook", "Look and sound"));
+            // The weapons whose parts and sounds can be borrowed.
+            List<(string, Texture2D, Action)> Weapons(Action<int> pick) =>
+                GameItemChoices(pick, index => !(Database.Shared.Item(index) is ItemData d) || d.TypeId > 2);
+            for (int k = 0; k < ProjectItem.FxParts.Length; k++)
+            {
+                string part = ProjectItem.FxParts[k], label = T("mbPart_" + part, PartLabels[k]);
+                var row = Add(itemPage, new VisualElement(), "mbv-row");
+                if (it.FxPartIsCustom(part))
+                {
+                    Add(row, new Label($"{label}: {T("mbCustomInFile", "your own (items.json)")}"), "mbv-inline-label");
+                    continue;
+                }
+                int? from = it.FxPartItem(part);
+                Add(row, new Label($"{label}: {(from != null ? string.Format(T("mbModelOfItem", "{0}'s"), GameNames.Item(from.Value)) : T("mbBaseItems", "the base item's"))}"), "mbv-inline-label");
+                Act(row, T("mbGameItemButton", "Game item…"), () => ShowPicker(string.Format(T("mbPickPartFrom", "{0} from"), label), Weapons(index =>
+                {
+                    it.SetFxPartItem(part, index);
+                    LookEdited();
+                })));
+                if (from != null) Act(row, "✕", () => { it.SetFxPartItem(part, null); LookEdited(); }, "mbv-step");
+                Int(itemPage, string.Format(T("mbPartSize", "{0} size (%)"), label), Mathf.RoundToInt((it.FxPartScale(part) ?? 1f) * 100f), 1, 10000, v =>
+                {
+                    it.SetFxPartScale(part, v / 100f);
+                    LookEdited(false);
+                });
+            }
+            foreach (var (key, english) in new[] { ("shot", "Shot sound"), ("explosionSound", "Blast sound") })
+            {
+                string k = key, label = T("mbSound_" + key, english);
+                var row = Add(itemPage, new VisualElement(), "mbv-row");
+                if (it.SoundIsCustom(k))
+                {
+                    Add(row, new Label($"{label}: {T("mbCustomInFile", "your own (items.json)")}"), "mbv-inline-label");
+                    continue;
+                }
+                int? from = it.SoundItem(k);
+                Add(row, new Label($"{label}: {(from != null ? string.Format(T("mbModelOfItem", "{0}'s"), GameNames.Item(from.Value)) : T("mbBaseItems", "the base item's"))}"), "mbv-inline-label");
+                Act(row, T("mbGameItemButton", "Game item…"), () => ShowPicker(string.Format(T("mbPickPartFrom", "{0} from"), label), Weapons(index =>
+                {
+                    it.SetSoundItem(k, index);
+                    LookEdited();
+                })));
+                if (from != null) Act(row, "✕", () => { it.SetSoundItem(k, null); LookEdited(); }, "mbv-step");
+            }
+            Note(itemPage, T("mbLookNote", "Borrow any game weapon's projectile, muzzle flash, impact or sounds: no files needed. What the weapon does stays its base item's. Fit it and press Test fly to see it."));
+        }
+
+        void LookEdited(bool rebuild = true)
+        {
+            ItemEdited();
+            if (rebuild) BuildItemPage();
         }
 
         /// <summary>A turret model change: the game reads the project again, so the turntable shows it.</summary>

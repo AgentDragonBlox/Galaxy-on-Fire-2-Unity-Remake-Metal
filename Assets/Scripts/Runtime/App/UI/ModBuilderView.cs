@@ -136,6 +136,7 @@ namespace GoF2Remake.UI
             Action importAction = ModImport.Available ? ImportModel : null;
             var newShip = Act(left, T("mbNewShip", "+ New ship from .glb"), () => importAction?.Invoke(), "mbv-add");
             newShip.SetEnabled(ModImport.Available);
+            Act(left, T("mbNewShipGame", "+ New ship on a game model"), () => PickGameShip(T("mbNewShipGameTitle", "New ship on a game model"), NewShipOnGameModel), "mbv-add");
             Act(left, T("mbChangeShip", "+ Change a game ship"), PickOriginal, "mbv-add");
             Act(left, T("mbRemoveShip", "Remove ship"), AskRemove, "mbv-danger");
 
@@ -406,12 +407,28 @@ namespace GoF2Remake.UI
                                          Mathf.RoundToInt(original.handling), ItemInfo.Credits(original.price)));
 
             Heading(ship, T("mbModel", "Model"));
-            bool hasModel = !string.IsNullOrEmpty(s.Model);
-            Note(ship, hasModel ? s.Model : T("mbOriginalModel", "The game's own model."));
+            bool gameModel = s.HasGameModel;
+            bool hasModel = !string.IsNullOrEmpty(s.Model) && !gameModel;
+            int modelShip = gameModel && GameModels.Is(s.Model, out string modelName) ? GameModels.ShipOf(modelName) : -1;
+            Note(ship, gameModel ? string.Format(T("mbGameModelNote", "The game's {0} model, as it is: it sits on the pads like that ship."),
+                                                 modelShip >= 0 ? GameNames.Ship(modelShip) : s.Model)
+                       : hasModel ? s.Model : T("mbOriginalModel", "The game's own model."));
             var mrow = Add(ship, new VisualElement(), "mbv-row");
             if (ModImport.Available)
                 Act(mrow, hasModel ? T("mbReplaceModel", "Replace model…") : T("mbUseModel", "Use a .glb model…"), () => PickModel(s));
-            if (s.IsOverride && hasModel) Act(mrow, T("mbOriginalModelButton", "Original model"), () => { s.Model = null; RequestReload(true); BuildShipPage(); });
+            Act(mrow, T("mbGameModel", "Game model…"), () => PickGameShip(T("mbGameModelTitle", "Use a game ship's model"), i => UseGameShipModel(s, i)));
+            if (s.IsOverride && (hasModel || gameModel)) Act(mrow, T("mbOriginalModelButton", "Original model"), () =>
+            {
+                s.Model = null;
+                if (gameModel)
+                {
+                    // Back to the ship's own model: its own hardpoints too.
+                    s.Mounts.Clear();
+                    s.Mounts.AddRange(Database.GameMounts(s.OverrideIndex).Select(ProjectShip.Copy));
+                }
+                RequestReload(true);
+                BuildShipPage();
+            });
             if (hasModel)
             {
                 Int(ship, T("mbLength", "Length nose to tail (units, 20 = 1 m)"), Mathf.RoundToInt(s.ModelLength), 50, 200000,
@@ -450,7 +467,7 @@ namespace GoF2Remake.UI
                 Act(nrow, T("mbCentreModel", "Centre on pivot"), () => CentreModel(s));
                 BuildTextures(s);
             }
-            if (!s.IsOverride)
+            if (!s.IsOverride && !gameModel)
             {
                 var hrow = Add(ship, new VisualElement(), "mbv-row");
                 Int(hrow, T("mbHangarHeight", "Height over the pad"), s.HangarHeight, 0, 20000, v => { s.HangarHeight = v; RequestReload(true); });
@@ -882,7 +899,7 @@ namespace GoF2Remake.UI
         void AutoHangarHeight()
         {
             var s = Current;
-            if (s == null || s.IsOverride || boundTransform == null) return;
+            if (s == null || s.IsOverride || s.HasGameModel || boundTransform == null) return;   // a game model sits like its ship
             s.HangarHeight = Mathf.Max(0, Mathf.CeilToInt(-gizmo.LocalBounds.min.y / M) + 4);
             RequestReload(true);
         }
@@ -993,6 +1010,56 @@ namespace GoF2Remake.UI
             return s.Length == 0 ? "New ship" : char.ToUpperInvariant(s[0]) + s.Substring(1);
         }
 
+        /// <summary>A picker of the game's flyable ships (with their icons) for a game model.</summary>
+        void PickGameShip(string title, Action<int> pick)
+        {
+            var db = Database.Shared;
+            var choices = new List<(string name, Texture2D icon, Action pick)>();
+            for (int i = 0; i < GameNames.OriginalShips; i++)
+            {
+                if (i == 13 || i == 14 || i == 15 || db.Ship(i) == null || db.ShipAssembly(i, original: true) == null) continue;
+                int index = i;
+                choices.Add((GameNames.Ship(i), ItemInfo.ShipIcon(i), () => pick(index)));
+            }
+            ShowPicker(title, choices);
+        }
+
+        /// <summary>A new ship on game ship 'index''s model (GameModels): its stats, slots, race and hardpoints to start from,
+        /// its icon unless one is set; nothing to import.</summary>
+        void NewShipOnGameModel(int index)
+        {
+            var db = Database.Shared;
+            string name = string.Format(T("mbCustomShip", "Custom {0}"), GameNames.Ship(index));
+            string id = Project.ShipIdFor(name);
+            var asm = db.ShipAssembly(index, original: true);
+            var s = Project.AddNewShip(id, name, GameModels.Ref(asm.name));
+            s.UseGameModel(asm.name, db.Ship(index), Database.GameMounts(index), Shop.RaceOfShip(index));
+            Project.SetLoadout(s, ModBuilder.DefaultLoadout(db, index));
+            ModBuilder.Ship = s;
+            Project.LastShip = s.Ref;
+            gizmo.Selected = -1;
+            RequestReload(false);
+            RebuildShips();
+            RebuildPages();
+            Status(string.Format(T("mbShipOnGameModel", "A new ship on the {0}'s model: give it a name and its own stats."), GameNames.Ship(index)), false);
+        }
+
+        /// <summary>The ship flies game ship 'index''s model instead (its hardpoints come along; the stats stay).</summary>
+        void UseGameShipModel(ProjectShip s, int index)
+        {
+            var db = Database.Shared;
+            var asm = db.ShipAssembly(index, original: true);
+            if (asm == null) return;
+            string old = s.HasGameModel ? null : s.Model;
+            s.UseGameModel(asm.name, null, Database.GameMounts(index));
+            if (!string.IsNullOrEmpty(old) && !Project.Ships.Any(o => o != s && o.Model == old))
+                try { System.IO.File.Delete(System.IO.Path.Combine(Project.Folder, old)); } catch { }
+            gizmo.Selected = -1;
+            RequestReload(false);
+            RebuildPages();
+            Status(string.Format(T("mbShipModelSet", "{0}'s model, with its hardpoints."), GameNames.Ship(index)), false);
+        }
+
         /// <summary>A picker of the game's ships for "Change a game ship" (not those already in the project).</summary>
         void PickOriginal()
         {
@@ -1071,7 +1138,7 @@ namespace GoF2Remake.UI
             {
                 Project.Ships.Remove(s);
                 // Its model file goes too when no other ship uses it.
-                if (!string.IsNullOrEmpty(s.Model) && !Project.Ships.Any(o => o.Model == s.Model))
+                if (!string.IsNullOrEmpty(s.Model) && !s.HasGameModel && !Project.Ships.Any(o => o.Model == s.Model))
                     try { System.IO.File.Delete(System.IO.Path.Combine(Project.Folder, s.Model)); } catch { }
                 ModBuilder.Ship = Project.Ships.FirstOrDefault();
                 Project.LastShip = ModBuilder.Ship?.Ref;
@@ -1378,7 +1445,8 @@ namespace GoF2Remake.UI
             if (InHangar) level.BeginInspect(0.55f);
             ApplyEngines();   // the rebuilt ship comes with its engines off
             // A new ship's first hardpoints (just imported, or never given any).
-            if (s != null && !s.IsOverride && (s.NeedsLayout || s.Mounts.Count == 0) && ModBuilder.IndexOf(s) == index) AutoLayout(s);
+            // Not on a game model: it came with that ship's own hardpoints (or, a model that is no ship's, none on purpose).
+            if (s != null && !s.IsOverride && !s.HasGameModel && (s.NeedsLayout || s.Mounts.Count == 0) && ModBuilder.IndexOf(s) == index) AutoLayout(s);
             else if (autoHeightAfterReload && s != null && ModBuilder.IndexOf(s) == index)
             {
                 autoHeightAfterReload = false;
@@ -1396,7 +1464,7 @@ namespace GoF2Remake.UI
         /// the modder set by hand is left alone.</summary>
         void MaybeMakeIcon(ProjectShip s, int index)
         {
-            if (s == null || s.IsOverride || string.IsNullOrEmpty(s.Model) || ModBuilder.IndexOf(s) != index) return;
+            if (s == null || s.IsOverride || string.IsNullOrEmpty(s.Model) || s.HasGameModel || ModBuilder.IndexOf(s) != index) return;   // a game model has the game's icon
             var made = Project.GeneratedIcon(s);
             if (!string.IsNullOrEmpty(s.Icon) && (made == null || made.Value.file != s.Icon)) return;   // the modder's own
             string key = IconKey(s);

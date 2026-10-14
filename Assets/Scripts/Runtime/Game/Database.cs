@@ -156,8 +156,11 @@ namespace GoF2Remake.Data
         public int hangarHeight = 250;     // StationTables.ShipY: pivot height above the hangar floor, game units
         public string assembly;            // set by ModContent: "ship_NNN_mod" (Database.ShipAssembly finds it by number)
         public List<WeaponMount> mounts;   // like weapons_hd.json: slotType 0 primary, 1 secondary, 2 turret, 3 exhaust
-        public string model;               // the glTF / GLB file in the mod
+        public string model;               // the glTF / GLB file in the mod, or "gof2:<model>" (Modding.GameModels)
         public string icon;                // the shop icon (PNG, 180 x 88 like the originals); none = the Phantom's
+        /// <summary>Remake (Modding.GameModels): with a "gof2:" model, the original ship that model belongs to (its hangar
+        /// height and icon when the entry gives none), else -1; hangarHeight -1 = take that ship's.</summary>
+        [System.NonSerialized] public int gameModelShip = -1;
         public float modelLength = 1000f;  // nose to tail in game units (0.05 m each) after scaling
         public float modelYaw;             // degrees about Unity y, when the model's nose doesn't face +Z
         public float modelPitch, modelRoll; // degrees about Unity x / z, for a model lying on its side or nose up in its file
@@ -260,7 +263,9 @@ namespace GoF2Remake.Data
         /// 'original': the game's own model even when a mod replaces it (the stand-in while the mod's is built).</summary>
         public AssemblyData ShipAssembly(int ship, string raceName = null, bool original = false)
         {
-            // A mod's model for this ship (a new mod ship, or an original's replaced: ModContent.ModelOverrides).
+            // A mod's ship on one of the game's own models (Modding.GameModels), else a mod's model for this ship (a new mod
+            // ship, or an original's replaced: ModContent.ModelOverrides).
+            if (!original && ShipModels.TryGetValue(ship, out var gameModel) && AssemblyByName(gameModel) is AssemblyData g) return g;
             string modName = $"ship_{ship:000}_mod";
             var modded = original ? null : Assemblies.Find(a => a.pack == "mod" && a.name == modName);
             if (modded != null) return modded;
@@ -292,6 +297,10 @@ namespace GoF2Remake.Data
         /// on its turret mounts (World.NpcMountedTurrets, the hangar's parked ships), by ship index. The original's NPC ships
         /// carry none.</summary>
         [System.NonSerialized] public Dictionary<int, List<int>> NpcTurrets = new Dictionary<int, List<int>>();
+
+        /// <summary>Remake (Modding.GameModels): ships that fly one of the game's own models, by ship index (a mod's new ship
+        /// or an override with "model": "gof2:<model>"); ShipAssembly hands it out before anything else.</summary>
+        [System.NonSerialized] public Dictionary<int, string> ShipModels = new Dictionary<int, string>();
 
         /// <summary>The turret items NPC ships of 'shipIndex' carry (NpcTurrets), empty = none.</summary>
         public List<int> NpcTurretsOf(int shipIndex) => NpcTurrets != null && NpcTurrets.TryGetValue(shipIndex, out var l) ? l : new List<int>();
@@ -388,6 +397,16 @@ namespace GoF2Remake.Data
             // The active mods' new and changed entries (Modding.ModContent), after the economy so their prices stand.
             if (resourceFolder == "GoF2Data") Modding.ModContent.Apply(db);
             return db;
+        }
+
+        static List<WeaponMountSet> gameMounts;
+
+        /// <summary>An original ship's hardpoints as the game has them (weapons_hd.json, no mod's changes), never null; the
+        /// Mod Builder's game models take copies.</summary>
+        public static List<WeaponMount> GameMounts(int ship)
+        {
+            gameMounts ??= Read<List<WeaponMountSet>>("GoF2Data", "weapons_hd");
+            return gameMounts?.Find(m => m.ship == ship)?.mounts ?? new List<WeaponMount>();
         }
 
         // The search is a loop of its own: a lambda capturing 'index' allocated its closure on every call, the fast path too
