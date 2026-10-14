@@ -342,7 +342,7 @@ namespace GoF2Remake.UI
         /// <summary>Amounts of money: a number (with , . or space thousands) followed by "$" or a credit word (Chinese:
         /// "20,000个信用分", without a space).</summary>
         static readonly System.Text.RegularExpressions.Regex Amount = new System.Text.RegularExpressions.Regex(
-            @"(?<![\p{L}\p{N}])\d{1,3}(?:[,.\u00A0\u202F ]\d{3})+(?![\p{N}])(?=\s?\$|\s+(?:credits?|crédits?|créditos?|crediti|credito|kredyt\w*|кредит\w*|크레딧|クレジット|क्रेडिट)|\s*个?信用分)|(?<![\p{L}\p{N}])\d+(?=\s?\$|\s+(?:credits?|crédits?|créditos?|crediti|credito|kredyt\w*|кредит\w*|크레딧|クレジット|क्रेडिट)|\s*个?信用分)",
+            @"(?<!\p{N}|[\p{L}-[\p{Lo}]])\d{1,3}(?:[,.\u00A0\u202F ]\d{3})+(?![\p{N}])(?=\s?\$|\s+(?:credits?|crédits?|créditos?|crediti|credito|kredyt\w*|кредит\w*|크레딧|クレジット|क्रेडिट)|\s*个?信用分)|(?<!\p{N}|[\p{L}-[\p{Lo}]])\d+(?=\s?\$|\s+(?:credits?|crédits?|créditos?|crediti|credito|kredyt\w*|кредит\w*|크레딧|クレジット|क्रेडिट)|\s*个?信用分)",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
         /// <summary>The icon to put before each letter of 'text' (null = none).</summary>

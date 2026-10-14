@@ -182,7 +182,7 @@ namespace GoF2Remake.Multiplayer
         internal static string Names(IList<string> names)
         {
             var n = new List<string>();
-            foreach (var s in names) if (!string.IsNullOrEmpty(s) && !n.Contains(s)) n.Add(Safe(s));
+            foreach (var s in names) { if (string.IsNullOrEmpty(s)) continue; string safe = Safe(s); if (!n.Contains(safe)) n.Add(safe); }
             if (n.Count == 0) return "Unknown pilots";
             if (n.Count == 1) return n[0];
             if (n.Count <= 3) return string.Join(", ", n.GetRange(0, n.Count - 1)) + " and " + n[n.Count - 1];

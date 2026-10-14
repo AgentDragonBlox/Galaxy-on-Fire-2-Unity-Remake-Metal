@@ -143,7 +143,7 @@ namespace GoF2Remake.Data
             switch (campaign)
             {
                 case Campaign.Valkyrie:
-                    for (int i = 0; i < GameWonIndex; i++) Advance(db);
+                    while (Index < GameWonIndex) Advance(db);
                     Session.ShipIndex = 5;   // Inflict
                     Session.Equipment = new List<ItemStack> { new ItemStack(2, 1), new ItemStack(5, 1), new ItemStack(36, 10), new ItemStack(81, 1),
                                                                   new ItemStack(51, 1), new ItemStack(86, 1), new ItemStack(85, 1) };
@@ -154,7 +154,7 @@ namespace GoF2Remake.Data
                     AddonStartHints(false);
                     break;
                 case Campaign.Supernova:
-                    for (int i = 0; i < Dlc1WonIndex; i++) Advance(db);
+                    while (Index < Dlc1WonIndex) Advance(db);   // not 84 calls: 52 -> 54 skips one, which landed on 85
                     Session.ShipIndex = 30;   // Berger CrossXT
                     Session.Equipment = new List<ItemStack> { new ItemStack(176, 1), new ItemStack(20, 1), new ItemStack(36, 20), new ItemStack(44, 20),
                                                                   new ItemStack(81, 1), new ItemStack(51, 1), new ItemStack(68, 1), new ItemStack(86, 1),
@@ -647,9 +647,8 @@ namespace GoF2Remake.Data
                 case 28: Session.VoidInvasionSystem = 18; Session.VoidInvasionStation = 91; break;
                 case 34: Shop.RemoveFromCargo(164, 50); Blueprints.UnlockFromStory(db, n); break;   // the Void Crystals -> the Khador blueprint
                 case 58: Blueprints.UnlockFromStory(db, n); RestoreOwnShip(); break;              // Liberator; the own ship back
-                case 72:   // case 0x47: the Disruptor blueprint (0xb7) unlocked, a Void Essence (175) in the hold (Ship::addCargo)
-                    Blueprints.UnlockFromStory(db, n);
-                    Shop.AddToCargo(175, 1);
+                case 72:   // case 0x47: the Disruptor blueprint (0xb7) unlocked and a Void Essence (175) in the hold (Ship::addCargo),
+                    Blueprints.UnlockFromStory(db, n);   // both in UnlockFromStory (it added a second one here too)
                     break;
                 case 104: case 141: Blueprints.UnlockFromStory(db, n); break;                       // Gamma II, Chromo Plasma
                 case 42: Session.VoidInvasionSystem = Session.VoidInvasionStation = -10; break;
@@ -661,6 +660,7 @@ namespace GoF2Remake.Data
                 case 48:   // Taret Orskk's H'Soc (race 1) with a D'iol and a Hiroto Proscan; the own ship parked
                     ParkOwnShip();
                     LendShip(9, new ItemStack(58, 1), new ItemStack(83, 1));
+                    Session.WingmanContractMs = 0f;   // case 47 sets Status+0x30 = 0: the wingmen leave at the next docking
                     break;
                 case 49:   // the stolen K'Suukk: three FlaK 9-9, D'iol, Proscan, H'Belam (the H'Soc stays behind)
                     LendShip(41, new ItemStack(177, 1), new ItemStack(177, 1), new ItemStack(177, 1),

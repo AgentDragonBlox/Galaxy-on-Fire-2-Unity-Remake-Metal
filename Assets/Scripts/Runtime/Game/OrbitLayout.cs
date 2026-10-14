@@ -319,8 +319,12 @@ namespace GoF2Remake.World
             sunColor = new Color(SunColors[s], SunColors[s + 1], SunColors[s + 2]);
             if (Modding.ModWorld.SunColor(systemIndex, out var modSun)) sunColor = modSun / 15f * 1.5f;   // remake mods: 1 = a bright light (x15 below, clamped at 2)
             int p = Mathf.Clamp(stationTexture, 0, 26) * 3;
+            if (alienOrbit) p = 0x17;   // initLight 0x15d080: the alien orbit reads the table at flat element 23, not row 23
             planetLightColor = new Color(PlanetLightColors[p], PlanetLightColors[p + 1], PlanetLightColors[p + 2]) * 1.5f;
-            dustFogTint = new Color32((byte)(DustFogTints[s] * 0.6f), (byte)(DustFogTints[s + 1] * 0.6f), (byte)(DustFogTints[s + 2] * 0.6f), 0xbb);
+            // initParticleSystems: x0.6 and alpha 0xbb, in the supernova system (Status::inSupernovaSystem) x0.5 and opaque
+            bool supernova = Shop.InSupernovaSystem(systemIndex, stationIndex);
+            float dust = supernova ? 0.5f : 0.6f;
+            dustFogTint = new Color32((byte)(DustFogTints[s] * dust), (byte)(DustFogTints[s + 1] * dust), (byte)(DustFogTints[s + 2] * dust), supernova ? (byte)0xff : (byte)0xbb);
             if (alienOrbit) dustFogTint = new Color32(0x92, 0x74, 0xd4, 0xbb);   // initParticleSystems: 0x9274d4 in the alien orbit
             switch (systemTexture)
             {

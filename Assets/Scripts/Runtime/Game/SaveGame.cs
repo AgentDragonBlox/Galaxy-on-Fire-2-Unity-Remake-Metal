@@ -486,7 +486,8 @@ namespace GoF2Remake.Data
                     foreach (var a in rs.agents)
                         if (a != null && a.offer == 11 && a.sellShip >= 0) a.offer = AgentOffer.SellShip;
             Session.SeenItems = new HashSet<int>(s.seenItems ?? new List<int>());
-            Session.VisitedStations = new HashSet<int>(s.visitedStations ?? new List<int> { s.station });
+            // JsonUtility reads a missing list as an empty one, not null: an old save without it counts its own station.
+            Session.VisitedStations = new HashSet<int>(s.visitedStations != null && s.visitedStations.Count > 0 ? s.visitedStations : new List<int> { s.station });
             Session.AttackedStations = new HashSet<int>(s.attackedStations ?? new List<int>());
             Session.LowestKnownPrice = Prices(s.lowestPrices);
             Session.HighestKnownPrice = Prices(s.highestPrices);

@@ -141,7 +141,8 @@ namespace GoF2Remake.Flight
             // Level::createGun: pool sizes and spread per sort.
             int pool = kind switch
             {
-                Kind.AutoCannon or Kind.ScatterGun or Kind.Turret => kind == Kind.Turret ? 15 : 25,
+                Kind.Turret or Kind.PlasmaCollector => 15,   // sorts 8 and 35 (weapons.md 2)
+                Kind.AutoCannon or Kind.ScatterGun => 25,
                 Kind.Rocket or Kind.Missile => 5,
                 Kind.ClusterMissile => Mathf.Max(1, look - 211),   // Shesha 3, Garuda 4, Patala 5
                 Kind.EmpBomb or Kind.Nuke or Kind.Ionizing or Kind.ShockBlast => 1,

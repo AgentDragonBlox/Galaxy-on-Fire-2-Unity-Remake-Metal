@@ -43,6 +43,9 @@ namespace GoF2Remake.Data
             return best;
         }
 
+        /// <summary>The better of two medal grades: 1 gold, 2 silver, 3 bronze, 0 none.</summary>
+        static int BetterGrade(int a, int b) => a == 0 ? b : b == 0 ? a : Math.Min(a, b);
+
         /// <summary>Carries 'old' over into the new game just set up (after Story.StartCampaign).</summary>
         public static void Apply(SaveData old)
         {
@@ -50,7 +53,7 @@ namespace GoF2Remake.Data
             Session.Credits += Math.Max(0, old.credits);
             if (old.unlockedBlueprints != null) foreach (int b in old.unlockedBlueprints) Session.UnlockedBlueprints.Add(b);
             if (old.medals != null && old.medals.Length == Session.Medals.Length)
-                for (int i = 0; i < old.medals.Length; i++) Session.Medals[i] = Math.Max(Session.Medals[i], old.medals[i]);
+                for (int i = 0; i < old.medals.Length; i++) Session.Medals[i] = BetterGrade(Session.Medals[i], old.medals[i]);
 
             // The Kaamo Club, owned, with the old storage and the old ship, equipment and cargo in it.
             var story = new HashSet<int>(old.unsaleable ?? new List<int>());

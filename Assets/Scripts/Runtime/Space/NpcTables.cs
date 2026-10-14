@@ -59,7 +59,8 @@ namespace GoF2Remake.Flight
         {
             int rank = Mathf.Min(Session.Rank, 20);
             float hp = 4 * StatCampaign + 14 * rank + 20;
-            if (ship == 51) hp *= 1.7f; else if (ship == 49) hp *= 17f; else if (ship == 44) hp *= 2.25f;
+            // Level::createShip 0xcf930 truncates the special ships' hull to an int before the difficulty factor
+            if (ship == 51) hp = (int)(hp * 1.7f); else if (ship == 49) hp = (int)(hp * 17f); else if (ship == 44) hp = (int)(hp * 2.25f);
             if (IsHull270Mission(Session.CampaignMission)) hp = 270;
             if (kind == 1) hp *= ship == 14 ? 25 : 5;
             return (int)(hp * Difficulty);

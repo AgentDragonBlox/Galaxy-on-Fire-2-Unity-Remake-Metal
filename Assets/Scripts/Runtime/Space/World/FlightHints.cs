@@ -139,10 +139,8 @@ namespace GoF2Remake.World
                 if (t.Length == 0 && pad) t = GameControls.KeyText(GameControls.AutopilotMenu, true);
                 return t.Length > 0 ? t : "–";
             }
-            // E, the PC version's action menu key, is the autopilot menu's second key in the remake (one menu for both).
-            var menuRow = GameControls.RowOf(GameControls.AutopilotMenu);
-            string actionMenu = !pad && GameControls.IsBound(menuRow, BindSlot.Key2) ? GameControls.SlotText(menuRow, BindSlot.Key2)
-                                                                                     : K(GameControls.AutopilotMenu);
+            // The PC version's Action Menu is the quick menu (GameControls.ActionsMenu: E, D-pad left).
+            string actionMenu = K(GameControls.ActionsMenu);
             return s.Replace("#KEY_DOCK", K(GameControls.Action))
                     .Replace("#KEY_ACTION_MENU", actionMenu)
                     .Replace("#KEY_AUTOPILOT", K(GameControls.AutopilotMenu))

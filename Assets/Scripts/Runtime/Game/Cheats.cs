@@ -81,7 +81,7 @@ namespace GoF2Remake.Data
 
         public static void AddCredits(int amount)
         {
-            Session.Credits = (int)Mathf.Min((long)Session.Credits + amount, 999999999L);
+            Session.Credits = (int)System.Math.Min((long)Session.Credits + amount, 999999999L);   // not Mathf.Min: a float rounds 999 999 999 up to 1e9
         }
 
         /// <summary>Hull, shield and armor full (the live ship too, in flight), the gamma pool refilled.</summary>
