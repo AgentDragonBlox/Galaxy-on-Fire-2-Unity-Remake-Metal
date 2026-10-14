@@ -843,6 +843,12 @@ The FMOD data comes from the FEV's LGCY chunk (`Reference/tools/audio/fev_lgcy.p
   bigger logos (APPX3207), so the 310 x 310 and wide tiles and the splash come at 100 % only). Without the art the old icon
   (the GoF2 logo on skybox_003).
 - **Android name**: package `com.joppietoppie.gof2remake`, launcher label "GoF2 Remake" (`AndroidAppLabel` rewrites the Gradle project's app_name); the product name stays "Galaxy on Fire 2" so the desktop save folder and PlayerPrefs don't move.
+- **Android Vulkan pre-transform off** (Player settings > Android > "Apply display rotation during rendering",
+  `PlayerSettings.vulkanEnablePreTransform`, off since 2026-10-14; a player's report): with it on, at render scale 100 %
+  without anti-aliasing part of the screen froze (the same symptom as #45's FSR at 100 %+: URP's final pass through an
+  intermediate texture doesn't get the pre-rotation, so it covers only part of the rotated back buffer); off, it didn't
+  happen. Off = Android rotates the landscape frame itself (free on most recent phones' display hardware, else a little GPU
+  composition); not measured here. `Bootstrap.ApplyUpscaling` still keeps FSR 1 below 100 % until that is checked on a phone.
 - **UWP** (Universal Windows Platform, no build profile: `EditorUserBuildSettings.SwitchActiveBuildTarget(WSA, WSAPlayer)`
   first, then `BuildPipeline.BuildPlayer` to a folder; IL2CPP, x64, D3D): package `JoppieToppie.GoF2Remake`, Start menu
   name "GoF2 Remake", capabilities InternetClient / InternetClientServer / PrivateNetworkClientServer (multiplayer and
