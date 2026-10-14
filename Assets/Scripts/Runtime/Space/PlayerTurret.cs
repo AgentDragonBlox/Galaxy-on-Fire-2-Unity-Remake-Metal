@@ -26,8 +26,10 @@
 // Remake: several turrets (custom ships with more turret slots and slot-2 mounts): one PlayerTurret per mounted turret item,
 // the n-th turret item of the equipment on the n-th slot-2 mount (AttachAll). They share one switch for auto fire (SetAuto,
 // the HUD's announcement on the first turret) and one turret view at a time (the camera button steps through the manual
-// ones, FreeLookCamera). A mount with 'upsideDown' hangs its turret under the hull (turned 180 deg about the ship's length):
-// its turret camera stays upright and sits under it, and the stick is mirrored so it aims as seen in that view.
+// ones, FreeLookCamera). A mount's 'turretUp' (or 'upsideDown') turns its turret to face any way from the hull: the sides,
+// the nose, under it (WeaponMount.TurretTurn). The turret view's camera sits on the turret's outer side with the turret's up
+// as its up, so the stick turns it as seen; a turret facing below the ship's horizon has the camera the other way up (as
+// the old under-hull mounts: upright, under it) and the stick mirrored.
 // Remake, for mods: a turret item with its own model (items.json fx "turret", WeaponFx.modTurret) shows it in flight and in
 // the hangar; "missiles" (attr 105) make its shots homing missiles on the target it aims at (an auto turret's pick, else
 // the radar's lock), with the smoke trail; "turretRange" (attr 109) is how far an auto turret looks for a target.
@@ -43,7 +45,9 @@ namespace GoF2Remake.Flight
     public class PlayerTurret : MonoBehaviour
     {
         const float M = Gun.MetersPerUnit;
-        const float PickMs = 3000f, IdleStopMs = 500f, AutoRangeUnits = 60000f, LeadUnits = 1500f;
+        const float PickMs = 3000f, IdleStopMs = 500f, LeadUnits = 1500f;
+        /// <summary>How far an auto turret looks for a target (units) unless the item's attr 109 says otherwise (mods).</summary>
+        public const float AutoRangeUnits = 60000f;
         const float PitchUpUnits = 500f, PitchDownUnits = -70f;
 
         // The controls are GameControls' (rebindable): Camera (the turret view, T / D-pad up), AutoTurret (Y / D-pad down).
@@ -64,9 +68,12 @@ namespace GoF2Remake.Flight
         public bool AutoEnabled { get; private set; } = true;
         public bool InTurretView { get; private set; }
         public int Item { get; private set; } = -1;
-        /// <summary>Remake: which slot-2 mount it sits on (0 = the first) and whether that mount hangs it under the hull.</summary>
+        /// <summary>Remake: which slot-2 mount it sits on (0 = the first) and whether its base faces below the ship's horizon
+        /// (WeaponMount.TurretHangs: the turret view's camera hangs under it, upright).</summary>
         public int MountIndex { get; private set; }
-        public bool UpsideDown { get; private set; }
+        public bool Hangs { get; private set; }
+        /// <summary>The turret model's root on its mount: its up is the turret's yaw axis.</summary>
+        Transform mountRoot;
         bool removed;
         /// <summary>A toggle message for the HUD (text 37 / remake strings).</summary>
         public event Action<string> Message;
@@ -164,12 +171,12 @@ namespace GoF2Remake.Flight
             return list;
         }
 
-        /// <summary>The turret's model on its mount: the mount's position, and under the hull a half turn about the ship's
-        /// length (local z) on top of the model's own turn.</summary>
+        /// <summary>The turret's model on its mount: the mount's position, and the mount's turn (WeaponMount.TurretTurn: its
+        /// base facing turretUp, under the hull a half turn about the ship's length) on top of the model's own turn.</summary>
         static void PlaceOnMount(Transform model, WeaponMount mount, Quaternion turn)
         {
             model.localPosition = WeaponSystem.MountToLocal(mount);
-            model.localRotation = mount.upsideDown ? Quaternion.Euler(0f, 0f, 180f) * turn : turn;
+            model.localRotation = mount.TurretTurn * turn;
         }
 
         /// <summary>CutScene::checkForTurret 0xa4594 (the hangar): the item's hangar_turret_item_N assembly (base + gun, the gun
@@ -213,7 +220,7 @@ namespace GoF2Remake.Flight
             chase = chaseCamera;
             Item = item.index;
             MountIndex = mountIndex;
-            UpsideDown = mount.upsideDown;
+            Hangs = mount.TurretHangs;
             IsAuto = item.Attr(16) == 1;
             IsCollector = item.categoryId == 35;
             PullSpeed = item.Attr(49);
@@ -224,6 +231,7 @@ namespace GoF2Remake.Flight
             var model = Instantiate(fx.turretMounted, parent, false);
             model.name = mountIndex == 0 ? "Turret" : "Turret " + (mountIndex + 1);
             PlaceOnMount(model.transform, mount, model.transform.localRotation);
+            mountRoot = model.transform;
             GunRig.StripForFx(model);
             anims = model.GetComponentsInChildren<Visuals.PartAnimation>(true);
             foreach (var a in anims) a.speed = 0f;   // still until the first shot
@@ -346,8 +354,8 @@ namespace GoF2Remake.Flight
                 if (docking != null && (docking.State == ObjectDocking.Phase.Entering || docking.State == ObjectDocking.Phase.Docked
                                         || docking.State == ObjectDocking.Phase.Leaving)) chase.enabled = on;
                 chase.follow = on ? camAnchor : null;
-                // Under the hull the camera hangs below the turret (still upright: the anchor keeps the ship's up).
-                float side = UpsideDown ? -1f : 1f;
+                // The camera sits on the turret's outer side: a hanging turret's anchor has the other up (still upright).
+                float side = Hangs ? -1f : 1f;
                 chase.followOffset = new Vector3(0f, 6f * side, -14f);
                 chase.followLookOffset = new Vector3(0f, 2f * side, 40f);
                 chase.followRigid = true;
@@ -394,11 +402,13 @@ namespace GoF2Remake.Flight
             bool fire = false;
             if (!halted && InTurretView)
             {
-                // Upside down the turret's own axes point the other way round than the upright view's: mirror the stick.
+                // A hanging turret's own axes point the other way round than its upright view's: mirror the stick.
                 var stick = ship != null ? ship.SteerInput : Vector2.zero;
-                aim.Drive(UpsideDown ? -stick : stick, dtMs);
-                // The camera turns with the turret, at half the gun's pitch.
-                camAnchor.rotation = Quaternion.LookRotation(Vector3.Slerp(Vector3.ProjectOnPlane(aim.BarrelForward, transform.up), aim.BarrelForward, 0.5f), transform.up);
+                aim.Drive(Hangs ? -stick : stick, dtMs);
+                // The camera turns with the turret, at half the gun's pitch; its up is the turret's (upright when hanging).
+                var yawAxis = mountRoot != null ? mountRoot.up : transform.up;
+                camAnchor.rotation = Quaternion.LookRotation(Vector3.Slerp(Vector3.ProjectOnPlane(aim.BarrelForward, yawAxis), aim.BarrelForward, 0.5f),
+                                                             Hangs ? -yawAxis : yawAxis);
                 fire = weapons != null && weapons.FireHeld && !IsCollector;   // a collector collects by aiming (GasCloudField)
                 if (IsCollector) foreach (var a in anims) if (a != null) a.speed = 1f;
             }

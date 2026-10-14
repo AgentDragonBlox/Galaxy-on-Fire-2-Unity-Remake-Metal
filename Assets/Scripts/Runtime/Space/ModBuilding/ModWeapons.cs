@@ -8,13 +8,15 @@
 // beam, a mine a mine): only what it looks and sounds like changes. A part may also be another item's ("item": its base's
 // part), recoloured or not, and any part without a sprite / model can be resized ("scale"); "shot" / "explosionSound" may
 // name an item whose sounds it takes. Turrets: "turret" is the turret's own model (a glTF / GLB with a "pivot" node holding
-// the base and a node named *_gun, the barrel along +Z), with "muzzle" / "shotStart" along the gun node (game units).
+// the base and a node named *_gun, the barrel along +Z; without them it turns as one piece), with "muzzle" / "shotStart"
+// along the gun node (game units, on the model as made), "scale" and "offset" (the model moved off its mount, game units).
 // Each item gets a WeaponFx of its own (a copy of the base item's, the parts and clips replaced), which WeaponFx.Load hands
 // to every gun (the player's, NPCs', turrets, sentry guns, other players' mirrored shots). The parts are built under a
 // hidden DontDestroyOnLoad holder (GunRig instantiates them); ModFxPart gives the sprites and models their lifetime,
 // growth, fade and camera facing. Loaded in the background with the ships when the mods change (Preload; ModLoading).
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using GoF2Remake.Flight;
 using Newtonsoft.Json.Linq;
@@ -58,6 +60,13 @@ namespace GoF2Remake.Modding
             /// <summary>"turret": the turret's own model, its muzzle and where its shots start (game units, -1 = the base's).</summary>
             public string turretModel;
             public float turretMuzzle = -1f, turretShot = -1f;
+            /// <summary>"turret" "scale": the model's size factor (1 = as made, 1 unit = 1 m).</summary>
+            public float turretScale = 1f;
+            /// <summary>"turret" "offset": the model moved off its mount, game units in the turret's frame (x toward the
+            /// pilot's left, y along the turret's up, z forward).</summary>
+            public Vector3 turretOffset;
+            /// <summary>The turret model is resized or moved (its own or the base item's).</summary>
+            public bool TurretReshaped => !Mathf.Approximately(turretScale, 1f) || turretOffset != Vector3.zero;
         }
 
         static readonly Dictionary<int, WeaponFx> made = new Dictionary<int, WeaponFx>();
@@ -128,7 +137,7 @@ namespace GoF2Remake.Modding
             { "sprite", "model", "texture", "size", "color", "glow", "additive", "lifetime", "grow", "fade", "spin", "alongFlight", "stretch", "rotate",
               "item", "scale" };
         static readonly HashSet<string> CopyFields = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase) { "item", "scale", "color", "glow" };
-        static readonly HashSet<string> TurretFields = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase) { "model", "muzzle", "shotStart" };
+        static readonly HashSet<string> TurretFields = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase) { "model", "muzzle", "shotStart", "scale", "offset" };
 
         static Def Parse(ModInfo mod, JToken token, int item, string label)
         {
@@ -153,7 +162,8 @@ namespace GoF2Remake.Modding
             return d;
         }
 
-        /// <summary>"turret": "models/x.glb" or { "model": ..., "muzzle": units, "shotStart": units }.</summary>
+        /// <summary>"turret": "models/x.glb" or { "model": ..., "muzzle": units, "shotStart": units, "scale": f, "offset": [x, y, z] };
+        /// without "model" the base item's turret, resized and / or moved.</summary>
         static void ParseTurret(ModInfo mod, Def d, JToken t)
         {
             if (t == null) return;
@@ -166,9 +176,19 @@ namespace GoF2Remake.Modding
                 d.turretModel = ModJson.Str(o, "model");
                 d.turretMuzzle = ModJson.Float(o, "muzzle", -1f, File);
                 d.turretShot = ModJson.Float(o, "shotStart", -1f, File);
-                if (d.turretModel == null) throw new ModJsonException($"{where}: \"turret\" needs \"model\" (a glTF / GLB)");
+                d.turretScale = ModJson.Float(o, "scale", 1f, File);
+                if (d.turretScale <= 0f) throw new ModJsonException($"{where}: \"turret\": \"scale\" must be above 0");
+                if (ModJson.Get(o, "offset") is JToken off)
+                {
+                    if (!(off is JArray a) || a.Count != 3 || a.Any(v => v.Type != JTokenType.Integer && v.Type != JTokenType.Float))
+                        throw new ModJsonException($"{ModJson.Where(off, File)}: \"turret\": \"offset\" is [x, y, z] (game units)");
+                    d.turretOffset = new Vector3((float)a[0], (float)a[1], (float)a[2]);
+                }
+                if (d.turretModel == null && !d.TurretReshaped && d.turretMuzzle < 0f && d.turretShot < 0f)
+                    throw new ModJsonException($"{where}: \"turret\" needs \"model\" (a glTF / GLB), or \"scale\" / \"offset\" for the base item's");
+                if (d.turretModel == null) return;   // the base item's model, resized / moved
             }
-            else throw new ModJsonException($"{where}: \"turret\" is a model file or {{ \"model\": ..., \"muzzle\": ..., \"shotStart\": ... }}");
+            else throw new ModJsonException($"{where}: \"turret\" is a model file or {{ \"model\": ..., \"muzzle\": ..., \"shotStart\": ..., \"scale\": ..., \"offset\": [x, y, z] }}");
             if (!mod.Source.Exists(d.turretModel)) throw new ModJsonException($"{where}: the turret model {d.turretModel} isn't in the mod");
         }
 
@@ -345,13 +365,25 @@ namespace GoF2Remake.Modding
                 if (shots.Result != null && shots.Result.Length > 0) { fx.shots = shots.Result; fx.shot = shots.Result[0]; }
                 if (booms.Result != null && booms.Result.Length > 0) { fx.explosionSounds = booms.Result; fx.explosionSound = booms.Result[0]; }
                 if (d.shotLoops.HasValue) fx.shotLoops = d.shotLoops.Value;
-                if (turret.Result != null)
+                var turretModel = turret.Result;
+                if (turretModel == null && d.turretModel == null && d.TurretReshaped && fx.turretMounted != null)
                 {
-                    fx.turretMounted = turret.Result;
-                    fx.modTurret = true;
-                    fx.turretMuzzleUnits = d.turretMuzzle;
-                    fx.turretShotUnits = d.turretShot;
+                    // The base item's turret, resized / moved: a copy of its ship-mounted model (also shown in the hangar).
+                    turretModel = Object.Instantiate(fx.turretMounted, holder.transform, false);
+                    turretModel.name = $"{d.mod.Id}:{d.label} turret (base, reshaped)";
+                    owned.Add(turretModel);
+                    var pivot = turretModel.transform.Find("pivot");
+                    if (pivot != null) Reshape(turretModel.transform, pivot, d);
+                    else { Warn(d.mod, $"{d.where}: the base item's turret has no pivot to move"); turretModel = null; }
                 }
+                if (turretModel != null)
+                {
+                    fx.turretMounted = turretModel;
+                    fx.modTurret = true;
+                }
+                // The muzzle and shot start apply to the base item's model as well (PlayerTurret reads them either way).
+                fx.turretMuzzleUnits = d.turretMuzzle;
+                fx.turretShotUnits = d.turretShot;
                 owned.Add(fx);
                 made[d.item] = fx;
                 Debug.Log($"Mods: {d.mod.Id}: weapon fx for \"{d.label}\" (item {d.item})");
@@ -382,7 +414,9 @@ namespace GoF2Remake.Modding
             Resources.Load<WeaponFx>($"{WeaponFx.ResourcesFolder}/item_{ModContent.ItemLook(item):000}");
 
         /// <summary>A turret's own model (fx "turret"), as PlayerTurret expects the game's *_ship_mounted prefabs: a "pivot"
-        /// node holding the base and a node whose name contains "_gun" (the barrel along +Z). Its size as made: 1 = 1 m.</summary>
+        /// node holding the base and a node whose name contains "_gun" (the barrel along +Z). Its size as made (1 = 1 m) times
+        /// "scale". A model without them turns as one piece: a "pivot" without a *_gun node gets one holding its children, a
+        /// model without "pivot" one holding the whole model (so a plain GLB from the Mod Builder works).</summary>
         static async Task<GameObject> BuildTurret(int rev, Def d)
         {
             var bytes = await Task.Run(() => d.mod.Source.ReadBytes(d.turretModel));
@@ -400,15 +434,41 @@ namespace GoF2Remake.Modding
             if (rev != ModManager.Revision || holder == null) return null;
             // glTFast may put the scene under a node of its own: PlayerTurret looks for "pivot" right under the root.
             var pivot = FindDeep(root.transform, "pivot");
-            Transform gun = null;
-            if (pivot != null) foreach (Transform c in pivot) if (c.name.Contains("_gun")) gun = c;
-            if (pivot == null || gun == null)
+            if (pivot == null)
             {
-                Warn(d.mod, $"{d.turretModel}: the turret needs a node named \"pivot\" holding the base and a node named *_gun (the barrel); the base item's model is used");
-                return null;
+                pivot = new GameObject("pivot").transform;
+                pivot.SetParent(root.transform, false);
+                foreach (var c in Children(root.transform)) if (c != pivot) c.SetParent(pivot, true);
             }
-            if (pivot.parent != root.transform) pivot.SetParent(root.transform, true);
+            else if (pivot.parent != root.transform) pivot.SetParent(root.transform, true);
+            Transform gun = null;
+            foreach (Transform c in pivot) if (c.name.Contains("_gun")) gun = c;
+            if (gun == null)
+            {
+                gun = new GameObject("model_gun").transform;
+                gun.SetParent(pivot, false);
+                foreach (var c in Children(pivot)) if (c != gun) c.SetParent(gun, true);
+            }
+            Reshape(root.transform, pivot, d);
             return root;
+        }
+
+        /// <summary>A turret model's "scale" (on its root) and "offset": the offset moves the pivot (the root's own place is
+        /// the mount's), game units, x mirrored like the models, undone by the root's scale so it stays in game units.</summary>
+        static void Reshape(Transform root, Transform pivot, Def d)
+        {
+            root.localScale *= d.turretScale;
+            var o = d.turretOffset;
+            float scale = Mathf.Max(1e-4f, root.localScale.x);
+            // In the mount's frame: the root may carry the model's own turn (the game's turrets: a half turn).
+            pivot.localPosition += Quaternion.Inverse(root.localRotation) * new Vector3(-o.x, o.y, o.z) * (Flight.Gun.MetersPerUnit / scale);
+        }
+
+        static List<Transform> Children(Transform t)
+        {
+            var list = new List<Transform>();
+            foreach (Transform c in t) list.Add(c);
+            return list;
         }
 
         static Transform FindDeep(Transform t, string name)

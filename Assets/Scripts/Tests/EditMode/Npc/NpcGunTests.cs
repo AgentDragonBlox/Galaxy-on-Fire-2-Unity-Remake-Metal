@@ -354,6 +354,13 @@ namespace GoF2Remake.Tests
             Assert.IsFalse(g.missiles);
             Assert.AreEqual(1, g.salvoShots);
             Assert.AreEqual(1, g.salvoCount);
+            Assert.IsFalse(Gun.FiresPlainShots(Database.Shared.Item(item)), "the Mod Builder doesn't offer them either");
         }
+
+        [TestCase(0)]     // a laser
+        [TestCase(180)]   // an auto turret
+        [TestCase(37)]    // a homing missile
+        public void PlainShotWeaponsTakeMissilesAndSalvos(int item) =>
+            Assert.IsTrue(Gun.FiresPlainShots(Database.Shared.Item(item)));
     }
 }

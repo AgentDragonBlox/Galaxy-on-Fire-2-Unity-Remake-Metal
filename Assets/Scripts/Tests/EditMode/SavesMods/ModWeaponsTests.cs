@@ -1,6 +1,6 @@
 // ModWeaponsTests.cs
 // Feature: Modding/README.md "Weapon effects" (ModWeapons.Defs, the items.json "fx" entries): a turret's own model ("turret":
-// a file, or { "model", "muzzle", "shotStart" }), a part borrowed from another item ("item") and resized ("scale"), a sound
+// a file, or { "model", "muzzle", "shotStart", "scale" }), a part borrowed from another item ("item") and resized ("scale"), a sound
 // taken from another item ("shot": a number), and their refusals. Only the parsing: the models aren't loaded here.
 
 using System.Linq;
@@ -39,6 +39,48 @@ namespace GoF2Remake.Tests
             Assert.AreEqual("models/t.glb", d.turretModel);
             Assert.AreEqual(-1f, d.turretMuzzle);
             Assert.AreEqual(-1f, d.turretShot);
+        }
+
+        [Test]
+        public void ATurretModelWithItsScale()
+        {
+            var d = DefOf("{ 'turret': { 'model': 'models/t.glb', 'scale': 2.5 } }", ("models/t.glb", "glb"));
+            Assert.AreEqual(2.5f, d.turretScale);
+            Assert.AreEqual(1f, DefOf("{ 'turret': 'models/t.glb' }", ("models/t.glb", "glb")).turretScale, "as made");
+        }
+
+        [Test]
+        public void ATurretModelMovedOffItsMount()
+        {
+            var d = DefOf("{ 'turret': { 'model': 'models/t.glb', 'offset': [10, -20, 30] } }", ("models/t.glb", "glb"));
+            Assert.AreEqual(new UnityEngine.Vector3(10f, -20f, 30f), d.turretOffset);
+            Assert.IsTrue(d.TurretReshaped);
+        }
+
+        [Test]
+        public void TheBaseTurretResizedWithoutAModel()
+        {
+            var d = DefOf("{ 'turret': { 'scale': 1.5, 'offset': [0, 40, 0] } }");
+            Assert.IsNotNull(d, AllMessages(Installed(Mod)));
+            Assert.IsNull(d.turretModel, "the base item's model");
+            Assert.AreEqual(1.5f, d.turretScale);
+            Assert.IsTrue(d.TurretReshaped);
+        }
+
+        [Test]
+        public void AnEmptyTurretIsRefused()
+        {
+            Assert.IsNull(DefOf("{ 'turret': { } }"));
+            StringAssert.Contains("needs \"model\"", AllMessages(Installed(Mod)));
+            Assert.IsNull(DefOf("{ 'turret': { 'model': 'models/t.glb', 'offset': [1, 2] } }", ("models/t.glb", "glb")));
+            StringAssert.Contains("\"offset\" is [x, y, z]", AllMessages(Installed(Mod)));
+        }
+
+        [Test]
+        public void ATurretScaleOfZeroIsRefused()
+        {
+            Assert.IsNull(DefOf("{ 'turret': { 'model': 'models/t.glb', 'scale': 0 } }", ("models/t.glb", "glb")));
+            StringAssert.Contains("\"scale\" must be above 0", AllMessages(Installed(Mod)));
         }
 
         [Test]

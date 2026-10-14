@@ -1830,7 +1830,7 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   `NetPlayer` use mesh renderers only. Another player's ship built before the session's mods were on (they join before
   NetState applies them) is built again on `ModShips.ModelsChanged`.
 - **From PR #34, now general** (for any ship with the data): several turret mounts (`PlayerTurret.AttachAll`, one item per
-  mount in equipment order, `upsideDown` mounts; `FreeLookCamera` visits Turret 1, 2...; the HUD's auto-fire and turret-view
+  mount in equipment order, `upsideDown` / `turretUp` mounts; `FreeLookCamera` visits Turret 1, 2...; the HUD's auto-fire and turret-view
   hints for each kind; `Hangar` takes a second turret into a second slot), `ThrottleGlow`, lounge ship sellers
   (`AgentGenerator.AddCustomShipSellers`, `AgentOffer.SellShip`, `LoungeChat` / `LoungePanel` ConfirmShip: "Okay." buys, with
   the Kaamo Club owned 327 Sell / Keep; `Hangar.BuyShipFor` / `KeepAndBuyShipFor`), `Shop.RaceOfShip`, `StationTables.ShipY`.
@@ -1913,7 +1913,27 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   `turretMuzzleUnits` / `turretShotUnits` for its `muzzle` / `shotStart`), used in flight and by `PlayerTurret.BuildStatic`
   (the hangar, other players' ships); a part without sprite / model takes `item` (another item's part, `ModWeapons.Copy`)
   and `scale` (on a node under a new root: GunRig sets the root's scale); `shot` / `explosionSound` an item's number (its
-  sounds and shot looping).
+  sounds and shot looping). Same day, turret modding made whole: a turret GLB without `pivot` / `*_gun` turns as one piece
+  (`BuildTurret` wraps it in a `pivot` and a `model_gun`); `"turret"` takes `scale` (its root) and `offset` [x, y, z] (game
+  units in the mount's frame, on the pivot, undone by the root's scale and turn, `ModWeapons.Reshape`), and without `model`
+  they resize / move the base item's turret (a copy of its `*_ship_mounted` prefab, so the hangar shows it too); `muzzle` /
+  `shotStart` apply to the base model as well. **Turret mounts face any way** (`WeaponMount.turretUp` [x, y, z], game frame
+  like `position_engine`; `TurretUpLocal` / `TurretTurn` = `FromToRotation(up, it)`, straight down the old `upsideDown`
+  half turn about the length, which `upsideDown` still means; `TurretHangs` below the ship's horizon): the sides, the nose,
+  any slant, in flight and the hangar (`PlayerTurret.PlaceOnMount`); the turret view's camera takes the turret's yaw axis as
+  its up and sits on its outer side, upside down (hanging) the other way up with the stick mirrored, as the under-hull view
+  was. Mod Builder: the Items page lists the remake-only stats the item's kind takes even when its base has none of them
+  (`ModBuilderViewItems.ExtraStats`: missiles / salvos by `Gun.FiresPlainShots`, a turret's automatic / turn speed / range,
+  the mining beam's, the phase cloak) and a turret's **Turret model** section (pick a .glb into `models/`, Size %, Offset X Y
+  Z, and with its own model Muzzle / Shots start; `ProjectItem.TurretModel` / `TurretScale` / `TurretOffset` /
+  `TurretMuzzle` / `TurretShotStart`, an empty `"turret"` dropped; each change reloads, so the turntable shows it); a turret
+  hardpoint's **Turret faces** presets (Up / Down / Left / Right / Front / Back), **Match the hull here**
+  (`ModBuilderGizmo.HullNormalAt`: short rays from just outside the point), and placing or dragging it over the hull faces it
+  out of the surface (`WeaponMount.SetTurretUp(dir, snap)`: within 15 deg of a ship axis it takes the axis); Mirror flips its
+  x; `ProjectShip.ToJson` writes `turretUp` only for a slant (`upsideDown` straight down, nothing straight up); turret mount
+  edits reload the project. Verified in Play mode (the builder on a Veteran override): an exported turret_002 GLB and a
+  plain ship GLB at 15 % on the turntable after the reload, the new sections, a mount faced Left sitting on the hull's left
+  side (its up the pilot's left). Not tested: the turret view on a side mount in flight, a hand-picked file (the picker).
 - **Sound effects** (`ModSounds`, a mod's `sounds/<clip name>.ogg | .wav | .mp3`): replaces the game's clip of that name
   everywhere; `ModSounds.Get(clip)` wraps every `PlayOneShot` and `.clip =` site (57, not the music sources: ModMusic's),
   memoised per clip (AudioClip.name allocates), a no-op without mod sounds; later mods win; loaded decoded
@@ -2114,7 +2134,8 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   `modelOffset`, game units in the ship's frame, nudges of 2 % and Centre on pivot; moves and resizes carry the hardpoints
   along, every change re-measures the hangar height), hangar height + Auto, hull textures: one
   `materials` entry for all meshes, for GLBs without their own), Hardpoints (add by clicking the hull, list, X / Y / Z, mirror,
-  centre, delete, slot counts following the points, turret upside down, engine flame radius / length / particles), Loadout
+  centre, delete, slot counts following the points, a turret's facing (see "Missile turrets and salvos"), engine flame
+  radius / length / particles), Loadout
   (per-slot item pickers, Auto-fill, god mode / infinite ammo). The 3D editor is `World.ModBuilderGizmo` (balls drawn over the
   hull by `Hidden/GoF2/BuilderGizmo`, Unity-style move arrows along the ship's axes (X = game +x = the pilot's left), a drag on
   a ball slides it over the hull (MeshColliders on layer 22), a flat arrow on the floor toward the nose); the camera is
@@ -2144,7 +2165,8 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   so the preview waited forever and the camera refused new drags). The top bar's kinds swap the side panels (`ModBuilderView.SelectKind`;
   the gizmo only with Ships): **Items** (`ModBuilderViewItems`, items.json as `ProjectItem`): new items from a game item
   (a copy: type, category, look) or changes to one, name, description, its own icon PNG, tech level, occurrence, prices
-  and the base's stats by readable name (`ItemStats`; a new item's value equal to the base's isn't written), "Fit to the
+  and the base's stats by readable name (`ItemStats`; a new item's value equal to the base's isn't written), the
+  remake-only stats of its kind and a turret's own model (see "Missile turrets and salvos"), "Fit to the
   test ship" (every slot of a weapon's kind, equipment in place of its category; a new item waits for the project to be
   read and numbered: `afterReload`); item edits reach the game when the kind is left or at Test fly. **Characters**
   (`ModBuilderViewCharacters`, characters.json as `ProjectCharacter`), edited in the station's Space Lounge (no ship,

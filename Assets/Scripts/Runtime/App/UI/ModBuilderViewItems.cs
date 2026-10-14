@@ -4,7 +4,9 @@
 // a game item ("override"), Remove. Right: the selected one's name, description, shop values (tech level, occurrence, the
 // price range), its own shop icon (a PNG, else the base's) and the stats its base item has, by their readable names
 // (Modding.ItemStats); a value left at the base's
-// isn't written, so the base's stays. "Fit to the test ship" mounts it on the Ships tab's ship for Test fly (once the game
+// isn't written, so the base's stays. The remake-only stats its kind takes come under them (ExtraStats: missiles and
+// salvos for guns and turrets, a turret's range, the mining beam, the phase cloak), and a turret gets its own model (fx
+// "turret": the .glb, its size, muzzle and shot start), shown on the turntable once fitted. "Fit to the test ship" mounts it on the Ships tab's ship for Test fly (once the game
 // has read the project and numbered a new item). Edits are written at once; the game reads them at the next test flight or
 // when the builder leaves this kind (the loadout's pickers then list them).
 
@@ -179,6 +181,9 @@ namespace GoF2Remake.UI
             if (shown == 0) Note(itemPage, T("mbNoStats", "This kind of item has no stats to change."));
             else Note(itemPage, T("mbStatsNote", "Times are in milliseconds, speeds in game units per ms (20 units = 1 m). A shot's range is its speed x its lifetime."));
 
+            BuildExtraStats(it, original);
+            if (original.categoryId == 8) BuildTurretModel(it);
+
             Heading(itemPage, T("mbTry", "Try it"));
             var tryRow = Add(itemPage, new VisualElement(), "mbv-row");
             if (original.TypeId <= 3) Act(tryRow, T("mbFitItem", "Fit to the test ship"), () => FitItem(it));
@@ -200,6 +205,143 @@ namespace GoF2Remake.UI
         {
             itemsChanged = true;
             MarkDirty();
+        }
+
+        /// <summary>A remake-only stat (ItemStats 100+) a kind of item takes although no game item has it: its attribute, name,
+        /// whether it is an on / off switch, the value the game uses without it, its range and a note.</summary>
+        struct ExtraStat
+        {
+            public int attr, def, min, max;
+            public string name, note;
+            public bool flag;
+        }
+
+        /// <summary>The remake-only stats this item's kind takes (Flight.Gun.FiresPlainShots: missiles and salvos; turrets:
+        /// their range, automatic and turn speed; drills: the mining beam; cloaks: the phase cloak).</summary>
+        List<ExtraStat> ExtraStats(ItemData item)
+        {
+            var list = new List<ExtraStat>();
+            void Add(int attr, int def, int min, int max, string note = null, bool flag = false)
+            {
+                var names = StatNames();
+                if (names.TryGetValue(attr, out var name)) list.Add(new ExtraStat { attr = attr, name = name, def = def, min = min, max = max, note = note, flag = flag });
+            }
+            if (item.TypeId <= 2 && Flight.Gun.FiresPlainShots(item))
+            {
+                Add(105, 0, 0, 1, T("mbStatNoteMissiles", "Its shots are homing missiles (smoke trail, a rocket's burst): a turret's home on what it aims at, a gun's on the radar's lock."), true);
+                Add(106, 1, 1, 12, T("mbStatNoteSalvo", "Shots fired side by side at each trigger pull."));
+                Add(107, 1, 1, 20, T("mbStatNoteSalvoCount", "Salvos per magazine, 'Salvo gap' apart; the reload comes after the last."));
+                Add(108, 0, 0, 60000);
+            }
+            if (item.categoryId == 8)
+            {
+                Add(16, 0, 0, 1, T("mbStatNoteAuto", "An automatic turret aims and fires at hostile ships by itself; else the player aims it in the turret view."), true);
+                Add(17, 100, 1, 1000, T("mbStatNoteTurn", "How fast it turns (100 = the game's standard turrets)."));
+                Add(109, (int)Flight.PlayerTurret.AutoRangeUnits, 1000, 1000000, T("mbStatNoteRange", "How far an automatic turret looks for a target, in game units (20 = 1 m)."));
+            }
+            if (item.categoryId == 19)
+            {
+                Add(100, 0, 0, 1, T("mbStatNoteBeam", "A mining beam: it cuts a locked asteroid in free flight while fire is held, no mining game."), true);
+                Add(101, (int)Flight.Mining.BeamDefaultRangeUnits, 1000, 200000);
+                Add(102, (int)Flight.MiningGame.LayerMs, 500, 60000);
+                Add(103, 228, 0, 300, T("mbStatNoteBeamLook", "The beam laser item whose beam it draws."));
+            }
+            if (item.categoryId == 21)
+                Add(104, 0, 0, 1, T("mbStatNotePhase", "While cloaked the ship also passes through stations, asteroids and other ships, and nothing hits it."), true);
+            return list;
+        }
+
+        /// <summary>The remake-only stats of this kind its base doesn't have (those it has are in the list above).</summary>
+        void BuildExtraStats(ProjectItem it, ItemData original)
+        {
+            var extras = ExtraStats(original).Where(e => !original.HasAttr(e.attr)).ToList();
+            if (extras.Count == 0) return;
+            Heading(itemPage, T("mbItemExtras", "Remake stats"));
+            foreach (var e in extras)
+            {
+                var stat = e;
+                int value = it.Stat(stat.attr) ?? stat.def;
+                if (stat.flag)
+                {
+                    var row = Add(itemPage, new VisualElement(), "mbv-row");
+                    var b = Act(row, $"{StatLabel(stat.name)}: {(value == 1 ? T("mbOn", "on") : T("mbOff", "off"))}", () =>
+                    {
+                        it.SetStat(stat.attr, stat.name, value == 1 ? (int?)null : 1);
+                        ItemEdited();
+                        BuildItemPage();
+                    });
+                    b.EnableInClassList("mbv-toggle--on", value == 1);
+                }
+                else
+                    Int(itemPage, StatLabel(stat.name), value, stat.min, stat.max, v =>
+                    {
+                        it.SetStat(stat.attr, stat.name, v == stat.def ? (int?)null : v);
+                        ItemEdited();
+                    });
+                if (stat.note != null) Note(itemPage, stat.note);
+            }
+        }
+
+        /// <summary>A turret's own model (items.json fx "turret", ModWeapons.BuildTurret): a .glb, its size, where the muzzle
+        /// flash sits and where the shots start along the barrel. Shown on the turntable once fitted to the test ship.</summary>
+        void BuildTurretModel(ProjectItem it)
+        {
+            Heading(itemPage, T("mbTurretModel", "Turret model"));
+            var row = Add(itemPage, new VisualElement(), "mbv-row");
+            string model = it.TurretModel;
+            Add(row, new Label($"{T("mbModel", "Model")}: {(model != null ? System.IO.Path.GetFileName(model) : T("mbBaseModel", "the base item's"))}"), "mbv-inline-label");
+            if (ModImport.Available)
+                Act(row, T("mbChoose", "Choose…"), () => PickFile(T("mbPickTurret", "Choose a turret model"), "glTF binary model", "glb",
+                    new byte[] { (byte)'g', (byte)'l', (byte)'T', (byte)'F' },
+                    T("mbNotGlb", "That isn't a .glb model (glTF binary). In Blender: File > Export > glTF 2.0, format glTF Binary."), path =>
+                    {
+                        string old = it.TurretModel;
+                        it.TurretModel = Project.AddFile(path, "models", (it.IsOverride ? "item_" + it.OverrideIndex : it.LocalId) + "_turret", ".glb");
+                        if (old != null) Project.DeleteFile(old, Project.Items.Any(o => o != it && o.TurretModel == old));
+                        TurretEdited();
+                        Status(T("mbLoadingModel", "Loading the model…"), false);
+                    }));
+            if (model != null)
+                Act(row, "✕", () =>
+                {
+                    it.TurretModel = null;
+                    Project.DeleteFile(model, Project.Items.Any(o => o != it && o.TurretModel == model));
+                    TurretEdited();
+                }, "mbv-step");
+            // Size and place work for the base item's model too (ModWeapons copies it).
+            Int(itemPage, T("mbTurretSize", "Size (%)"), Mathf.RoundToInt((it.TurretScale ?? 1f) * 100f), 1, 100000, v =>
+            {
+                it.TurretScale = v == 100 ? (float?)null : v / 100f;
+                TurretEdited();
+            });
+            var off = it.TurretOffset;
+            var xyz = Add(itemPage, new VisualElement(), "mbv-row", "mbv-xyz");
+            Int(xyz, "X", off.x, -100000, 100000, v => { var o = it.TurretOffset; o.x = v; it.TurretOffset = o; TurretEdited(); });
+            Int(xyz, "Y", off.y, -100000, 100000, v => { var o = it.TurretOffset; o.y = v; it.TurretOffset = o; TurretEdited(); });
+            Int(xyz, "Z", off.z, -100000, 100000, v => { var o = it.TurretOffset; o.z = v; it.TurretOffset = o; TurretEdited(); });
+            Note(itemPage, T("mbTurretOffsetNote", "Moves the model off its mount: game units (20 = 1 m), X toward the pilot's left, Y along the turret's up, Z forward."));
+            if (model != null)
+            {
+                Int(itemPage, T("mbTurretMuzzle", "Muzzle flash, along the barrel"), Mathf.RoundToInt(it.TurretMuzzle ?? 200f), 0, 100000, v =>
+                {
+                    it.TurretMuzzle = v;
+                    TurretEdited();
+                });
+                Int(itemPage, T("mbTurretShotStart", "Shots start, along the barrel"), Mathf.RoundToInt(it.TurretShotStart ?? 300f), 0, 100000, v =>
+                {
+                    it.TurretShotStart = v;
+                    TurretEdited();
+                });
+            }
+            Note(itemPage, T("mbTurretNote", "A .glb, 1 unit = 1 m, its origin on the mount, the barrel along +Z. A node named \"pivot\" holding the base turns it left and right and a node named *_gun under it (the barrel) tilts up and down; without them the whole model turns. The distances are game units (20 = 1 m) on the model as made. Fit it to the test ship to see it on the turntable."));
+        }
+
+        /// <summary>A turret model change: the game reads the project again, so the turntable shows it.</summary>
+        void TurretEdited()
+        {
+            itemsChanged = false;
+            RequestReload(true);
+            BuildItemPage();
         }
 
         /// <summary>The first readable stat name of every attribute (ItemStats).</summary>

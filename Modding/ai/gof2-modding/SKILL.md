@@ -161,9 +161,11 @@ with the mod's own `sprite` (PNG in the mod, white on black or transparent; `col
 (models). Without `sprite` / `model` a part may also take `item` (another item's number: its part instead of the base's,
 e.g. `{ "item": 46, "scale": 0.35 }` the AMR Extinctor's missile at 35 %) and `scale` (size factor). `shot` /
 `explosionSound` may be an item's number (its sounds; `shotLoops` then that item's unless given). Turrets: `"turret":
-"models/t.glb"` or `{ "model": ..., "muzzle": units, "shotStart": units }` is the turret's own model (flight, hangar,
-other players): a node `pivot` (the base, turns) holding a node named `*_gun` (tilts; barrel along +Z), 1 unit = 1 m;
-muzzle / shotStart along the gun node in game units. Sounds: `.ogg` / `.wav` / `.mp3`. Behaviour never changes (a beam
+"models/t.glb"` or `{ "model": ..., "muzzle": units, "shotStart": units, "scale": f, "offset": [x, y, z] }` is the
+turret's own model (flight, hangar, other players): origin on the mount, 1 unit = 1 m, a node `pivot` (the base, turns)
+holding a node named `*_gun` (tilts; barrel along +Z), else it turns as one piece; muzzle / shotStart along the gun node in
+game units; `scale` resizes, `offset` moves it off the mount (game units, x pilot's left, y the turret's up, z forward);
+without `model`, `scale` / `offset` reshape the base item's turret. Sounds: `.ogg` / `.wav` / `.mp3`. Behaviour never changes (a beam
 stays a beam) except through the stats above.
 
 ## ships.json
@@ -199,7 +201,7 @@ stays a beam) except through the stats above.
 | `modelLength`, `modelYaw` | Nose-to-tail length in game units (Phantom ~1000); yaw degrees if the nose isn't +Z. |
 | `icon` | Shop icon PNG 180 x 88. Default: the Phantom's. |
 | `hangarHeight` | Pivot height above the hangar pad (originals 140-400). |
-| `mounts` | Game units from the ship centre (x right, y up, z forward). `slotType` 0 primary, 1 secondary, 2 turret (`upsideDown`), 3 engine exhaust (`turretAngles[0]` particle size, `glowColor` [r,g,b], `glowSize` [halfW, halfH, length]). Give each gun slot its own mount where possible (the originals do). |
+| `mounts` | Game units from the ship centre (x the pilot's left, y up, z forward). `slotType` 0 primary, 1 secondary, 2 turret (`turretUp` [x, y, z]: the way its base faces, default [0, 1, 0]; [0, -1, 0] under the hull (= `upsideDown`), [±1, 0, 0] the sides, [0, 0, 1] the nose, any slant), 3 engine exhaust (`turretAngles[0]` particle size, `glowColor` [r,g,b], `glowSize` [halfW, halfH, length]). Give each gun slot its own mount where possible (the originals do). |
 | `engineGlowRadius`, `engineGlowColor` | Flame size (default 24) / colour for all exhausts. |
 | `materials` | Replace materials: entries `{ "mesh", "submesh", "diffuse", "color", "normal", "normalScale", "metallicSmoothness", "metallic", "smoothness", "emission", "emissionColor", "emissionIntensity", "alphaClip", "opacity", "detailAlbedo", "detailNormal", "detailTiling", "detailNormalScale", "doubleSided" }`. Without it the GLB's own materials are used. |
 | `throttleGlow`, `extraGlows` | Hull parts glowing with the throttle: `{ "mask", "mesh", "submesh", "color", "idle", "full", "boost", "offset", "trailWidth", "trailTime", "trailBrightness", "trailCount" }`. |

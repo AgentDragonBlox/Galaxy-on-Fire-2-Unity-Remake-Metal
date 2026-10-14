@@ -95,13 +95,54 @@ namespace GoF2Remake.Data
     /// <summary>Weapon mounts of one ship (weapons_hd.json). slotType 0 = primary, 1 = secondary, 2 = turret,
     /// 3 = engine exhaust points (not a turret, see weapons.md). position_engine is game space, ship-relative.</summary>
     /// <remarks>upsideDown (remake, turret mounts only): the turret hangs under the hull, turned 180 deg about the ship's
-    /// length (PlayerTurret); none of the original's mounts set it. glowColor / glowSize (remake, a mod ship's exhaust mounts):
+    /// length (PlayerTurret); none of the original's mounts set it. turretUp (remake, turret mounts): the direction the
+    /// turret's base faces, game space like position_engine (x toward the pilot's left, y up, z forward; any length), so a
+    /// turret sits on the sides, the nose or at any angle; it wins over upsideDown (= [0, -1, 0]). glowColor / glowSize (remake, a mod ship's exhaust mounts):
     /// the engine flame's colour (RGB 0..1, ModShipBuilder's tinted glow and the nearest-coloured exhaust particle cell) and
     /// shape (half width, half height, flame length in game units; none = the round glow of CustomShipData.engineGlowRadius).</remarks>
     [System.Serializable] public class WeaponMount
     {
         public int slotType; public int[] position_engine; public float[] turretAngles; public bool upsideDown;
-        public float[] glowColor, glowSize;
+        public float[] glowColor, glowSize, turretUp;
+
+        /// <summary>turretUp (else upsideDown) in the Unity ship frame ((-x, y, z), the models are mirrored): a unit vector,
+        /// Vector3.up for a plain mount.</summary>
+        public Vector3 TurretUpLocal
+        {
+            get
+            {
+                var up = turretUp != null && turretUp.Length >= 3 ? new Vector3(-turretUp[0], turretUp[1], turretUp[2])
+                    : upsideDown ? Vector3.down : Vector3.up;
+                return up.sqrMagnitude < 1e-8f ? Vector3.up : up.normalized;
+            }
+        }
+
+        /// <summary>The turret's turn on this mount in the ship's frame: its up onto TurretUpLocal by the shortest turn, and
+        /// straight down as a half turn about the ship's length (the upsideDown turret's, so its rest heading stays forward).</summary>
+        public Quaternion TurretTurn
+        {
+            get
+            {
+                var up = TurretUpLocal;
+                return up.y < -0.9999f ? Quaternion.Euler(0f, 0f, 180f) : Quaternion.FromToRotation(Vector3.up, up);
+            }
+        }
+
+        /// <summary>The turret's base faces below the ship's horizon: its turret view hangs the camera under it, upright.</summary>
+        public bool TurretHangs => TurretUpLocal.y < -0.01f;
+
+        /// <summary>Sets turretUp (game frame), normalised and rounded; upsideDown dropped (turretUp says it). The Mod Builder:
+        /// with 'snap' a direction within 15 deg of one of the ship's axes takes that axis (a hull's surface is seldom exact).</summary>
+        public void SetTurretUp(Vector3 game, bool snap = false)
+        {
+            if (game.sqrMagnitude < 1e-8f) return;
+            game.Normalize();
+            if (snap)
+                foreach (var axis in new[] { Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward, Vector3.back })
+                    if (Vector3.Dot(game, axis) > 0.9659f) { game = axis; break; }   // cos 15 deg
+            turretUp = new[] { Mathf.Round(game.x * 1000f) / 1000f, Mathf.Round(game.y * 1000f) / 1000f, Mathf.Round(game.z * 1000f) / 1000f };
+            upsideDown = false;
+        }
     }
     [System.Serializable] public class WeaponMountSet { public int ship; public string shipName; public List<WeaponMount> mounts; }
 

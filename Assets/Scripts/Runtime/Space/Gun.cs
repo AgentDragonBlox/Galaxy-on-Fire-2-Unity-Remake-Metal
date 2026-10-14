@@ -137,6 +137,17 @@ namespace GoF2Remake.Flight
 
         IReadOnlyList<Target> lastTargets;
 
+        /// <summary>Remake (mods): a weapon whose shots may be missiles and salvos (ItemStats 105-108): plain shots, not beams,
+        /// bombs, mines, cluster salvos, the Shock Blast, sentries or collectors. The Mod Builder offers those stats by it.</summary>
+        public static bool FiresPlainShots(ItemData item)
+        {
+            if (item == null) return false;
+            int look = item.Look;
+            if (look == 9 || look == 10 || look == 11 || look == 228) return false;   // beams
+            return (Kind)item.categoryId is not (Kind.EmpBomb or Kind.Nuke or Kind.Ionizing or Kind.Mine or Kind.ClusterMissile
+                                                 or Kind.ShockBlast or Kind.Sentry or Kind.PlasmaCollector);
+        }
+
         public Gun(ItemData item, Vector3 mountLocal, bool secondary)
         {
             itemIndex = item.index;
@@ -152,10 +163,7 @@ namespace GoF2Remake.Flight
             lifetimeMs = kind == Kind.ShockBlast ? 1f : item.Attr(12, 2000);
             speedUnitsPerMs = kind == Kind.Mine ? MineSpeedUnits : kind == Kind.ShockBlast ? 0f : item.Attr(13, 20);
             magnitude = kind == Kind.ShockBlast ? ShockBlastRadiusUnits : item.Attr(14);
-            // Missiles and salvos only for guns that fire plain shots (not beams, bombs, mines, cluster salvos, sentries).
-            bool plainShots = !isBeam && kind is not (Kind.EmpBomb or Kind.Nuke or Kind.Ionizing or Kind.Mine or Kind.ClusterMissile
-                                                      or Kind.ShockBlast or Kind.Sentry or Kind.PlasmaCollector);
-            if (plainShots)
+            if (FiresPlainShots(item))
             {
                 missiles = item.Attr(105) == 1;
                 salvoShots = Mathf.Max(1, item.Attr(106, 1));
