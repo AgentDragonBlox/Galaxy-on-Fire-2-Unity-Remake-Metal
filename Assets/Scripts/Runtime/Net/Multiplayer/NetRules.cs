@@ -84,6 +84,40 @@ namespace GoF2Remake.Multiplayer
             NetState.Instance?.SetRules(Host);
         }
 
+        // ---- the Kaamo upgrade limit: a number beside the bits ----
+
+        public const string KaamoLevelKey = "kaamomaxlevel", KaamoLevelFlag = "-kaamomaxlevel",
+                            KaamoLevelLabel = "Kaamo Club upgrade levels per ship";
+
+        /// <summary>The server's Kaamo upgrade limit (Settings.KaamoMaxLevel; NetGame.StartHost: the host's option;
+        /// DedicatedServer.Boot: -kaamomaxlevel, else the default). NetState carries it.</summary>
+        public static int HostKaamoLevel { get; set; } = SessionRules.DefaultKaamoLevel;
+
+        /// <summary>The session's Kaamo upgrade limit; false outside a session or before NetState has arrived.</summary>
+        public static bool TryGetKaamoLevel(out int level)
+        {
+            level = 0;
+            if (!NetGame.Active) return false;
+            if (NetGame.IsServer) { level = HostKaamoLevel; return true; }
+            var s = NetState.Instance;
+            if (s == null || !s.IsSpawned || s.KaamoLevel <= 0) return false;
+            level = s.KaamoLevel;
+            return true;
+        }
+
+        /// <summary>Server: the Kaamo upgrade limit (NetServerSettings, HostKaamoLevelChanged).</summary>
+        public static void SetKaamoLevel(int level)
+        {
+            HostKaamoLevel = SessionRules.ClampKaamoLevel(level);
+            NetState.Instance?.SetKaamoLevel(HostKaamoLevel);
+        }
+
+        /// <summary>A player host changed its Kaamo upgrade limit while hosting: for everyone at once.</summary>
+        public static void HostKaamoLevelChanged(int level)
+        {
+            if (NetGame.IsServer) SetKaamoLevel(level);
+        }
+
         /// <summary>The options' rows: hidden for a player in someone else's session (the host decides).</summary>
         public static bool ClientLocked => NetGame.Active && !NetGame.IsServer;
 

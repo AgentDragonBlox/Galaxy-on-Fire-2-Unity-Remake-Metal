@@ -147,6 +147,7 @@ Players on a different game version are turned away with a message saying which 
 | `-informeroriginal` | Informer missions use the original's rule (any other ship destroyed before docking fails it). Off by default. |
 | `-nopirateevents` | No pirate outposts and bosses (on by default). |
 | `-nokaamostacking` | The Kaamo Club's upgrades only once each, as in the original (stackable by default). |
+| `-kaamomaxlevel N` | With stacking: how many times each Kaamo Club upgrade can be fitted to one ship, 2 to 20 (default 10). Profiles above it are cut back when they sign in. |
 | `-nokaamoequipment` | Ships stored in the Kaamo Club hand their equipment over, as in the original (they keep it by default). |
 | `-nocloakbay` | A cloak mounted on the Specter or the Scimitar takes an equipment slot, as in the original (by default it goes into their integrated cloak's bay). |
 | `-noempcloak` | EMP hits don't break cloaks, as in the original (by default an EMP hit drops a cloak at once). |
@@ -183,6 +184,7 @@ window, **Admin** tab, **Server settings**. You can also type `/set <key> <value
 | `allowdebug` | Players may use the Debug menu (`on` / `off`) | At once. |
 | `freepvp` | Players may fight anywhere (`on` / `off`) | At once. |
 | `cloakhides`, `pirateevents`, `capitalships`, `informeroriginal`, `kaamostacking`, `kaamoequipment`, `cloakbay`, `empcloak` | The gameplay rules above (`on` / `off`; `on` = the option on) | At once (new orbits get the spawns that depend on them). |
+| `kaamomaxlevel` | The Kaamo Club upgrade limit above (2-20) | At once for new upgrades; profiles above a lowered limit are cut back at their next sign-in or upload. |
 | `maxearn` | Worth a profile may gain per minute | At once. |
 | `claimcost`, `maxclaims`, `claimdays`, `siegecost`, `toll` | The faction settings above | At once. |
 
@@ -397,6 +399,6 @@ Players can only join a server running the same game version. To update:
 | The process ends right after starting | Read the log: `journalctl -u gof2 -n 100`, or `Player.log` in the game's data folder. A local server stops when its port is in use; try another `-port`. |
 | A player's progress isn't saved | Without `-allowdebug` the server turns away progress that grows faster than `maxearn`; the log says "upload not saved" (once per profile every 10 minutes, with how many were refused since), and the ops, admins and masters online get a chat notice as often. |
 | "signed in more than 8 times in 10 minutes" | A player (or device) in a reconnect loop: the server turns them away for 10 minutes ("You reconnected too often"). Their joins and leaves don't show in the chat either: a join is told after 15 s in the game, and not when the player left under 2 minutes before. |
-| "Kaamo upgrade level(s) ... removed" | A profile had more than 3 levels of one Kaamo upgrade on a hull (builds from 2026-10-08 had no cap). The server cuts it back at sign-in and on every upload. |
+| "Kaamo upgrade level(s) ... removed" | A profile had more levels of one Kaamo upgrade on a hull than the server's limit (`kaamomaxlevel`, default 10; builds from 2026-10-08 had no cap). The server cuts it back at sign-in and on every upload. |
 | A player's progress is gone | Profiles nobody has signed in to for 30 days are pruned. The last 50 pruned profiles are in `Pruned/` (see [Files](#files-the-server-keeps)). |
 | Lost admin access | Read the token from the log, or delete `admin_token.txt` and restart, then use `/claimadmin` again. |

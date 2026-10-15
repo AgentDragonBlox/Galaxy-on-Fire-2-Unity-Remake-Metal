@@ -62,6 +62,11 @@ namespace GoF2Remake.Data
         public static RuleQuery SessionRule;
         /// <summary>A player host changed a rule's option (NetRules.HostChanged).</summary>
         public static Action<int, bool> RuleChangedByHost;
+        public delegate bool NumberQuery(out int value);
+        /// <summary>The session's Kaamo upgrade limit (NetRules.TryGetKaamoLevel); false = no session, the player's own option.</summary>
+        public static NumberQuery SessionKaamoLevel;
+        /// <summary>A player host changed the Kaamo upgrade limit (NetRules.HostKaamoLevelChanged).</summary>
+        public static Action<int> KaamoLevelChangedByHost;
 
         // ---- the flight (GoF2.Space) ---------------------------------------------------------------------------------
 

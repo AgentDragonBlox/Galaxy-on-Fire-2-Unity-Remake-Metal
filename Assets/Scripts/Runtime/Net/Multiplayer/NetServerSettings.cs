@@ -79,6 +79,10 @@ namespace GoF2Remake.Multiplayer
             {
                 int bit = r.bit;
                 list.Insert(at++, Flag(r.key, r.flag, r.label, () => (NetRules.Host & bit) != 0, v => NetRules.Set(bit, v)));
+                if (bit == NetRules.KaamoStacking)
+                    list.Insert(at++, Num(NetRules.KaamoLevelKey, NetRules.KaamoLevelFlag, NetRules.KaamoLevelLabel,
+                        SessionRules.MinKaamoLevel, SessionRules.MaxKaamoLevel, () => NetRules.HostKaamoLevel, NetRules.SetKaamoLevel,
+                        "profiles above it are cut back at sign-in"));
             }
             return list;
         }

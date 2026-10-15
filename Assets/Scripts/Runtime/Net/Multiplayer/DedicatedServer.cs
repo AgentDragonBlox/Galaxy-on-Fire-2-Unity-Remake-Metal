@@ -13,6 +13,7 @@
 //   -freepvp         players may fight anywhere (else only in arena matches, NetArena)
 //   -cloakhides -capitalships -informeroriginal -nopirateevents -nokaamostacking -nokaamoequipment -nocloakbay -noempcloak
 //                    the session's gameplay options (NetRules), each the other way from the game's default
+//   -kaamomaxlevel N how many times one Kaamo Club upgrade can be fitted to a ship (2..20, default 10; NetRules)
 //   -noprofiles      no player profiles (NetProfiles; on by default: credits, ships, cargo, Kaamo Club, squad kept
 //                    per player between sessions; no limit, one unused for 30 days is pruned); -maxearn N (worth a profile may gain
 //                    per minute online without -allowdebug, default 1 000 000), -profiledir PATH (default
@@ -111,6 +112,7 @@ namespace GoF2Remake.Multiplayer
             NetGame.FreePvp = HasFlag("-freepvp");
             NetRules.Host = NetRules.Defaults;   // the session's gameplay options: the defaults, a flag turns one the other way
             foreach (var r in NetRules.All) if (HasFlag(r.flag)) NetRules.Host ^= r.bit;
+            NetRules.HostKaamoLevel = SessionRules.ClampKaamoLevel(int.TryParse(Value(NetRules.KaamoLevelFlag), out int kaamo) ? kaamo : SessionRules.DefaultKaamoLevel);
             NetProfiles.Configure(!HasFlag("-noprofiles"),
                 int.TryParse(Value("-maxearn"), out int earn) ? earn : NetProfiles.DefaultEarnPerMinute,
                 Value("-profiledir"));

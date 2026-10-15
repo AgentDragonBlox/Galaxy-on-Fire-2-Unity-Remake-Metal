@@ -118,7 +118,7 @@ namespace GoF2Remake.Tests
 
         // ---- NetServerSettings ----
 
-        int savedMaxPlayers, savedClaims, savedLapse, savedRules;
+        int savedMaxPlayers, savedClaims, savedLapse, savedRules, savedKaamoLevel;
 
         void BeginSettings()
         {
@@ -126,6 +126,7 @@ namespace GoF2Remake.Tests
             savedClaims = NetFactions.MaxClaims;
             savedLapse = NetFactions.LapseDays;
             savedRules = NetRules.Host;
+            savedKaamoLevel = NetRules.HostKaamoLevel;
             NetProfiles.Configure(false, NetProfiles.DefaultEarnPerMinute, Path.Combine(Sandbox, "ServerProfiles"));
             Directory.CreateDirectory(Path.Combine(Sandbox, "ServerProfiles"));
             NetServerSettings.Load(_ => false);
@@ -137,6 +138,7 @@ namespace GoF2Remake.Tests
             NetFactions.MaxClaims = savedClaims;
             NetFactions.LapseDays = savedLapse;
             NetRules.Host = savedRules;
+            NetRules.HostKaamoLevel = savedKaamoLevel;
             ResetStatics(typeof(NetServerSettings));
             ResetStatics(typeof(NetProfiles));
         }
@@ -153,7 +155,7 @@ namespace GoF2Remake.Tests
         {
             var keys = NetServerSettings.All.Select(s => s.key).ToList();
             Assert.AreEqual(keys.Count, keys.Distinct().Count());
-            foreach (var k in new[] { "name", "password", "maxplayers", "allowdebug", "freepvp", "maxearn", "claimcost", "maxclaims", "claimdays", "siegecost", "toll" })
+            foreach (var k in new[] { "name", "password", "maxplayers", "allowdebug", "freepvp", "maxearn", "claimcost", "maxclaims", "claimdays", "siegecost", "toll", "kaamomaxlevel" })
                 Assert.Contains(k, keys);
             foreach (var r in NetRules.All) Assert.Contains(r.key, keys, "the rules are settings too");
             foreach (var s in NetServerSettings.All) StringAssert.StartsWith("-", s.option, s.key);
@@ -175,6 +177,27 @@ namespace GoF2Remake.Tests
                 Assert.AreEqual(1, NetFactions.LapseDays);
                 NetServerSettings.Set("maxplayers", "1,000", "test");
                 Assert.AreEqual(100, NetGame.MaxPlayers, "thousands separators are fine");
+            }
+            finally { EndSettings(); }
+        }
+
+        [Test]
+        public void KaamoUpgradeLimitIsANumberSetting()
+        {
+            BeginSettings();
+            try
+            {
+                var s = NetServerSettings.All.Single(x => x.key == "kaamomaxlevel");
+                Assert.AreEqual("-kaamomaxlevel", s.option);
+                Assert.AreEqual(NetServerSettings.All.FindIndex(x => x.key == "kaamostacking") + 1, NetServerSettings.All.IndexOf(s),
+                    "right after the stacking rule");
+                NetServerSettings.Set("kaamomaxlevel", "3", "test");
+                Assert.AreEqual(3, NetRules.HostKaamoLevel);
+                NetServerSettings.Set("kaamomaxlevel", "500", "test");
+                Assert.AreEqual(SessionRules.MaxKaamoLevel, NetRules.HostKaamoLevel);
+                NetServerSettings.Set("kaamomaxlevel", "1", "test");
+                Assert.AreEqual(SessionRules.MinKaamoLevel, NetRules.HostKaamoLevel);
+                Assert.IsFalse(NetRules.TryGetKaamoLevel(out _), "outside a session the player's own option");
             }
             finally { EndSettings(); }
         }

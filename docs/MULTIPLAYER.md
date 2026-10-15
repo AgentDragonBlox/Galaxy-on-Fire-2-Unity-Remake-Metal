@@ -281,7 +281,8 @@ taken the same way.
   (2–20 % of your cargo's value); refuse, or shoot one, and they attack.
 - **Story-only blueprints:** the Khador Drive and Disruptor Laser blueprints (Var Destro) and Gamma Shield II and
   Chromo Plasma (Quineros) are sold by visitors in the Loma lounges at 1.5× the product's price.
-- **Kaamo Club upgrades** stack up to **3 levels** of each per ship, the price doubling every level.
+- **Kaamo Club upgrades** stack up to the server's limit of each per ship (10 by default; the host's "Kaamo Club upgrade
+  limit" option, a dedicated server's `kaamomaxlevel`), the price doubling every level.
 - **Buying a ship:** the old ship's equipment goes into your cargo hold (story items stay mounted). Mount what you want
   on the new ship in the **Ship** tab; launching is refused while the hold is overloaded.
 

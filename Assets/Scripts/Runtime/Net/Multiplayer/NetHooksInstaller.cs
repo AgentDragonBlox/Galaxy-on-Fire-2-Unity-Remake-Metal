@@ -52,6 +52,8 @@ namespace GoF2Remake.Multiplayer
             GameHooks.SharedPirateBoard = () => NetState.Instance != null ? NetState.Instance.PirateBoardJson : null;
             GameHooks.SessionRule = NetRules.TryGet;
             GameHooks.RuleChangedByHost = NetRules.HostChanged;
+            GameHooks.SessionKaamoLevel = NetRules.TryGetKaamoLevel;
+            GameHooks.KaamoLevelChangedByHost = NetRules.HostKaamoLevelChanged;
 
             InstallSpace();
         }

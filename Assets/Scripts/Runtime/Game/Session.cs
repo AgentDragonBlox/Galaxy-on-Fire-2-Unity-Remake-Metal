@@ -129,10 +129,10 @@ namespace GoF2Remake.Data
         {
             if (mod >= 0 && (!ShipMods.Contains(mod) || (Settings.KaamoStacking && ModLevel(mod) < MaxModLevel))) ShipMods.Add(mod);
         }
-        /// <summary>Remake: the highest level of one Kaamo upgrade with stacking. Upstream allows 10 (players' feedback,
-        /// 2026-10: 45 equipment slots on a Cronus); this fork's server keeps 3 (its profiles are cut back to it,
-        /// NetProfiles.ClampMods). Levels fitted before the cap stay in single player.</summary>
-        public const int MaxModLevel = 3;
+        /// <summary>Remake: the highest level of one Kaamo upgrade with stacking: Settings.KaamoMaxLevel (default 10, players'
+        /// feedback 2026-10: 45 equipment slots on a Cronus uncapped), the session's in multiplayer, where a server with
+        /// profiles cuts them back to it (NetProfiles.ClampMods). Levels fitted before a lower limit stay in single player.</summary>
+        public static int MaxModLevel => Settings.KaamoMaxLevel;
         public static bool HasMod(int mod) => ShipMods.Contains(mod);
         /// <summary>How many times the mod is fitted (its level; 0 = none).</summary>
         public static int ModLevel(int mod)

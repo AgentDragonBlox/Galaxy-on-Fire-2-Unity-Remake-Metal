@@ -204,6 +204,21 @@ namespace GoF2Remake.Data
         /// level (LoungeChat.ModPrice); off = the original's one of each. Levels already fitted stay either way. A session
         /// rule.</summary>
         public static bool KaamoStacking { get => Rule(R.KaamoStacking, "kaamoStacking", true); set => SetRule(R.KaamoStacking, "kaamoStacking", value); }
+        /// <summary>Remake: with KaamoStacking, how many times one upgrade can be fitted to a ship (Session.MaxModLevel;
+        /// 2..20, default 10). A session rule: the host's or the server's value in multiplayer (-kaamomaxlevel,
+        /// "/set kaamomaxlevel").</summary>
+        public static int KaamoMaxLevel
+        {
+            get => GameHooks.SessionKaamoLevel != null && GameHooks.SessionKaamoLevel(out int n) ? R.ClampKaamoLevel(n) : LocalKaamoLevel();
+            set
+            {
+                int v = R.ClampKaamoLevel(value);
+                Set("kaamoMaxLevel", v);
+                GameHooks.KaamoLevelChangedByHost?.Invoke(v);
+            }
+        }
+        /// <summary>The player's own Kaamo upgrade limit (a player host's start, NetRules).</summary>
+        public static int LocalKaamoLevel() => R.ClampKaamoLevel(Mathf.RoundToInt(Get("kaamoMaxLevel", R.DefaultKaamoLevel)));
         /// <summary>Remake (players' suggestion): a hull stored in the Kaamo Club keeps the items mounted on it (Hangar). A
         /// session rule.</summary>
         public static bool KaamoKeepsEquipment { get => Rule(R.KaamoKeepsEquipment, "kaamoKeepsEquipment", true); set => SetRule(R.KaamoKeepsEquipment, "kaamoKeepsEquipment", value); }
@@ -302,7 +317,7 @@ namespace GoF2Remake.Data
         };
         public static readonly string[] GameplayKeys =
         {
-            "launchCamera", "hangarFlights", "tutorialHints", "showStoryStep", "pirateEvents", "capitalShips", "kaamoStacking", "kaamoKeepsEquipment", "cloakBay", "informerOriginalRule",
+            "launchCamera", "hangarFlights", "tutorialHints", "showStoryStep", "pirateEvents", "capitalShips", "kaamoStacking", "kaamoMaxLevel", "kaamoKeepsEquipment", "cloakBay", "informerOriginalRule",
             "originalTargetLock", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "discordPresence",
         };
         public static readonly string[] LanguageKeys = { "voiceLanguage" };

@@ -356,8 +356,16 @@ namespace GoF2Remake.UI
             list.Add(SessionRule(capitalShips));
             var kaamoStacking = Toggle("kaamoStacking", OptionPage.Gameplay, () => X("kaamoStacking", "Stackable Kaamo Club upgrades"),
                 () => Settings.KaamoStacking, v => Settings.KaamoStacking = v);
-            kaamoStacking.description = () => X("kaamoStackingHelpCap", "The Kaamo Club's mechanics fit each upgrade up to 3 times per ship, each level costing twice the last. Off: one of each, as in the original. Not in the original.");
+            kaamoStacking.description = () => string.Format(X("kaamoStackingHelp", "The Kaamo Club's mechanics fit their upgrade again and again, each level costing twice the last, up to level {0}. Off: one of each, as in the original. Not in the original."),
+                Settings.KaamoMaxLevel);
             list.Add(SessionRule(kaamoStacking));
+            // Remake: the stacking's top level (Session.MaxModLevel), a session rule too (-kaamomaxlevel, /set kaamomaxlevel).
+            var kaamoLevel = Choice("kaamoMaxLevel", OptionPage.Gameplay, () => X("kaamoMaxLevel", "Kaamo Club upgrade limit"), false,
+                () => Enumerable.Range(SessionRules.MinKaamoLevel, SessionRules.MaxKaamoLevel - SessionRules.MinKaamoLevel + 1).Select(n => n.ToString()).ToArray(),
+                () => Settings.KaamoMaxLevel - SessionRules.MinKaamoLevel, i => Settings.KaamoMaxLevel = SessionRules.MinKaamoLevel + i,
+                () => X("kaamoMaxLevelHelp", "How many times each upgrade can be fitted to one ship."));
+            kaamoLevel.visible = () => Settings.KaamoStacking;
+            list.Add(SessionRule(kaamoLevel));
             var kaamoGear = Toggle("kaamoKeepsEquipment", OptionPage.Gameplay, () => X("kaamoKeepsEquipment", "Stored ships keep their equipment"),
                 () => Settings.KaamoKeepsEquipment, v => Settings.KaamoKeepsEquipment = v);
             kaamoGear.description = () => X("kaamoKeepsEquipmentHelp", "A ship you park in the Kaamo Club keeps its weapons, turrets and equipment, and they are back on it when you fly it again. Off: they move to the ship you take, as in the original. Ships traded in elsewhere always hand theirs over.");
