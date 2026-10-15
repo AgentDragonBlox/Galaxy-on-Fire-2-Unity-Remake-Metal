@@ -1,9 +1,6 @@
 {
   "dependencies": {
-    "com.unity.ai.inference": "2.6.1",
-    "com.unity.ai.navigation": "2.0.15",
     "com.unity.cloud.gltfast": "6.20.0",
-    "com.unity.collab-proxy": "2.13.6",
     "com.unity.dedicated-server": "3.0.0",
     "com.unity.ide.rider": "3.0.40",
     "com.unity.ide.visualstudio": "2.0.27",
@@ -16,7 +13,6 @@
     "com.unity.sdk.linux-x86_64": "1.1.0",
     "com.unity.services.multiplayer": "2.3.3",
     "com.unity.test-framework": "1.9.0",
-    "com.unity.timeline": "6.7.0",
     "com.unity.toolchain.win-x86_64-linux": "1.1.0",
     "com.unity.ugui": "7.0.0",
     "com.unity.xr.openxr": "1.18.0",

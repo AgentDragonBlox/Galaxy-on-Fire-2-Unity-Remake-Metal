@@ -477,7 +477,8 @@ namespace GoF2Remake.Modding
                             var sm = new StationModel
                             {
                                 mod = mod, station = st.index, model = model, label = st.name,
-                                size = Mathf.Max(1000f, ModJson.Float(o, "modelSize", 40000f, d.file)),
+                                // A game model ("gof2:", GameModels) keeps its own size unless modelSize is given.
+                                size = GameModels.Is(model) && !ModJson.Has(o, "modelSize") ? 0f : Mathf.Max(1000f, ModJson.Float(o, "modelSize", 40000f, d.file)),
                                 yaw = ModJson.Float(o, "modelYaw", 0f, d.file),
                                 centre = ModJson.Bool(o, "modelCentre", true, d.file),
                                 collision = ModJson.Str(o, "collision", "box"),
@@ -487,7 +488,7 @@ namespace GoF2Remake.Modding
                                 foreach (var m in mats) sm.materials.Add(JsonUtility.FromJson<CustomShipMaterial>(m.ToString()));
                             stationModels[st.index] = sm;
                             if (db.Assemblies.Find(a => a.name == sm.Assembly) == null)
-                                db.Assemblies.Add(new AssemblyData { name = sm.Assembly, pack = ModShips.Pack, category = "stations", origin = "mod " + mod.Id });
+                                db.Assemblies.Add(new AssemblyData { name = sm.Assembly, pack = ModContent.Pack, category = "stations", origin = "mod " + mod.Id });
                         }
                     }
                     catch (ModJsonException e) { Report(mod, e.Message); }

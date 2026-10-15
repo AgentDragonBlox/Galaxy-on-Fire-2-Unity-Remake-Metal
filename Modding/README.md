@@ -4,16 +4,52 @@ A mod is a folder (or a `.zip`) of plain files: JSON for data, PNG for images. M
 harm your computer. Players turn mods on and off in the main menu's **Mods** screen.
 
 **Making a mod in the game:** main menu > **Mods** > **Mod Builder** (experimental) makes projects in this same format
-without writing any JSON: new ships from a `.glb` model or changes to the game's ships, their stats and textures, their
-hardpoints placed on the hull in 3D, and test flights against pirates; new items made from a game item (or changes to one)
-with their own stats and icon, fitted to the ship to try them out; characters with their portraits, for your quests
+without writing any JSON: new ships from a `.glb` model or on one of the game's ship models (no 3D file needed), or
+changes to the game's ships, their stats and textures, their
+hardpoints placed on the hull in 3D (turrets facing out of the hull where they sit: top, sides, under it or any slant),
+and test flights against pirates; new items made from a game item (or changes to one) with their own stats and icon (the
+remake-only stats too: missiles and salvos, a turret's range, mining beams, phase cloaks), a turret's model (a game
+turret's or your own `.glb`), resized and moved on its mount, a weapon's projectile, muzzle flash, impact and sounds
+borrowed from the game's other weapons, fitted to the ship to try them out; characters with their portraits, for your quests
 or standing in for a story character; and skins: a game ship's textures replaced, with its originals saved for you to paint
 over. A new ship's shop icon is rendered from its model
-(`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). **Export as mod** puts the finished project into your
-Mods folder. Ships, items, characters and skins can be built there so far; everything below can still be written by hand.
+(`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). Each kind of content is edited where it lives
+in the game:
+
+| Kind | Where | |
+|---|---|---|
+| Ships, Items, Skins | the hangar | as above; **Test fly** flies them against pirates |
+| Blueprints | the hangar | the product (a ship stands on the turntable), ingredients, autocomplete, where it is found |
+| Campaign | the hangar | the card, the start (station, ship and its equipment, money, standings), its story quest, the galaxy / shops kept to mods; new-game options |
+| Characters, Quests, Audio | the Space Lounge | portraits; quests, bar missions and events in a node graph (or as a list of steps, below), Unity-made event graphs imported; music, sound effects and voice lines, each with ▶ |
+| Systems | the star map | every system shown: drag yours to their place, their gates, sky, sun, music, stations |
+| Stations, Weapon fx | in space | a station in its own orbit (model, size, turn, rooms, planet); weapons firing from one ship onto another |
+| Hangars & bars | the room itself | a `.glb` room or one of the game's (its markers filled in), the markers clicked into the room, light, fog, lens |
+
+Wherever content names other content (a quest's speaker, a station's system, a blueprint's product, a campaign's ship) the
+picker offers the game's, your project's own (your character can speak in your quest) and **every other installed mod's**:
+picking another mod's makes it a dependency of yours (Menu > Dependencies lists them). **Play** in the top bar starts a play
+test: the game as a player has it with your mod on, from the builder's station, from your campaign's start or with one of
+your quests under way; the pause menu's (or the station menu's) Back to Mod Builder ends it, and so does a death.
+**Undo** / **Redo** in the top bar (Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z) step back and forth through your edits, files you replaced
+or removed included, until you close the project. **Export as mod** puts the finished project into your Mods folder.
+Every entry's page has **Edit as JSON…**: the entry's fields as this guide lists them, also the ones the builder has no field
+for (a ship's per-mesh `materials`, throttle and extra glows, a station's collision `volumes`, a room's `gateSpan`). The
+Menu has **Mod details** (website, credits, the Mods screen's picture) and **Translations** (every name and description of
+your items, ships, systems and stations in each language, `text/<lang>.json`); the Skins kind's **Other textures…** replaces
+any game texture (a station's, a planet's, a sun's, a ring's) and turns your retextured planets into stars (`backdrop.json`).
+**AI tools** in the top bar (Windows) is a switch for an MCP server: your own AI assistant (Claude Code, Claude Desktop,
+other MCP apps) can then look up content, write entries and files, check quests, play-test the open project, look at models
+and textures, aim the builder's camera, place hardpoints and room markers, set the test loadout, test-fly, play a quest
+through by itself and export
+(`Modding/ai/README.md` says how to connect; off by default, this computer only, with a token). Its **Permissions** say
+what waits for your Yes: Read only, Ask always, Ask to remove (the default) or Allow all, so an assistant can also build
+while you do something else.
 
 **Making a mod with an AI assistant:** `Modding/ai/gof2-modding` is this guide condensed for Claude, ChatGPT and the like,
-with every original item, ship, system and station number in `reference.md`. See `Modding/ai/README.md` for how to use it.
+with every number and name of the original game a mod refers to in `reference.md` (items, stats, blueprints, ships, systems,
+stations, hardpoints, skies, planets, story steps and speakers, models and their textures, music, sounds), every voice clip in
+`voices.md`, every event graph node and command in `events.md`, and a copy of this guide as `guide.md`. See `Modding/ai/README.md` for how to use it.
 
 What mods can do so far:
 
@@ -168,7 +204,7 @@ earlier). Only the fields you give change. Giving `name` or `description` rename
 | `attributes` | The original game's attribute numbers directly: `{ "9": 14 }`. For anything `stats` has no name for. |
 | `defaultEconomy` | The same fields again, used when the player picked the Default Economy (the PC / Mac prices) for their game. |
 | `fx` | A weapon's own look and sound, see [Weapon effects](#weapon-effects). |
-| `icon` | Its own shop icon: a PNG in the mod, 180 x 88 like the originals (frame and background included; copy one from `Assets/Resources/GoF2Icons` to start from). Without it the item shows its base item's icon. An `override` with `icon` gives an original item a new one. |
+| `icon` | Its own shop icon: a PNG in the mod, 180 x 88 like the originals (frame and background included; copy one from `Assets/Resources/GoF2Icons` to start from), or one of the game's: `"gof2:item_046"`. Without it the item shows its base item's icon. An `override` with `icon` gives an original item a new one. |
 | `available` | A [condition](#conditions) that must hold before shops stock it or it turns up in loot (an `override` can hold back an original item too). |
 
 ### Stats
@@ -216,6 +252,11 @@ earlier). Only the fields you give change. Giving `name` or `description` rename
 | `miningBeamLayerMs` | 102 | Mining beam: time to cut one rock layer (ms; default 6000, the drill minigame's) |
 | `miningBeamLook` | 103 | Mining beam: the beam laser whose beam and impact it shows (9, 10, 11 or 228; default 228) |
 | `phaseCloak` | 104 | 1 = a cloak that also phases the ship through objects, shots and explosions while cloaked (see [Phase cloaks](#phase-cloaks)) |
+| `missiles` | 105 | 1 = a gun or turret whose shots are homing missiles (see [Missile turrets and salvos](#missile-turrets-and-salvos)) |
+| `salvoShots` | 106 | Shots fired side by side per trigger (default 1) |
+| `salvoCount` | 107 | Salvos per magazine: after the last one comes `reloadMs` (default 1) |
+| `salvoGapMs` | 108 | Time between the salvos of one magazine (ms) |
+| `turretRange` | 109 | How far an automatic turret looks for a target (game units, 20 per metre; default 60000) |
 
 Which stats an item uses depends on its category, so copy the stats its base item has (see `items.json` and
 `item_attributes.json` in `Assets/Resources/GoF2Data`). items.json's own stat names (`loadingTimeMs`, `range`,
@@ -265,6 +306,38 @@ volume, or the asteroid it sits in destroyed for 20 damage.
 }
 ```
 
+### Missile turrets and salvos
+
+Any gun or turret that fires ordinary shots (not beam lasers, bombs, mines or cluster missiles) can fire homing missiles
+and salvos:
+
+- `"missiles": 1`: its shots are homing missiles. A turret's missiles home on the ship it is aiming at (an automatic
+  turret's target, else the ship the scanner has locked), a gun's on the scanner's lock like the game's missiles. They keep
+  their size, trail smoke and burst like a rocket on a hit; a boost or a cloak shakes them off.
+- `salvoShots` fires that many shots side by side (6 m apart) each time; `salvoCount` salvos make a magazine,
+  `salvoGapMs` apart, then the weapon waits `reloadMs` (`2`, `2`, `500`, `2000`: two missiles, half a second, two more, two
+  seconds' reload). A secondary uses one round per salvo.
+
+With the look of a missile, its own turret model and the missile's launch sound (see [Weapon effects](#weapon-effects)):
+
+```json
+{
+    "id": "hornet_mat4",
+    "base": 182,
+    "name": "Hornet MAT-4 Missile Turret",
+    "techLevel": 9,
+    "price": [900000, 950000],
+    "stats": { "damage": 30, "reloadMs": 2000, "speed": 56, "lifetimeMs": 1786, "automatic": 1, "turretTurnSpeed": 150,
+               "missiles": 1, "salvoShots": 2, "salvoCount": 2, "salvoGapMs": 500, "turretRange": 100000 },
+    "fx": {
+        "turret": { "model": "models/mat4_turret.glb", "muzzle": 28, "shotStart": 32 },
+        "projectile": { "item": 46, "scale": 0.35 },
+        "shot": 46,
+        "shotLoops": false
+    }
+}
+```
+
 ### Weapon effects
 
 A weapon (a new one or an `override` of an original) can look and sound like its own thing with `fx`. Anything it leaves out
@@ -302,17 +375,29 @@ original's hue is replaced by yours (the Nirai Impulse's orange bolt turns purpl
 | `projectile` | What flies. For a beam weapon the beam itself (stretched from the gun to what it hits along its length), for a missile the missile. |
 | `muzzle` | The flash at the gun on every shot. |
 | `impact` | What shows where a shot hits. |
-| `shot` | The sound of a shot: a file, or a list of files (one is picked at random each shot). `.ogg`, `.wav` or `.mp3`. |
-| `shotLoops` | `true`: the shot sound loops while the trigger is held (like the auto-cannons); `false`: one per shot. Default: the base item's. |
-| `explosionSound` | Bombs, mines and blast weapons: the sound of the blast (a file or a list). |
+| `shot` | The sound of a shot: a file, or a list of files (one is picked at random each shot). `.ogg`, `.wav` or `.mp3`. Or an item's number: that item's shot sound (`46`: the AMR Extinctor's launch). |
+| `shotLoops` | `true`: the shot sound loops while the trigger is held (like the auto-cannons); `false`: one per shot. Default: the base item's (or, with `shot` an item's number, that item's). |
+| `explosionSound` | Bombs, mines and blast weapons: the sound of the blast (a file, a list, or an item's number). |
+| `trail` | The smoke trail behind each shot: `false` for none, or `{ "color": [r, g, b], "width": 100, "length": 3000 }` (its colour at the start, fading to nothing; half its width in game units; how long each part lasts in ms). Rockets and missiles trail white smoke (100 / 3000), thermo guns a coloured flame; a weapon without a trail gets one. Your own ship's shots and other players' show it. |
+| `turret` | Turrets: the turret's own model, shown on the ship in flight, in the hangar and to other players. A glTF / GLB file, or `{ "model": "models/t.glb", "muzzle": 28, "shotStart": 32, "scale": 1.5, "offset": [0, 20, 0] }`. Its origin sits on the mount, 1 unit = 1 m as made. A node named `pivot` holding the base turns it left and right and, in it, a node whose name contains `_gun` tilts it up and down (the barrel along +Z); a model without them turns as one piece. `scale` resizes it; `offset` moves it off its mount (game units: x toward the pilot's left, y along the turret's up, z forward). Leave out `model` and give `scale` / `offset` to resize or move the base item's own turret; `"item": 48` instead of `model` takes that game turret's model (with its muzzle and shot start), and `model` may be one of the game's (`"gof2:turret_003_ship_mounted"`, see [The game's own models](#the-games-own-models)). `muzzle` is where the muzzle flash shows and `shotStart` where the shots start, along the gun node in game units (20 per metre) on the model as made; default: the base turret's. |
 
-Each of `projectile`, `muzzle` and `impact` is either `false` (none at all), an object with only `color` / `glow` (the
-original's, recoloured, above), or an object with a `sprite` or `model`:
+Each of `projectile`, `muzzle` and `impact` is either `false` (none at all), an object without a `sprite` or `model` (the
+base item's own, or another item's, changed: below), or an object with a `sprite` or `model`.
+
+Without a sprite or model:
+
+| Field | |
+|---|---|
+| `item` | Another item's number: its projectile, muzzle flash or impact instead of the base item's (`46`: the AMR Extinctor's missile). |
+| `scale` | Its size, times the original's (`0.35`). Default 1. |
+| `color`, `glow` | Recolours it (above). |
+
+With a sprite or model:
 
 | Field | |
 |---|---|
 | `sprite` | A PNG drawn on a flat square that always faces the camera. Draw it white on black (or transparent): bright = visible, and `color` tints it. |
-| `model` | Or a glTF / GLB model. With `texture` it is drawn glowing like a sprite with that PNG; without, with the model's own materials (lit by the sun). |
+| `model` | Or a glTF / GLB model, or one of the game's (`"gof2:<name>"`, see [The game's own models](#the-games-own-models)). With `texture` it is drawn glowing like a sprite with that PNG; without, with the model's own materials (lit by the sun). |
 | `size` | Its size in game units (20 units = 1 m): the sprite's width, or the model's largest extent. Default 200. The game's own effects are big: a blaster bolt is about 1600 units across, an impact glow several thousand. |
 | `color` | A tint: `[r, g, b]` or `[r, g, b, a]` from 0 to 1, or from 0 to 255 (`[134, 59, 135]`: any value above 1 means the 0-255 scale), or `"#rrggbb"`. Default white. Without a sprite or model: the colour the original effect is recoloured to. |
 | `glow` | How much it blooms; above 1 glows under the bloom option (the game's effects use 2.5). Default: as the game's effects. |
@@ -366,18 +451,19 @@ A list of entries, like items.json: `"id"` adds a ship, `"override"` changes one
 | `armor`, `cargo`, `handling` | Hull points, hold size (t), handling (the originals use 60 to 160). |
 | `price`, `priceDefault` | The price, and the price in the Default Economy (0 = the same). |
 | `slots` | `primary`, `secondary`, `turret`, `equipment`. A ship may have several turret slots, one per turret mount. |
-| `model` | **Required.** The ship's model, a `.glb` (or `.gltf`) file in the mod. Shots hit its real shape, and the player's ship slides along it: every mesh counts except those with an additive / glow material, so keep invisible helper meshes out of the file. |
+| `model` | **Required.** The ship's model, a `.glb` (or `.gltf`) file in the mod, or one of the game's (`"gof2:ship_028_terran"`, see [The game's own models](#the-games-own-models)). Shots hit its real shape, and the player's ship slides along it: every mesh counts except those with an additive / glow material, so keep invisible helper meshes out of the file. |
 | `modelLength`, `modelYaw` | Its length nose to tail in game units (the Phantom is about 1000; 20 units = 1 m), and a turn in degrees when the model's nose doesn't point forward (+Z). The model is scaled to that length. |
 | `modelPitch`, `modelRoll` | More turns in degrees (about the side axis and the length axis), for a model lying nose up or on its side in its file. |
 | `modelOffset` | `[x, y, z]` in game units (like the mounts): the sized model moved off the ship's centre, the point it turns, docks and flies around. |
-| `icon` | The shop icon, a PNG of 180 x 88 like the originals (the ship on the plate). None = the Phantom's. |
+| `icon` | The shop icon, a PNG of 180 x 88 like the originals (the ship on the plate), or one of the game's (`"gof2:ship_028"`). None = the Phantom's (on a game model: that ship's). |
 | `hangarHeight` | How high its pivot sits above the hangar pad, in game units (the originals 140 to 400). |
-| `mounts` | Where guns and exhausts sit, in game units from the ship's centre (x right, y up, z forward): `slotType` 0 primary gun, 1 secondary, 2 turret (`"upsideDown": true` hangs it under the hull), 3 engine exhaust (the flame and its particles; `turretAngles[0]` sizes the particles; `"glowColor": [r, g, b]` (0 to 1) colours that exhaust's flame and its exhaust particles; `"glowSize": [halfWidth, halfHeight, length]` (game units) makes the flame an ellipse of that size, its flared ring `length` behind the nozzle). |
+| `mounts` | Where guns and exhausts sit, in game units from the ship's centre (x toward the pilot's left, y up, z forward): `slotType` 0 primary gun, 1 secondary, 2 turret (`"turretUp": [x, y, z]` is the way its base faces, in the same axes: `[0, 1, 0]` on top (the default), `[0, -1, 0]` under the hull (or `"upsideDown": true`), `[1, 0, 0]` / `[-1, 0, 0]` the left / right side, `[0, 0, 1]` the nose, or any slant; the Mod Builder sets it from the hull's surface where you place the turret), 3 engine exhaust (the flame and its particles; `turretAngles[0]` sizes the particles; `"glowColor": [r, g, b]` (0 to 1) colours that exhaust's flame and its exhaust particles; `"glowSize": [halfWidth, halfHeight, length]` (game units) makes the flame an ellipse of that size, its flared ring `length` behind the nozzle). |
 | `engineGlowRadius` | Size of the engine flame at each exhaust mount (game units, default 24); a mount's `glowSize` replaces it. |
 | `engineGlowColor` | `[r, g, b]` (0 to 1): the flame colour of every exhaust without its own `glowColor`. None = the game's own blue-white flame. |
 | `materials` | Optional. Replace the model's own materials, see below. |
 | `throttleGlow`, `extraGlows` | Optional. Parts of the hull that glow with the throttle, see below. |
 | `lounge` | Optional. A visitor in the Space Lounges sells it: in systems of `systemRace` (-1 = any), from story step `minCampaign` (in free play from rank `minRank`), `chance` % each time a bar fills with new visitors. |
+| `npcTurrets` | Optional, also in an `override`. Turret items (numbers or `"mod:id"`, e.g. `[ 48, "my_mod:flak" ]`) the **NPC** ships of this type carry on its turret mounts (`slotType` 2), the n-th item on the n-th mount: in space they aim and fire by themselves at whatever that ship is hostile to (your own turret model, missiles and salvos included), and parked in a hangar they show them. Items that are no turret, or more items than mounts, give a warning. The game's own NPC ships carry none; the Bloodstar (45) and the Rhino (51) swap their built-in turret for yours. |
 | `dealer` | Optional. The ordinary ship dealers may stock it: `{ "chance": 2, "systemRace": -1, "minTechLevel": 0 }`, `chance` % (decimals allowed) each time a station's dealer list is made, at stations of `systemRace` systems (-1 = any) with at least that tech level. Not the special yards (Kothar, Quineros, Thynome...). |
 | `available` | Optional. A [condition](#conditions) that must hold before it is sold anywhere (dealers and lounges). |
 
@@ -439,6 +525,12 @@ An override of an original ship can also give it a new **model**: `model` with `
 `modelRoll`, `modelOffset`), `materials`,
 `engineGlowRadius` / `engineGlowColor` and the glows, as for a new ship. Every ship of that number then uses it (yours, the
 NPCs', the hangar's). Its guns and exhausts stay at the original's mounts unless the entry has its own `mounts`.
+
+Any turret item can arm the NPC ships of a type, the game's own included (the Veteran, 28, has one turret mount):
+
+```json
+[ { "override": 28, "npcTurrets": [ "my_mod:flak" ] } ]
+```
 
 ```json
 [
@@ -537,7 +629,7 @@ nebula on black, not on a dark blue. The sky also lights the scene a little (its
 | `techLevel` | 0 to 10: which items its shop sells. |
 | `planet` | The planet it orbits: one of the game's planet textures, 0 to 22 or 24 to 26. |
 | `looksLike` | An original station whose model and docking shape it uses. Default: the first original station of its system's race. With a `model` it stands in while the model loads, or when it can't be read. |
-| `model` | Its own 3D model: a glTF / GLB file in the mod (made like a ship's, see [Ship models](#new-ships)). |
+| `model` | Its own 3D model: a glTF / GLB file in the mod (made like a ship's, see [Ship models](#new-ships)), or one of the game's (`"gof2:station_078_midorian"`, as made unless `modelSize` is given). |
 | `modelSize` | The model's largest extent in game units (20 units = 1 m). Default 40000 (2 km); the original stations are 20000-100000. |
 | `modelYaw` | Degrees to turn the model about its up axis. A launch leaves along the station's front (the model's +Z after the turn, toward the orbit's planet); arrivals come from there too. |
 | `modelCentre` | `true` (default): the middle of the model is the station's centre; `false`: the model's own origin is. |
@@ -649,6 +741,7 @@ the event graphs' expression language and is checked when it matters (a shop's s
 | `campaign` | The story step (-1 in free play and mod campaigns). |
 | `rank`, `credits`, `kills`, `station`, `system`, `ship` | The player's rank, credits, kills, where they are docked / flying, the ship they fly. |
 | `visited(station)`, `has(item)`, `cargo(item)`, `quest(name)` | A station docked at; how many of an item the player has (mounted too) / has in the hold; a quest under way (1) or done (2). |
+| `docked(station)`, `inorbit(station)` | How many of the players are docked at that station now / alive in its orbit (single player: 1 or 0). |
 
 Combine them with `and`, `or`, `not`, comparisons and arithmetic:
 
@@ -721,6 +814,11 @@ GLB model listed in `interiors.json`:
 ```
 
 and picked by the station: `"hangar": "kepler_hangar", "bar": "kepler_bar"` in stations.json.
+
+**Markers** can also be listed in `interiors.json` (`"markers": { "pad": [x, y, z], "parked_1": [x, y, z] }`, room metres;
+they win over the model's nodes of that name): the Mod Builder's Hangars & bars kind places them by clicking into the room. A
+room's `model` may be one of the game's rooms (`"gof2:hangar_terran"`, `"gof2:bar_vossk"`), which has no marker nodes: the
+builder fills its markers in from the game's own tables.
 
 **Markers.** Put empty objects (Blender: Add > Empty) into the room where things go, named like this; only their position
 counts, so their rotation and size don't matter. Names are matched without case; numbered ones by their start.
@@ -834,6 +932,67 @@ step, -1 without one), `credits`, `rank`, `station`, `system`, `ship`, `kills`, 
 name or number. In single player `%player%` is Keith T. Maxwell.
 
 Mod quests run beside the game's own story. A quest whose mod is turned off waits in the save until the mod is back.
+
+### Quests made in the Mod Builder
+
+The Mod Builder's Quests kind makes quests, bar missions and events without the Unity Editor, in a **node graph** like
+the Editor's: a Start node, every step a node, the white wires the order they run in, a block's outputs (If's Then / Else,
+an Ask's answers...) the steps it runs. Drag the canvas to move around, the wheel to zoom; drag from an output onto a node
+to wire it (onto the empty canvas: a new step there, or cut the wire); drag a wired input away to cut it; double-click
+the canvas for a new step; Delete removes the selected node; **Tidy up** lays the graph out. The panel on the right edits
+the selected node (or the quest's settings), **Edit as JSON…** included. A node reached by no wire is drawn faded: it
+doesn't run. **Value nodes** (+ Value: a number, the game's state, a variable, maths, a comparison, and / or / not,
+random, min / max, the players, an orbit, ships alive, a ship's distance, cargo, docked at, visited, a quest's state)
+wire into the small square inputs of a step's fields (conditions, numbers, stations, whom it is for) or into each other.
+**List view** shows the same as an outline of steps. **Import an event graph…** reads a `.gof2event` from the Unity Editor:
+converted into the builder's nodes (where they stood on the Unity canvas; the lines the builder has no node for stay
+Command nodes, so it runs the same) or added as it is.
+
+It writes `events/<name>.gof2quest`, which the game turns into an event graph's script when it loads it (**Show the script**
+shows it). It can be written by hand too:
+
+```json
+{
+    "format": "gof2quest", "title": "The first signal", "kind": "quest", "startsWhen": "visited(78)", "reward": 5000,
+    "variables": [ { "name": "waves", "value": 2 } ],
+    "steps": [
+        { "type": "dialog", "pages": [ { "speaker": "Keith", "text": "A signal! {waves} waves of them.", "voice": "signal_1" }, { "speaker": "my_mod:vega", "text": "Come." } ] },
+        { "type": "goto", "station": 78, "dock": false, "objective": "Fly to Var Hastra" },
+        { "type": "repeat", "count": "waves", "as": "wave", "steps": [
+            { "type": "fight", "station": 78, "name": "Raider", "ships": [ { "ship": 2, "count": 3, "race": "pirate" } ] }
+        ] },
+        { "type": "ask", "question": "Go on?", "speaker": "Keith", "answers": [
+            { "text": "Yes", "steps": [ { "type": "reward", "credits": 5000 } ] },
+            { "text": "No", "steps": [ { "type": "fail", "title": "You gave up." } ] }
+        ] },
+        { "type": "checkpoint" },
+        { "type": "complete" }
+    ]
+}
+```
+
+`kind` is `quest`, `mission` (a bar mission: `offer`, `client`, `stations`, `players` [min, max] as the Start node's) or
+`event` (started by `/event <name>` or another one's Next event step). `variables`: numbers the quest keeps (`setting`: true
+lets `/event name x=3` change it); a text shows one in braces (`{waves}`). Without `complete` / `fail` a quest completes after
+its last step (`"autoComplete": false` turns that off). Every step takes `who` (whom it is for: `@a` everyone the quest is for,
+the default; `@trigger` the player a When block is about; any selector). The steps:
+
+| Group | Steps (fields) |
+|---|---|
+| Story | `dialog` (pages: speaker, text, voice), `radio` (speaker, text, voice), `objective` (text, station), `title` (title, subtitle, seconds), `note` (text: a comment) |
+| Flow | `wait` (seconds), `waituntil` (condition, timeout), `if` (condition, `then`, `else`), `while` (condition, `steps`), `repeat` (count, as, `steps`), `parallel` (`steps`: beside the rest), `every` (seconds, `steps`), `on` (trigger: died, docked, launched, kill, cleared, entered, near, respawned, joined, left, pvpkill; station; near: at "x y z", radius; `steps`), `ask` / `vote` (question, speaker, seconds, `answers`: [{ text, steps }]; a vote's `none` runs when nobody voted), `random` (`branches`: [{ weight, steps }]), `set` (variable, value), `checkpoint` (name), `startquest` (quest), `startevent` (event, settings), `complete` (reward, title), `fail` (title), `stop` |
+| Places | `goto` (station, `dock` true: docked there, false: in its orbit, objective), `waypoint` (station, at), `target` (station), `questorbit` (station, on), `restrict` (what: jumps / docking / all / off), `respawn` (station, at, spread, delay), `teleport` (station, dock, at) |
+| Ships | `fight` (station, ships: ship / count / race / behaviour, name, quiet; ends when none is left), `spawn` (ship, count, race, behaviour, name, at, turrets), `shipgoto` (ship, to, speed, radius, fight, then), `shiproute` (ship, route "place / place", loop, ...), `shipfollow` (ship, leader, offset, escort, speed), `shipattack` (ship, target), `shipaction` (ship, action: hold / resume / jump / dock / flee, seconds), `provoke` (race, within) |
+| The player | `reward` (credits, items, title), `give` (item, amount, mount), `cargo` (item, amount, station: waits until the hold has it), `credits` (amount), `ship` (hull, own), `heal`, `ammo`, `kill`, `reveal`, `peace` |
+| Cutscenes | `cutscene` (letterbox, freeze, invulnerable), `camera` (from, to, seconds, look, follow, fov, shake), `chasecamera`, `cutsceneend`, `fade` (direction: out / in / clear, seconds, colour), `letterbox` (on) |
+| Sound and screen | `music` (track), `sound` (sound), `timer` (seconds, label, stop) |
+| Score | `points` (amount), `scoreboard` (show, title), `score` (mode), `winner` (mode), `pvp` (on) |
+| Other | `command` (line: any event command) |
+
+Places (camera, ship orders) are written as for the [cutscenes](#cutscenes). A field wired to a value node holds
+`{ "$value": "v1" }`, the node in `"values"`: `[ { "id": "v1", "type": "compare", "op": ">=", "a": { "$value": "v2" }, "b": 5 } ]`.
+The graph view keeps each node's place (`"pos"`), the chains wired to nothing (`"loose"`) and the Start node's place.
+Conditions also know `docked(<station>)` and `inorbit(<station>)`.
 
 ### Moving ships
 
@@ -1033,6 +1192,24 @@ To draw your retextured planets as stars, add a `backdrop.json` to the mod (the 
 | `planetFlare` | The sun's flare at this share of its strength when you look at them: a slight swell and a horizontal streak (0..1, default 0.35; 0 = none) |
 
 Planets you don't retexture stay planets.
+
+## The game's own models
+
+Anywhere a mod takes a 3D model, it can name one of the game's own models instead of a `.glb` file: `"gof2:<model name>"`,
+with the names in `Modding/ai/gof2-modding/reference.md` ("Models and their textures"). No 3D file is needed, and the game's
+model comes with everything it has: its textures, lights, engine glows, animations and level of detail.
+
+| Where | |
+|---|---|
+| ships.json `model` | A new ship on a game ship's model: `"model": "gof2:ship_028_terran"`. It gets that ship's hardpoints (unless the entry has its own `mounts`), sits on the hangar pads like that ship (unless it gives `hangarHeight`) and uses its shop icon (unless it gives `icon`). On an `override` it gives an original ship another ship's model. `modelLength`, `modelYaw` and the other model fields don't apply: the model is used as made. |
+| stations.json `model` | A station on any game model, at its own size unless `modelSize` is given: `"model": "gof2:station_078_midorian"`. |
+| items.json fx `turret` | A turret on any game model: `"turret": "gof2:turret_003_ship_mounted"` (a model without the turret's `pivot` / `*_gun` nodes turns as one piece), or `"turret": { "item": 48 }` for that game turret's model with its own muzzle and shot start. `scale` and `offset` work on both. |
+| items.json fx parts | A projectile, muzzle flash or impact on a game model: `{ "model": "gof2:rocket_002", "size": 300 }`; or another item's own part with `{ "item": 46 }` (see [Weapon effects](#weapon-effects)). |
+| items.json / ships.json `icon` | One of the game's shop icons: `"icon": "gof2:item_046"`, `"icon": "gof2:ship_028"`. |
+
+The Mod Builder offers the same without typing names: **+ New ship on a game model** and **Game model…** on the Ship tab,
+**Game item…** for an item's icon, **Game turret…** for a turret's model, and the **Look and sound** section for a weapon's
+projectile, muzzle flash, impact, shot sound and blast sound from any of the game's weapons.
 
 ## Building on other mods
 

@@ -6,9 +6,20 @@ description: Make mods for the Galaxy on Fire 2 Unity Remake - JSON data mods wi
 # Galaxy on Fire 2 Remake modding
 
 You help a player make a mod for the Galaxy on Fire 2 Unity Remake. A mod is a folder (or a .zip of it) of JSON files plus
-the PNG / GLB / OGG assets they name. Mods contain no code. This file is the complete format reference; `reference.md` next to
-it lists every original item, ship, system and station with its number and stats. If you can't open `reference.md`, ask the
-user to paste the part you need (or to attach it).
+the PNG / GLB / OGG assets they name. Mods contain no code. This file is the format reference with the rules; next to it:
+
+- `reference.md`: every number and name of the original game a mod can refer to: items (every stat and raw attribute),
+  item categories, attribute numbers, blueprint recipes, ships (hull size, hangar height, model name), every original
+  ship's hardpoints as `mounts` JSON, the Default economy's numbers, systems, skies (what each `sky` looks like), stations,
+  planets (what each `planet` looks like), story steps, story speakers, every model with the texture names a skin
+  replaces, backdrop textures, music tracks, sound effects, the event sound / music words, the built-in event graphs.
+- `voices.md`: every voice clip with its speaker and English line (for `[voice <clip>]`).
+- `events.md`: every event graph node with its options, ports, types, choices and defaults, the expression words, every
+  command with its syntax and the player selectors (for quest / bar mission / cutscene recipes).
+- `guide.md`: the full modders' guide, every field of every file with more detail and examples than this file. When a
+  field or behaviour isn't covered here, look it up there.
+
+If you can't open them, ask the user to paste the part you need (or to attach it).
 
 ## How to work
 
@@ -16,12 +27,13 @@ user to paste the part you need (or to attach it).
    when content should appear, which assets (models, images, sounds) the user has or will make.
 2. Write every file in full, each under its path inside the mod folder (`my_mod/items.json` ...). JSON only: no trailing
    commas. `//` comments are allowed but keep files plain unless the user wants notes.
-3. Use real numbers: an original item, ship, system or station is referred to by its number from `reference.md`; never
-   guess one. Content from a mod (this one or another) is referred to by its key `mod_id:id`.
+3. Use real numbers and names: an original item, ship, system, station, speaker, story step, texture, model, music track,
+   sound or voice clip is referred to by its number or name from `reference.md` / `voices.md`; never guess one. Content from a mod (this one or another) is referred to by its key `mod_id:id`.
 4. You can't make binary assets. For every PNG / GLB / OGG a file names, tell the user exactly what to provide (size, format,
    layout, where to put it). Paths in JSON are relative to the mod folder, with `/`.
 5. Event graphs (quests, bar missions, cutscenes) are made in the Unity Editor, not written by hand. For those, give the user
-   a node-by-node recipe (see "Quests").
+   a node-by-node recipe (see "Quests"). A simple quest or bar mission can be written by hand instead as a step list,
+   `events/<name>.gof2quest` (see "Quests made as step lists"; the in-game Mod Builder writes the same).
 6. Check your output against the checklist at the end before giving it.
 
 The player installs the mod by copying the folder (or zip) into the game's `Mods` folder, pressing **Refresh** in the main
@@ -60,7 +72,8 @@ my_mod/
   campaign.json       a whole new game under Start new game
   systems.json, stations.json, interiors.json   new star systems, stations, hangars and bars
   characters.json     speakers with portraits
-  events/*.gof2event  quests and bar missions (made in the Unity Editor)
+  events/*.gof2event  quests and bar missions as Unity event graphs
+  events/*.gof2quest  quests and bar missions as step lists (by hand or the Mod Builder)
   text/<lang>.json    translations
   music/, sounds/, voices/, textures/          replacement / new audio and skins
 ```
@@ -103,14 +116,14 @@ copied.
 |---|---|
 | `name`, `description` | String or per language. |
 | `techLevel` | 1-10: shops sell items up to their station's tech level. |
-| `occurrence` | How often shops stock it, 0-90 (0 = never randomly). |
+| `occurrence` | How often shops stock it and NPCs carry it as loot, 0-90 (0 = never: only `alwaysSoldAt`, blueprints, rewards). |
 | `price` / `minPrice`, `maxPrice` | `1500` or `[1200, 1500]`; a station's price lies in the range. |
 | `lowestPriceSystem`, `highestPriceSystem` | System numbers where it's cheapest / dearest. |
 | `vosskOnly` | `true`: only Vossk systems sell it. |
 | `alwaysSoldAt` | A station number that always stocks it (78 = Var Hastra, the start; -1 none). |
 | `stats` | Named stats (below); copy the base item's stats from `reference.md` and change them. |
 | `attributes` | Raw attribute numbers `{ "9": 14 }` for anything without a name (not 0-8). |
-| `defaultEconomy` | The same fields for the Default economy. |
+| `defaultEconomy` | The same fields, laid over the main ones in the Default economy only. The main fields apply in both economies, so give only what differs (usually the prices). |
 | `icon` | Own shop icon PNG, 180 x 88 (frame included). Default: the base's. |
 | `fx` | The weapon's own look and sound (below). |
 | `available` | A condition (see Conditions) before shops stock it or loot drops it. |
@@ -123,7 +136,11 @@ drillSpeed 32, miningYield 33, cabins 34, cloakDurationMs 35, cloakChargeMs 36, 
 damageFactor 40 (weapon mods %), emergencyMs 41, timeExtenderMs 42, timeExtenderCooldownMs 43, collectorSpeed 49,
 collectorMagnitude 50, collectorRange 51, gammaShielding 52, beamRange 53, beamStrength 54, beamTargets 55, miningBeam 100 (a
 drill based on 86-90 that cuts while flying), miningBeamRange 101, miningBeamLayerMs 102, miningBeamLook 103 (9/10/11/228), phaseCloak 104 (a
-cloak based on 94-96 whose ship passes through asteroids, stations, gates, ships, shots and explosions while cloaked).
+cloak based on 94-96 whose ship passes through asteroids, stations, gates, ships, shots and explosions while cloaked),
+missiles 105 (1 = a gun's or turret's shots are homing missiles: a turret's home on its target, else on the scanner lock;
+smoke trail, rocket burst; not for beams, bombs, mines or cluster missiles), salvoShots 106 (shots side by side per trigger),
+salvoCount 107 (salvos per magazine, then reloadMs), salvoGapMs 108 (ms between them), turretRange 109 (auto turret search
+range, units, default 60000).
 items.json's own names (`loadingTimeMs`, `range`, `projectileSpeed`...) work too. An unknown stat name is an error.
 
 ### Weapon fx
@@ -143,7 +160,19 @@ with the mod's own `sprite` (PNG in the mod, white on black or transparent; `col
 `texture` drawn glowing), `size` (game units; a blaster bolt is ~1600, an impact glow several thousand), `color`
 (`[r,g,b]` 0-1, or 0-255 when a value is above 1, or `"#rrggbb"`), `glow` (>1 blooms; game effects ~2.5), `additive` (default true),
 `lifetime` ms (muzzle 100, impact 300), `grow`, `fade`, `spin` (deg/s), `alongFlight` + `stretch` (laser bolts), `rotate`
-(models). Sounds: `.ogg` / `.wav` / `.mp3`. Behaviour never changes (a beam stays a beam).
+(models). Without `sprite` / `model` a part may also take `item` (another item's number: its part instead of the base's,
+e.g. `{ "item": 46, "scale": 0.35 }` the AMR Extinctor's missile at 35 %) and `scale` (size factor). `shot` /
+`explosionSound` may be an item's number (its sounds; `shotLoops` then that item's unless given). `"trail"`: `false` (none)
+or `{ "color": [r, g, b], "width": units (half; a rocket's 100), "length": ms (3000) }`, the shots' smoke trail (any
+weapon). Turrets: `"turret":
+"models/t.glb"` or `{ "model": ..., "muzzle": units, "shotStart": units, "scale": f, "offset": [x, y, z] }` is the
+turret's own model (flight, hangar, other players): origin on the mount, 1 unit = 1 m, a node `pivot` (the base, turns)
+holding a node named `*_gun` (tilts; barrel along +Z), else it turns as one piece; muzzle / shotStart along the gun node in
+game units; `scale` resizes, `offset` moves it off the mount (game units, x pilot's left, y the turret's up, z forward);
+without `model`, `scale` / `offset` reshape the base item's turret; `"item": 48` instead of `model` = that game turret's
+model with its muzzle / shot start. Any `model` (turret, part) may be `"gof2:<model name>"`, one of the game's models from
+reference.md's "Models and their textures" (no file needed). Sounds: `.ogg` / `.wav` / `.mp3`. Behaviour never changes (a beam
+stays a beam) except through the stats above.
 
 ## ships.json
 
@@ -174,19 +203,21 @@ with the mod's own `sprite` (PNG in the mod, white on black or transparent; `col
 | `armor`, `cargo`, `handling` | Hull points, hold (t), handling (originals 30-162; 100 average). |
 | `price`, `priceDefault` | Price; Default economy price (0 = same). |
 | `slots` | primary, secondary, turret, equipment. One turret slot per turret mount. |
-| `model` | **Required** for a new ship: `.glb`/`.gltf` in the mod (Blender: glTF Binary, +Y up; nose toward +Z). |
+| `model` | **Required** for a new ship: `.glb`/`.gltf` in the mod (Blender: glTF Binary, +Y up; nose toward +Z), or `"gof2:ship_028_terran"` (a game ship's model, no file: its hardpoints unless `mounts` is given, its hangar height unless `hangarHeight`, its icon unless `icon`; the model fields below don't apply). Also on an override (another ship's model). Stations take `"gof2:<model>"` too (as made unless `modelSize`). |
 | `modelLength`, `modelYaw` | Nose-to-tail length in game units (Phantom ~1000); yaw degrees if the nose isn't +Z. |
-| `icon` | Shop icon PNG 180 x 88. Default: the Phantom's. |
+| `icon` | Shop icon PNG 180 x 88, or a game icon `"gof2:ship_028"` (items: `"gof2:item_046"`). Default: the Phantom's (a game model: its ship's). |
 | `hangarHeight` | Pivot height above the hangar pad (originals 140-400). |
-| `mounts` | Game units from the ship centre (x right, y up, z forward). `slotType` 0 primary, 1 secondary, 2 turret (`upsideDown`), 3 engine exhaust (`turretAngles[0]` particle size, `glowColor` [r,g,b], `glowSize` [halfW, halfH, length]). Give each gun slot its own mount where possible (the originals do). |
+| `mounts` | Game units from the ship centre (x the pilot's left, y up, z forward). `slotType` 0 primary, 1 secondary, 2 turret (`turretUp` [x, y, z]: the way its base faces, default [0, 1, 0]; [0, -1, 0] under the hull (= `upsideDown`), [±1, 0, 0] the sides, [0, 0, 1] the nose, any slant), 3 engine exhaust (`turretAngles[0]` particle size, `glowColor` [r,g,b], `glowSize` [halfW, halfH, length]). Give each gun slot its own mount where possible (the originals do). |
 | `engineGlowRadius`, `engineGlowColor` | Flame size (default 24) / colour for all exhausts. |
 | `materials` | Replace materials: entries `{ "mesh", "submesh", "diffuse", "color", "normal", "normalScale", "metallicSmoothness", "metallic", "smoothness", "emission", "emissionColor", "emissionIntensity", "alphaClip", "opacity", "detailAlbedo", "detailNormal", "detailTiling", "detailNormalScale", "doubleSided" }`. Without it the GLB's own materials are used. |
 | `throttleGlow`, `extraGlows` | Hull parts glowing with the throttle: `{ "mask", "mesh", "submesh", "color", "idle", "full", "boost", "offset", "trailWidth", "trailTime", "trailBrightness", "trailCount" }`. |
 | `lounge` | A Space Lounge visitor sells it: systemRace (-1 any), minCampaign (story step), minRank (free play), chance %. |
+| `npcTurrets` | Also in an override: turret items (numbers or "mod:id") the NPC ships of this type carry on its turret mounts (n-th item on n-th slotType-2 mount); they aim and fire by themselves, and show in hangars. 45 / 51 swap their built-in turret for them. |
 | `dealer` | Ordinary ship dealers stock it: chance % (decimals ok) per dealer list, systemRace, minTechLevel. Not the special yards. |
 | `available` | Condition before dealers / lounges sell it. |
 
-`override` changes an original (number) or another mod's ship (key): armor, cargo, price, priceDefault, slots, handling, name,
+`override` changes an original (number) or another mod's ship (key) in both economies (only the price has a Default twin,
+`priceDefault`): armor, cargo, price, priceDefault, slots, handling, name,
 description, `mounts` (mod ships also race, hangarHeight), and an original can get a new `model` (+ its fields). `slots` merges
 (give only the changed counts); `mounts` replaces the ship's whole list (exhausts too). More weapon slots than gun mounts: the
 extra weapons share the mounts; fewer slots: what doesn't fit goes to the hold on the next docking.
@@ -301,6 +332,10 @@ the game.
     "planetTexture": "textures/planet.png", "music": "kepler_bar" } ]
 ```
 
+`looksLike` borrows only an original station's model and collision (reference.md's Model column): its special rules (the
+Kaamo Club's storage and siege, a pirate base) stay with the original number. Stations have no hidden flag: every station of
+a visible system shows on the map.
+
 Systems: race 0-3, security 0 (lawless) - 3 (secure), map position (originals x 15-94, y 2-96, z 10-90), sky 0-18, gates
 both ways, up to 7 stations each. Skybox images: 2:1 panorama or 6:1 cube strip (right, left, up, down, front, back), light
 on black, 8192 x 4096 sharp. Stations: techLevel 0-10, planet 0-22 or 24-26, looksLike = an original station whose model
@@ -328,6 +363,52 @@ required). `override` changes originals (name, techLevel, looks, music...).
   transparent edge. `backdrop.json` `{ "planets": "star", "planetGlow": 2, "planetFlare": 0.35 }` draws the retextured planets
   as stars (facing the camera, no ring, a core glow, a weaker copy of the sun's flare).
 
+## Quests made as step lists (.gof2quest)
+
+Prefer these over event graphs: plain JSON, no Unity Editor, and the Mod Builder opens them as a node graph.
+`events/<name>.gof2quest` (the file name is its name: letters, digits, `_`): `{ "format": "gof2quest", "title", "kind":
+"quest" | "mission" | "event", "startsWhen", "reward", "offer", "client", "stations", "players", "variables": [{ name, value,
+setting }], "steps": [...] }`. Every step type, field and default is in `quests.md` (the same as `quest.schema.json`), made
+from the game's own table: read it before writing a quest. In short: story steps (`dialog` pages, `radio`, `objective`,
+`title`), flow and blocks (`wait`, `waituntil`, `if` then / else, `while`, `repeat`, `parallel`, `every`, `on` <trigger>, `ask`
+/ `vote` answers, `random` branches, `set`, `checkpoint`, `startquest`, `startevent`, `complete`, `fail`), places (`goto`,
+`waypoint`, `target`, `questorbit`, `restrict`, `respawn`, `teleport`), ships (`fight`, `spawn`, `shipgoto`, `shiproute`,
+`shipfollow`, `shipattack`, `shipaction`, `provoke`), the player (`reward`, `give`, `cargo`, `credits`, `ship`, `heal`...),
+cutscenes (`cutscene`, `camera`, `fade`, `letterbox`...), `music`, `sound`, `timer`, score steps and `command` (any event
+command line). Steps acting on players take `who` (default `@a`; `@trigger` inside an `on` block). Speakers as in Dialog
+(`Keith`, `my_mod:vega`, `vossk K'ekki`, `player`); stations / ships / items by number or key; `{variable}` in a text shows
+it. Without `complete` / `fail` a quest completes after its last step. Put a `checkpoint` after each step a save shouldn't
+repeat (not inside a block).
+
+## The Mod Builder's MCP server
+
+When the user has the game's Mod Builder open with its **AI tools** MCP server on (Windows), you may have its tools:
+`builder_status`, `search_content` (find the right numbers / keys: use its `value`), `list_entries`, `get_entries`,
+`put_entry` (the mod files' own JSON; quests with `name`), `patch_entry` (for changes to an existing entry: ops `set` /
+`insert` / `remove` / `move` / `test` by paths like "steps/2/pages/0/text" or "steps/3/then/0", all or none; it keeps the rest
+and a quest's graph layout, so prefer it to rewriting the whole entry; `test` a step's type first so a stale index can't
+edit the wrong step; `get_entries` with `path` reads one part), `delete_entry`, `list_files`, `read_file`, `write_file`,
+`compile_quest`, `validate`, `get_quest_schema`, `play_test`, `end_play_test`, `get_log`, `screenshot`, `undo`, `redo`,
+`show_kind`; and to see and drive the builder: `view_model` (a model from named angles in one image: "gof2:<assembly>",
+"ship:<id | override:N | number>" with its hardpoints as tagged dots P / S / T / E, hollow where the hull hides them,
+"station:...", or "models/x.glb"), `view_texture` / `list_textures`, `select_entry` (an entry on screen; ships' tab, a quest's
+graph), `view` (the builder's camera from front / back / left / right / top / bottom / threequarter / rear, zoom, with a
+screenshot, `clean` hides the panels), `hardpoint` (op list / add / snap / select / mirror / delete; add puts a point where a
+line from a side meets the hull: use it instead of guessing coordinates, then check with view_model), `engines`, `test_fly` /
+`end_test_fly`, `weapon_range`, `switch_hangar`, `list_projects`, `create_project`, `open_project`, `export_mod`, `loadout`
+(the test loadout and cheats), `room_marker` (a room's markers placed by a ray from inside it: the pad `toward` "down"),
+`view` with `map` (the star map on a system); and during a play test or test flight `press` (actions such as action,
+autopilotMenu, fastForward, boost, firePrimary, or keys such as enter, escape, 1-8), `steer`, `ui_buttons` / `ui_click` (a
+button by its text): play a quest through to check it (ui_click a conversation's Next / Close and Launch; the autopilot menu
+plus a number key and a held fastForward dock you), watching with the screenshots they answer with. Then work
+in the live project instead of giving the user files: look things up, put entries, `validate` (fix every error), look at
+what you made (`view_model`, `view_texture`, `select_entry` + `view`), `play_test` a quest and check it with `screenshot` /
+`builder_status` / `get_log`, `end_play_test`. Every
+change is an undo step. What waits for the player depends on the permission mode they chose (builder_status's
+`permission`): ReadOnly (changes are refused: suggest instead), AskEveryChange (each change waits for their Yes, up to 5
+minutes: make few, complete calls), AskRemovals (only delete_entry asks), AllowEverything (nothing asks: remove only
+what they asked you to). "The player said no" means stop and ask them what they want.
+
 ## Quests and bar missions (event graphs)
 
 Made as `.gof2event` node graphs in the Unity Editor (the remake's project: Assets > Create > GoF2 > Event Graph), saved
@@ -336,8 +417,10 @@ to the mod's `events/` folder; the file name is the graph's name. The Start node
 Nodes include Dialog, Radio, Spawn (named ships), Wait / Wait Until, On (docked, entered orbit, destroyed, cleared, near a
 point), Set Waypoint, Set Objective, Checkpoint, Quest Orbit, Give Item, Reward, Mission Complete / Failed, Start Quest, ship
 orders (Fly To, Fly Route, Follow, Attack, Ship Action), cutscene nodes (Start Cutscene, Camera Shot, Fade, End Cutscene),
-Play Music. You can't write the file; describe the graph as an ordered list of nodes with their settings for the user to
-build.
+Play Music. A Checkpoint (and a quest's start) is kept by the game's next save: the auto-save at the next docking or a manual
+save; a quest started while docked isn't in that docking's auto-save. Quest Orbit takes effect the next time the orbit is built
+(launching from its station counts). You can't write the file; describe the graph as an ordered list of nodes with their settings and wires for the
+user to build, using the exact node, option and port names (and option choices) from `events.md`.
 
 ## Balancing (the originals, Android economy)
 
@@ -383,7 +466,8 @@ ships.json entry for the weak GoF3D ship (no better than the worst originals):
 - Every entry has `id` (new) or `override` (change), never both; new items have `base`; new ships have `model`; blueprints
   have exactly one of `ship` / `item` and at least one ingredient.
 - Ids unique per file, lowercase `a-z0-9_-`. Cross-file references use `mod_id:id`; other mods are in `dependencies`.
-- Original numbers come from reference.md (items 0-232, ships 0-63, systems 0-33, stations 0-134).
+- Original numbers and names come from reference.md / voices.md (items 0-232, ships 0-63, systems 0-33, stations 0-134,
+  speakers, story steps, texture / model / music / sound / voice names).
 - Stat names from the list above; numbers are integers (except chances, colours, sizes).
 - Conditions use only the words above; option keys match gameoptions.json ids (`mod_id:option_id`).
 - Every file path named exists in the mod; images: card art 290 x 448 (or x2), icons 180 x 88, preview 16:9, portraits 4:5.
