@@ -979,7 +979,7 @@ namespace GoF2Remake.UI
             missileWarning?.Update(level.Player != null ? level.Player.transform : null, Camera.main,
                                    !cinematic && level.LaunchCameraOver && health != null && !health.Dead,
                                    level.Player != null && level.Player.Model != null && level.Player.Model.HasBooster, Time.deltaTime * 1000f);
-            cooldownView?.Update(level.Database, level.Player, level.Cloak, !cinematic && level.LaunchCameraOver && InputMode.Current != InputKind.Touch);
+            cooldownView?.Update(level.Database, level.Player, level.Cloak, level.Extender, !cinematic && level.LaunchCameraOver && InputMode.Current != InputKind.Touch);
             // The Ultrascan's class-A letters: Radar::draw too, so not during the launch camera or a cinematic. The range is the
             // level's asteroid field (Level+0xc4), not the autopilot's "Asteroid field" entry: the Void's crystal field has none
             // (players' report: no letters there).
@@ -1371,12 +1371,14 @@ namespace GoF2Remake.UI
             if (hardcoreDead) { BackToMenu(); return; }   // hardcore: nothing to load
             if (Modding.ModBuilder.TestFlying) { Modding.ModBuilder.EndTestFlight(false); return; }
             if (Modding.ModBuilder.PlayTesting) { ModBuilderPlay.End(); return; }
-            // Multiplayer: back in this orbit's station (a faction member: the faction's home, NetFactions), repaired (docking
-            // repairs), everything else kept.
+            // Multiplayer: back at the station last docked at (like single player's auto-save), repaired (docking repairs),
+            // everything else kept. Not the faction's home any more: dying was a free trip home.
             if (GoF2Remake.Multiplayer.NetGame.Active)
             {
-                int home = GoF2Remake.Multiplayer.NetFactionsClient.Home;
-                if (home >= 0 && home < GoF2Remake.Multiplayer.NetGame.Db.Stations.Count) Session.StationIndex = home;
+                int docked = Session.LastDockedStation;
+                // A defender destroyed in their station's siege fight respawns there (NetFactions).
+                bool defending = GoF2Remake.Multiplayer.NetFactionsClient.DefendsSiegeHere(Session.StationIndex);
+                if (!defending && docked >= 0 && docked < GoF2Remake.Multiplayer.NetGame.Db.Stations.Count) Session.StationIndex = docked;
                 Session.DockedFromSpace = false;
                 SceneManager.LoadScene("Station");
                 return;
@@ -1480,6 +1482,7 @@ namespace GoF2Remake.UI
                 runtimePanel.match = 1f;
             }
             root.EnableInClassList("layout-phone", phone);
+            root.EnableInClassList("ui-large", UiScale.Large(h, phone ? 900f : 1080f));   // a small high-density screen: bigger lists
             ApplySafeArea(w, h, offscreen);
         }
 

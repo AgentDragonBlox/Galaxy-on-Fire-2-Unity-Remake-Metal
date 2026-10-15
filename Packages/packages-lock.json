@@ -25,6 +25,12 @@
       "source": "builtin",
       "dependencies": {}
     },
+    "com.unity.dedicated-server": {
+      "version": "3.0.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {}
+    },
     "com.unity.entities": {
       "version": "6.7.0",
       "depth": 1,

@@ -129,9 +129,10 @@ namespace GoF2Remake.Data
         {
             if (mod >= 0 && (!ShipMods.Contains(mod) || (Settings.KaamoStacking && ModLevel(mod) < MaxModLevel))) ShipMods.Add(mod);
         }
-        /// <summary>Remake: the highest level of one Kaamo upgrade with stacking (players' feedback, 2026-10: 45 equipment slots
-        /// on a Cronus); levels fitted before the cap stay.</summary>
-        public const int MaxModLevel = 10;
+        /// <summary>Remake: the highest level of one Kaamo upgrade with stacking. Upstream allows 10 (players' feedback,
+        /// 2026-10: 45 equipment slots on a Cronus); this fork's server keeps 3 (its profiles are cut back to it,
+        /// NetProfiles.ClampMods). Levels fitted before the cap stay in single player.</summary>
+        public const int MaxModLevel = 3;
         public static bool HasMod(int mod) => ShipMods.Contains(mod);
         /// <summary>How many times the mod is fitted (its level; 0 = none).</summary>
         public static int ModLevel(int mod)
@@ -262,6 +263,11 @@ namespace GoF2Remake.Data
         /// <summary>Status' station stack [1]: where the player came from (the planet-jump arrival point), -1 = none.</summary>
         public static int PreviousStationIndex = -1;
 
+        /// <summary>Remake: the station the player last docked at (StationLevel), -1 = none yet. Multiplayer starts a signed-in
+        /// pilot and respawns a destroyed one there (it was the faction's home: a free trip home, saving energy cells and
+        /// time).</summary>
+        public static int LastDockedStation = -1;
+
         /// <summary>Player ship index (ships.json), Status+0x18c.</summary>
         public static int ShipIndex = 10;
 
@@ -386,6 +392,7 @@ namespace GoF2Remake.Data
             PlaySeconds = 0f;
             StationIndex = 78;
             PreviousStationIndex = -1;
+            LastDockedStation = -1;
             ShipIndex = 10;
             Equipment = StartEquipment();
             Cargo = new List<ItemStack>();

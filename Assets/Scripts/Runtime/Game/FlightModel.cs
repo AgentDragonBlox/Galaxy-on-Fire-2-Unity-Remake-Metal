@@ -215,6 +215,9 @@ namespace GoF2Remake.Flight
         public float BoostRechargePercent =>
             boostTimerMs >= 0 || boostRechargeMs <= 0 ? 1f : 1f + (float)boostTimerMs / boostRechargeMs;
 
+        /// <summary>What is left of a running boost, 1 at its start, 0 when it ends (or none runs).</summary>
+        public float BoostLeftPercent => IsBoosting && boostDurationMs > 0 ? Mathf.Clamp01(1f - (float)boostTimerMs / boostDurationMs) : 0f;
+
         public void Boost()
         {
             if (!BoostReady) return;

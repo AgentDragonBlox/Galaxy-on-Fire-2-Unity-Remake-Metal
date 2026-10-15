@@ -489,6 +489,7 @@ namespace GoF2Remake.Multiplayer
             worldEntered = true;
             if (seed >= 0) Seed = seed;
             Session.DockedFromSpace = false;
+            NetMotd.RequestOnEnter();   // the server's message of the day (shown unless already seen)
             // The session's mods' ship models first (NetMods: a joining game has just turned the session's mods on).
             Modding.ModShips.WhenReady(() => { if (Active) SceneManager.LoadScene(StationScene); });
         }
@@ -735,6 +736,7 @@ namespace GoF2Remake.Multiplayer
             Session.Difficulty = Session.DifficultyNormal;   // every session plays on Normal (the shared stock, NPCs, rewards)
             Session.Economy = Economy.Android;               // and on one economy (the shared stock's prices)
             Session.UseCompletedWorld();   // free play in the finished game's world (every dealer ship, Ginoya after the supernova)
+            ResetDb();   // the session's tables (Database.Load reads CompletedWorld: the Cronus' price)
             Session.StationIndex = Station;
             Session.LaunchedFromStation = false;   // the session starts docked (EnterWorld)
             // Remake: a modest start instead of resetGame's well-equipped Phantom, so the pilot works up to better ships (a

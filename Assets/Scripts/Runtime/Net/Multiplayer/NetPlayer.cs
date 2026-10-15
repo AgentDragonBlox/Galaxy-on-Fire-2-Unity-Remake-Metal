@@ -224,7 +224,12 @@ namespace GoF2Remake.Multiplayer
         Obstacle obstacle;
         NetShotSender sender;
         NetShotMirror mirror;
-        bool shown, joinNoticePending;
+        bool shown, joinNoticePending, joinAnnounced;
+        /// <summary>The chat's join / leave notices (a relog loop flooded the chat): a join is told only once the player has
+        /// stayed JoinNoticeSeconds, and not when they left less than QuietRejoinSeconds ago; a leave only when their join
+        /// was told (or they were here before this game joined), and once per QuietRejoinSeconds per name.</summary>
+        const float JoinNoticeSeconds = 15f, QuietRejoinSeconds = 120f;
+        static readonly Dictionary<string, float> lastLeft = new Dictionary<string, float>(), lastLeaveNotice = new Dictionary<string, float>();
         ShipExhaust exhaust;
         World.NpcCloak cloakLook;
         AudioSource engineLoop;
@@ -288,6 +293,7 @@ namespace GoF2Remake.Multiplayer
             SetShown(false);
             // The join notice: once their name is here, and not for the players already in the session when this one joined.
             joinNoticePending = Local != null && Time.unscaledTime - Local.spawnedAt > 3f;
+            joinAnnounced = !joinNoticePending;   // already here when this game joined: their leave is told
             spawnedAt = Time.unscaledTime;
         }
 
@@ -298,7 +304,17 @@ namespace GoF2Remake.Multiplayer
             if (IsServer && !IsOwner && NetState.Instance != null && !NetworkManager.ShutdownInProgress) NetState.Instance.HandOverMission(this);
             All.Remove(this);
             if (Local == this) Local = null;
-            else if (!IsOwner && NetGame.Active && !NetGame.Dedicated) NetChat.Notice(NetChat.LeftText(DisplayName));
+            else if (!IsOwner && NetGame.Active && !NetGame.Dedicated)
+            {
+                string who = DisplayName;
+                float now = Time.unscaledTime;
+                lastLeft[who] = now;
+                if (joinAnnounced && (!lastLeaveNotice.TryGetValue(who, out float told) || now - told > QuietRejoinSeconds))
+                {
+                    lastLeaveNotice[who] = now;
+                    NetChat.Notice(NetChat.LeftText(who));
+                }
+            }
             SceneManager.sceneLoaded -= OnSceneLoaded;
             Modding.ModShips.ModelsChanged -= OnModShipModels;
             if (target != null) Target.NetShips.Remove(target);
@@ -586,10 +602,13 @@ namespace GoF2Remake.Multiplayer
             if (!IsSpawned) return;
             if (!IsOwner)
             {
-                if (joinNoticePending && (pilot.Value.Length > 0 || Time.unscaledTime - spawnedAt > 2f))
+                if (joinNoticePending && pilot.Value.Length > 0 && Time.unscaledTime - spawnedAt > JoinNoticeSeconds)
                 {
                     joinNoticePending = false;
-                    NetChat.Notice(NetChat.JoinedText(DisplayName));
+                    joinAnnounced = true;
+                    // Back within QuietRejoinSeconds of leaving (a dropped connection, a relog): no notice.
+                    if (!lastLeft.TryGetValue(DisplayName, out float left) || Time.unscaledTime - left > QuietRejoinSeconds)
+                        NetChat.Notice(NetChat.JoinedText(DisplayName));
                 }
                 if (jumpedGate != null && (gateResetMs -= Time.deltaTime * 1000f) <= 0f) { SystemJump.ResetGate(jumpedGate); jumpedGate = null; }
                 bool show = SharesOrbit && visible.Value;

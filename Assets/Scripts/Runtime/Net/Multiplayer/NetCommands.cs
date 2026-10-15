@@ -223,6 +223,8 @@ namespace GoF2Remake.Multiplayer
                 description = () => X("mpCmdMusic", "admins: plays a music track instead of the game's (battle, boss, void...), stop ends it") },
             new Command { name = "event", usage = "<name [setting=value ...] | stop | list>", arg = Arg.Text, optional = true, available = () => LocalIsAdmin, allowed = IsAdmin,
                 run = EventRunner.Command, description = () => X("mpCmdEvent", "admins: runs an event (game modes like waves), stops it or lists them") },
+            new Command { name = "motd", usage = "[reload | set <text> | clear]", arg = Arg.Text, optional = true, available = Everyone, allowed = Anyone,
+                run = NetMotd.Command, description = () => X("mpCmdMotd", "shows the server's message of the day; admins: reload motd.txt, set or clear it") },
             new Command { name = "news", usage = "<text | clear>", arg = Arg.Text, available = () => LocalIsAdmin, allowed = IsAdmin, run = News,
                 description = () => X("mpCmdNews", "admins: a GalNet item on every station's news ticker (\"clear\" empties the news)") },
             new Command { name = "mute", usage = "<players> [minutes]", arg = Arg.PlayerText, available = () => LocalIsAdmin, allowed = IsAdmin,

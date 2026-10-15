@@ -571,6 +571,7 @@ namespace GoF2Remake.UI
             root.EnableInClassList("layout-narrow", aspect < 1.55f);
             root.EnableInClassList("layout-ultrawide", aspect > 2.3f);
             root.EnableInClassList("layout-phone", phone);
+            root.EnableInClassList("ui-large", UiScale.Large(h, phone ? 900f : 1080f));   // a small high-density screen: bigger lists
 
             ApplySafeArea(w, h, offscreen);
         }
@@ -1714,7 +1715,10 @@ namespace GoF2Remake.UI
             var left = new VisualElement();
             left.AddToClassList("debug-column");
             left.AddToClassList("debug-column--missions");
-            var right = new VisualElement();
+            // The cheats scroll on a short screen (the panel is sized to the screen, MainMenu.uss .debug-panel).
+            var right = new ScrollView(ScrollViewMode.Vertical) { horizontalScrollerVisibility = ScrollerVisibility.Hidden };
+            right.AddManipulator(new DragScroll(right));
+            right.RegisterCallback<FocusInEvent>(e => { if (e.target is VisualElement v && v != right) right.ScrollTo(v); });   // follows the D-pad
             right.AddToClassList("debug-column");
             right.AddToClassList("debug-column--cheats");
             columns.Add(left);

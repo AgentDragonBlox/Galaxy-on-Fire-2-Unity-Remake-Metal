@@ -51,7 +51,7 @@ namespace GoF2Remake.Data
         /// <summary>A dealer ship swapped: station, removed, added (NetStock.ShipChanged).</summary>
         public static Action<int, int, int> StockShipChanged;
         /// <summary>A faction station's buying / selling price (NetFactionsClient); unset: the price.</summary>
-        public static Func<int, int, int> FactionBuyPrice, FactionSellPrice;
+        public static Func<int, int, int> FactionBuyPrice, FactionSellPrice, FactionShipBuyPrice;
         /// <summary>Save point in a session: the profile goes to the server instead (NetProfileClient.Upload).</summary>
         public static Action ProfileUpload;
         /// <summary>The session's pirate board as JSON (NetState.PirateBoardJson), null = none.</summary>

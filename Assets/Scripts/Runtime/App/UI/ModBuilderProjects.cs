@@ -163,6 +163,7 @@ namespace GoF2Remake.UI
         TextField Field(VisualElement parent, string label, int max, Action<string> set, bool multiline = false)
         {
             var box = Add(parent, new VisualElement(), "mb-field-box");
+            if (parent.childCount == 1) box.AddToClassList("mb-field-box--first");   // USS has no :first-child
             Add(box, new Label(label.ToUpperInvariant()), "mb-field-label");
             var f = Add(box, new TextField { maxLength = max, multiline = multiline }, "mb-field");
             if (multiline) f.AddToClassList("mb-field--multi");

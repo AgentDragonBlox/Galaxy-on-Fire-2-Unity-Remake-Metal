@@ -541,7 +541,9 @@ namespace GoF2Remake.Multiplayer
             target.untargetable = hidden.Value || life.Value != Flying || cloaked >= 25f;
             // A mission ship's name only for the mission's team (its owner and their squad).
             bool team = !missionShip.Value || NetSquad.SameClient(OwnerClientId, NetPlayer.Local);
-            target.displayName = IsJunk ? Target.JunkName : label.Value.Length > 0 && team ? label.Value.ToString() : null;
+            // The owner's game writes the label (a wingman's name comes from its save): no rich-text tags reach the others'
+            // lock plates (<size>, <color> to impersonate staff or cover the HUD).
+            target.displayName = IsJunk ? Target.JunkName : label.Value.Length > 0 && team ? NetNews.Safe(label.Value.ToString()) : null;
             if (life.Value != shownLife)
             {
                 // NpcShip.UpdateDying's end: the explosion (with its sound); a fighter's model goes with it.

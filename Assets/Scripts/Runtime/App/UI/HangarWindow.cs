@@ -671,10 +671,10 @@ namespace GoF2Remake.UI
                     tex = ItemInfo.ShipIcon(row.ship);
                     name.text = ItemInfo.ShipName(row.ship);
                     subText.text = ItemInfo.ShipRaceText(row.ship) + (hangar.Stock.ModsOf(row.ship).Count > 0 ? "  (+)" : "");
-                    int delta = hangar.ShipPrice(row.ship) - hangar.ShipPrice(Session.ShipIndex);   // trade-in difference
+                    int delta = hangar.BuyShipPrice(row.ship) - hangar.ShipPrice(Session.ShipIndex);   // trade-in difference
                     // Remake: the ship's own price on the row (the buy button still shows what it costs after the trade-in);
                     // red while the trade-in difference is more than the credits.
-                    price.text = ItemInfo.Credits(hangar.ShipPrice(row.ship));
+                    price.text = ItemInfo.Credits(hangar.BuyShipPrice(row.ship));
                     price.EnableInClassList("row-price--expensive", delta > Session.Credits);
                     break;
                 }
@@ -1026,7 +1026,7 @@ namespace GoF2Remake.UI
                 if (selected.kind == RowKind.OwnShip) ItemInfo.FillModLines(detailMods, Session.ShipMods);
                 if (selected.kind == RowKind.ShopShip)
                 {
-                    int delta = hangar.ShipPrice(selected.ship) - hangar.ShipPrice(Session.ShipIndex);
+                    int delta = hangar.BuyShipPrice(selected.ship) - hangar.ShipPrice(Session.ShipIndex);
                     ShowAction($"{T(301).ToUpperInvariant()}   {ItemInfo.Credits(delta)}", true);
                     ItemInfo.FillModLines(detailMods, hangar.Stock.ModsOf(selected.ship));   // a traded-in hull's mods
                 }
@@ -1590,11 +1590,12 @@ namespace GoF2Remake.UI
                     }, SoldOut);
                     void TradeIn() => Reserved(() => hangar.BuyShip(ship));
                     // Remake (#60): the question says what happens to the old ship (the original's 304 doesn't): it is traded in.
-                    int oldPrice = hangar.ShipPrice(Session.ShipIndex), difference = hangar.ShipPrice(ship) - oldPrice;
+                    int oldPrice = hangar.ShipPrice(Session.ShipIndex), difference = hangar.BuyShipPrice(ship) - oldPrice;
                     string tradeIn = Localization.Get(304) + "\n\n" + string.Format(difference >= 0
                             ? Localization.Extra("shopTradeInNote", "Your {0} is traded in for {1}, so you pay {2}.")
                             : Localization.Extra("shopTradeInRefund", "Your {0} is traded in for {1}, so you get {2} back."),
-                        ItemInfo.ShipName(Session.ShipIndex), ItemInfo.Credits(oldPrice), ItemInfo.Credits(Mathf.Abs(difference)));
+                        ItemInfo.ShipName(Session.ShipIndex), ItemInfo.Credits(oldPrice), ItemInfo.Credits(Mathf.Abs(difference)))
+                        + "\n\n" + Localization.Extra("shopGearToHold", "Your equipment goes into the cargo hold.");
                     if (!KaamoClub.Owned) { menu.ShowDialog(tradeIn, TradeIn); break; }
                     // 304, then 327 "sell your old ship or keep it and have it brought to your station?" (330 / 331).
                     menu.ShowDialog(Localization.Get(304), () => menu.ShowChoice(Localization.Get(327), Localization.Get(330), Localization.Get(331), TradeIn, () =>

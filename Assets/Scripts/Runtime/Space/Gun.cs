@@ -135,6 +135,9 @@ namespace GoF2Remake.Flight
         /// <summary>The wait before the next shot: the reload, or inside a magazine the gap between its salvos.</summary>
         public float WaitMs => salvoCount > 1 && salvoIndex > 0 ? salvoGapMs : reloadMs;
         public bool Ready => reloadAcc > WaitMs && (!isBeam || bullets[0].timer <= 0f);
+        /// <summary>The shortest reload the bullet pool sustains: a bullet frees up just as the next shot needs it (the
+        /// "No primary weapon cooldown" cheat; faster, the pool empties in a burst and the gun waits out a lifetime).</summary>
+        public float SustainedReloadMs => (lifetimeMs - FreeLimit) / bullets.Length;
 
         IReadOnlyList<Target> lastTargets;
 

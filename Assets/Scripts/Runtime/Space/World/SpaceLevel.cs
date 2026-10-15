@@ -725,9 +725,11 @@ namespace GoF2Remake.World
                 root.transform.SetPositionAndRotation(
                     OrbitLayout.ToUnity(UndockPoint),
                     OrbitLayout.RotationToUnity(new Vector3(0f, (Random.value < 0.5f ? 1 : -1) * OrbitLayout.UndockYaw / 65536f * 2f * Mathf.PI, 0f)));
-            // Multiplayer: an arena's spawn ring. (Players launching together were set 80 m apart by client id: a server's
-            // client ids are never reused, so after a few dozen joins players launched 2-3 km to the side of the station.)
+            // Multiplayer: players launching together sit side by side, 80 m apart by client id (one of 8 slots, -240..+320 m
+            // across the undock point: by the raw id a player who had reconnected a few dozen times came out kilometres to the
+            // side of the entrance, the ids only grow); an arena's spawn ring.
             if (GoF2Remake.World.SpaceHooks.InArena) { var spawn = GoF2Remake.World.SpaceHooks.ArenaSpawnPose(); root.transform.SetPositionAndRotation(spawn.position, spawn.rotation); }
+            else if (NetSession.Active) root.transform.position += root.transform.right * (((int)(NetSession.LocalId % 8) - 3) * 80f);
             // Multiplayer: answering a squadmate's distress call, next to them (NetDistress).
             if (GoF2Remake.Data.NetSession.Active && Session.ArrivedByTravel && SpaceHooks.DistressArrival != null && SpaceHooks.DistressArrival(Layout.stationIndex, out var near, out var nearFacing))
                 root.transform.SetPositionAndRotation(near, nearFacing);

@@ -374,6 +374,9 @@ namespace GoF2Remake.Data
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetShared() { shared = null; sharedRevision = -1; }
 
+        /// <summary>The Cronus' price in the finished world (multiplayer): see Load.</summary>
+        public const int CronusSessionPrice = 1_150_000;
+
         public static Database Load(string resourceFolder = "GoF2Data")
         {
             var db = new Database
@@ -394,6 +397,16 @@ namespace GoF2Remake.Data
             }
             Modding.ModContent.NoteOriginalCounts(db);
             if (Session.Economy == Economy.Default) db.ApplyDefaultEconomy(resourceFolder);
+            // Remake multiplayer (the finished world): the Cronus (37) costs 0 in the Android economy, Khador's story ship
+            // that step 77 has the player take at Kothar for nothing, but every session's Kothar dealer sells it after the
+            // Valkyrie add-on: a free top-tier hull, its Kaamo upgrades free too (LoungeChat.ModPrice). Priced like the
+            // ships of its stats (Velasco 456 200, Nuyang II 626 467: ~500 000 for 190 hull / 95 t / 120 handling and only
+            // 2 / 2 / 7 slots) plus its built-in Khador Drive (item 85, 624 803..662 923); the Default Economy has 1 200 000.
+            if (Session.CompletedWorld)
+            {
+                var cronus = db.Ship(37);
+                if (cronus != null && cronus.price <= 0) cronus.price = CronusSessionPrice;
+            }
             // The active mods' new and changed entries (Modding.ModContent), after the economy so their prices stand.
             if (resourceFolder == "GoF2Data") Modding.ModContent.Apply(db);
             return db;

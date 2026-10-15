@@ -356,7 +356,7 @@ namespace GoF2Remake.UI
             list.Add(SessionRule(capitalShips));
             var kaamoStacking = Toggle("kaamoStacking", OptionPage.Gameplay, () => X("kaamoStacking", "Stackable Kaamo Club upgrades"),
                 () => Settings.KaamoStacking, v => Settings.KaamoStacking = v);
-            kaamoStacking.description = () => X("kaamoStackingHelp", "The Kaamo Club's mechanics fit their upgrade again and again, each level costing twice the last, up to level 10. Off: one of each, as in the original. Not in the original.");
+            kaamoStacking.description = () => X("kaamoStackingHelpCap", "The Kaamo Club's mechanics fit each upgrade up to 3 times per ship, each level costing twice the last. Off: one of each, as in the original. Not in the original.");
             list.Add(SessionRule(kaamoStacking));
             var kaamoGear = Toggle("kaamoKeepsEquipment", OptionPage.Gameplay, () => X("kaamoKeepsEquipment", "Stored ships keep their equipment"),
                 () => Settings.KaamoKeepsEquipment, v => Settings.KaamoKeepsEquipment = v);

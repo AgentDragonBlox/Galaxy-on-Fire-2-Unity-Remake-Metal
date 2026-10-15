@@ -36,8 +36,8 @@ namespace GoF2Remake.Data
             Stock = stock;
             Station = stock.station;
             SystemIndex = Shop.SystemOf(db, Station);
-            // HangarWindow::initialize -> Status::calcCargoPrices: each list priced with its own Random(station); the
-            // station's price wins in the merged list (Item::mixItems).
+            // HangarWindow::initialize -> Status::calcCargoPrices: each list priced (the station's price wins in the merged
+            // list, Item::mixItems); remake: an item's price no longer depends on the list (Shop.PriceList).
             AddPrices(Session.Equipment.Select(e => e.item).ToList());
             AddPrices(Session.Cargo.Select(e => e.item).ToList());
             AddPrices(stock.items.Select(e => e.item).ToList());
@@ -352,13 +352,17 @@ namespace GoF2Remake.Data
 
         public int ShipPrice(int ship) => Shop.ShipPrice(db, ship, Station);
 
+        /// <summary>What a dealer ship costs here (multiplayer: a faction station's VAT markup for non-members); ShipPrice is
+        /// its value (a trade-in, the club's storage).</summary>
+        public int BuyShipPrice(int ship) => Storage ? ShipPrice(ship) : (GameHooks.FactionShipBuyPrice != null ? GameHooks.FactionShipBuyPrice(Station, ShipPrice(ship)) : ShipPrice(ship));
+
         /// <summary>HangarWindow::selectItem (ship row): 'need' = missing credits after trading in the current ship.</summary>
         public Result CanBuyShip(int ship, out int need)
         {
             need = 0;
             if (Session.Passengers > 0) return Result.Passengers;   // 336
             if (ship == Session.ShipIndex) return Result.SameShip;
-            int cost = Cheats.FreeShopping ? 0 : ShipPrice(ship) - ShipPrice(Session.ShipIndex);
+            int cost = Cheats.FreeShopping ? 0 : BuyShipPrice(ship) - ShipPrice(Session.ShipIndex);
             if (Session.Credits < cost) { need = cost - Session.Credits; return Result.NoCredits; }
             return Result.Ok;
         }
@@ -372,8 +376,8 @@ namespace GoF2Remake.Data
             if (CanBuyShip(ship, out _) != Result.Ok) return false;
             int old = Session.ShipIndex;
             var oldMods = new List<int>(Session.ShipMods ?? new List<int>());
-            if (!Cheats.FreeShopping) ChangeCredits(ShipPrice(old) - ShipPrice(ship));
-            SwitchTo(ship, Stock.TakeMods(ship));
+            if (!Cheats.FreeShopping) ChangeCredits(ShipPrice(old) - BuyShipPrice(ship));
+            SwitchTo(ship, Stock.TakeMods(ship), dismount: true);
             int row = Stock.ships.IndexOf(ship);
             if (row >= 0) Stock.ships[row] = old; else Stock.ships.Add(old);
             Stock.PutMods(old, oldMods);
@@ -414,7 +418,7 @@ namespace GoF2Remake.Data
                     Stock.PutMods(old, oldMods);
                     how = string.Format(Localization.Extra("bpShipTradedIn", "Your {0} was traded in for {1}."), oldName, GameNames.Credits(price));
                 }
-                SwitchTo(ship, rebuilt ? oldMods : null);
+                SwitchTo(ship, rebuilt ? oldMods : null, dismount: !rebuilt);
                 if (text.Length > 0) text.Append("\n\n");
                 text.Append(string.Format(Localization.Extra("bpShipReady", "Your new {0} is ready in the hangar."), GameNames.Ship(ship))).Append(' ').Append(how);
             }
@@ -439,17 +443,21 @@ namespace GoF2Remake.Data
 
         /// <summary>The new hull becomes the flown ship: every mounted item moves to the first free slot of its type (in
         /// slot order, secondaries with their ammo), the rest to the hold; the cargo stays with the player. 'mount' = the
-        /// items to put on it instead of the ones mounted now (a stored hull's own, KaamoKeepsEquipment).</summary>
-        void SwitchTo(int ship, List<int> mods, List<ItemStack> mount = null)
+        /// items to put on it instead of the ones mounted now (a stored hull's own, KaamoKeepsEquipment). Remake (players'
+        /// report): 'dismount' = a bought hull (dealer, lounge seller, Kaamo "Keep", a blueprint's ship) starts bare: the
+        /// saleable items go to the hold (secondaries with their ammo) for the player to mount again or sell; the story's
+        /// unsaleable items stay mounted (they can't be demounted, 323). The original moves them onto the new hull.</summary>
+        void SwitchTo(int ship, List<int> mods, List<ItemStack> mount = null, bool dismount = false)
         {
             var mounted = mount ?? Session.Equipment;
             Session.ShipIndex = ship;
             Session.ShipMods = mods != null ? new List<int>(mods) : new List<int>();
             Session.Equipment = new List<ItemStack>();
+            Session.SelectedSecondary = -1;
             foreach (var e in mounted)
             {
                 int type = TypeOf(e.item);
-                if (MountedOfType(type).Count < SlotCount(type) || BayTakes(db, ship, e.item, Session.Equipment)) Session.Equipment.Add(e);
+                if ((!dismount || !IsSaleable(e.item)) && (MountedOfType(type).Count < SlotCount(type) || BayTakes(db, ship, e.item, Session.Equipment))) Session.Equipment.Add(e);
                 else AddToCargo(e.item, Mathf.Max(1, e.amount));
             }
         }
@@ -472,7 +480,7 @@ namespace GoF2Remake.Data
         {
             if (CanBuyShipFor(ship, price, out _) != Result.Ok) return false;
             if (!Cheats.FreeShopping) ChangeCredits(ShipPrice(Session.ShipIndex) - price);
-            SwitchTo(ship, null);
+            SwitchTo(ship, null, dismount: true);
             return true;
         }
 
@@ -494,7 +502,7 @@ namespace GoF2Remake.Data
             var oldMods = Session.ShipMods;
             if (!Cheats.FreeShopping) ChangeCredits(-price);
             var kept = EquipmentToStore(moveEquipment);
-            SwitchTo(ship, null);
+            SwitchTo(ship, null, dismount: !moveEquipment);
             KaamoClub.Store(old, 0, oldMods, kept);
             return true;
         }
@@ -506,7 +514,7 @@ namespace GoF2Remake.Data
         {
             need = 0;
             if (KaamoClub.HasShip(Session.ShipIndex)) return Result.AlreadyStored;   // 328 (the old ship's type)
-            int cost = Cheats.FreeShopping ? 0 : ShipPrice(ship);
+            int cost = Cheats.FreeShopping ? 0 : BuyShipPrice(ship);
             if (Session.Credits < cost) { need = cost - Session.Credits; return Result.NoCredits; }
             return Result.Ok;
         }
@@ -516,9 +524,9 @@ namespace GoF2Remake.Data
             if (CanKeepAndBuyShip(ship, out _) != Result.Ok) return false;
             int old = Session.ShipIndex;
             var oldMods = Session.ShipMods;
-            if (!Cheats.FreeShopping) ChangeCredits(-ShipPrice(ship));
+            if (!Cheats.FreeShopping) ChangeCredits(-BuyShipPrice(ship));
             var kept = EquipmentToStore(moveEquipment);
-            SwitchTo(ship, Stock.TakeMods(ship));   // the bought row's mods (OnTouchEnd: getMods of the row, both branches)
+            SwitchTo(ship, Stock.TakeMods(ship), dismount: !moveEquipment);   // the bought row's mods (OnTouchEnd: getMods of the row, both branches)
             Stock.ships.Remove(ship);   // the bought row is gone
             GameHooks.StockShipChanged?.Invoke(Station, ship, -1);
             // A bare hull (makeShip(old) + its mods; Ship::clone resets the race to 0), or with its items (KaamoKeepsEquipment).
