@@ -4,9 +4,11 @@
 //   search_content   the game's, this project's and other mods' content by kind (ModRefs: the values the files use)
 //   list_entries / get_entries / put_entry / delete_entry   the project's entries in the mod files' own JSON, through
 //                    ModProject.CaptureState / RestoreState (an undo step; a removal asks the player)
+//   patch_entry      small edits by path (EntryPatch: set / insert / remove / move / test), the rest of the entry untouched
 //   list_files / read_file / write_file   the project's files (images, models, audio, texts) inside its folder only
 //   compile_quest / validate / get_quest_schema   the game's own checks: QuestFile, EventRunner, the mod loaders
 //   play_test / end_play_test   ModBuilderPlay; get_log, screenshot; undo / redo; show_kind
+//   (seeing and driving the builder: ModBuilderMcpVision)
 
 using System;
 using System.Collections.Generic;
@@ -46,7 +48,7 @@ namespace GoF2Remake.UI
         static readonly string[] KindNames = Kinds.Select(k => k.kind).ToArray();
         static readonly string[] RefKinds = { "item", "ship", "system", "station", "character", "quest", "music", "interior" };
         static readonly string[] FileFolders = { "models", "textures", "icons", "portraits", "fx", "sky", "cards", "music", "sounds", "voices", "text", "events", "templates" };
-        static readonly string[] FileExtensions = { ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".dds", ".aei", ".glb", ".ogg", ".wav", ".mp3", ".json", ".gof2event", ".txt", ".md" };
+        static readonly string[] FileExtensions = { ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".dds", ".aei", ".glb", ".ogg", ".wav", ".mp3", ".json", ".gof2event", ".gof2quest", ".txt", ".md" };
         static readonly string[] TextExtensions = { ".json", ".gof2event", ".gof2quest", ".txt", ".md" };
 
         static JObject Enum(params string[] values) => new JObject { ["type"] = "string", ["enum"] = new JArray(values) };
@@ -69,7 +71,7 @@ namespace GoF2Remake.UI
         // ---- the table ------------------------------------------------------------------------------------------
 
         static List<Tool> tools;
-        static List<Tool> Tools => tools ??= MakeTools();
+        static List<Tool> Tools => tools ??= MakeTools().Concat(VisionTools()).ToList();
 
         static List<Tool> MakeTools() => new List<Tool>
         {
@@ -96,8 +98,9 @@ namespace GoF2Remake.UI
             new Tool
             {
                 name = "get_entries", title = "Read entries", readOnly = true,
-                description = "Entries of a kind as their mod-file JSON (all, or those named in 'ids': an id, \"override:<n>\", or a quest's name).",
-                input = Input(("kind", Enum(KindNames), "the kind of entry", true), ("ids", new JObject { ["type"] = "array", ["items"] = new JObject { ["type"] = "string" } }, "which (empty: all)", false)),
+                description = "Entries of a kind as their mod-file JSON (all, or those named in 'ids': an id, \"override:<n>\", or a quest's name). With one id and a 'path' (\"steps/2\", \"steps/3/then\", \"stats\"), only that part: what patch_entry's paths point at.",
+                input = Input(("kind", Enum(KindNames), "the kind of entry", true), ("ids", new JObject { ["type"] = "array", ["items"] = new JObject { ["type"] = "string" } }, "which (empty: all)", false),
+                              ("path", "string", "with one id: only this part of it", false)),
                 run = GetEntries,
             },
             new Tool
@@ -112,6 +115,19 @@ namespace GoF2Remake.UI
                     string id = Str(a, "name") ?? (e != null ? (string)e["id"] ?? (e["override"] != null ? "override " + e["override"] : null) : null);
                     return $"write {Str(a, "kind") ?? "an entry"}{(id != null ? $" \"{id}\"" : "")} into the project";
                 },
+            },
+            new Tool
+            {
+                name = "patch_entry", title = "Edit part of an entry",
+                description = "Small edits of one entry in place, the rest left exactly as it is (a quest's graph layout too): prefer it to put_entry for a change to an existing entry. " +
+                              "'ops' in order, all or none applied: {\"op\": \"set\", \"path\": \"steps/2/pages/0/text\", \"value\": ...} (replace, or add a key; \"-\" appends to a list), " +
+                              "{\"op\": \"insert\", \"path\": \"steps/3\", \"value\": {step}} (into a list before that index, \"-\" at the end), {\"op\": \"remove\", \"path\": ...}, " +
+                              "{\"op\": \"move\", \"from\": ..., \"path\": ...} (the target path read after the removal), {\"op\": \"test\", \"path\": ..., \"value\": ...} (fails the patch unless equal: guards against editing the wrong step). " +
+                              "Paths are slash-separated keys and list indices into the entry (get_entries with 'path' reads a part). A quest's step inserted without \"pos\" gets a place in its column. One undo step; the answer lists the problems the game finds.",
+                input = Input(("kind", Enum(KindNames), "the kind of entry", true), ("id", "string", "an id, \"override:<n>\", a quest's name (campaign / manifest: none)", false),
+                              ("ops", new JObject { ["type"] = "array", ["items"] = new JObject { ["type"] = "object" } }, "the operations", true)),
+                run = PatchEntry, timeoutSeconds = 60f,
+                ask = a => $"edit {Str(a, "kind") ?? "an entry"}{(Str(a, "id") != null ? $" \"{Str(a, "id")}\"" : "")} ({((a["ops"] as JArray)?.Count ?? 0)} change(s))",
             },
             new Tool
             {
@@ -183,8 +199,9 @@ namespace GoF2Remake.UI
             new Tool
             {
                 name = "screenshot", title = "Screenshot", readOnly = true,
-                description = "What the game shows now (the builder, or the play test), as an image.",
-                input = Input(("maxWidth", "integer", "at most this wide (default 1280)", false)), run = Screenshot, timeoutSeconds = 15f,
+                description = "What the game shows now (the builder, a test flight or a play test), as an image; 'clean' hides the builder's panels for it (the model or room alone). To see a model from any side use view_model, to aim the builder's camera view.",
+                input = Input(("maxWidth", "integer", "at most this wide (default 1280)", false), ("clean", "boolean", "without the builder's panels", false)),
+                run = Screenshot, timeoutSeconds = 15f,
             },
             new Tool
             {
@@ -210,8 +227,8 @@ namespace GoF2Remake.UI
 
         static JObject Status()
         {
-            var o = new JObject { ["builderOpen"] = ModBuilder.Active, ["playTesting"] = ModBuilder.PlayTesting, ["scene"] = SceneManager.GetActiveScene().name,
-                                  ["permission"] = ModBuilderMcp.Permission.ToString() };
+            var o = new JObject { ["builderOpen"] = ModBuilder.Active, ["playTesting"] = ModBuilder.PlayTesting, ["testFlying"] = ModBuilder.TestFlying,
+                                  ["inSpace"] = ModBuilder.InSpace, ["scene"] = SceneManager.GetActiveScene().name, ["permission"] = ModBuilderMcp.Permission.ToString() };
             var p = Project;
             if (p != null)
             {
@@ -230,7 +247,7 @@ namespace GoF2Remake.UI
                 if (mod != null) { o["errors"] = new JArray(mod.Errors.Take(20)); o["warnings"] = new JArray(mod.Warnings.Take(20)); }
             }
             var screen = ModBuilderScreen.Open;
-            if (!ModBuilder.PlayTesting && screen != null && screen.Alive) o["kindShown"] = screen.CurrentKind.ToString();
+            if (!ModBuilder.PlayTesting && screen != null && screen.Alive) { o["kindShown"] = screen.CurrentKind.ToString(); o["shown"] = screen.ExternalSelection(); }
             if (ModBuilder.PlayTesting)
             {
                 var db = Database.Shared;
@@ -315,6 +332,19 @@ namespace GoF2Remake.UI
             else if (kind == "campaign") result = state["campaign"];
             else if (kind == "manifest") result = state["manifest"];
             else result = new JArray(((JArray)state[kind]).OfType<JObject>().Where(e => ids.Count == 0 || ids.Contains(Ident(e))));
+            string path = Str(a, "path");
+            if (!string.IsNullOrEmpty(path))
+            {
+                JToken one = kind == "quests" || kind == "campaign" || kind == "manifest"
+                    ? (kind == "quests" ? (result as JObject)?.Properties().FirstOrDefault()?.Value : result)
+                    : (result as JArray)?.FirstOrDefault();
+                if (ids.Count != 1 && kind != "campaign" && kind != "manifest") { c.Fail("path: give exactly one id."); return; }
+                if (one == null || one.Type == JTokenType.Null) { c.Fail($"No {kind} entry \"{ids.FirstOrDefault()}\"."); return; }
+                var part = EntryPatch.Get(one, path, out string err);
+                if (part == null) { c.Fail(err); return; }
+                c.Json(new JObject { ["path"] = path, ["value"] = part }, $"{kind} {ids.FirstOrDefault()} {path}");
+                return;
+            }
             c.Json(result, $"{kind}{(ids.Count > 0 ? " " + string.Join(", ", ids) : "")}");
         }
 
@@ -370,10 +400,17 @@ namespace GoF2Remake.UI
                 }
             }, kind == "quests" ? $"quest {name}" : $"{kind}");
             if (error != null) { c.Fail(error); return; }
-            // The answer once the game has read the project again: its problems with this file.
+            AnswerAfterReload(c, screen, label, kind == "quests" ? entry : null, questProblems);
+        }
+
+        /// <summary>The answer once the game has read the project again: its problems with the files, and a quest's own
+        /// (QuestFile's, then the event runner's on the compiled script).</summary>
+        static void AnswerAfterReload(Call c, ModBuilderScreen screen, string label, JObject quest, List<string> questProblems, JObject extra = null)
+        {
             c.Wait(() => !screen.ReloadBusy, () =>
             {
                 var o = new JObject { ["ok"] = true, ["done"] = label };
+                if (extra != null) foreach (var p in extra.Properties()) o[p.Name] = p.Value;
                 var mod = ModManager.BuilderProject;
                 if (mod != null)
                 {
@@ -381,9 +418,9 @@ namespace GoF2Remake.UI
                     if (mod.Warnings.Count > 0) o["warnings"] = new JArray(mod.Warnings.Take(20));
                 }
                 if (questProblems != null && questProblems.Count > 0) o["questProblems"] = new JArray(questProblems);
-                if (questProblems != null && questProblems.Count == 0)
+                if (quest != null && (questProblems == null || questProblems.Count == 0))
                 {
-                    string script = QuestFile.Compile(entry, new List<string>());
+                    string script = QuestFile.Compile(quest, new List<string>());
                     string runner = EventRunner.CheckScript(script);
                     if (runner != null) o["questProblems"] = new JArray(runner);
                 }
@@ -391,6 +428,99 @@ namespace GoF2Remake.UI
                 if (bad) o["ok"] = false;
                 c.Json(o, label + (bad ? " (with problems)" : ""));
             });
+        }
+
+        /// <summary>The steps after 'step' in its list moved down (with their blocks' steps) when it overlaps the next one.</summary>
+        static void MakeRoomAfter(JObject step)
+        {
+            const float Height = 150f, Width = 260f;
+            if (!(step.Parent is JArray list) || !QuestGraph.HasPos(step)) return;
+            int i = list.IndexOf(step);
+            if (i < 0 || i + 1 >= list.Count || !(list[i + 1] is JObject next) || !QuestGraph.HasPos(next)) return;
+            var (x, y) = QuestGraph.Pos(step);
+            var (nx, ny) = QuestGraph.Pos(next);
+            if (Mathf.Abs(nx - x) >= Width || ny - y >= Height) return;
+            float dy = y + Height - ny;
+            void Shift(JObject st)
+            {
+                if (QuestGraph.HasPos(st)) { var (px, py) = QuestGraph.Pos(st); QuestGraph.SetPos(st, px, py + dy); }
+                foreach (var (_, child) in QuestSteps.Children(st)) foreach (var c in child.OfType<JObject>()) Shift(c);
+            }
+            for (int k = i + 1; k < list.Count; k++) if (list[k] is JObject f) Shift(f);
+        }
+
+        static void PatchEntry(JObject a, Call c)
+        {
+            int k = KindIndex(a);
+            var screen = Screen(out string why);
+            if (screen == null) { c.Fail(why); return; }
+            if (!(a["ops"] is JArray ops) || ops.Count == 0) throw new ArgumentException("ops: a list of operations.");
+            string kind = Kinds[k].kind, id = Str(a, "id"), label = null;
+            JObject patchedQuest = null;
+            List<string> questProblems = null;
+            string error = screen.ExternalEdit(state =>
+            {
+                // The entry and where it goes back.
+                JToken target;
+                Action<JToken> put;
+                switch (kind)
+                {
+                    case "quests":
+                    {
+                        var qs = (JObject)state["quests"];
+                        target = qs[id ?? ""];
+                        if (target == null) return $"No quest \"{id}\" in the project.";
+                        put = v => qs[id] = v;
+                        break;
+                    }
+                    case "campaign":
+                        target = state["campaign"];
+                        if (!(target is JObject)) return "The project has no campaign (put_entry makes one).";
+                        put = v => state["campaign"] = v;
+                        break;
+                    case "manifest":
+                        target = state["manifest"];
+                        put = v => state["manifest"] = v;
+                        break;
+                    default:
+                    {
+                        var list = (JArray)state[kind];
+                        var e = list.OfType<JObject>().FirstOrDefault(x => Ident(x) == id);
+                        if (e == null) return $"No {kind} entry \"{id}\" (list_entries lists them).";
+                        target = e;
+                        put = v => e.Replace(v);
+                        break;
+                    }
+                }
+                var patched = EntryPatch.Apply(target, ops, out string err);
+                if (patched == null) return err;
+                if (!(patched is JObject po)) return "The entry must stay an object.";
+                // Its identity stays (a new id is a new entry: put_entry).
+                if (kind != "quests" && kind != "campaign" && kind != "manifest" && Ident(po) != id) return "The id / override can't change by a patch: put_entry the new entry (and delete_entry the old one).";
+                if (kind == "manifest")
+                    foreach (var p in po.Properties())
+                        if (!JToken.DeepEquals(p.Value, target[p.Name]) && !ManifestFields.Contains(p.Name)) return $"mod.json: {p.Name} can't be changed here (the fields: {string.Join(", ", ManifestFields)}).";
+                if (kind == "quests")
+                {
+                    po["format"] = "gof2quest";
+                    // A step put in without a place gets one in its column (only a quest already laid out in the graph), and
+                    // the steps after it in its list move down when it lands on them, as an insert in the graph looks.
+                    if (QuestGraph.HasPos(po, "startPos"))
+                    {
+                        var fresh = QuestGraph.AllSteps(po).Where(st => !QuestGraph.HasPos(st)).ToList();
+                        QuestGraph.Layout(po, false, _ => 90f);
+                        foreach (var st in fresh) MakeRoomAfter(st);
+                    }
+                    questProblems = new List<string>();
+                    QuestFile.Compile(po, questProblems);
+                    patchedQuest = po;
+                }
+                put(po);
+                label = $"{kind} {id ?? kind} patched ({ops.Count} change(s))";
+                return null;
+            }, kind == "quests" ? $"quest {id} edited" : $"{kind} {id} edited");
+            if (error != null) { c.Fail(error); return; }
+            AnswerAfterReload(c, screen, label, patchedQuest, questProblems);
         }
 
         static void DeleteEntry(JObject a, Call c)
@@ -614,6 +744,11 @@ namespace GoF2Remake.UI
         {
             var pump = ModBuilderMcpPump.Instance;
             if (pump == null) { c.Fail("Not ready."); return; }
+            if (a["clean"] is JValue cl && cl.Type == JTokenType.Boolean && (bool)cl && ModBuilderScreen.Open != null && ModBuilderScreen.Open.Alive)
+            {
+                Answer(c, true, true, $"{SceneManager.GetActiveScene().name}, the builder's panels hidden");
+                return;
+            }
             int w = Mathf.Clamp(Int(a, "maxWidth", 1280), 320, 3840);
             pump.Capture(w, (png, width, height) => c.Image(png, $"{width} x {height}, {SceneManager.GetActiveScene().name}"));
         }

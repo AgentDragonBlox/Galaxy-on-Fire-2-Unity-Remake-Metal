@@ -114,6 +114,7 @@ namespace GoF2Remake.UI
             pivot = b.center;
             radius = Mathf.Clamp(b.extents.magnitude, 100f, 20000f);
             distance = radius * 2.4f;
+            ApplyAiView();
         }
 
         void ApplyCamera(float dt)

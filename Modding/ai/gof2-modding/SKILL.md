@@ -384,10 +384,26 @@ repeat (not inside a block).
 
 When the user has the game's Mod Builder open with its **AI tools** MCP server on (Windows), you may have its tools:
 `builder_status`, `search_content` (find the right numbers / keys: use its `value`), `list_entries`, `get_entries`,
-`put_entry` (the mod files' own JSON; quests with `name`), `delete_entry`, `list_files`, `read_file`, `write_file`,
+`put_entry` (the mod files' own JSON; quests with `name`), `patch_entry` (for changes to an existing entry: ops `set` /
+`insert` / `remove` / `move` / `test` by paths like "steps/2/pages/0/text" or "steps/3/then/0", all or none; it keeps the rest
+and a quest's graph layout, so prefer it to rewriting the whole entry; `test` a step's type first so a stale index can't
+edit the wrong step; `get_entries` with `path` reads one part), `delete_entry`, `list_files`, `read_file`, `write_file`,
 `compile_quest`, `validate`, `get_quest_schema`, `play_test`, `end_play_test`, `get_log`, `screenshot`, `undo`, `redo`,
-`show_kind`. Then work in the live project instead of giving the user files: look things up, put entries, `validate` (fix
-every error), `play_test` a quest and check it with `screenshot` / `builder_status` / `get_log`, `end_play_test`. Every
+`show_kind`; and to see and drive the builder: `view_model` (a model from named angles in one image: "gof2:<assembly>",
+"ship:<id | override:N | number>" with its hardpoints as tagged dots P / S / T / E, hollow where the hull hides them,
+"station:...", or "models/x.glb"), `view_texture` / `list_textures`, `select_entry` (an entry on screen; ships' tab, a quest's
+graph), `view` (the builder's camera from front / back / left / right / top / bottom / threequarter / rear, zoom, with a
+screenshot, `clean` hides the panels), `hardpoint` (op list / add / snap / select / mirror / delete; add puts a point where a
+line from a side meets the hull: use it instead of guessing coordinates, then check with view_model), `engines`, `test_fly` /
+`end_test_fly`, `weapon_range`, `switch_hangar`, `list_projects`, `create_project`, `open_project`, `export_mod`, `loadout`
+(the test loadout and cheats), `room_marker` (a room's markers placed by a ray from inside it: the pad `toward` "down"),
+`view` with `map` (the star map on a system); and during a play test or test flight `press` (actions such as action,
+autopilotMenu, fastForward, boost, firePrimary, or keys such as enter, escape, 1-8), `steer`, `ui_buttons` / `ui_click` (a
+button by its text): play a quest through to check it (ui_click a conversation's Next / Close and Launch; the autopilot menu
+plus a number key and a held fastForward dock you), watching with the screenshots they answer with. Then work
+in the live project instead of giving the user files: look things up, put entries, `validate` (fix every error), look at
+what you made (`view_model`, `view_texture`, `select_entry` + `view`), `play_test` a quest and check it with `screenshot` /
+`builder_status` / `get_log`, `end_play_test`. Every
 change is an undo step. What waits for the player depends on the permission mode they chose (builder_status's
 `permission`): ReadOnly (changes are refused: suggest instead), AskEveryChange (each change waits for their Yes, up to 5
 minutes: make few, complete calls), AskRemovals (only delete_entry asks), AllowEverything (nothing asks: remove only

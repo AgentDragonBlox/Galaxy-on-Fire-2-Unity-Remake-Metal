@@ -230,6 +230,43 @@ namespace GoF2Remake.UI
         /// <summary>The question ran out of time: closed (a No).</summary>
         internal void ExternalCancelAsk() { if (pendingAsk != null) CloseModal(); }
 
+        // ---- what the AI can drive (the screens override what they have) ------------------------------------------
+
+        /// <summary>Selects an entry of the kind shown, as a click on its row would ('id': an id, "override:&lt;n&gt;", a quest's
+        /// name, a skinned ship's number); 'options' per kind (a ship's tab, a quest's graph view). Null, or why not.</summary>
+        internal virtual string ExternalSelectEntry(string kindName, string id, JObject options) => $"{kindName} can't be picked on this screen.";
+
+        /// <summary>The camera from a named side of what is shown (ModelViewer.Angles' names) at 'zoom' (its unit per screen;
+        /// 0 = kept); 'reset' back to the screen's own framing. Null, or why not.</summary>
+        internal virtual string ExternalCamera(string angle, float zoom, bool reset) => "This view has no camera to aim (the lounge, the map).";
+
+        /// <summary>The camera has settled (a blend under way, a scene still loading: false).</summary>
+        internal virtual bool CameraSettled => true;
+
+        internal virtual string ExternalEngines(float level) => "The engines are only on the hangar's turntable ship.";
+        internal virtual string ExternalTestFly() => "Test fly is in the hangar's Ships, Items and Skins.";
+        internal virtual string ExternalRange(bool fire) => "The weapon range is in space, in the Weapon fx kind.";
+        internal virtual string ExternalHangar(string which, out string done) { done = null; return "The hangar is picked in the hangar's kinds."; }
+        internal virtual string ExternalHardpoint(JObject a, out JObject done) { done = null; return "Hardpoints are edited in the Ships kind, in the hangar."; }
+        internal virtual string ExternalLoadout(JObject a, out JObject done) { done = null; return "The test loadout is the Ships kind's Loadout tab, in the hangar."; }
+        internal virtual string ExternalRoomMarker(JObject a, out JObject done) { done = null; return "Room markers are placed in the Hangars & bars kind."; }
+        /// <summary>The Systems kind's star map centred on a system (its number, or a project system's id); "galaxy" back from the
+        /// overview.</summary>
+        internal virtual string ExternalMap(string what) => "The star map is the Systems kind's.";
+        /// <summary>What the screen shows selected (kind, entry), for builder_status.</summary>
+        internal virtual JObject ExternalSelection() => new JObject { ["kind"] = kind.ToString() };
+
+        /// <summary>The panels hidden (a clean screenshot of the model or room), or shown again.</summary>
+        internal void ExternalCleanView(bool on)
+        {
+            // Opacity, not visibility: a control's own visibility style showed through a hidden panel.
+            StyleFloat hide = on ? new StyleFloat(0f) : new StyleFloat(StyleKeyword.Null);
+            foreach (var e in new[] { uiTop, uiLeft, uiRight, status }) if (e != null) e.style.opacity = hide;
+            foreach (var e in CleanViewHides()) if (e != null) e.style.opacity = hide;
+        }
+
+        protected virtual System.Collections.Generic.IEnumerable<VisualElement> CleanViewHides() { yield break; }
+
         /// <summary>A question closed without an answer is a No.</summary>
         void DropPendingAsk()
         {

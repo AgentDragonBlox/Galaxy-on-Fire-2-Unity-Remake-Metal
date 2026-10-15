@@ -41,7 +41,9 @@ Menu has **Mod details** (website, credits, the Mods screen's picture) and **Tra
 your items, ships, systems and stations in each language, `text/<lang>.json`); the Skins kind's **Other textures…** replaces
 any game texture (a station's, a planet's, a sun's, a ring's) and turns your retextured planets into stars (`backdrop.json`).
 **AI tools** in the top bar (Windows) is a switch for an MCP server: your own AI assistant (Claude Code, Claude Desktop,
-other MCP apps) can then look up content, write entries and files, check quests and play-test the open project
+other MCP apps) can then look up content, write entries and files, check quests, play-test the open project, look at models
+and textures, aim the builder's camera, place hardpoints and room markers, set the test loadout, test-fly, play a quest
+through by itself and export
 (`Modding/ai/README.md` says how to connect; off by default, this computer only, with a token). Its **Permissions** say
 what waits for your Yes: Read only, Ask always, Ask to remove (the default) or Allow all, so an assistant can also build
 while you do something else.

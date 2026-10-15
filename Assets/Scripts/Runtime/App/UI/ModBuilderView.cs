@@ -1016,31 +1016,44 @@ namespace GoF2Remake.UI
 
         /// <summary>One station per kind of hangar (StationTables.HangarIndex): picking one moves the builder there, and its
         /// orbit is the test flights'. Dis (Terran) and Var Hastra (Midorian) where they can, else the first that can host.</summary>
-        void PickHangar()
+        /// <summary>The hangar kinds the builder can sit in: (room, its English name, the station that has it); 'current' the
+        /// room the builder is in now (-1 none).</summary>
+        static List<(int room, string name, int station)> HangarChoices(out int current)
         {
             var db = Database.Shared;
             var rooms = RoomNames;
             int[] preferred = { 70, -1, -1, 78 };
             int RoomOf(int i) => StationTables.HangarIndex(i, db.Systems.ElementAtOrDefault(db.Stations[i].system)?.raceId ?? 0);
             var hosts = Enumerable.Range(0, db.Stations.Count).Where(i => ModBuilder.CanHost(i, db)).ToList();
-            int current = hosts.Contains(Session.StationIndex) ? RoomOf(Session.StationIndex) : -1;
-            var choices = new List<(string, Texture2D, Action)>();
+            current = hosts.Contains(Session.StationIndex) ? RoomOf(Session.StationIndex) : -1;
+            var list = new List<(int, string, int)>();
             for (int room = 0; room < rooms.Length; room++)
             {
                 if (rooms[room] == null) continue;
                 int r = room;
                 int station = room < preferred.Length && preferred[room] >= 0 && hosts.Contains(preferred[room]) && RoomOf(preferred[room]) == room
                     ? preferred[room] : hosts.Where(i => RoomOf(i) == r).DefaultIfEmpty(-1).First();
-                if (station < 0) continue;
+                if (station >= 0) list.Add((room, rooms[room], station));
+            }
+            return list;
+        }
+
+        void PickHangar()
+        {
+            var db = Database.Shared;
+            var choices = new List<(string, Texture2D, Action)>();
+            foreach (var (room, name, station) in HangarChoices(out int current))
+            {
                 var st = db.Stations[station];
                 int race = db.Systems.ElementAtOrDefault(st.system)?.raceId ?? 0;
-                string label = $"{T("mbRoom" + room, rooms[room])}\n{st.name}" + (room == current ? " ✓" : "");
+                string label = $"{T("mbRoom" + room, name)}\n{st.name}" + (room == current ? " ✓" : "");
                 var emblem = Resources.Load<Texture2D>("GoF2Hud/race_" + (race >= 0 && race < 4 ? race : 0));
+                int r = room, s = station;
                 choices.Add((label, emblem, () =>
                 {
                     if (r == current) return;
                     SaveNow();
-                    ModBuilder.SwitchStation(station);
+                    ModBuilder.SwitchStation(s);
                 }));
             }
             ShowPicker(T("mbHangarTitle", "Build and test-fly at"), choices);

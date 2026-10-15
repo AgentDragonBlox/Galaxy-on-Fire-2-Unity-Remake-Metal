@@ -362,7 +362,7 @@ namespace GoF2Remake.UI
 
         /// <summary>An imported normal map as read back: X / Y in R / G (BC5) or A / G (DXT5nm-style), Z dropped. Written back
         /// as RGB = XYZ like a painted normal map, opaque.</summary>
-        static void DecodeNormals(Texture2D tex, TextureFormat format)
+        internal static void DecodeNormals(Texture2D tex, TextureFormat format)
         {
             var px = tex.GetPixels32();
             bool xInAlpha = format == TextureFormat.DXT5 || format == TextureFormat.DXT5Crunched || format == TextureFormat.ETC2_RGBA8 || format == TextureFormat.ASTC_4x4;

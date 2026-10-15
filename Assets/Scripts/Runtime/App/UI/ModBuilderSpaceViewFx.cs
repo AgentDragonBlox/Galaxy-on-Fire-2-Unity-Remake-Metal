@@ -372,6 +372,7 @@ namespace GoF2Remake.UI
             var side = (ship.right * 0.95f - ship.forward * 0.3f).normalized;
             yaw = Mathf.Atan2(side.x, side.z);
             pitch = 0.18f;
+            ApplyAiView();
         }
 
         /// <summary>The shooter: the Ships tab's ship (the project's) when there is one, else the ship the builder flies.</summary>

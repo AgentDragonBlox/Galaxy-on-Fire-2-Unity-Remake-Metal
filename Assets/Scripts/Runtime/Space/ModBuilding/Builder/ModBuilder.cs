@@ -281,6 +281,23 @@ namespace GoF2Remake.Modding
             SceneManager.LoadScene("MainMenu");
         }
 
+        /// <summary>The builder's session dropped without a scene change (the Editor leaving Play mode with a project open:
+        /// Play mode runs without a domain reload, and these statics would otherwise keep the project as the active mod and
+        /// saving refused until the next Play, which the edit-mode tests then saw).</summary>
+        public static void CloseAfterPlayMode()
+        {
+            if (!Active && Project == null) return;
+            Project?.Save();
+            History?.Dispose();
+            History = null;
+            Active = TestFlying = InSpace = PlayTesting = false;
+            Project = null;
+            Ship = null;
+            PreviewInterior = null;
+            Cheats.ClearGranted();
+            ModManager.SetBuilderProject(null);
+        }
+
         /// <summary>The game's ship number of a project ship: an override's original, a new ship's mod number (-1 while the
         /// project can't be read).</summary>
         public static int IndexOf(ProjectShip s)

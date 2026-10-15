@@ -107,6 +107,14 @@ namespace GoF2Remake.UI
 
         int draggingSystem = -1, pendingFocus = -1;
 
+        /// <summary>The builder's map shows every visible system at once ('on'), or the galaxy view again (the Mod Builder's
+        /// MCP view tool).</summary>
+        public void BuilderOverview(bool on)
+        {
+            if (cam == null) return;
+            SetOverview(on);
+        }
+
         /// <summary>The builder closes its map.</summary>
         public void CloseBuilder() => Close(new StarMapResult { station = -1 });
 
@@ -243,12 +251,16 @@ namespace GoF2Remake.UI
             return map;
         }
 
+        /// <summary>The map's panel settings asset's own sorting order (the station UI's), before the map's copy raised it.</summary>
+        float baseSortingOrder;
+
         void OnEnable()
         {
             panelRenderer = GetComponent<PanelRenderer>();
             panelRenderer.RegisterUIReloadCallback(OnUIReload);
             if (runtimePanel == null && panelRenderer.panelSettings != null)
             {
+                baseSortingOrder = panelRenderer.panelSettings.sortingOrder;   // the shared asset's, before the copy takes its place
                 runtimePanel = Instantiate(panelRenderer.panelSettings);
                 runtimePanel.sortingOrder = panelRenderer.panelSettings.sortingOrder + 20;   // above the HUD / station menu
                 runtimePanel.referenceResolution = new Vector2Int(1920, 1080);
@@ -338,7 +350,9 @@ namespace GoF2Remake.UI
                 {
                     // The Mod Builder's map: every system, under the builder's panels, without the map's own header / footer.
                     for (int i = 0; i < visible.Length; i++) visible[i] = true;
-                    if (runtimePanel != null) runtimePanel.sortingOrder = panelRenderer.panelSettings.sortingOrder - 1;
+                    // Under the station UI's panel (the shared asset's order): panelSettings is the runtime copy by now, 20 above
+                    // it, so "its order - 1" kept the map over the builder's panels.
+                    if (runtimePanel != null) runtimePanel.sortingOrder = baseSortingOrder - 1;
                     root.AddToClassList("map-builder");
                     foreach (var n in new[] { "mapTitle", "backButton", "keyButton", "zoomButton", "hints" })
                         if (root.Q(n) is VisualElement el) el.style.display = DisplayStyle.None;

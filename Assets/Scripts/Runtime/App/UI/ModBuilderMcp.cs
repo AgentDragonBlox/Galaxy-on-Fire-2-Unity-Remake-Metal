@@ -215,6 +215,7 @@ namespace GoF2Remake.UI
 
         public static void Stop()
         {
+            McpInput.Uninstall();   // the AI's virtual keyboard and gamepad go with the server
             if (!running && listener == null) return;
             running = false;
             try { listener?.Stop(); } catch (Exception) { }
@@ -455,7 +456,10 @@ namespace GoF2Remake.UI
             "interiors.json, blueprints.json, gameoptions.json, campaign.json, mod.json, events/<name>.gof2quest), files " +
             "(images, models, audio) with write_file. Check with validate (and compile_quest for a quest); try it with " +
             "play_test, read get_log and take a screenshot. Every change is an undo step in the builder (the undo tool takes the " +
-            "last one back). ";
+            "last one back). To see your work: view_model draws any model (game, project ship with its hardpoints, station, .glb) " +
+            "from any side, view_texture / list_textures show textures, select_entry and view put an entry on the builder's screen " +
+            "and aim its camera (with a screenshot); hardpoint places hardpoints onto the hull from a side. Also test_fly, " +
+            "weapon_range, engines, switch_hangar, and the projects (list_projects, create_project, open_project, export_mod). ";
 
         /// <summary>The instructions' line on the permission mode (builder_status says the current one).</summary>
         static string PermissionNote(Permissions p) => p switch
@@ -564,6 +568,7 @@ namespace GoF2Remake.UI
         internal static void Pump()
         {
             Keep();
+            McpInput.Tick();
             List<Call> due;
             lock (waiting) due = waiting.ToList();
             foreach (var c in due)
@@ -589,8 +594,10 @@ namespace GoF2Remake.UI
                 try
                 {
                     var tool = job.tool;
-                    if (tool.readOnly || tool.noAsk || tool.permitsItself) tool.run(job.args, call);
-                    else Permit(call, tool.ask != null ? tool.ask(job.args) : "use \"" + tool.title + "\"", tool.destructive, () => tool.run(job.args, call));
+                    // 'ask' answering null: this use changes nothing (hardpoint's list)
+                    string what = tool.readOnly || tool.noAsk || tool.permitsItself ? null : tool.ask != null ? tool.ask(job.args) : "use \"" + tool.title + "\"";
+                    if (what == null) tool.run(job.args, call);
+                    else Permit(call, what, tool.destructive, () => tool.run(job.args, call));
                 }
                 catch (ArgumentException e) { call.Fail(e.Message); }
                 catch (Exception e)
