@@ -10,9 +10,9 @@ namespace GoF2Remake.Data
                          KaamoStacking = 16, KaamoKeepsEquipment = 32, CloakBay = 64, EmpBreaksCloak = 128;
 
         /// <summary>Remake: the highest level of one Kaamo Club upgrade on a ship while stacking is on (Settings.KaamoMaxLevel,
-        /// Session.MaxModLevel); a number, so the session carries it beside the bits (NetRules.HostKaamoLevel). 10 is the
+        /// Session.MaxModLevel); a number, so the session carries it beside the bits (NetRules.HostKaamoLevel). 5 by default; 10 was the
         /// players' feedback of 2026-10 (45 equipment slots on a Cronus uncapped); 1 would be stacking off.</summary>
-        public const int DefaultKaamoLevel = 10, MinKaamoLevel = 2, MaxKaamoLevel = 20;
+        public const int DefaultKaamoLevel = 5, MinKaamoLevel = 2, MaxKaamoLevel = 20;
 
         public static int ClampKaamoLevel(int level) => level < MinKaamoLevel ? MinKaamoLevel : level > MaxKaamoLevel ? MaxKaamoLevel : level;
     }

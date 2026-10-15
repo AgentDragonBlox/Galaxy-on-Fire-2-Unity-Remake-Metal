@@ -79,7 +79,7 @@ namespace GoF2Remake.Tests
             Assert.IsFalse(Settings.CapitalShips, "off by default");
             Assert.IsFalse(Settings.InformerOriginalRule, "Remake by default");
             Assert.IsTrue(Settings.KaamoStacking, "on by default");
-            Assert.AreEqual(10, Settings.KaamoMaxLevel, "upgrade limit 10 by default");
+            Assert.AreEqual(5, Settings.KaamoMaxLevel, "upgrade limit 5 by default");
             Assert.IsTrue(Settings.KaamoKeepsEquipment, "on by default");
             Assert.IsTrue(Settings.CloakBay, "on by default");
             Assert.IsTrue(Settings.EmpBreaksCloak, "on by default");

@@ -187,7 +187,7 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
-        public void StackedModsUpToLevelTen()
+        public void StackedModsUpToTheDefaultLevel()
         {
             using (new SettingsScope<bool>(() => Settings.KaamoStacking, v => Settings.KaamoStacking = v))
             using (new SettingsScope<int>(() => Settings.KaamoMaxLevel, v => Settings.KaamoMaxLevel = v))
@@ -196,8 +196,8 @@ namespace GoF2Remake.Tests
                 Settings.KaamoMaxLevel = SessionRules.DefaultKaamoLevel;
                 for (int i = 0; i < 14; i++) Session.AddShipMod(2);
                 Assert.AreEqual(Session.MaxModLevel, Session.ModLevel(2));
-                Assert.AreEqual(10, Session.MaxModLevel, "the default limit");
-                Assert.AreEqual(10, Session.ModLevel(Session.ShipMods, 2));
+                Assert.AreEqual(5, Session.MaxModLevel, "the default limit");
+                Assert.AreEqual(5, Session.ModLevel(Session.ShipMods, 2));
                 Assert.AreEqual(0, Session.ModLevel(null, 2));
             }
         }

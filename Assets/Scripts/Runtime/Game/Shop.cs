@@ -175,11 +175,14 @@ namespace GoF2Remake.Data
         /// +- 2 %. The original draws the +- 2 % in list order from a fresh java.util.Random(station), so an item's price
         /// depended on its place in the list: the hold's, the mounted items' and the stock's lists priced it differently,
         /// and a unit bought from the stock sold for more once it was the hold's (players' report, multiplayer: Garuda
-        /// missiles bought at Thynome for 724, sold for 746, again and again). Remake: the +- 2 % comes from
-        /// java.util.Random(station x 10007 + item), the same for an item at a station whatever list it is in.</summary>
+        /// missiles bought at Thynome for 724, sold for 746, again and again). Remake, in a multiplayer session only: the
+        /// +- 2 % comes from java.util.Random(station x 10007 + item), the same for an item at a station whatever list it is
+        /// in. Single player keeps the original's prices (Reference/tools/shop/prices.py; a docking's prices are pinned
+        /// there, Hangar.PinPrices).</summary>
         public static int[] PriceList(Database db, int station, IList<int> items)
         {
             int system = SystemOf(db, station);
+            var rnd = NetSession.Active ? null : new JavaRandom(station);
             var prices = new int[items.Count];
             for (int n = 0; n < items.Count; n++)
             {
@@ -192,7 +195,7 @@ namespace GoF2Remake.Data
                 if (!(f < 1f)) f = 1f;
                 int b = it.minPrice + (int)(f * (it.maxPrice - it.minPrice));
                 int d = Mathf.Max(1, (int)(b * 0.02f));
-                prices[n] = b - d + new JavaRandom(station * 10007L + items[n]).NextInt(2 * d + 1);
+                prices[n] = b - d + (rnd ?? new JavaRandom(station * 10007L + items[n])).NextInt(2 * d + 1);
             }
             return prices;
         }

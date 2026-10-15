@@ -446,9 +446,11 @@ namespace GoF2Remake.Data
         /// items to put on it instead of the ones mounted now (a stored hull's own, KaamoKeepsEquipment). Remake (players'
         /// report): 'dismount' = a bought hull (dealer, lounge seller, Kaamo "Keep", a blueprint's ship) starts bare: the
         /// saleable items go to the hold (secondaries with their ammo) for the player to mount again or sell; the story's
-        /// unsaleable items stay mounted (they can't be demounted, 323). The original moves them onto the new hull.</summary>
+        /// unsaleable items stay mounted (they can't be demounted, 323). The original moves them onto the new hull, which
+        /// single player keeps: the bare hull is a multiplayer session's rule only.</summary>
         void SwitchTo(int ship, List<int> mods, List<ItemStack> mount = null, bool dismount = false)
         {
+            dismount &= NetSession.Active;
             var mounted = mount ?? Session.Equipment;
             Session.ShipIndex = ship;
             Session.ShipMods = mods != null ? new List<int>(mods) : new List<int>();

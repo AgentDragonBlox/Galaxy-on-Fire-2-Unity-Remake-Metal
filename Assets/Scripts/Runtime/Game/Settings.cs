@@ -205,7 +205,7 @@ namespace GoF2Remake.Data
         /// rule.</summary>
         public static bool KaamoStacking { get => Rule(R.KaamoStacking, "kaamoStacking", true); set => SetRule(R.KaamoStacking, "kaamoStacking", value); }
         /// <summary>Remake: with KaamoStacking, how many times one upgrade can be fitted to a ship (Session.MaxModLevel;
-        /// 2..20, default 10). A session rule: the host's or the server's value in multiplayer (-kaamomaxlevel,
+        /// 2..20, default 5). A session rule: the host's or the server's value in multiplayer (-kaamomaxlevel,
         /// "/set kaamomaxlevel").</summary>
         public static int KaamoMaxLevel
         {
