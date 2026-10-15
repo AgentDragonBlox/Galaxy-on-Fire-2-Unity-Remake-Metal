@@ -40,6 +40,79 @@ namespace GoF2Remake.Modding
         public string Description { get => Str(manifest, "description") ?? ""; set => manifest["description"] = value; }
         public string Author { get => Str(manifest, "author") ?? ""; set => manifest["author"] = value; }
         public string Version { get => Str(manifest, "version") ?? "1.0"; set => manifest["version"] = value; }
+        public string Website { get => Str(manifest, "website") ?? ""; set { if (string.IsNullOrWhiteSpace(value)) manifest.Remove("website"); else manifest["website"] = value.Trim(); } }
+        /// <summary>mod.json "credits": who made what (the Mods screen shows it).</summary>
+        public string Credits { get => Str(manifest, "credits") ?? ""; set { if (string.IsNullOrWhiteSpace(value)) manifest.Remove("credits"); else manifest["credits"] = value; } }
+        /// <summary>The Mods screen's picture (mod.json "preview", default preview.png): its path in the project, or null.</summary>
+        public string PreviewImage
+        {
+            get
+            {
+                string p = Str(manifest, "preview") ?? "preview.png";
+                return File.Exists(Path.Combine(Folder, p)) ? p : null;
+            }
+        }
+
+        public void SetPreviewImage(string sourcePng)
+        {
+            File.Copy(sourcePng, Path.Combine(Folder, "preview.png"), true);
+            manifest.Remove("preview");
+        }
+
+        // ---- translations (text/<lang>.json) ------------------------------------------------------------------
+
+        public const string TextFolder = "text";
+        public static readonly string[] TextLanguages = { "de", "fr", "es", "it", "nl", "pl", "ru", "pt", "zh", "hi", "ja", "ko", "ar" };
+
+        /// <summary>Every text of the project a translation can carry: key ("items.plasma_lance.name") and its English.</summary>
+        public List<(string key, string english)> TranslatableTexts()
+        {
+            var list = new List<(string, string)>();
+            foreach (var it in Items)
+            {
+                string id = it.IsOverride ? it.OverrideIndex.ToString() : it.LocalId;
+                if (id == null) continue;
+                list.Add(($"items.{id}.name", it.Name ?? ""));
+                list.Add(($"items.{id}.description", it.Description ?? ""));
+            }
+            foreach (var s in Ships)
+            {
+                string id = s.IsOverride ? s.OverrideIndex.ToString() : s.LocalId;
+                if (id == null) continue;
+                list.Add(($"ships.{id}.name", s.Name ?? ""));
+                list.Add(($"ships.{id}.description", s.Description ?? ""));
+            }
+            foreach (var s in Systems) { string id = s.IsOverride ? s.OverrideRef : s.LocalId; if (id != null) list.Add(($"systems.{id}.name", s.Name ?? "")); }
+            foreach (var s in Stations) { string id = s.IsOverride ? s.OverrideRef : s.LocalId; if (id != null) list.Add(($"stations.{id}.name", s.Name ?? "")); }
+            return list;
+        }
+
+        /// <summary>text/&lt;lang&gt;.json as key -> text (empty when there is none).</summary>
+        public Dictionary<string, string> Texts(string lang)
+        {
+            var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            string f = Path.Combine(Folder, TextFolder, lang + ".json");
+            try
+            {
+                if (File.Exists(f) && JToken.Parse(File.ReadAllText(f)) is JObject o)
+                    foreach (var p in o.Properties()) if (p.Value.Type == JTokenType.String) d[p.Name] = (string)p.Value;
+            }
+            catch (Exception e) { Debug.LogWarning($"Mod Builder: {f}: {e.Message}"); }
+            return d;
+        }
+
+        /// <summary>One translation set (empty: removed); the file goes when none is left.</summary>
+        public void SetText(string lang, string key, string text)
+        {
+            var d = Texts(lang);
+            if (string.IsNullOrWhiteSpace(text)) d.Remove(key); else d[key] = text;
+            string dir = Path.Combine(Folder, TextFolder), f = Path.Combine(dir, lang + ".json");
+            if (d.Count == 0) { try { if (File.Exists(f)) File.Delete(f); } catch { } return; }
+            Directory.CreateDirectory(dir);
+            var o = new JObject();
+            foreach (var kv in d.OrderBy(k => k.Key, StringComparer.Ordinal)) o[kv.Key] = kv.Value;
+            File.WriteAllText(f, o.ToString(Formatting.Indented));
+        }
         public DateTime Modified { get; private set; }
 
         public readonly List<ProjectShip> Ships = new List<ProjectShip>();
@@ -500,6 +573,40 @@ namespace GoF2Remake.Modding
             return set.ToList();
         }
 
+        /// <summary>The project's replacements of game textures that aren't a ship's (stations, planets, suns, rings...):
+        /// the texture names in textures/.</summary>
+        public List<string> OtherTextures()
+        {
+            var list = new List<string>();
+            string dir = Path.Combine(Folder, ModContent.TexturesFolder);
+            if (!Directory.Exists(dir)) return list;
+            var shipName = new System.Text.RegularExpressions.Regex(@"^(?:v_|sn_)?ship_(\d{3})_");
+            foreach (var f in Directory.GetFiles(dir))
+            {
+                string n = Path.GetFileNameWithoutExtension(f);
+                if (!shipName.IsMatch(n) && ImageExtensions.Contains(Path.GetExtension(f).ToLowerInvariant())) list.Add(n);
+            }
+            list.Sort(StringComparer.OrdinalIgnoreCase);
+            return list;
+        }
+
+        /// <summary>backdrop.json (the retextured planets drawn as stars), null = none.</summary>
+        public JObject Backdrop
+        {
+            get
+            {
+                string f = Path.Combine(Folder, "backdrop.json");
+                try { return File.Exists(f) ? JToken.Parse(File.ReadAllText(f)) as JObject : null; }
+                catch { return null; }
+            }
+            set
+            {
+                string f = Path.Combine(Folder, "backdrop.json");
+                if (value == null || !value.HasValues) { try { if (File.Exists(f)) File.Delete(f); } catch { } return; }
+                File.WriteAllText(f, value.ToString(Formatting.Indented));
+            }
+        }
+
         public void AddSkin(int ship)
         {
             if (!(builder["skins"] is JArray a)) builder["skins"] = a = new JArray();
@@ -647,6 +754,42 @@ namespace GoF2Remake.Modding
             var q = new ProjectQuest(QuestNameFor(title), new JObject { ["title"] = title, ["kind"] = mission ? "mission" : "quest" });
             Quests.Add(q);
             return q;
+        }
+
+        /// <summary>A quest from a whole .gof2quest object (an event graph converted to steps, QuestFile.FromScript).</summary>
+        public ProjectQuest AddQuest(string name, JObject json)
+        {
+            var q = new ProjectQuest(QuestNameFor(string.IsNullOrWhiteSpace(name) ? (string)json["title"] ?? "quest" : name), json);
+            Quests.Add(q);
+            return q;
+        }
+
+        /// <summary>An event graph made in the Unity Editor copied into events/ as it is (it runs like the quests).</summary>
+        public string AddEventGraph(string sourceFile)
+        {
+            string name = UniqueId(Path.GetFileNameWithoutExtension(sourceFile), "event",
+                id => Quests.Any(q => string.Equals(q.Name, id, StringComparison.OrdinalIgnoreCase)) || EventGraphs().Any(g => string.Equals(g, id, StringComparison.OrdinalIgnoreCase)));
+            string dir = Path.Combine(Folder, ProjectQuest.Folder);
+            Directory.CreateDirectory(dir);
+            File.Copy(sourceFile, Path.Combine(dir, name + ".gof2event"), true);
+            return name;
+        }
+
+        /// <summary>An event graph's file in the project (.gof2event, or the old .gof2netevent), or null.</summary>
+        public string EventGraphPath(string name)
+        {
+            foreach (string ext in new[] { ".gof2event", ".gof2netevent" })
+            {
+                string f = Path.Combine(Folder, ProjectQuest.Folder, name + ext);
+                if (File.Exists(f)) return f;
+            }
+            return null;
+        }
+
+        public void RemoveEventGraph(string name)
+        {
+            string f = EventGraphPath(name);
+            if (f != null) try { File.Delete(f); } catch { }
         }
 
         /// <summary>events/&lt;name&gt;.gof2quest for every quest; a builder quest file no longer in the list goes.</summary>
@@ -876,12 +1019,24 @@ namespace GoF2Remake.Modding
         public ProjectShip(JObject o)
         {
             json = o;
-            if (o["mounts"] is JArray a)
+            ReadMounts();
+        }
+
+        /// <summary>The hardpoints read again from the JSON (after Edit as JSON).</summary>
+        public void ReadMounts()
+        {
+            Mounts.Clear();
+            if (json["mounts"] is JArray a)
                 foreach (var m in a.OfType<JObject>())
                 {
                     try { Mounts.Add(JsonUtility.FromJson<WeaponMount>(m.ToString())); } catch { }
                 }
         }
+
+        /// <summary>The entry's JSON itself (Edit as JSON); the less common fields read and written raw.</summary>
+        public JObject Json => json;
+        public JToken Get(string k) => json[k];
+        public void Set(string k, JToken v) { if (v == null || v.Type == JTokenType.Null) json.Remove(k); else json[k] = v; }
 
         public static WeaponMount Copy(WeaponMount m) => new WeaponMount
         {

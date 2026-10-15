@@ -72,6 +72,7 @@ namespace GoF2Remake.UI
 
         protected override void ShowKind(ModBuilder.Kind k, ModBuilder.Kind was)
         {
+            if (k == ModBuilder.Kind.AiTools) { StopRange(); return; }   // the AI tools' tab: the orbit stays as it is
             bool fx = k == ModBuilder.Kind.WeaponFx;
             if (level.Player != null) foreach (var r in level.Player.GetComponentsInChildren<Renderer>(true)) r.enabled = fx;   // the shooter only in the range
             if (fx) { RebuildFx(); BuildFxPage(); StartRange(); }
@@ -194,6 +195,7 @@ namespace GoF2Remake.UI
 
         public void Dispose()
         {
+            DisposeAi();
             StopRange();
             SaveNow();
         }
@@ -312,6 +314,8 @@ namespace GoF2Remake.UI
             stationPage.Clear();
             var s = currentStation;
             if (s == null) { Note(stationPage, T("mbPickStation", "Add a station on the left to start.")); return; }
+            JsonButton(stationPage, s.Json, () => { SaveNow(); RequestReload(false); RebuildStations(); BuildStationPage(); },
+                       T("mbJsonStationNote", "stations.json's fields: also volumes (collision boxes / spheres), materials, hangar / bar, music, planetTexture."));
             bool isNew = !s.IsOverride;
             Heading(stationPage, isNew ? T("mbNewStationSub", "New station") : string.Format(T("mbChanges", "Changes {0}"), RefLabel(RefKind.Station, s.OverrideRef, s.OverrideRef)));
             if (isNew) Note(stationPage, string.Format(T("mbStationKey", "Other content names it {0}."), Project.Key(s.LocalId)));

@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GoF2Remake.Data;
 using GoF2Remake.Modding;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -213,6 +214,8 @@ namespace GoF2Remake.UI
                 Note(systemPage, T("mbPickSystem", "Pick a system on the left or on the map."));
                 return;
             }
+            JsonButton(systemPage, currentSystem.Json, () => { SystemEdited(); RebuildSystems(); BuildSystemPage(); },
+                       T("mbJsonSystemNote", "systems.json's fields: also skybox (nebula, stars, brightness, rotation), sunTexture / sunColor, spaceMusic / stationMusic."));
             var s = currentSystem;
             bool isNew = !s.IsOverride;
             Heading(systemPage, isNew ? T("mbNewSystemSub", "New system") : string.Format(T("mbChanges", "Changes {0}"), RefLabel(RefKind.System, s.OverrideRef, s.OverrideRef)));
@@ -269,6 +272,27 @@ namespace GoF2Remake.UI
             Note(systemPage, T("mbSkyNote", "Which of the game's 19 nebula skies (and suns) it uses: reference.md's sky table says what each looks like. An image of your own below replaces it."));
             ImageRow(systemPage, T("mbNebula", "Nebula image (2:1 panorama or a 6:1 cube strip)"), s.Nebula, "sky", (s.LocalId ?? "system") + "_nebula", v => { s.Nebula = v; SystemEdited(); });
             if (s.Nebula != null) Float(systemPage, T("mbNebulaBrightness", "Nebula brightness"), s.NebulaBrightness, 0f, 4f, v => { s.NebulaBrightness = v; SystemEdited(false); });
+            Float(systemPage, T("mbStarsBrightness", "Stars brightness"), s.StarsBrightness, 0f, 4f, v => { s.StarsBrightness = v; SystemEdited(false); });
+            {
+                var sky = s.Get("skybox") as JObject;
+                var rot = sky?["rotation"] as JArray;
+                FlagButton(Row(systemPage), T("mbSkyFixedTurn", "The sky turned the same at every station"), rot != null, on =>
+                {
+                    var o = s.Get("skybox") as JObject ?? new JObject();
+                    if (on) o["rotation"] = new JArray(0, 0, 0); else o.Remove("rotation");
+                    s.Set("skybox", o.HasValues ? o : null);
+                    SystemEdited(false);
+                }, () => BuildSystemPage());
+                if (rot != null && rot.Count >= 3)
+                {
+                    var rrow = Row(systemPage, "mbv-xyz");
+                    for (int k = 0; k < 3; k++)
+                    {
+                        int c = k;
+                        Float(rrow, "XYZ".Substring(c, 1), (float)rot[c], -360f, 360f, v => { rot[c] = Math.Round(v, 1); SystemEdited(false); });
+                    }
+                }
+            }
             string stars = s.Stars;
             int starMode = stars == null ? 0 : stars == "0" ? 1 : stars == "1" ? 2 : stars == "2" ? 3 : stars == "none" ? 4 : 5;
             Segments(systemPage, T("mbStars", "Stars"), new[] { T("mbUsual", "Usual"), "1", "2", "3", T("mbNoStars", "None"), T("mbOwnImage", "Image") }, starMode, n =>

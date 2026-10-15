@@ -5,7 +5,8 @@ prices differ). Use these numbers and names in mod files and event graphs: `base
 `system`, `looksLike`, `planet`, `sky`, `startStation`, `startShip`, `replaces`, speakers, `textures/<name>.png`,
 `music/<name>.ogg`, `sounds/<name>.ogg`, `/spawn` objects... Mod content is referred to by key instead (`mod_id:id`).
 Beside this file: `voices.md` (every voice clip with its line), `events.md` (every event graph node with its options and
-ports, every command), `guide.md` (the full modders' guide: every field of every mod file).
+ports, every command), `quests.md` + `quest.schema.json` (the .gof2quest step format), `guide.md` (the full modders' guide:
+every field of every mod file).
 
 Contents: Races, Items, Item categories, Item stats (attribute numbers), Blueprints, Ships, Ship hardpoints, Default
 economy, Systems, Skies, Stations, Planets, Story steps, Story speakers, Models and their textures, Backdrop textures,

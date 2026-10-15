@@ -48,6 +48,7 @@ namespace GoF2Remake.Events
         public sealed class Node
         {
             public string id, kind, graph;   // graph: the (sub-)graph it is in
+            public float x, y;               // its place on the canvas (m_Position)
             public readonly Dictionary<string, string> values = new Dictionary<string, string>(StringComparer.Ordinal);
         }
 

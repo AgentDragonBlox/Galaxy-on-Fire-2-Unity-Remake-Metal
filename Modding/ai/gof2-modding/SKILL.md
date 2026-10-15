@@ -72,7 +72,7 @@ my_mod/
   campaign.json       a whole new game under Start new game
   systems.json, stations.json, interiors.json   new star systems, stations, hangars and bars
   characters.json     speakers with portraits
-  events/*.gof2event  quests and bar missions (made in the Unity Editor)
+  events/*.gof2event  quests and bar missions as Unity event graphs
   events/*.gof2quest  quests and bar missions as step lists (by hand or the Mod Builder)
   text/<lang>.json    translations
   music/, sounds/, voices/, textures/          replacement / new audio and skins
@@ -365,16 +365,33 @@ required). `override` changes originals (name, techLevel, looks, music...).
 
 ## Quests made as step lists (.gof2quest)
 
-`events/<name>.gof2quest`, JSON the game turns into an event graph's script (no Unity Editor):
-`{ "format": "gof2quest", "title", "kind": "quest" | "mission", "startsWhen" (quests; an expression, "" at once, "never"),
-"reward", "offer", "client", "stations": [...], "players": [min, max] (missions), "steps": [...] }`. Steps (`type` + fields):
-`dialog` pages [{speaker, text, voice}], `radio` speaker text voice, `objective` text station, `goto` station dock(bool)
-objective, `fight` station ships [{ship, count, race, behaviour}] name quiet objective (waits in that orbit, spawns them,
-waits until none is left), `cargo` item amount station, `reward` credits items [{item, amount}] title, `give` item amount,
-`wait` seconds, `waituntil` condition, `checkpoint`, `music` track, `title` title subtitle, `waypoint` station at "x y z",
-`startquest` quest, `complete` reward title, `fail` title, `command` line. Speakers as in Dialog (`Keith`, `my_mod:vega`,
-`vossk K'ekki`, `player`); stations / ships / items by number or key. Without `complete` / `fail` it completes after the last
-step. Conditions also have `docked(station)` and `inorbit(station)`.
+Prefer these over event graphs: plain JSON, no Unity Editor, and the Mod Builder opens them as a node graph.
+`events/<name>.gof2quest` (the file name is its name: letters, digits, `_`): `{ "format": "gof2quest", "title", "kind":
+"quest" | "mission" | "event", "startsWhen", "reward", "offer", "client", "stations", "players", "variables": [{ name, value,
+setting }], "steps": [...] }`. Every step type, field and default is in `quests.md` (the same as `quest.schema.json`), made
+from the game's own table: read it before writing a quest. In short: story steps (`dialog` pages, `radio`, `objective`,
+`title`), flow and blocks (`wait`, `waituntil`, `if` then / else, `while`, `repeat`, `parallel`, `every`, `on` <trigger>, `ask`
+/ `vote` answers, `random` branches, `set`, `checkpoint`, `startquest`, `startevent`, `complete`, `fail`), places (`goto`,
+`waypoint`, `target`, `questorbit`, `restrict`, `respawn`, `teleport`), ships (`fight`, `spawn`, `shipgoto`, `shiproute`,
+`shipfollow`, `shipattack`, `shipaction`, `provoke`), the player (`reward`, `give`, `cargo`, `credits`, `ship`, `heal`...),
+cutscenes (`cutscene`, `camera`, `fade`, `letterbox`...), `music`, `sound`, `timer`, score steps and `command` (any event
+command line). Steps acting on players take `who` (default `@a`; `@trigger` inside an `on` block). Speakers as in Dialog
+(`Keith`, `my_mod:vega`, `vossk K'ekki`, `player`); stations / ships / items by number or key; `{variable}` in a text shows
+it. Without `complete` / `fail` a quest completes after its last step. Put a `checkpoint` after each step a save shouldn't
+repeat (not inside a block).
+
+## The Mod Builder's MCP server
+
+When the user has the game's Mod Builder open with its **AI tools** MCP server on (Windows), you may have its tools:
+`builder_status`, `search_content` (find the right numbers / keys: use its `value`), `list_entries`, `get_entries`,
+`put_entry` (the mod files' own JSON; quests with `name`), `delete_entry`, `list_files`, `read_file`, `write_file`,
+`compile_quest`, `validate`, `get_quest_schema`, `play_test`, `end_play_test`, `get_log`, `screenshot`, `undo`, `redo`,
+`show_kind`. Then work in the live project instead of giving the user files: look things up, put entries, `validate` (fix
+every error), `play_test` a quest and check it with `screenshot` / `builder_status` / `get_log`, `end_play_test`. Every
+change is an undo step. What waits for the player depends on the permission mode they chose (builder_status's
+`permission`): ReadOnly (changes are refused: suggest instead), AskEveryChange (each change waits for their Yes, up to 5
+minutes: make few, complete calls), AskRemovals (only delete_entry asks), AllowEverything (nothing asks: remove only
+what they asked you to). "The player said no" means stop and ask them what they want.
 
 ## Quests and bar missions (event graphs)
 

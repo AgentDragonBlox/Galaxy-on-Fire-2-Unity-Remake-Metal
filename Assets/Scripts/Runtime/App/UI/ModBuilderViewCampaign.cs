@@ -130,13 +130,14 @@ namespace GoF2Remake.UI
         void BuildCampaignPage()
         {
             campaignPage.Clear();
-            if (currentOption != null) { BuildOptionPage(currentOption); return; }
+            if (currentOption != null) { JsonButton(campaignPage, currentOption.Json, () => { SaveNow(); RequestReload(false); BuildCampaignPage(); }); BuildOptionPage(currentOption); return; }
             var c = Project.Campaign;
             if (c == null)
             {
                 Note(campaignPage, T("mbNoCampaign", "A campaign is a new game of its own: it shows as a card beside the game's three campaigns in Start new game and starts the player where you say, with the GoF2 story off. Make one on the left, or add new-game options (switches on the Game options panel your content can ask for)."));
                 return;
             }
+            JsonButton(campaignPage, c.Json, () => { SaveNow(); RequestReload(false); BuildCampaignPage(); });
             // The card as the menu shows it.
             var card = Add(campaignPage, new VisualElement(), "mbv-card-preview");
             var img = ProjectImage(c.Image);

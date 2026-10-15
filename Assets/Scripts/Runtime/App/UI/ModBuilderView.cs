@@ -223,7 +223,7 @@ namespace GoF2Remake.UI
             gizmo.gameObject.SetActive(ships);
             var place = ModBuilder.PlaceOf(k);
             bool bar = place == ModBuilder.Place.Lounge;
-            if (place != ModBuilder.Place.Map) level.SetView(bar ? StationView.Lounge : StationView.Hangar);
+            if (place != ModBuilder.Place.Map && k != ModBuilder.Kind.AiTools) level.SetView(bar ? StationView.Lounge : StationView.Hangar);
             viewport.pickingMode = place == ModBuilder.Place.Map ? PickingMode.Ignore : PickingMode.Position;   // the map takes the pointer
             root.EnableInClassList("mbv-root--map", place == ModBuilder.Place.Map);
             drag = Drag.None;
@@ -245,6 +245,7 @@ namespace GoF2Remake.UI
             if (k == ModBuilder.Kind.Campaigns) { RebuildCampaign(); BuildCampaignPage(); }
             if (k == ModBuilder.Kind.Interiors) { RebuildInteriors(); BuildInteriorPage(); ShowInteriorInScene(); }
             if (k == ModBuilder.Kind.Quests) { RebuildQuests(); BuildQuestPage(); }
+            else UpdateQuestGraph();
             if (k == ModBuilder.Kind.Audio) { RebuildAudio(); BuildAudioPage(); }
             if (k == ModBuilder.Kind.Systems) { RebuildSystems(); BuildSystemPage(); OpenMap(); }
             // The turntable swaps between the project's ship, the skinned game ship and the campaign's start ship.
@@ -369,6 +370,8 @@ namespace GoF2Remake.UI
             ship.Clear();
             var s = Current;
             if (s == null) { Note(ship, T("mbPickShip", "Add a ship on the left to start.")); return; }
+            JsonButton(ship, s.Json, () => { s.ReadMounts(); SaveNow(); RequestReload(false); RebuildShips(); BuildShipPage(); BuildHardpointsPage(); },
+                       T("mbJsonShipNote", "ships.json's fields: also materials (per mesh), throttleGlow / extraGlows, dealer, lounge, npcTurrets, priceDefault, engineGlowColor / Radius, available."));
             var db = Database.Shared;
             var original = s.IsOverride ? db.Ship(s.OverrideIndex) : null;
             Heading(ship, s.IsOverride ? string.Format(T("mbChanges", "Changes {0}"), GameNames.Ship(s.OverrideIndex)) : T("mbNewShipSub", "New ship"));
@@ -395,6 +398,7 @@ namespace GoF2Remake.UI
             if (original != null)
                 Note(ship, string.Format(T("mbOriginalStats", "Original: {0} hull, {1} t, handling {2}, {3}."), original.armor, original.cargo,
                                          Mathf.RoundToInt(original.handling), ItemInfo.Credits(original.price)));
+            BuildShipMore(s);
 
             Heading(ship, T("mbModel", "Model"));
             bool gameModel = s.HasGameModel;
@@ -1464,6 +1468,7 @@ namespace GoF2Remake.UI
         {
             if (gizmo != null) UnityEngine.Object.Destroy(gizmo.gameObject);
             DisposeKinds();
+            DisposeAi();
             SaveNow();
         }
     }

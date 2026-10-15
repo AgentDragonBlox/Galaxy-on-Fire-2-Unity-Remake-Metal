@@ -13,6 +13,7 @@
 // Plain C#.
 
 using System;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Linq;
 using GoF2Remake.Data;
@@ -23,7 +24,7 @@ using UnityEngine.UIElements;
 
 namespace GoF2Remake.UI
 {
-    public abstract class ModBuilderScreen
+    public abstract partial class ModBuilderScreen
     {
         protected static string T(string key, string english) => Localization.Extra(key, english);
 
@@ -90,6 +91,12 @@ namespace GoF2Remake.UI
             foreach (var (k, e, kd) in KindTabs) KindTab(kinds, T(k, e), kd);
             undoButton = TopButton(top, T("mbUndo", "Undo"), () => UndoRedo(false), "mbv-undo-button");
             redoButton = TopButton(top, T("mbRedo", "Redo"), () => UndoRedo(true), "mbv-redo-button");
+            // The AI tools (the MCP server's tab) aren't content: their own button, again = back to the kind before.
+            aiButton = TopButton(top, T("mbAiTools", "AI tools"), () =>
+            {
+                sound(false);
+                SelectKind(kind == ModBuilder.Kind.AiTools ? kindBeforeAi : ModBuilder.Kind.AiTools);
+            }, "mbv-ai-button");
             AddTopButtons(top);
             TopButton(top, Localization.Get(172), ShowMenu, "mbv-menu-button");   // "Menu", like the station's
 
@@ -102,6 +109,7 @@ namespace GoF2Remake.UI
                 rightGroups[k] = Add(uiRight, new VisualElement(), "mbv-group");
                 leftGroups[k].style.display = rightGroups[k].style.display = DisplayStyle.None;
             }
+            BuildAiPanels(leftGroups[(int)ModBuilder.Kind.AiTools], rightGroups[(int)ModBuilder.Kind.AiTools]);
 
             status = new Label { pickingMode = PickingMode.Ignore };
             status.AddToClassList("mbv-status");
@@ -275,13 +283,15 @@ namespace GoF2Remake.UI
         /// <summary>A kind is picked in the top bar: in another scene the builder goes there; else the screen shows it.</summary>
         protected void SelectKind(ModBuilder.Kind k)
         {
-            if (!EditsHere(k))
+            if (k != ModBuilder.Kind.AiTools && !EditsHere(k))   // the AI tools' tab is shown wherever the builder is
             {
                 SaveNow();
                 if (ModBuilder.GoTo(k)) return;
             }
             var was = kind;
+            if (k == ModBuilder.Kind.AiTools && was != ModBuilder.Kind.AiTools && (int)was >= 0) kindBeforeAi = was;
             kind = k;
+            aiButton?.EnableInClassList("mbv-top-button--on", k == ModBuilder.Kind.AiTools);
             ModBuilder.OpenKind = k;
             for (int i = 0; i < ModBuilder.KindCount; i++)
             {
@@ -290,6 +300,7 @@ namespace GoF2Remake.UI
                 kindTabs[i]?.EnableInClassList("mbv-kind--on", i == (int)k);
             }
             ShowKind(k, was);
+            if (k == ModBuilder.Kind.AiTools) ShowAiTools();
         }
 
         /// <summary>The kinds this screen edits (the others are another scene's).</summary>
@@ -440,8 +451,50 @@ namespace GoF2Remake.UI
             field.schedule.Execute(() => field.Focus());
         }
 
+        /// <summary>A button that opens Edit as JSON for an entry (every field the modding guide lists, the builder's pages
+        /// or not).</summary>
+        protected void JsonButton(VisualElement page, JObject target, Action after, string note = null)
+        {
+            var row = Row(page);
+            Act(row, T("mbEditJson", "Edit as JSON…"), () => EditJson(target, after, note), "mbv-step");
+        }
+
+        /// <summary>The entry's JSON in a text box; Apply puts it back in place (the same object, so the page's references
+        /// stay), after checking it parses. Every field of the modding guide can be set this way.</summary>
+        protected void EditJson(JObject target, Action after, string note = null)
+        {
+            modal.Clear();
+            var box = Add(modal, new VisualElement(), "mbv-modal-box", "mbv-modal-box--list", "mbv-panel");
+            Heading(box, T("mbEditJson", "Edit as JSON…"));
+            Note(box, note ?? T("mbEditJsonNote", "Every field the modding guide (Modding/README.md) lists for this kind of entry can be written here, also the ones the builder has no field for."));
+            var error = Add(box, new Label(), "mbv-note", "mbv-warn");
+            error.style.display = DisplayStyle.None;
+            var scroll = Add(box, new ScrollView(ScrollViewMode.Vertical), "mbv-picker-scroll");
+            var field = Add(scroll, new TextField { value = target.ToString(Newtonsoft.Json.Formatting.Indented), multiline = true, maxLength = 200000 }, "mbv-field", "mbv-script");
+            var row = Add(box, new VisualElement(), "mbv-row");
+            Act(row, T("mbApply", "Apply"), () =>
+            {
+                JObject parsed;
+                try { parsed = JObject.Parse(field.value); }
+                catch (Exception e)
+                {
+                    error.text = "✖ " + e.Message;
+                    error.style.display = DisplayStyle.Flex;
+                    return;
+                }
+                target.RemoveAll();
+                foreach (var p in parsed.Properties().ToList()) target.Add(p.Name, p.Value.DeepClone());
+                CloseModal();
+                MarkDirty();
+                after?.Invoke();
+            });
+            Act(row, T("mbCancel", "Cancel"), CloseModal);
+            modal.AddToClassList("mbv-modal--shown");
+        }
+
         protected void CloseModal()
         {
+            DropPendingAsk();
             modal.RemoveFromClassList("mbv-modal--shown");
             modal.RemoveFromClassList("mbv-modal--options");
             modal.Clear();
@@ -579,6 +632,8 @@ namespace GoF2Remake.UI
             Act(box, T("mbResume", "Resume"), CloseModal, "mbv-menu-item");
             Act(box, Localization.Get(31), ShowOptions, "mbv-menu-item");   // Options
             Act(box, T("mbDependencies", "Dependencies"), ShowDependencies, "mbv-menu-item");
+            Act(box, T("mbModDetails", "Mod details"), ShowModDetails, "mbv-menu-item");
+            Act(box, T("mbTranslations", "Translations"), () => ShowTranslations(ModProject.TextLanguages[0]), "mbv-menu-item");
             Act(box, T("mbSave", "Save"), () => { SaveNow(); CloseModal(); Status(T("mbSaved", "Saved."), false); }, "mbv-menu-item");
             Act(box, T("mbExitBuilder", "Exit the Mod Builder"), () => { CloseModal(); SaveNow(); ModBuilder.End(); }, "mbv-menu-item", "mbv-danger");
             modal.AddToClassList("mbv-modal--shown");
@@ -594,6 +649,54 @@ namespace GoF2Remake.UI
             modal.AddToClassList("mbv-modal--options");
             modal.AddToClassList("mbv-modal--shown");
             optionsView.Select(optionsView.ActiveTab);
+        }
+
+        /// <summary>mod.json's other fields: the website, the credits and the Mods screen's picture.</summary>
+        void ShowModDetails()
+        {
+            modal.Clear();
+            var box = Add(modal, new VisualElement(), "mbv-modal-box", "mbv-modal-box--list", "mbv-panel");
+            Heading(box, T("mbModDetails", "Mod details"));
+            var scroll = Add(box, new ScrollView(ScrollViewMode.Vertical), "mbv-picker-scroll");
+            Text(scroll, T("mbName", "Name"), Project.Name, 60, v => { if (v.Trim().Length > 0) { Project.Name = v.Trim(); MarkDirty(); } });
+            Text(scroll, T("mbAuthor", "Author"), Project.Author, 60, v => { Project.Author = v.Trim(); MarkDirty(); });
+            Text(scroll, T("mbVersion", "Version"), Project.Version, 20, v => { if (v.Trim().Length > 0) { Project.Version = v.Trim(); MarkDirty(); } });
+            Text(scroll, T("mbDescription", "Description"), Project.Description, 600, v => { Project.Description = v; MarkDirty(); }, true);
+            Text(scroll, T("mbWebsite", "Website"), Project.Website, 200, v => { Project.Website = v; MarkDirty(); });
+            Text(scroll, T("mbCredits", "Credits (who made what)"), Project.Credits, 2000, v => { Project.Credits = v; MarkDirty(); }, true);
+            var row = Row(scroll);
+            Add(row, new Label($"{T("mbPreview", "Picture")}: {Project.PreviewImage ?? T("mbNone", "none")}"), "mbv-inline-label");
+            if (ModImport.Available)
+                Act(row, T("mbChoose", "Choose…"), () => PickImage(T("mbPreview", "Picture"), png => { Project.SetPreviewImage(png); MarkDirty(); ShowModDetails(); }), "mbv-step");
+            Note(scroll, T("mbPreviewNote", "The picture beside the mod in the Mods screen (preview.png; about 16:9)."));
+            Act(box, T("mbClose", "Close"), CloseModal);
+            modal.AddToClassList("mbv-modal--shown");
+        }
+
+        /// <summary>The project's texts in another language (text/&lt;lang&gt;.json): every name and description beside its
+        /// English, saved as typed.</summary>
+        void ShowTranslations(string lang)
+        {
+            modal.Clear();
+            var box = Add(modal, new VisualElement(), "mbv-modal-box", "mbv-modal-box--list", "mbv-panel");
+            Heading(box, T("mbTranslations", "Translations"));
+            int at = Array.IndexOf(ModProject.TextLanguages, lang);
+            Segments(box, null, ModProject.TextLanguages.Select(l => l.ToUpperInvariant()).ToArray(), Math.Max(0, at), n => ShowTranslations(ModProject.TextLanguages[n]));
+            var scroll = Add(box, new ScrollView(ScrollViewMode.Vertical), "mbv-picker-scroll");
+            var texts = Project.Texts(lang);
+            var all = Project.TranslatableTexts();
+            if (all.Count == 0) Note(scroll, T("mbNothingToTranslate", "Nothing to translate yet: the names and descriptions of the project's items, ships, systems and stations show here."));
+            foreach (var (key, english) in all)
+            {
+                Caption(scroll, key);
+                if (!string.IsNullOrEmpty(english)) Note(scroll, english);
+                texts.TryGetValue(key, out string cur);
+                string k = key;
+                Text(scroll, lang.ToUpperInvariant(), cur, 600, v => { Project.SetText(lang, k, v); MarkDirty(); }, key.EndsWith(".description"));
+            }
+            Note(scroll, T("mbTranslationsNote", "Empty = the English. Quests and characters carry their languages in their own texts; the game's language list: Options > Language."));
+            Act(box, T("mbClose", "Close"), CloseModal);
+            modal.AddToClassList("mbv-modal--shown");
         }
 
         /// <summary>The mods this one depends on (mod.json "dependencies"): each with its state, Remove; and the other mods the

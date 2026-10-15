@@ -586,7 +586,15 @@ namespace GoF2Remake.Events
             return script;
         }
 
-        static List<string> List()
+        /// <summary>Checks a script (the line form) with the runner's own parser: why it can't run, or null.</summary>
+        public static string CheckScript(string text)
+        {
+            var steps = Compile(text ?? "", out string error);
+            return steps == null ? error ?? "the script can't be read." : null;
+        }
+
+        /// <summary>Every event / quest name the game finds (the Events folders, the mods that are on, the built-ins).</summary>
+        public static List<string> List()
         {
             var names = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var dir in Folders())

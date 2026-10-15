@@ -29,8 +29,35 @@ namespace GoF2Remake.Modding
         }
 
         public string Title { get => S("title"); set => SetS("title", value); }
-        /// <summary>A bar mission (offered in the Space Lounges) instead of a quest (starts by itself).</summary>
-        public bool IsMission { get => S("kind") == "mission"; set => json["kind"] = value ? "mission" : "quest"; }
+        /// <summary>"quest" (starts by itself), "mission" (a bar mission, offered in the Space Lounges) or "event" (started
+        /// by /event or another's Next event step: multiplayer events, chains).</summary>
+        public string Kind
+        {
+            get { string k = S("kind"); return k == "mission" || k == "event" ? k : "quest"; }
+            set => json["kind"] = value == "mission" || value == "event" ? value : "quest";
+        }
+        public bool IsMission { get => Kind == "mission"; set => Kind = value ? "mission" : "quest"; }
+        public bool IsEvent => Kind == "event";
+
+        /// <summary>The quest's variables: [{ name, value, setting }] (a setting: /event name=value changes it).</summary>
+        public JArray Variables => json["variables"] as JArray ?? (JArray)(json["variables"] = new JArray());
+
+        /// <summary>No "variables" key when the list is empty.</summary>
+        public void TidyVariables()
+        {
+            if (json["variables"] is JArray a && a.Count == 0) json.Remove("variables");
+        }
+
+        /// <summary>Every step, nested ones too (blocks hold lists of their own), with the list it sits in.</summary>
+        public static IEnumerable<(JObject step, JArray list)> All(JArray steps, System.Func<JObject, IEnumerable<JArray>> children)
+        {
+            foreach (var st in steps.OfType<JObject>().ToList())
+            {
+                yield return (st, steps);
+                foreach (var list in children(st))
+                    foreach (var x in All(list, children)) yield return x;
+            }
+        }
         /// <summary>A quest's start condition: "" = at once, "never" = only when another starts it, else an expression.</summary>
         public string StartsWhen { get => S("startsWhen") ?? ""; set => SetS("startsWhen", value); }
         public int Reward { get => N("reward") ?? 0; set => SetN("reward", value <= 0 ? (int?)null : value); }
@@ -57,12 +84,21 @@ namespace GoF2Remake.Modding
 
         public void RemoveStep(JObject step) => step.Remove();
 
+        /// <summary>Moves a step up / down inside the list it is in (a block's or the quest's).</summary>
         public void MoveStep(JObject step, int delta)
         {
-            int i = Steps.IndexOf(step), j = i + delta;
-            if (i < 0 || j < 0 || j >= Steps.Count) return;
+            if (!(step.Parent is JArray list)) return;
+            int i = list.IndexOf(step), j = i + delta;
+            if (i < 0 || j < 0 || j >= list.Count) return;
             step.Remove();
-            Steps.Insert(j, step);
+            list.Insert(j, step);
+        }
+
+        /// <summary>Inserts a step after another (in the same list), or at the end of a list.</summary>
+        public static void InsertAfter(JArray list, JObject after, JObject step)
+        {
+            int i = after != null ? list.IndexOf(after) : -1;
+            if (i < 0) list.Add(step); else list.Insert(i + 1, step);
         }
     }
 }

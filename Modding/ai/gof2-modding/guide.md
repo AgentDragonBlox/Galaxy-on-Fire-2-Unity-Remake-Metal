@@ -15,8 +15,36 @@ turret's or your own `.glb`), resized and moved on its mount, a weapon's project
 borrowed from the game's other weapons, fitted to the ship to try them out; characters with their portraits, for your quests
 or standing in for a story character; and skins: a game ship's textures replaced, with its originals saved for you to paint
 over. A new ship's shop icon is rendered from its model
-(`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). **Export as mod** puts the finished project into your
-Mods folder. Ships, items, characters and skins can be built there so far; everything below can still be written by hand.
+(`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). Each kind of content is edited where it lives
+in the game:
+
+| Kind | Where | |
+|---|---|---|
+| Ships, Items, Skins | the hangar | as above; **Test fly** flies them against pirates |
+| Blueprints | the hangar | the product (a ship stands on the turntable), ingredients, autocomplete, where it is found |
+| Campaign | the hangar | the card, the start (station, ship and its equipment, money, standings), its story quest, the galaxy / shops kept to mods; new-game options |
+| Characters, Quests, Audio | the Space Lounge | portraits; quests, bar missions and events in a node graph (or as a list of steps, below), Unity-made event graphs imported; music, sound effects and voice lines, each with ▶ |
+| Systems | the star map | every system shown: drag yours to their place, their gates, sky, sun, music, stations |
+| Stations, Weapon fx | in space | a station in its own orbit (model, size, turn, rooms, planet); weapons firing from one ship onto another |
+| Hangars & bars | the room itself | a `.glb` room or one of the game's (its markers filled in), the markers clicked into the room, light, fog, lens |
+
+Wherever content names other content (a quest's speaker, a station's system, a blueprint's product, a campaign's ship) the
+picker offers the game's, your project's own (your character can speak in your quest) and **every other installed mod's**:
+picking another mod's makes it a dependency of yours (Menu > Dependencies lists them). **Play** in the top bar starts a play
+test: the game as a player has it with your mod on, from the builder's station, from your campaign's start or with one of
+your quests under way; the pause menu's (or the station menu's) Back to Mod Builder ends it, and so does a death.
+**Undo** / **Redo** in the top bar (Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z) step back and forth through your edits, files you replaced
+or removed included, until you close the project. **Export as mod** puts the finished project into your Mods folder.
+Every entry's page has **Edit as JSON…**: the entry's fields as this guide lists them, also the ones the builder has no field
+for (a ship's per-mesh `materials`, throttle and extra glows, a station's collision `volumes`, a room's `gateSpan`). The
+Menu has **Mod details** (website, credits, the Mods screen's picture) and **Translations** (every name and description of
+your items, ships, systems and stations in each language, `text/<lang>.json`); the Skins kind's **Other textures…** replaces
+any game texture (a station's, a planet's, a sun's, a ring's) and turns your retextured planets into stars (`backdrop.json`).
+**AI tools** in the top bar (Windows) is a switch for an MCP server: your own AI assistant (Claude Code, Claude Desktop,
+other MCP apps) can then look up content, write entries and files, check quests and play-test the open project
+(`Modding/ai/README.md` says how to connect; off by default, this computer only, with a token). Its **Permissions** say
+what waits for your Yes: Read only, Ask always, Ask to remove (the default) or Allow all, so an assistant can also build
+while you do something else.
 
 **Making a mod with an AI assistant:** `Modding/ai/gof2-modding` is this guide condensed for Claude, ChatGPT and the like,
 with every number and name of the original game a mod refers to in `reference.md` (items, stats, blueprints, ships, systems,
@@ -350,6 +378,7 @@ original's hue is replaced by yours (the Nirai Impulse's orange bolt turns purpl
 | `shot` | The sound of a shot: a file, or a list of files (one is picked at random each shot). `.ogg`, `.wav` or `.mp3`. Or an item's number: that item's shot sound (`46`: the AMR Extinctor's launch). |
 | `shotLoops` | `true`: the shot sound loops while the trigger is held (like the auto-cannons); `false`: one per shot. Default: the base item's (or, with `shot` an item's number, that item's). |
 | `explosionSound` | Bombs, mines and blast weapons: the sound of the blast (a file, a list, or an item's number). |
+| `trail` | The smoke trail behind each shot: `false` for none, or `{ "color": [r, g, b], "width": 100, "length": 3000 }` (its colour at the start, fading to nothing; half its width in game units; how long each part lasts in ms). Rockets and missiles trail white smoke (100 / 3000), thermo guns a coloured flame; a weapon without a trail gets one. Your own ship's shots and other players' show it. |
 | `turret` | Turrets: the turret's own model, shown on the ship in flight, in the hangar and to other players. A glTF / GLB file, or `{ "model": "models/t.glb", "muzzle": 28, "shotStart": 32, "scale": 1.5, "offset": [0, 20, 0] }`. Its origin sits on the mount, 1 unit = 1 m as made. A node named `pivot` holding the base turns it left and right and, in it, a node whose name contains `_gun` tilts it up and down (the barrel along +Z); a model without them turns as one piece. `scale` resizes it; `offset` moves it off its mount (game units: x toward the pilot's left, y along the turret's up, z forward). Leave out `model` and give `scale` / `offset` to resize or move the base item's own turret; `"item": 48` instead of `model` takes that game turret's model (with its muzzle and shot start), and `model` may be one of the game's (`"gof2:turret_003_ship_mounted"`, see [The game's own models](#the-games-own-models)). `muzzle` is where the muzzle flash shows and `shotStart` where the shots start, along the gun node in game units (20 per metre) on the model as made; default: the base turret's. |
 
 Each of `projectile`, `muzzle` and `impact` is either `false` (none at all), an object without a `sprite` or `model` (the
@@ -712,6 +741,7 @@ the event graphs' expression language and is checked when it matters (a shop's s
 | `campaign` | The story step (-1 in free play and mod campaigns). |
 | `rank`, `credits`, `kills`, `station`, `system`, `ship` | The player's rank, credits, kills, where they are docked / flying, the ship they fly. |
 | `visited(station)`, `has(item)`, `cargo(item)`, `quest(name)` | A station docked at; how many of an item the player has (mounted too) / has in the hold; a quest under way (1) or done (2). |
+| `docked(station)`, `inorbit(station)` | How many of the players are docked at that station now / alive in its orbit (single player: 1 or 0). |
 
 Combine them with `and`, `or`, `not`, comparisons and arithmetic:
 
@@ -784,6 +814,11 @@ GLB model listed in `interiors.json`:
 ```
 
 and picked by the station: `"hangar": "kepler_hangar", "bar": "kepler_bar"` in stations.json.
+
+**Markers** can also be listed in `interiors.json` (`"markers": { "pad": [x, y, z], "parked_1": [x, y, z] }`, room metres;
+they win over the model's nodes of that name): the Mod Builder's Hangars & bars kind places them by clicking into the room. A
+room's `model` may be one of the game's rooms (`"gof2:hangar_terran"`, `"gof2:bar_vossk"`), which has no marker nodes: the
+builder fills its markers in from the game's own tables.
 
 **Markers.** Put empty objects (Blender: Add > Empty) into the room where things go, named like this; only their position
 counts, so their rotation and size don't matter. Names are matched without case; numbered ones by their start.
@@ -897,6 +932,67 @@ step, -1 without one), `credits`, `rank`, `station`, `system`, `ship`, `kills`, 
 name or number. In single player `%player%` is Keith T. Maxwell.
 
 Mod quests run beside the game's own story. A quest whose mod is turned off waits in the save until the mod is back.
+
+### Quests made in the Mod Builder
+
+The Mod Builder's Quests kind makes quests, bar missions and events without the Unity Editor, in a **node graph** like
+the Editor's: a Start node, every step a node, the white wires the order they run in, a block's outputs (If's Then / Else,
+an Ask's answers...) the steps it runs. Drag the canvas to move around, the wheel to zoom; drag from an output onto a node
+to wire it (onto the empty canvas: a new step there, or cut the wire); drag a wired input away to cut it; double-click
+the canvas for a new step; Delete removes the selected node; **Tidy up** lays the graph out. The panel on the right edits
+the selected node (or the quest's settings), **Edit as JSON…** included. A node reached by no wire is drawn faded: it
+doesn't run. **Value nodes** (+ Value: a number, the game's state, a variable, maths, a comparison, and / or / not,
+random, min / max, the players, an orbit, ships alive, a ship's distance, cargo, docked at, visited, a quest's state)
+wire into the small square inputs of a step's fields (conditions, numbers, stations, whom it is for) or into each other.
+**List view** shows the same as an outline of steps. **Import an event graph…** reads a `.gof2event` from the Unity Editor:
+converted into the builder's nodes (where they stood on the Unity canvas; the lines the builder has no node for stay
+Command nodes, so it runs the same) or added as it is.
+
+It writes `events/<name>.gof2quest`, which the game turns into an event graph's script when it loads it (**Show the script**
+shows it). It can be written by hand too:
+
+```json
+{
+    "format": "gof2quest", "title": "The first signal", "kind": "quest", "startsWhen": "visited(78)", "reward": 5000,
+    "variables": [ { "name": "waves", "value": 2 } ],
+    "steps": [
+        { "type": "dialog", "pages": [ { "speaker": "Keith", "text": "A signal! {waves} waves of them.", "voice": "signal_1" }, { "speaker": "my_mod:vega", "text": "Come." } ] },
+        { "type": "goto", "station": 78, "dock": false, "objective": "Fly to Var Hastra" },
+        { "type": "repeat", "count": "waves", "as": "wave", "steps": [
+            { "type": "fight", "station": 78, "name": "Raider", "ships": [ { "ship": 2, "count": 3, "race": "pirate" } ] }
+        ] },
+        { "type": "ask", "question": "Go on?", "speaker": "Keith", "answers": [
+            { "text": "Yes", "steps": [ { "type": "reward", "credits": 5000 } ] },
+            { "text": "No", "steps": [ { "type": "fail", "title": "You gave up." } ] }
+        ] },
+        { "type": "checkpoint" },
+        { "type": "complete" }
+    ]
+}
+```
+
+`kind` is `quest`, `mission` (a bar mission: `offer`, `client`, `stations`, `players` [min, max] as the Start node's) or
+`event` (started by `/event <name>` or another one's Next event step). `variables`: numbers the quest keeps (`setting`: true
+lets `/event name x=3` change it); a text shows one in braces (`{waves}`). Without `complete` / `fail` a quest completes after
+its last step (`"autoComplete": false` turns that off). Every step takes `who` (whom it is for: `@a` everyone the quest is for,
+the default; `@trigger` the player a When block is about; any selector). The steps:
+
+| Group | Steps (fields) |
+|---|---|
+| Story | `dialog` (pages: speaker, text, voice), `radio` (speaker, text, voice), `objective` (text, station), `title` (title, subtitle, seconds), `note` (text: a comment) |
+| Flow | `wait` (seconds), `waituntil` (condition, timeout), `if` (condition, `then`, `else`), `while` (condition, `steps`), `repeat` (count, as, `steps`), `parallel` (`steps`: beside the rest), `every` (seconds, `steps`), `on` (trigger: died, docked, launched, kill, cleared, entered, near, respawned, joined, left, pvpkill; station; near: at "x y z", radius; `steps`), `ask` / `vote` (question, speaker, seconds, `answers`: [{ text, steps }]; a vote's `none` runs when nobody voted), `random` (`branches`: [{ weight, steps }]), `set` (variable, value), `checkpoint` (name), `startquest` (quest), `startevent` (event, settings), `complete` (reward, title), `fail` (title), `stop` |
+| Places | `goto` (station, `dock` true: docked there, false: in its orbit, objective), `waypoint` (station, at), `target` (station), `questorbit` (station, on), `restrict` (what: jumps / docking / all / off), `respawn` (station, at, spread, delay), `teleport` (station, dock, at) |
+| Ships | `fight` (station, ships: ship / count / race / behaviour, name, quiet; ends when none is left), `spawn` (ship, count, race, behaviour, name, at, turrets), `shipgoto` (ship, to, speed, radius, fight, then), `shiproute` (ship, route "place / place", loop, ...), `shipfollow` (ship, leader, offset, escort, speed), `shipattack` (ship, target), `shipaction` (ship, action: hold / resume / jump / dock / flee, seconds), `provoke` (race, within) |
+| The player | `reward` (credits, items, title), `give` (item, amount, mount), `cargo` (item, amount, station: waits until the hold has it), `credits` (amount), `ship` (hull, own), `heal`, `ammo`, `kill`, `reveal`, `peace` |
+| Cutscenes | `cutscene` (letterbox, freeze, invulnerable), `camera` (from, to, seconds, look, follow, fov, shake), `chasecamera`, `cutsceneend`, `fade` (direction: out / in / clear, seconds, colour), `letterbox` (on) |
+| Sound and screen | `music` (track), `sound` (sound), `timer` (seconds, label, stop) |
+| Score | `points` (amount), `scoreboard` (show, title), `score` (mode), `winner` (mode), `pvp` (on) |
+| Other | `command` (line: any event command) |
+
+Places (camera, ship orders) are written as for the [cutscenes](#cutscenes). A field wired to a value node holds
+`{ "$value": "v1" }`, the node in `"values"`: `[ { "id": "v1", "type": "compare", "op": ">=", "a": { "$value": "v2" }, "b": 5 } ]`.
+The graph view keeps each node's place (`"pos"`), the chains wired to nothing (`"loose"`) and the Start node's place.
+Conditions also know `docked(<station>)` and `inorbit(<station>)`.
 
 ### Moving ships
 

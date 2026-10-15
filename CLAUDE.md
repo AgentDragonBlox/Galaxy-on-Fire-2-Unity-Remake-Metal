@@ -86,7 +86,10 @@ Menu items (from `Scripts/Editor`), grouped in submenus; **GoF2 > Tools Overview
 - **GoF2 > Scenes > Space Scene**: `Assets/Scenes/Space.unity`, the flight level (see "Space scene"). Also (re)makes `Resources/GoF2Backdrop` and bakes the space skies if missing.
 - **GoF2 > Scenes > Station Scene**: `Assets/Scenes/Station.unity`, the docked station (see "Station scene"). Wires the bar visitor prefabs, glow materials, music, ambience and language tables.
 - **GoF2 > Scenes > Add Post Processing To Open Scene**: global Volume with `Assets/Settings/GoF2_VolumeProfile.asset` (Bloom, threshold 1) + camera post-processing on.
-- **GoF2 > Build > Modding AI Reference** (`ModdingReferenceBuilder`): `Modding/ai/gof2-modding/reference.md`, every number and name of the original game a mod or event graph refers to (Android economy): items with every stat / raw attribute, item categories, attribute numbers, blueprint recipes, ships (model, hangar height), systems (sky), stations (race, planet, model), story steps, story speakers, every assembled model with the texture names a skin replaces, backdrop textures, music, sound effects, the event sound / music words, the built-in event graphs; ship hull sizes and every original ship's hardpoints as `mounts` JSON, the Default economy's differences, what each sky / sun / planet looks like (hand-written tables `SkyLooks` / `SunLooks` / `PlanetLooks`: update them when a texture changes); `voices.md` (every voice clip with its speaker and English line, for `[voice <clip>]`); `events.md` (`ModdingEventsReference`: every event graph node's options and ports, read from `EventGraphNodes.cs` by a small tokenizer, so keep the node classes in that file's style, plus every command from `NetCommands.Reference`); and `guide.md`, a copy of `Modding/README.md`. For the AI modding guide (modders kept asking for ids). Run it again after changing the game data; headless: `Unity.exe -batchmode -nographics -projectPath . -executeMethod GoF2Remake.EditorTools.ModdingReferenceBuilder.Batch -quit`.
+- **GoF2 > Build > Modding AI Reference** (`ModdingReferenceBuilder`): `Modding/ai/gof2-modding/reference.md`, every number and name of the original game a mod or event graph refers to (Android economy): items with every stat / raw attribute, item categories, attribute numbers, blueprint recipes, ships (model, hangar height), systems (sky), stations (race, planet, model), story steps, story speakers, every assembled model with the texture names a skin replaces, backdrop textures, music, sound effects, the event sound / music words, the built-in event graphs; ship hull sizes and every original ship's hardpoints as `mounts` JSON, the Default economy's differences, what each sky / sun / planet looks like (hand-written tables `SkyLooks` / `SunLooks` / `PlanetLooks`: update them when a texture changes); `voices.md` (every voice clip with its speaker and English line, for `[voice <clip>]`); `quests.md` +
+  `quest.schema.json` (`Events.QuestSchema`, made from `QuestSteps` and `QuestGraph.ValueTypes`: every `.gof2quest` step,
+  field, kind and default, a JSON Schema 2020-12 with shared `$defs` who / text / value / wire; a new step row there is in
+  them at the next run); `events.md` (`ModdingEventsReference`: every event graph node's options and ports, read from `EventGraphNodes.cs` by a small tokenizer, so keep the node classes in that file's style, plus every command from `NetCommands.Reference`); and `guide.md`, a copy of `Modding/README.md`. For the AI modding guide (modders kept asking for ids). Run it again after changing the game data; headless: `Unity.exe -batchmode -nographics -projectPath . -executeMethod GoF2Remake.EditorTools.ModdingReferenceBuilder.Batch -quit`.
 - **GoF2 > Build > Combat Assets**: `Resources/GoF2Combat/CombatAssets` (`CombatAssets`). Also run by Create Space Scene.
 - **GoF2 > Build > Star Map Assets**: `Resources/GoF2StarMap/StarMapAssets` (`StarMapAssets`). Also run by Create Space Scene, and by Create Station Scene when missing.
 - **GoF2 > Build > Network Prefabs**: `Resources/GoF2Net`, the multiplayer network prefabs (see "Multiplayer").
@@ -2263,10 +2266,64 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   a model or none; shot / blast sounds; the trail (items.json fx "trail": none, or colour / width / length, also on a weapon
   without one: `WeaponFx.trail` (`TrailLook`, not serialized), `RocketTrail.For(gun, look)`, `GunRig.EnableTrails`); a
   range where the parked ship fires at a target ship 300-450 m off, seen from the side (Gun + GunRig like NetShotMirror; the
-  target's hit cube 35 m: at 900 m every shot hit as it left the gun). Tests: `ModBuilderKindsTests`. Verified in Play mode: every kind's page, a quest compiled and played (its
+  target's hit cube 35 m: at 900 m every shot hit as it left the gun). Tests: `ModBuilderKindsTests`.
+  **Quest graph** (2026-10-15, user's request "a full graph in the game just like in Unity"): every step type is a row of
+  `Events.QuestSteps` (type, picker group, fields with their kind, the line it makes; the steps needing more, blocks
+  included, are written by `QuestFile`), so a new step there is editable at once. Blocks (if / while / repeat / parallel /
+  every / on / ask / vote / random) hold nested step lists; `who` on every step; quest `variables` (param / set), kinds
+  quest / mission / event, `autoComplete`; `{variable}` kept in texts (`QuestFile.Clean` with the known names). The graph
+  (`Events.QuestGraph`, plain): flow wires ARE the step tree (Next = the next in its list, a block output its list, Start
+  the quest's `steps`; one wire into a node, like Graph Toolkit), unwired chains in `loose`, places in `pos` / `startPos`,
+  value nodes in `values` wired into fields as `{ "$value": id }` (`QuestReader.E` / `Arg` / `S` / `Ref` resolve them,
+  `QuestGraph.Resolve`). `UI.QuestGraphView` draws it (UI Toolkit: pan, zoom, bezier wires by Painter2D on a 100 km layer,
+  drag to wire / cut / move, double-click for a step, Delete); `ModBuilderViewQuests`' Graph view (default; PlayerPrefs
+  `mb_quest_graph`, Wider hides the list) with the inspector on the right, or List view. Newtonsoft trap: `new JArray(tokens)`
+  COPIES tokens that still have a parent (`AddLooseChain` removes them first). **Unity graphs**: `QuestFile.FromScript` turns
+  an event graph's script into steps (the lines it has no step for stay `command` steps; every editor template comes back
+  line for line), `FromGraphFile` places them where the Unity nodes stood (`EventGraphFile` now reads `m_Position`, the
+  script's `#@id` markers); the Quests kind imports a .gof2event converted or as it is, and converts a project's graph.
+  Also: **Edit as JSON…** on every entry page (`ModBuilderScreen.EditJson`, in place: `ProjectEntry.Json`,
+  `ProjectShip.Json` / `ReadMounts`), the items' and ships' less common fields (`ModBuilderViewMore`: price systems, Vossk
+  only, always sold at, available, attributes by number, Default Economy prices; available, dealer, lounge, npcTurrets,
+  priceDefault, engine flame), a system's stars brightness / fixed sky turn, Menu > **Mod details** (website, credits,
+  preview.png) and **Translations** (`ModProject.TranslatableTexts` / `Texts` / `SetText`, text/<lang>.json), Skins >
+  **Other textures…** (any game texture, the GoF2Backdrop list, `backdrop.json`). Tests: `QuestGraphTests`. Verified in Play mode: every kind's page, a quest compiled and played (its
   conversation in the station, back to the builder), a system on the map with its route, a game hangar as the project's
   room with its markers, a project station in its own orbit, a laser recoloured and a project missile hitting the target
   ship. Not yet: a system dragged by hand, a marker clicked by hand, the campaign play test.
+- **Mod Builder MCP server** (remake, 2026-10-15; user's request: the player's own AI assistant builds mods with the game's
+  checks, no AI chat in the game; `UI.ModBuilderMcp` (+ `ModBuilderMcpTools`, `ModBuilderMcpPump`), the builder's **AI
+  tools** button in the top bar between Redo and the Hangar button (not among the kinds: `ModBuilder.Kind.AiTools`, not in
+  `KindTabs`; `ModBuilderScreenAi`, shown in the hangar's and space's builder screens): MCP's Streamable HTTP on a
+  `TcpListener` (POST /mcp JSON-RPC 2.0 answered as application/json: initialize (protocol 2025-06-18 / 2025-03-26 /
+  2024-11-05, `Mcp-Session-Id`), ping, tools/list, tools/call (text / image content, isError); notifications 202, GET 405,
+  DELETE 200). Off by default (PlayerPrefs `mb_mcp_on`, port `mb_mcp_port` 47630, `mb_mcp_token`), Windows only (player and
+  Editor, `Supported`), running only while `ModBuilder.Active` and not in a play test's own screens; 127.0.0.1 only, a
+  Bearer token (constant-time), Origin / Host must be localhost (DNS rebinding). The HTTP thread never touches the Unity
+  API (Localization, PlayerPrefs, Application, Time: `liveToken` / `liveVersion` are cached at Start): each call is queued
+  and run on the main thread by the pump (`Call.Wait(condition, then)` for answers after a reload; screenshots at
+  WaitForEndOfFrame). Edits go through `ModProject.CaptureState` / `RestoreState` like an undo (`ExternalEdit`: saved, an
+  undo step, the screen refreshed, the project read again); files only inside the project's folders with their extensions
+  (models, textures, icons, portraits, music, sounds, voices, events, text). **Permissions** (the tab's row, PlayerPrefs
+  `mb_mcp_permission`, `ModBuilderMcp.Permissions`; user's request: an AI building a mod without the player watching the
+  game): Read only (every change refused, the AI told to suggest instead), Ask always (every change waits for the player's
+  Yes), Ask to remove (the default: removals ask, the rest goes through), Allow all (nothing asks); `ModBuilderMcp.Permit`
+  gates every tool that isn't `readOnly` / `noAsk` (show_kind, end_play_test) in `Pump` (delete_entry `permitsItself`,
+  after its own checks), with the tool's `ask` text; the question (`ExternalAsk`: Yes / No / Yes to everything, the last
+  setting Allow all) waits up to 5 minutes (`AskSeconds`, the HTTP thread's wait grows by it; then a No, the dialog closed,
+  `ExternalCancelAsk`); without a builder screen on show the change is refused; builder_status and the instructions say
+  the mode (`livePermission` for the HTTP thread). Tools: builder_status, search_content (`ModRefs`: the game's, the project's, other mods'),
+  list_entries / get_entries / put_entry / delete_entry (the mod files' own JSON; put answers after the reload with the
+  mod's errors / warnings and a quest's problems, `EventRunner.CheckScript`), list_files / read_file / write_file,
+  compile_quest, validate, get_quest_schema, play_test / end_play_test, get_log (a 600-line ring, the token redacted),
+  screenshot, undo / redo, show_kind. The tab: on / off, the permissions, the state, the port, the token (hidden; Show, Copy, New token), the
+  Claude Code / Claude Desktop (`npx mcp-remote`) / any-client setup with Copy (the token masked on screen), what the AI did
+  (the button's green border while it runs). Docs: `Modding/ai/README.md`, SKILL.md. Verified with curl in Play mode: auth,
+  the Host check, initialize, tools/list, put / compile / validate, a removal refused and confirmed, undo, a screenshot, a
+  quest play test with its dialogue, the log, end play test, write_file and a character, a path escape and ships.json as a
+  file refused; each permission mode (Read only refusing put_entry, Ask always's question answered by Yes to everything
+  switching to Allow all, a removal under Allow all without a question, a No under Ask to remove). Not yet: a real Claude
+  client connected.
 - Orbit drags (remake, players' request): a vertical drag takes the camera down / up the other way round (a drag up tips the
   ship up) in Inspect ship, Action Freeze (`PhotoMode`, the original's y flip dropped) and the Mod Builder; keys and sticks
   unchanged.

@@ -100,6 +100,8 @@ namespace GoF2Remake.UI
             itemPage.Clear();
             var it = currentItem;
             if (it == null) { Note(itemPage, T("mbPickItem", "Add an item on the left to start.")); return; }
+            JsonButton(itemPage, it.Json, () => { ItemEdited(); RebuildItems(); BuildItemPage(); },
+                       T("mbJsonItemNote", "items.json's fields: also stats / attributes by number, defaultEconomy, fx (projectile, muzzle, impact, turret, trail, sounds), available."));
             var db = Database.Shared;
             var original = it.Original >= 0 ? db.Item(it.Original) : null;
             bool isNew = !it.IsOverride;
@@ -176,6 +178,7 @@ namespace GoF2Remake.UI
             }
             minField = Int(itemPage, T("mbMinPrice", "Lowest price"), it.MinPrice ?? original.minPrice, 0, 999999999, _ => Prices());
             maxField = Int(itemPage, T("mbMaxPrice", "Highest price"), it.MaxPrice ?? original.maxPrice, 0, 999999999, _ => Prices());
+            BuildItemMore(it, original);
 
             Heading(itemPage, T("mbItemStats", "Stats"));
             var names = StatNames();

@@ -18,6 +18,8 @@ namespace GoF2Remake.Modding
         protected ProjectEntry(JObject o) { json = o; }
 
         public JObject ToJson() => (JObject)json.DeepClone();
+        /// <summary>The entry's JSON itself (the graph editor and Edit as JSON work on it in place).</summary>
+        public JObject Json => json;
 
         protected string S(string k) => json[k] is JValue v && v.Type == JTokenType.String ? (string)v : null;
         protected int? N(string k) => json[k] is JValue v && (v.Type == JTokenType.Integer || v.Type == JTokenType.Float) ? Mathf.RoundToInt((float)v) : (int?)null;

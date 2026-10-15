@@ -114,6 +114,7 @@ namespace GoF2Remake.UI
             blueprintPage.Clear();
             var b = currentBlueprint;
             if (b == null) { Note(blueprintPage, T("mbPickBlueprint", "Add a blueprint on the left to start.")); return; }
+            JsonButton(blueprintPage, b.Json, () => { BlueprintEdited(true); });
             var rk = b.IsShip ? RefKind.Ship : RefKind.Item;
             Heading(blueprintPage, b.IsShip ? T("mbShipBlueprint", "Ship blueprint") : T("mbItemBlueprint", "Item blueprint"));
             RefField(blueprintPage, b.IsShip ? T("mbBuildsShip", "Builds the ship") : T("mbBuildsItem", "Builds the item"), rk, b.Product,

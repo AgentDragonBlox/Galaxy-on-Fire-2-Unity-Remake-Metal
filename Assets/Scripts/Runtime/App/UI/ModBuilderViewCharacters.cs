@@ -83,6 +83,7 @@ namespace GoF2Remake.UI
             characterPage.Clear();
             var c = currentCharacter;
             if (c == null) { Note(characterPage, T("mbPickCharacter", "Add a character on the left to start.")); return; }
+            JsonButton(characterPage, c.Json, () => { SaveNow(); RequestReload(false); RebuildCharacters(); BuildCharacterPage(); });
 
             // The portrait as a conversation shows it, under its name.
             var preview = Add(characterPage, new VisualElement(), "mbv-char-preview");

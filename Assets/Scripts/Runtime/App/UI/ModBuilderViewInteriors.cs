@@ -223,6 +223,8 @@ namespace GoF2Remake.UI
             interiorPage.Clear();
             var r = currentInterior;
             if (r == null) { Note(interiorPage, T("mbPickRoom", "Add a room on the left to start.")); return; }
+            JsonButton(interiorPage, r.Json, () => { SaveNow(); RequestReload(false); RebuildInteriors(); BuildInteriorPage(); },
+                       T("mbJsonRoomNote", "interiors.json's fields: also materials, gateSpan, cruise, near / far, markers."));
             Heading(interiorPage, r.IsBar ? T("mbBarRoom", "Space Lounge bar") : T("mbHangarRoom", "Hangar"));
             Note(interiorPage, string.Format(T("mbRoomKey", "Stations use it as \"{0}\"."), InteriorKey(r)));
 
