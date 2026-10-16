@@ -600,8 +600,9 @@ namespace GoF2Remake.World
         }
 
         /// <summary>A level script's jump to another orbit (MGame::OnTouchEnd after index 64's / 80's success conversation:
-        /// switch_to_target_setting, departStation, initStreamOutPosition): hull, shield and armor kept, a stream-out arrival.</summary>
-        public void TravelTo(int station)
+        /// switch_to_target_setting, departStation, initStreamOutPosition): hull, shield and armor kept, a stream-out arrival;
+        /// 'streamOut' false = initStreamOutPosition 0, the undock point (MGame::OnTouchEnd / LevelScript::process at 0x90).</summary>
+        public void TravelTo(int station, bool streamOut = true)
         {
             if (Leaving) return;
             Leaving = true;
@@ -609,7 +610,7 @@ namespace GoF2Remake.World
             if (station == Session.VoidOrbit) Session.VoidReturnStation = Layout.stationIndex;
             Session.PreviousStationIndex = Layout.stationIndex;
             Session.StationIndex = station;
-            Session.ArrivedByTravel = true;
+            Session.ArrivedByTravel = streamOut;
             Session.LaunchedFromStation = false;
             Session.ProgrammedStation = -1;
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);

@@ -208,6 +208,9 @@ namespace GoF2Remake.Data
         public static int VoidReturnStation = 10;
         /// <summary>Level::comingFromAlienWorld: the next level starts with a wormhole closing behind the player.</summary>
         public static bool ComingFromVoid;
+        /// <summary>Level::initStreamOutPositionAfterCutscene: index 143 won in space at Var Lupra, so the 144 cutscene's reload
+        /// into the 145 attack is a stream-out arrival (LevelScript::process 0x90). Not saved, like the original's static.</summary>
+        public static bool StreamOutAfterCutscene;
         /// <summary>Level::lastMissionFreighterHitpoints: Errkt's freighter's hull carried from index 40 into 41 (-1 none).</summary>
         public static int LastFreighterHull = -1;
         /// <summary>Globals::lastCampaignMissionFailed / FailCount: the campaign index that failed and how often in a row (globals:
@@ -482,6 +485,7 @@ namespace GoF2Remake.Data
             InvasionDepartures = 0;
             VoidReturnStation = 10;
             ComingFromVoid = false;
+            StreamOutAfterCutscene = false;
             LastFreighterHull = -1;
             EndingPending = false;
             Unsaleable = new HashSet<int>();

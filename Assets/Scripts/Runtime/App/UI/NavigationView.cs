@@ -194,12 +194,10 @@ namespace GoF2Remake.UI
             // Remake: a single-player event graph bar mission's target ("target" line).
             if (Events.EventMissions.Active != null && Events.EventRunner.LocalMissionTarget == station) return true;
             if (!Freelance.Active) return false;
-            var f = Freelance.Mission;
             // Stolen goods: the original marks the agent's station from the start, and players went back there looking for
             // the documents (#113). Remake: nothing until the documents are aboard (the briefing names the system to
-            // search), then the client's station.
-            if (f.type == MissionType.StolenGoods) return Freelance.HasDocuments && station == f.clientStation;
-            return station == f.target;
+            // search), then the client's station (Freelance.MarkedStation, the star map's rule too).
+            return station == Freelance.MarkedStation;
         }
 
         /// <summary>The gold story icon: the campaign target (visible missions only, Story.MapMarks) or an event graph quest's.</summary>

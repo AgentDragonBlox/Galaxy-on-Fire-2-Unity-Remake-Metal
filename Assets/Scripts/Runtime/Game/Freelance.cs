@@ -180,6 +180,15 @@ namespace GoF2Remake.Data
         /// <summary>A Stolen goods mission's documents are in the hold.</summary>
         public static bool HasDocuments => CargoCount(Documents) > 0;
 
+        /// <summary>The station the mission's markers point at (the star map's and the HUD's icon), -1 = none. Stolen goods: the
+        /// original marks the agent's station from the start; remake (a player's report): none while the documents are still
+        /// to be found (the briefing names only the system), then the client's station.</summary>
+        public static int MarkedStation => !Active ? -1 : Mission.type != MissionType.StolenGoods ? Mission.target : HasDocuments ? Mission.clientStation : -1;
+
+        /// <summary>The station whose system the map marks and Show on map opens on: the marked one, else (Stolen goods before
+        /// the documents are aboard) the documents' station, of which the map shows only the system.</summary>
+        public static int MapStation => MarkedStation >= 0 ? MarkedStation : Active ? Mission.target : -1;
+
         /// <summary>ModStation::OnInitialize: the Stolen goods mission's documents wait in the target station's shop. Remake: not
         /// again while they are in the hold (#113: every docking at the target put another set in its shop).</summary>
         public static void OnEnterStation(StationStock stock)

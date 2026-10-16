@@ -428,8 +428,10 @@ namespace GoF2Remake.UI
         bool StoryShown => Session.StoryMission != null && Session.StoryMission.visible && !Session.FreePlay;
         /// <summary>The story icon on this station (step 59: every convoy target still to do, Story.MapMarks).</summary>
         bool StoryMarked(int station) => (StoryShown && Story.MapMarks(station)) || Events.EventRunner.IsQuestTarget(station);   // remake: event graph quests' targets too
-        int FreelanceTarget => Freelance.Active ? Freelance.Mission.target
+        int FreelanceTarget => Freelance.Active ? Freelance.MarkedStation
                              : Events.EventMissions.Active != null ? Events.EventRunner.LocalMissionTarget : -1;
+        /// <summary>The system with the freelance icon: the marked station's, or the system a Stolen goods briefing names.</summary>
+        int FreelanceSystem => SystemOf(Freelance.Active ? Freelance.MapStation : FreelanceTarget);
 
         // ---- 3D --------------------------------------------------------------------------------------------
 
@@ -865,7 +867,7 @@ namespace GoF2Remake.UI
                 it.visited.style.display = fully ? DisplayStyle.Flex : DisplayStyle.None;
                 it.pulse.style.display = s.index == currentSystem ? DisplayStyle.Flex : DisplayStyle.None;
                 it.story.style.display = s.stations.Exists(StoryMarked) ? DisplayStyle.Flex : DisplayStyle.None;
-                it.freelance.style.display = FreelanceTarget >= 0 && SystemOf(FreelanceTarget) == s.index ? DisplayStyle.Flex : DisplayStyle.None;
+                it.freelance.style.display = FreelanceSystem >= 0 && FreelanceSystem == s.index ? DisplayStyle.Flex : DisplayStyle.None;
                 it.products.style.display = Session.PendingProducts.Exists(pp => s.stations.Contains(pp.station)) ? DisplayStyle.Flex : DisplayStyle.None;
                 if (builder?.movable != null && builder.movable(s.index)) it.name.style.color = new Color(1f, 0.78f, 0.35f);   // the builder's own
                 systemItems[s.index] = it;

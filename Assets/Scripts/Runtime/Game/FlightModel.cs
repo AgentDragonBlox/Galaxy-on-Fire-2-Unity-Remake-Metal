@@ -662,6 +662,10 @@ namespace GoF2Remake.Flight
             float target = Mathf.Clamp(sum / autopilotTurnCount * limit * AutopilotBankGain, -limit, limit);
             autopilotRate = Mathf.MoveTowards(autopilotRate, target, dtMs * he / 81f);
             VisualYawBank = autopilotRate / (TargetRateScale / TargetRateDivisor);
+            // PlayerEgo::update: +0x280 becomes the yaw rate +0x27c, which banks the model (ShipController.UpdateVisualBank
+            // reads the yaw rate; since it banks from the rates, the autopilot flew its turns flat again). The autopilot's
+            // own turn doesn't rotate by it; handed back, the ship eases out of the turn as it decays (handleShip).
+            YawRate = autopilotRate;
         }
 
         /// <summary>The autopilot let go (PlayerEgo::update: +0x2a4 / +0x2a8 cleared).</summary>

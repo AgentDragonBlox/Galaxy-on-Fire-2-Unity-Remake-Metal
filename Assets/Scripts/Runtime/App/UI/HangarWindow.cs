@@ -1537,6 +1537,10 @@ namespace GoF2Remake.UI
                 {
                     int item = Session.Equipment[selected.equipment].item;
                     if (!Hangar.IsSaleable(item)) { menu.ShowToast(Localization.Get(323)); break; }
+                    // HangarWindow::selectItem 0x178e20: a passenger cabin stays while the others couldn't seat the passengers aboard.
+                    var cabin = level.Database.Item(item);
+                    if (cabin != null && cabin.categoryId == 20 && Session.Passengers > 0
+                        && Freelance.MaxPassengers(level.Database) - cabin.Stat("cabinSize") < Session.Passengers) { menu.ShowToast(Localization.Get(323)); break; }
                     hangar.Demount(selected.equipment);
                     menu.PlayClip(menu.shopDemount);
                     menu.ShowToast(Localization.Get(209).Replace("#N", ItemInfo.ItemName(item)));

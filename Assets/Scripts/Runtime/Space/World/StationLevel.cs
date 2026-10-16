@@ -707,10 +707,17 @@ namespace GoF2Remake.World
         /// and still rooms are where TAA has nothing to smear), unless a temporal upscaler (DLSS, FSR 2+, STP) already
         /// anti-aliases or MSAA is on (URP's TAA needs it off); then SMAA as before. Again when the options change.</summary>
         /// <summary>Remake mods: a customizable ship's parts arrived (loaded on demand, ModShips.EnsureBuild): the turntable shows
-        /// the player's build.</summary>
+        /// the player's build. Also a mod ship whose model wasn't built yet when the hangar opened (a save loaded while the mods
+        /// still loaded, a player's report: the Phantom stood in until the next docking): its own model now.</summary>
         void OnModShipModels()
         {
-            if (this == null || playerShip == null || PlayerFlying || Modding.ModShipKits.CustomizationOf(Session.ShipIndex) == null) return;
+            if (this == null || playerShip == null || PlayerFlying) return;
+            // The stand-in is another prefab (AssembledObject.ModScope = the prefab's name); the Mod Builder rebuilds its ship itself.
+            var want = PlayerHull.Assembly(db, Session.ShipIndex);
+            var shown = playerShip.GetComponent<AssembledObject>();
+            bool standIn = !Modding.ModManager.BuilderOpen && want != null && want.pack == Modding.ModShips.Pack
+                           && shown != null && shown.ModScope != want.name;
+            if (!standIn && Modding.ModShipKits.CustomizationOf(Session.ShipIndex) == null) return;
             ReplacePlayerShip(Session.ShipIndex);
         }
 
