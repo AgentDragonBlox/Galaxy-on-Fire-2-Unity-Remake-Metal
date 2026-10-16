@@ -16,6 +16,7 @@ using Newtonsoft.Json.Linq;
 
 namespace GoF2Remake.Events
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]   // read-only tables
     public static class QuestGraph
     {
         public const string Next = "next", Start = "start";

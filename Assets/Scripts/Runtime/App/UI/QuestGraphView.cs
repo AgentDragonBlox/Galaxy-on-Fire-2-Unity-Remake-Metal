@@ -22,6 +22,7 @@ using UnityEngine.UIElements;
 
 namespace GoF2Remake.UI
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]   // read-only tables
     public sealed class QuestGraphView : VisualElement
     {
         public const float NodeWidth = 250f, ValueWidth = 210f;

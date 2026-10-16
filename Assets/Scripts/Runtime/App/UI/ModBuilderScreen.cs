@@ -24,6 +24,7 @@ using UnityEngine.UIElements;
 
 namespace GoF2Remake.UI
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]   // Open: cleared at SubsystemRegistration (ModBuilderScreenAi)
     public abstract partial class ModBuilderScreen
     {
         protected static string T(string key, string english) => Localization.Extra(key, english);

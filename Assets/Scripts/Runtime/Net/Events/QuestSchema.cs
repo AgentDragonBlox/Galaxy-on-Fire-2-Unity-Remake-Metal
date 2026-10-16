@@ -12,6 +12,7 @@ using Newtonsoft.Json.Linq;
 
 namespace GoF2Remake.Events
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]   // read-only tables
     public static class QuestSchema
     {
         /// <summary>The fields of the custom steps (QuestSteps.custom: written by QuestFile itself): key, kind of value, meaning.</summary>

@@ -19,6 +19,7 @@ using UnityEngine;
 
 namespace GoF2Remake.EditorTools
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]   // read-only tables
     public static class ModdingReferenceBuilder
     {
         const string OutputPath = "Modding/ai/gof2-modding/reference.md";

@@ -20,6 +20,7 @@ using Object = UnityEngine.Object;
 
 namespace GoF2Remake.UI
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]   // read-only tables
     public static class ModelViewer
     {
         const int Layer = 30, Super = 2;

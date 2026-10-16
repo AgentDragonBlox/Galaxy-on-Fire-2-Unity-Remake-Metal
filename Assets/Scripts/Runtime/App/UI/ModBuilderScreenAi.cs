@@ -19,6 +19,9 @@ namespace GoF2Remake.UI
     {
         /// <summary>The builder screen open now (null / not Alive during a play test or outside the builder).</summary>
         public static ModBuilderScreen Open { get; private set; }
+        // Play mode runs without a domain reload: a screen open when it ended isn't the next session's.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetOpen() => Open = null;
 
         VisualElement aiPage, aiActivity;
         Button aiButton;

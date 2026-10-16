@@ -209,6 +209,7 @@ namespace GoF2Remake.Events
         public static string Join(params string[] parts) => string.Join(" ", parts.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p.Trim()));
     }
 
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]   // read-only tables
     public static class QuestSteps
     {
         /// <summary>The picker's groups, in order.</summary>

@@ -23,6 +23,7 @@ using Newtonsoft.Json.Linq;
 
 namespace GoF2Remake.Events
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]   // read-only tables
     public static class QuestFile
     {
         public const string Extension = "gof2quest";
