@@ -185,6 +185,7 @@ namespace GoF2Remake.Modding
             "skins", "weaponColors",   // customizations of a ship without a kit (ModShipKits.CustomizationOf)
             "engineFx",   // Galaxy on Fire 3's engine effect (EngineFx)
             "sounds",     // the ship's own engine and boost sounds (ModShipSounds)
+            "integrated", // a built-in Khador Drive / cloak (ApplyIntegrated)
         };
 
         static void ParseShips(ModInfo mod, Parsed p)
@@ -205,6 +206,8 @@ namespace GoF2Remake.Modding
                 };
                 if ((d.localId == null) == (d.overrideRef == null))
                     throw new ModJsonException($"{where}: a ship needs either \"id\" (a new ship) or \"override\" (change an existing one)");
+                if (ModJson.Get(o, "integrated") is JToken ig && !(ig is JObject))
+                    throw new ModJsonException($"{where}: \"integrated\" must be an object {{ \"khadorDrive\": true, \"cloak\": 95 }}");
                 if (ModJson.Get(o, "npcTurrets") is JToken nt && !(nt is JArray))
                     throw new ModJsonException($"{where}: \"npcTurrets\" must be a list of turret items [ 48, \"mod:id\" ]");
                 foreach (var prop in o.Properties())
@@ -235,7 +238,7 @@ namespace GoF2Remake.Modding
                 }
                 // The rest as CustomShipData (JsonUtility reads it; the texts and ids are the mod's own; npcTurrets: ApplyShips).
                 var data = (JObject)o.DeepClone();
-                foreach (var k in new[] { "id", "override", "name", "description", "npcTurrets", "build", "sounds" }) data.Remove(k);
+                foreach (var k in new[] { "id", "override", "name", "description", "npcTurrets", "build", "sounds", "integrated" }) data.Remove(k);
                 try { JsonUtility.FromJson<CustomShipData>(data.ToString()); }
                 catch (Exception e) { throw new ModJsonException($"{where}: {e.Message}"); }
                 d.data = data.ToString();
@@ -682,6 +685,8 @@ namespace GoF2Remake.Modding
         {
             db.NpcTurrets.Clear();
             db.ShipModels.Clear();
+            db.IntegratedDrives = new HashSet<int>(Database.DefaultIntegratedDrives);
+            db.IntegratedCloaks = new Dictionary<int, int>(Database.DefaultIntegratedCloaks);
             foreach (var mod in ModManager.Active)
                 foreach (var d in Parse(mod).ships)
                 {
@@ -740,6 +745,7 @@ namespace GoF2Remake.Modding
                                 }
                             }
                             ApplyNpcTurrets(db, mod, d, t);
+                            ApplyIntegrated(db, mod, d, t);
                             continue;
                         }
                         int index = shipIndex[d.key];
@@ -758,6 +764,7 @@ namespace GoF2Remake.Modding
                             db.WeaponMounts.Add(new WeaponMountSet { ship = index, shipName = c.name, mounts = c.mounts });
                         else if (GameModels.Is(c.model, out string mountsModel)) CopyModelMounts(db, d, index, c.name, mountsModel);
                         ApplyNpcTurrets(db, mod, d, index);
+                        ApplyIntegrated(db, mod, d, index);
                     }
                     catch (ModJsonException e) { Report(mod, e.Message); }
                 }
@@ -787,6 +794,39 @@ namespace GoF2Remake.Modding
             if (db.MountsOf(ship, 2).Count < items.Count)
                 Report(mod, $"{d.where}: \"npcTurrets\" lists {items.Count} turrets, the ship has {db.MountsOf(ship, 2).Count} turret mounts (the rest is left off)");
             db.NpcTurrets[ship] = items;
+        }
+
+        /// <summary>Remake (a modder's request): ships.json "integrated", what a ship has built in like the Kothar ships' Khador
+        /// Drive (37 / 38 / 40) and the Specter's / Scimitar's cloak (44 / 49): "khadorDrive" true / false (Database.IntegratedDrives:
+        /// GalaxyMap.HasJumpDrive, the Khador entry and its hints), "cloak" true (the U'tool's stats, 95), a cloak item (a number or
+        /// "mod:id", category 21) or false (Database.IntegratedCloaks: PlayerCloak, the cloak bay). An override can take an
+        /// original ship's away; the later mod wins.</summary>
+        static void ApplyIntegrated(Database db, ModInfo mod, ShipDef d, int ship)
+        {
+            if (!(ModJson.Get(d.json, "integrated") is JObject o)) return;
+            foreach (var prop in o.Properties())
+            {
+                var v = prop.Value;
+                if (string.Equals(prop.Name, "khadorDrive", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (v.Type != JTokenType.Boolean) { Report(mod, $"{d.where}: \"integrated\": \"khadorDrive\" must be true or false"); continue; }
+                    if ((bool)v) db.IntegratedDrives.Add(ship); else db.IntegratedDrives.Remove(ship);
+                }
+                else if (string.Equals(prop.Name, "cloak", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (v.Type == JTokenType.Boolean)
+                    {
+                        if ((bool)v) db.IntegratedCloaks[ship] = Database.IntegratedCloakItem; else db.IntegratedCloaks.Remove(ship);
+                        continue;
+                    }
+                    string reference = v.Type == JTokenType.Integer ? ((int)v).ToString() : v.Type == JTokenType.String ? (string)v : null;
+                    if (reference == null || !TryResolveItem(reference, out int item) || db.Item(item) == null)
+                    { Report(mod, $"{d.where}: \"integrated\": \"cloak\": {v} is no item (true, false or a cloak item)"); continue; }
+                    if (db.Item(item).categoryId != 21) { Report(mod, $"{d.where}: \"integrated\": \"cloak\": {db.Item(item).name} ({item}) is no cloak"); continue; }
+                    db.IntegratedCloaks[ship] = item;
+                }
+                else mod.Warnings.Add($"{d.where}: \"integrated\": unknown field \"{prop.Name}\" (ignored; \"khadorDrive\", \"cloak\")");
+            }
         }
 
         /// <summary>A mod ship whose mod isn't on: never sold, can't be flown (ModSaves moves the player out of it).</summary>

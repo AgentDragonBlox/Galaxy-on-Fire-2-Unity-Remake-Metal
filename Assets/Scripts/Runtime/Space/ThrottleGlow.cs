@@ -12,6 +12,7 @@
 // The drive comes from EngineDrive (the player's ShipController, else the ship's measured speed). The level eases toward the target so throttle steps
 // fade in and out. Never hidden with the engines: while the game has the player's engine parts off (mining, object
 // docking, cutscenes; AssembledObject.playerVariantParts holds the empty 'engineState' for it) the glow sits at 'idle'.
+// Remake mods: 'off' (ships.json "off") is the level while parked in a hangar with the engines off instead.
 
 using UnityEngine;
 
@@ -28,6 +29,8 @@ namespace GoF2Remake.Visuals
         public float full = 4f;
         [Tooltip("Glow intensity at the height of a boost.")]
         public float boost = 7f;
+        [Tooltip("Remake mods: glow intensity while the ship is parked in a hangar with its engines off; below 0 = 'idle'.")]
+        public float off = -1f;
         [Tooltip("How fast the glow follows the throttle (1/s).")]
         public float response = 4f;
         [Tooltip("An empty player engine part: while the game has the engines off (it is inactive) the glow stays at idle.")]
@@ -130,6 +133,9 @@ namespace GoF2Remake.Visuals
             float dt = Time.deltaTime;
             float d = drive.Sample(dt, engineState);
             float target = drive.Off ? 0f : d <= 1f ? Mathf.Lerp(idle, full, d) : Mathf.Lerp(full, boost, d - 1f);   // free flight, no thrust: off
+            // Remake mods ("off"): parked in a hangar (the engine part hidden) the glow sits at 'off', so with idle = full it
+            // is steady like the game's own engine glow: dark on the pad, lit through the take-off and all flight.
+            if (inStation && off >= 0f && engineState != null && !engineState.activeInHierarchy) target = off;
             level = level < 0f ? target : Mathf.Lerp(level, target, 1f - Mathf.Exp(-dt * response));
             block.SetFloat(GlowId, level);
             block.SetColor(ColorId, color);

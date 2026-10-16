@@ -145,9 +145,10 @@ namespace GoF2Remake.Data
         }
 
         /// <summary>Remake option (Settings.CloakBay): the Specter (44) and the Scimitar (49) have the U'tool built in
-        /// (Ship::hasCloakIntegrated, PlayerCloak); a cloak mounted on them goes into that bay, replacing it, instead of
-        /// taking one of the equipment slots (the original: a slot like any equipment).</summary>
-        public static bool HasCloakBay(int ship) => (ship == 44 || ship == 49) && Settings.CloakBay;
+        /// (Ship::hasCloakIntegrated, PlayerCloak), as has a mod ship with "integrated": "cloak"; a cloak mounted on them goes
+        /// into that bay, replacing it, instead of taking one of the equipment slots (the original: a slot like any
+        /// equipment).</summary>
+        public static bool HasCloakBay(int ship) => Database.Shared.IntegratedCloak(ship) >= 0 && Settings.CloakBay;
 
         static bool IsCloak(Database db, int item) => db.Item(item)?.categoryId == 21;
 

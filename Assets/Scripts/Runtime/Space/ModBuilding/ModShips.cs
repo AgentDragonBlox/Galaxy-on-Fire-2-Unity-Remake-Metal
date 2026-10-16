@@ -490,7 +490,9 @@ namespace GoF2Remake.Modding
             ApplyColors(template, kit, build);
             DamageEmbers.Add(template, kit.materials.Where(m => m != null && (!string.IsNullOrEmpty(m.damageEmission) || !string.IsNullOrEmpty(m.damageDetail)) && !string.IsNullOrEmpty(m.material)).Select(m => m.material));
             EngineMaterialGlow.Add(template, kit.materials.Where(m => m != null && m.engine && !string.IsNullOrEmpty(m.material)).Select(m => m.material),
-                kit.materials.Where(m => m != null && m.boost && !string.IsNullOrEmpty(m.material)).Select(m => m.material));
+                kit.materials.Where(m => m != null && m.boost && !string.IsNullOrEmpty(m.material)).Select(m => m.material),
+                kit.materials.Where(m => m != null && m.engine && m.engineIdle > 0f && !string.IsNullOrEmpty(m.material))
+                    .GroupBy(m => m.material).ToDictionary(g => g.Key, g => g.First().engineIdle));
             return template;
         }
 

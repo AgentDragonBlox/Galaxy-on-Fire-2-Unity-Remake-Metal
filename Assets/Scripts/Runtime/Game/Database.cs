@@ -254,6 +254,9 @@ namespace GoF2Remake.Data
         public float opacity;   // 0 / 1 = opaque; below 1 a see-through surface (glass: premultiplied, so reflections stay bright)
         public bool doubleSided;   // both faces drawn (models with one-sided panels the camera can see from behind)
         public bool engine;        // its emission shows only while the engines run (dark on a ship parked in a hangar)
+        // With "engine": its share of the glow at throttle 0 (0..1); 1 = steady like the game's own engine glow, lit
+        // whenever the engines run (dark on a parked ship, full through the take-off and all flight).
+        public float engineIdle;
         public bool boost;         // its emission shows only while boosting (a boost vent; dark otherwise)
         // A hologram projector (GoF2/ModHologram): additive rings whose emission pattern turns and which bob; UV1 x a ring's
         // spin (-1..1), y its share of the hover; emissionColor x emissionIntensity and emission (the pattern) as usual.
@@ -287,6 +290,7 @@ namespace GoF2Remake.Data
         public string mask, mesh;
         public float[] color;
         public float idle = 0.35f, full = 4f, boost = 7f, offset = 0.5f;
+        public float off = -1f;           // remake mods: the level while parked in a hangar (engines off); below 0 = idle
         public float trailWidth;          // game units; > 0: a trail in the glow's colour from the glow's rear ends while
         public float trailTime = 0.6f;    // boosting or travelling (planet jump, jumpgate, Khador Drive), 'trailTime' s long
         public float trailBrightness = 0.3f;   // the trail x the glow's level
@@ -405,6 +409,21 @@ namespace GoF2Remake.Data
         /// <summary>Remake (Modding.GameModels): ships that fly one of the game's own models, by ship index (a mod's new ship
         /// or an override with "model": "gof2:<model>"); ShipAssembly hands it out before anything else.</summary>
         [System.NonSerialized] public Dictionary<int, string> ShipModels = new Dictionary<int, string>();
+
+        /// <summary>Ship::hasJumpDriveIntegrated: the ships with a Khador Drive built in (37 Cronus, 38 Typhon, 40 Nemesis);
+        /// remake mods add or remove them (ships.json "integrated": "khadorDrive", Modding.ModContent).</summary>
+        [System.NonSerialized] public HashSet<int> IntegratedDrives = new HashSet<int>(DefaultIntegratedDrives);
+        /// <summary>Ship::hasCloakIntegrated: the ships with a cloak built in, by ship index the cloak item whose stats it has
+        /// (44 Specter and 49 Scimitar: the U'tool, 95); remake mods add or remove them ("integrated": "cloak").</summary>
+        [System.NonSerialized] public Dictionary<int, int> IntegratedCloaks = new Dictionary<int, int>(DefaultIntegratedCloaks);
+        public static readonly int[] DefaultIntegratedDrives = { 37, 38, 40 };
+        public static readonly Dictionary<int, int> DefaultIntegratedCloaks = new Dictionary<int, int> { { 44, 95 }, { 49, 95 } };
+        public const int IntegratedCloakItem = 95;
+
+        public bool HasIntegratedDrive(int ship) => IntegratedDrives != null && IntegratedDrives.Contains(ship);
+
+        /// <summary>The cloak item a ship has built in (IntegratedCloaks), -1 = none.</summary>
+        public int IntegratedCloak(int ship) => IntegratedCloaks != null && IntegratedCloaks.TryGetValue(ship, out int item) ? item : -1;
 
         /// <summary>The turret items NPC ships of 'shipIndex' carry (NpcTurrets), empty = none.</summary>
         public List<int> NpcTurretsOf(int shipIndex) => NpcTurrets != null && NpcTurrets.TryGetValue(shipIndex, out var l) ? l : new List<int>();

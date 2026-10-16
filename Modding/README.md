@@ -422,6 +422,13 @@ With a sprite or model:
 | `stretch` | Sprites: its length as a multiple of `size` (a 64 x 256 PNG wants `4`). Default 1. |
 | `rotate` | Models: `[x, y, z]` degrees, when the model doesn't point forward (+Z). |
 
+**Beam lasers** (an item based on the M6 A3 "Wolverine" family's beams: 9, 10, 11 or 228): the projectile is the beam
+itself, drawn from the gun to the beam's reach. A `sprite` there runs the whole length of the beam, `size` units wide,
+turned about it to face the camera: the PNG's width is across the beam and its height along it (bottom at the gun, top at
+the far end), so a beam texture is a vertical strip, e.g. a bright core fading to the sides, 64 x 256. `alongFlight` and
+`stretch` don't apply, and `grow` widens it only. A `model` is fitted the same way: `size` across, its length (+Z) the
+beam's.
+
 The game loads them with the mod at the start (the loading screen waits). Every gun of that item uses them: the player's,
 NPC ships', turrets, sentry guns, and other players' in multiplayer.
 
@@ -484,6 +491,7 @@ styles](#exhaust-styles)), 4 manoeuvring jet (`"direction": [x, y, z]`, the way 
 | `traffic` | Optional. How NPC fighters fly it: `{ "weight": 1, "races": [8] }`. With the Gameplay option "Mod ships in traffic" (Off / 10 / 25 % (default) / 50 %) that share of the game's NPC fighters (patrols, raiders, pirates, escorts, guards) fly one of the mods' ships of their race instead, picked by `weight` (0 = never); `races` are the races whose fighters fly it (0 Terran, 1 Vossk, 2 Nivelian, 3 Midorian, 8 pirates, 9 Void; default its own `race`). Only ships up to 150 m long, available now (`available`), with their model loaded. Their hull and guns stay those of the fighter they replace. Freighters and capital ships aren't replaced, and a [campaign's](#campaigns) `trafficShips` win. A [customizable ship](#customizable-ships)'s NPCs each fly a random build of it (parts the type may fit, a tier, one of the kit's colour presets or random palette colours, now and then a skin); `"randomBuild": false` keeps them to its default build. The builds use the parts already loaded, and every docking loads a few more in the background, so the variety grows as you play. |
 | `available` | Optional. A [condition](#conditions) that must hold before it is sold anywhere (dealers and lounges), and before NPCs fly it. |
 | `sounds` | Optional. The ship's own engine and boost sounds, see [Ship sounds](#ship-sounds). |
+| `integrated` | Optional, also in an `override`. Equipment built into the hull, like the Kothar ships' Khador Drive (Cronus, Typhon, Nemesis) and the Specter's / Scimitar's cloak: `{ "khadorDrive": true, "cloak": true }`. `khadorDrive`: the ship can make Khador jumps without the drive in a slot (it still needs energy cells). `cloak`: `true` (the U'tool's stats), a cloak item (a number or `"mod:id"`, e.g. `96`) whose stats it has, or `false`; a cloak the player mounts replaces it, and with the Gameplay option "Cloak bay on cloaking ships" it goes into the built-in cloak's bay instead of a slot. `false` takes an original ship's away. |
 
 Ship and station materials get the original game's hull shine: the system's reflection and a rim light, stronger where
 the surface is smoother (the smoothness / alpha of the metallic map), like the game's own ships; metal parts reflect
@@ -538,6 +546,7 @@ To set materials up in the mod instead (paths inside the mod), each entry applie
 | `detailAlbedo`, `detailNormal`, `detailTiling`, `detailNormalScale` | A tiled detail pair (brushed metal ...). |
 | `doubleSided` | Draw both faces (models with one-sided panels). |
 | `engine` | `true`: its emission (glow) follows the engines: dim at idle, full at full throttle, dark on a ship parked in a hangar (an engine nozzle's glowing surface). |
+| `engineIdle` | With `engine`: its share of the glow at throttle 0, 0 to 1 (default 0). `1` = a steady glow like the game's own engines: lit whenever the engines run (the take-off from the hangar and all flight, whatever the throttle), dark while the ship is parked. |
 | `boost` | `true`: its emission shows only while boosting, fading in and out with the boost (a boost vent); dark otherwise. |
 | `damageEmission` | A mask (PNG) used as the material's emission when it has none: battle damage embers, glowing ember-orange with the ship's hull damage (from a third lost to full at 90 %, flickering slowly). |
 | `damageDetail`, `damageNormal` | Battle damage charring (a material without its own detail maps): a detail colour PNG (sRGB, mid grey = unchanged, darker = burnt; its alpha the burn mask) and a normal map, blended in with the hull damage (from a fifth lost to full at 75 %), under the embers. |
@@ -568,6 +577,7 @@ with flames gets neither the engine glow discs nor the exhaust particles at its 
 | `mesh`, `submesh` | Which renderers / submesh. |
 | `color` | RGB tint. |
 | `idle`, `full`, `boost` | Brightness at throttle 0, full throttle and while boosting (above 1 blooms). |
+| `off` | Brightness while the ship is parked in a hangar with its engines off (default: `idle`). With `idle` = `full` and `off` 0 the glow is steady like the game's own engine glow: dark on the pad, lit through the take-off and all flight. |
 | `offset` | How far the glow sits out from the hull (game units, default 0.5). |
 | `trailWidth`, `trailTime`, `trailBrightness`, `trailCount` | A trail in the glow's colour while boosting or jumping: width (game units), length (s), brightness, and `trailCount` above 0 for that many trails along the glow's rear edge. |
 

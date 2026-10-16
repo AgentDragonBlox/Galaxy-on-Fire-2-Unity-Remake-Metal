@@ -1960,6 +1960,16 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   `ApplyShips`, which `Database.ShipAssembly` returns before the original's; the original's mounts unless the entry has
   its own; not a CustomShips ship: no sellers, the stats stay). Verified in Play mode: the Groza (22) with its Galaxy on
   Fire 3: Manticore model (`Mods/groza`, converted from the .aem / .aei pack; git-ignored) in the hangar and in flight.
+- **Built-in equipment and a steady engine glow** (remake, a modder's requests, 2026-10-16): ships.json `integrated` (new
+  ships and overrides; `ModContent.ApplyIntegrated`): `khadorDrive` true / false (`Database.IntegratedDrives`, defaults
+  37 / 38 / 40, `Ship::hasJumpDriveIntegrated`; read by `GalaxyMap.HasIntegratedDrive` through `Database.Shared`) and
+  `cloak` true (95's stats) / a cloak item (category 21) / false (`Database.IntegratedCloaks`, defaults 44 / 49 -> 95,
+  `Ship::hasCloakIntegrated`; `PlayerCloak.HasCloak` / `Attach`, `Hangar.HasCloakBay`); an override can take an original's
+  away; NPCs' cloaking is unchanged (Specters and ship 49). The glow: a material's `engineIdle` (with `engine`, 0..1, its
+  share at throttle 0, `EngineMaterialGlow.Target`; 1 = lit whenever the engines run, dark parked) and a throttle glow's
+  `off` (`ThrottleGlow.off`: its level parked in a hangar with the engine part hidden, default -1 = idle; idle = full with
+  off 0 = steady): before, a mod ship's glow either followed the throttle or stayed lit on the pad. Tests in
+  `ModContentTests`. Not yet looked at in Play mode.
 - **Ship models** (`ModShips`, `ModShipBuilder`, `ModMaterials`, `ModGltfMaterials`; glTFast 6.20, `com.unity.cloud.gltfast`):
   each new ship's GLB loads with glTFast (asynchronous: `Preload` from the main menu, the menu's Leave and `NetGame.EnterWorld`
   wait for `Ready` / `WhenReady`, at most 30 s) into an AssembledObject template under a hidden DontDestroyOnLoad holder
@@ -2139,7 +2149,12 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   the startup loading screen nothing had, and every override's fx was dropped), so every gun (player, NPCs, turrets, sentries, `NetShotMirror`) uses it. `ModFxPart` (on the sprite / model
   under the part's root, since GunRig sets the root's scale and rotation): camera facing, lifetime growth and fade through
   `_Color` (rgb additive, alpha otherwise); `PartAnimation.PlayOnce` restarts it (`ModFxPart.RestartAll`, also turning it
-  to the camera at once) and `GunRig.MaxLength` counts its lifetime. Loaded in the background with the rest
+  to the camera at once) and `GunRig.MaxLength` counts its lifetime. A beam laser's projectile (`Gun.IsBeamLook`: 9-11 /
+  228; a modder's report 2026-10-16: GunRig scales the beam's root (1, 1, length in game units), and a camera-facing sprite
+  under that scale smeared across the screen, an `alongFlight` one took the ship's movement for its direction): a sprite
+  is one game unit long from the root along +Z (`ModWeapons.FitBeamSprite`), `size` wide, turned about the root's +Z to
+  face the camera (`ModFxPart.beam`; `grow` widens it only); a model sits on a "beam fit" node, `size` across and one
+  unit long. Test `ModWeaponsTests.ABeamsSpriteRunsAlongTheBeamFacingTheCamera`; checked in an off-screen render. Loaded in the background with the rest
   (`ModLoading`, the menu's `Preload`). Verified in Play mode: the example's Plasma Lance (fired: violet bolts stretched
   along their flight, the flash at the gun, the ring impact, its own shot sound).
 - **Missile turrets and salvos** (remake, for mods; a modder's missile turret, 2026-10-14, whose own source patch was

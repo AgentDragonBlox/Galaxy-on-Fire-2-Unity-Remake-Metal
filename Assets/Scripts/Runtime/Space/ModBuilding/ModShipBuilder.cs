@@ -66,7 +66,9 @@ namespace GoF2Remake.Modding
             // "engine" materials glow only while the engines run (a parked ship's nozzles dark; EngineMaterialGlow).
             DamageEmbers.Add(root, specs.Select((sp, i) => sp != null && (!string.IsNullOrEmpty(sp.damageEmission) || !string.IsNullOrEmpty(sp.damageDetail)) && mats[i] != null ? mats[i].name : null).Where(n => n != null));
             EngineMaterialGlow.Add(root, specs.Select((sp, i) => sp != null && sp.engine && mats[i] != null ? mats[i].name : null).Where(n => n != null),
-                specs.Select((sp, i) => sp != null && sp.boost && mats[i] != null ? mats[i].name : null).Where(n => n != null));
+                specs.Select((sp, i) => sp != null && sp.boost && mats[i] != null ? mats[i].name : null).Where(n => n != null),
+                specs.Select((sp, i) => (sp, i)).Where(x => x.sp != null && x.sp.engine && x.sp.engineIdle > 0f && mats[x.i] != null)
+                     .GroupBy(x => mats[x.i].name).ToDictionary(g => g.Key, g => g.First().sp.engineIdle));
             bool flames = specs.Any(sp => sp != null && sp.flame) || hasFlames;
             if (flames) EngineFlame.Add(root);
             if (kitScale > 0f) model.transform.localScale = Vector3.one * kitScale;
@@ -342,6 +344,7 @@ namespace GoF2Remake.Modding
             g.idle = tg.idle;
             g.full = tg.full;
             g.boost = tg.boost;
+            g.off = tg.off;
             if (tg.trailWidth > 0f && tg.trailCount > 0)
             {
                 // trailCount trails across the glow's width on its rear edge, sized by an ellipse (sqrt(1 - t^2), at least 0.15).
