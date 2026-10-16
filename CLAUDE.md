@@ -1308,7 +1308,9 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   flag, so each player's markers show the hostility toward them; a takeover keeps the aggressors.
 - **Orbits** (`NetOrbit` on each player's Space level): asteroids from the world seed per station (`NetGame.OrbitSeed`,
   `SpaceLevel.SpawnNetworkAsteroids`: `OrbitBuilder.SpawnAsteroids` only draws from `UnityEngine.Random`), the same field for
-  everyone; destroyed ones are kept per station for the session (NetState) and removed for a player arriving later. **Only
+  everyone; destroyed ones are kept per station (NetState) and removed for a player arriving later, until nobody has flown
+  in that orbit for 2 minutes (`NetState.AsteroidRespawnSeconds`, `RespawnEmptyAsteroidFields`, PR #118): then the whole
+  field comes back (not at once, so docking to sell ore and launching again doesn't refill it). **Only
   the first player in an empty orbit builds its traffic** (`NetState.OrbitEmpty`, `SpaceLevel.NetAuthority`), so nobody
   sees ships appear out of nowhere; that player (the orbit authority) shows its ships and crates to the others as NetProxy /
   NetCrate objects it owns (spawned by the host on request, by index in `Traffic.Ships`). When the authority leaves the
