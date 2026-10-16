@@ -1384,5 +1384,6 @@
  "blueprintMountAsk": "¿Instalarlo ahora?",
  "mpAdmWreck": "Creando un pecio hackeable junto a {0}.",
  "mpAdmWreckRace": "Un pecio es un carguero terrano, vossk, niveliano o midoriano.",
- "statShieldDamage": "Daño a los escudos"
+ "statShieldDamage": "Daño a los escudos",
+ "mapVoidJump": "Saltar al Void"
 }

@@ -1384,5 +1384,6 @@
  "blueprintMountAsk": "تركيبه الآن؟",
  "mpAdmWreck": "سيتم إنشاء حطام قابل للاختراق عند {0}.",
  "mpAdmWreckRace": "الحطام سفينة شحن بشرية أو فوسك أو نيفيلية أو ميدورية.",
- "statShieldDamage": "الضرر على الدروع"
+ "statShieldDamage": "الضرر على الدروع",
+ "mapVoidJump": "القفز إلى الفويد"
 }

@@ -1384,5 +1384,6 @@
  "blueprintMountAsk": "Установить сейчас?",
  "mpAdmWreck": "Создаю взламываемые обломки у {0}.",
  "mpAdmWreckRace": "Обломки — это грузовой корабль терран, восков, нивелиан или мидориан.",
- "statShieldDamage": "Урон по щитам"
+ "statShieldDamage": "Урон по щитам",
+ "mapVoidJump": "К Войдам"
 }

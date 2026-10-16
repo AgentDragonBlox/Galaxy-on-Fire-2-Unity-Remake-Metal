@@ -1384,5 +1384,6 @@
  "blueprintMountAsk": "现在装上吗？",
  "mpAdmWreck": "正在{0}附近生成可入侵的残骸。",
  "mpAdmWreckRace": "残骸是人类、沃斯克、尼维利安或米多利安的货船。",
-  "statShieldDamage": "对护盾伤害"
+  "statShieldDamage": "对护盾伤害",
+  "mapVoidJump": "跳入Void"
 }

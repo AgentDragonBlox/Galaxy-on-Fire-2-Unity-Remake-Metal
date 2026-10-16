@@ -1384,5 +1384,6 @@
  "blueprintMountAsk": "Jetzt einbauen?",
  "mpAdmWreck": "Erzeuge ein hackbares Wrack bei {0}.",
  "mpAdmWreckRace": "Ein Wrack ist ein Frachter der Terraner, Vossk, Nivelianer oder Midorianer.",
- "statShieldDamage": "Schaden an Schilden"
+ "statShieldDamage": "Schaden an Schilden",
+ "mapVoidJump": "Sprung zu den Voids"
 }

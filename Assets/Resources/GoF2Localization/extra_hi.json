@@ -1384,5 +1384,6 @@
  "blueprintMountAsk": "अभी लगाएँ?",
  "mpAdmWreck": "{0} के पास एक हैक करने योग्य मलबा बनाया जा रहा है।",
  "mpAdmWreckRace": "मलबा टेरान, वॉस्क, निवेलियन या मिडोरियन मालवाहक जहाज़ होता है।",
-  "statShieldDamage": "शील्ड पर क्षति"
+  "statShieldDamage": "शील्ड पर क्षति",
+  "mapVoidJump": "Void में जंप"
 }

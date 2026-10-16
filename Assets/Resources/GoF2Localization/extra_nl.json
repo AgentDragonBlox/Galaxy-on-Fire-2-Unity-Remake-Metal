@@ -1384,5 +1384,6 @@
  "blueprintMountAsk": "Nu inbouwen?",
  "mpAdmWreck": "Hackbaar wrak bij {0} wordt gemaakt.",
  "mpAdmWreckRace": "Een wrak is een Terraans, Vossk, Niveliaans of Midoriaans vrachtschip.",
- "statShieldDamage": "Schade aan schilden"
+ "statShieldDamage": "Schade aan schilden",
+ "mapVoidJump": "Naar de Void"
 }
