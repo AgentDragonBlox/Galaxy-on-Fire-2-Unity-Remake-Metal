@@ -224,6 +224,8 @@ namespace GoF2Remake.World
             Story.OnDepart(db, station);
             // Status::departStation's station stack: an attacked station's locals calm down 3 new orbits later (a player's report).
             if (arena == null) Session.ArriveInOrbit(station);
+            // ... and the shops' stack: a station new to it gets its stock here, not only when docking (a player's report).
+            if (arena == null) Shop.ArriveInOrbit(db, station);
             // Status::moveWanted: a real orbit change (not a launch from the docked station, not to / from the Void) moves the
             // Most Wanted criminals one system along their routes.
             if ((Session.ArrivedByTravel || Session.ArrivedBySystemJump) && station != Session.VoidOrbit && Session.PreviousStationIndex != Session.VoidOrbit)

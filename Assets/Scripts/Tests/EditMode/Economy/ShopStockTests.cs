@@ -404,6 +404,23 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
+        public void ArrivingInOrbitsPushesTheStackLikeDocking()
+        {
+            // Status::departStation runs on every orbit arrival: flying through 3 other orbits without docking makes the
+            // station's stock afresh (Katashán's empty dealer stayed until the player had docked at 3 other stations).
+            var a = Shop.EnterStation(Db, 120);
+            Shop.ArriveInOrbit(Db, 120);
+            Assert.AreSame(a, Shop.EnterStation(Db, 120), "already on the stack: kept");
+            Shop.ArriveInOrbit(Db, 15);
+            Shop.ArriveInOrbit(Db, 41);
+            Shop.ArriveInOrbit(Db, 15);   // a revisit doesn't reorder
+            Assert.AreEqual(new[] { 120, 15, 41 }, Session.RecentStations.Select(s => s.station).ToArray());
+            Shop.ArriveInOrbit(Db, 86);
+            Assert.AreEqual(new[] { 15, 41, 86 }, Session.RecentStations.Select(s => s.station).ToArray());
+            Assert.AreNotSame(a, Shop.EnterStation(Db, 120), "fell off the stack: generated afresh");
+        }
+
+        [Test]
         public void ReturningAfterThirtySecondsNibblesTheStock()
         {
             // Generator::computerTradeGoods: r = rnd(3); if r < amount, amount -= r (a row never empties)

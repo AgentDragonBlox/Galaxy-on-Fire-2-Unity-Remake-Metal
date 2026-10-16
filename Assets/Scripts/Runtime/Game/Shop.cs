@@ -211,20 +211,36 @@ namespace GoF2Remake.Data
 
         // ---- docking: stock kept for the last 3 stations ------------------------------------------------------
 
+        /// <summary>Status::departStation on arriving in an orbit (StarMap::depart, the jump scenes, MGame's level
+        /// switches): the station goes on the 3-station stack (addStationToStack: one already on it keeps its place), its
+        /// stock, dealer and lounge made when it is new to it. The remake only pushed on docking, so a station's stock (an
+        /// empty dealer, getShipBuyList's 1 in 6) stayed until the player had docked at 3 other stations; flying through
+        /// orbits counts in the original (a player's report: Katashán's dealer never refreshed). Not in a multiplayer session,
+        /// whose stock the host keeps (NetStock).</summary>
+        public static void ArriveInOrbit(Database db, int station)
+        {
+            if (station < 0 || NetSession.Active || Session.RecentStations.Exists(s => s.station == station)) return;
+            PushStation(db, station);
+        }
+
+        /// <summary>A station new to the stack: its stock (getItemBuyList / getShipBuyList / createAgents); the oldest goes.</summary>
+        static StationStock PushStation(Database db, int station)
+        {
+            var recent = Session.RecentStations;
+            var stock = new StationStock { station = station, items = GenerateItems(db, station), ships = GenerateShips(db, station),
+                                           agents = AgentGenerator.CreateAgents(db, station) };
+            recent.Add(stock);
+            while (recent.Count > RecentStationCount) recent.RemoveAt(0);
+            return stock;
+        }
+
         /// <summary>Status::departStation (on arrival) + ModStation::OnInitialize: the station's stock, generated when the
         /// station isn't among the last 3 visited, otherwise nibbled by computerTradeGoods after > 30 s away.</summary>
         public static StationStock EnterStation(Database db, int station)
         {
             Modding.ModBlueprints.UnlockAvailable();   // remake mods: blueprints.json "unlocked": known once available
-            var recent = Session.RecentStations;
-            var stock = recent.Find(s => s.station == station);
-            if (stock == null)
-            {
-                stock = new StationStock { station = station, items = GenerateItems(db, station), ships = GenerateShips(db, station),
-                                               agents = AgentGenerator.CreateAgents(db, station) };
-                recent.Add(stock);
-                while (recent.Count > RecentStationCount) recent.RemoveAt(0);
-            }
+            var stock = Session.RecentStations.Find(s => s.station == station);
+            if (stock == null) stock = PushStation(db, station);
             else if (Session.LastDepartureTime >= 0f && Time.realtimeSinceStartup - Session.LastDepartureTime > TradeGoodsDelaySeconds
                      && station != 108 && !(GameHooks.StockShared?.Invoke(station) ?? false))   // multiplayer: the host's stock resets instead
             {
