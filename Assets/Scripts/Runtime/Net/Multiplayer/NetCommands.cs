@@ -191,6 +191,9 @@ namespace GoF2Remake.Multiplayer
             new Command { name = "restrict", usage = "[players] <jumps | docking | all | off>", arg = Arg.PlayerText, self = true,
                 available = () => LocalIsAdmin, allowed = IsAdmin, run = NetAdmin.Restrict,
                 description = () => X("mpCmdRestrict", "admins: no jumps (planet, gate, Khador) and / or no docking, until off") },
+            new Command { name = "flightstyle", usage = "[players] <es2 | gof2 | player>", arg = Arg.PlayerText, self = true,
+                available = () => LocalIsAdmin, allowed = IsAdmin, run = NetAdmin.FlightStyle,
+                description = () => X("mpCmdFlightStyle", "admins: some players' flight model (es2 or gof2) for now, over the session's /flightmodel; player gives it back") },
             new Command { name = "provoke", usage = "[players] [race] [within <metres>]", arg = Arg.PlayerText, self = true,
                 available = () => LocalIsAdmin, allowed = IsAdmin, run = NetAdmin.Provoke,
                 description = () => X("mpCmdProvoke", "admins: the NPC ships around them turn on them and their squad (a race, a distance)") },
@@ -261,6 +264,9 @@ namespace GoF2Remake.Multiplayer
                 run = (a, by) => Moderate("disband", a, by), description = () => X("mpCmdDisband", "admins: ends a faction") },
             new Command { name = "deleteprofile", usage = "<profile>", arg = Arg.Text, available = () => LocalRole >= NetModeration.Master, allowed = Anyone,
                 run = (a, by) => Moderate("deleteprofile", a, by), description = () => X("mpCmdDeleteProfile", "master: deletes an offline pilot's profile") },
+            new Command { name = "flightmodel", usage = "[gof2 | es2 | player]", arg = Arg.Text, available = () => LocalIsAdmin, allowed = IsAdmin,
+                run = FlightModel,
+                description = () => X("mpCmdFlightModel", "admins: the flight model everyone flies: gof2 (the game's, the default), es2 (EVERSPACE 2 style) or player (each player's own option)") },
             new Command { name = "settings", available = () => LocalRole >= NetModeration.Admin, allowed = Anyone,
                 run = (a, by) => Moderate("settings", a, by), description = () => X("mpCmdSettings", "admins: the server's settings") },
             new Command { name = "set", usage = "<key> <value>", arg = Arg.Text, available = () => LocalRole >= NetModeration.Admin, allowed = Anyone,
@@ -327,6 +333,17 @@ namespace GoF2Remake.Multiplayer
         static bool IsOp(IPilot p) => IsAdmin(p) || (p is NetPlayer np && np.StaffRole >= NetModeration.Op);
 
         /// <summary>Server: a moderation command (NetModeration checks the role; the console outranks everyone).</summary>
+        /// <summary>/flightmodel [gof2 | es2 | player]: the session's flight model (NetRules.HostFlight), one for everyone so
+        /// PvP is fair; no argument shows it. Saved like /set flightmodel on a server that keeps its settings.</summary>
+        static string FlightModel(string args, IPilot by)
+        {
+            args = (args ?? "").Trim();
+            if (args.Length == 0)
+                return string.Format(X("mpFlightModelNow", "The flight model is {0}. /flightmodel gof2 | es2 | player changes it."), SessionRules.FlightText(NetRules.HostFlight));
+            if (SessionRules.ParseFlight(args) < SessionRules.PlayerFlight) return UsageOf("flightmodel");
+            return NetServerSettings.Set(NetRules.FlightKey, args, IssuerName(by));
+        }
+
         static string Moderate(string name, string args, IPilot by)
         {
             if (!NetProfiles.Enabled) return ModerateWithoutProfiles(name, args, by);

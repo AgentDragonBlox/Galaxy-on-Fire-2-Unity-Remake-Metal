@@ -11,7 +11,7 @@ Shader "GoF2/HangarShadow"
     {
         [NoScaleOffset] _MainTex ("Silhouette (alpha)", 2D) = "white" {}
         _Color ("Colour (alpha = strength)", Color) = (0, 0, 0, 0.7)
-        _Hull ("Hull bottom y, height range (m)", Vector) = (0, 1, 0, 0)
+        _Hull ("Hull bottom y, height range, fade from y, gone at y (m)", Vector) = (0, 1, 2, 8)
     }
     SubShader
     {
@@ -62,9 +62,10 @@ Shader "GoF2/HangarShadow"
                 // it, so the hull doesn't shade itself; around it up to 3 m above (the pads' rims around a sunk hull).
                 float under = _Hull.x + m.r * _Hull.y + (m.g > 0.5 ? -0.15 : 3.0);
                 mask *= saturate((under - world.y) * 4.0);
-                // Full strength over the box's lower 60 %, fading out over the rest; only on surfaces facing up (the
-                // normal from the rebuilt positions' screen derivatives), so the hull's sides and belly stay lit.
-                half height = saturate((0.5 - local.y) * 2.5);
+                // Full strength up to _Hull.z, fading out to _Hull.w (heights above the floor, HangarShipShadow); only on
+                // surfaces facing up (the normal from the rebuilt positions' screen derivatives), so the hull's sides and
+                // belly stay lit.
+                half height = saturate((_Hull.w - world.y) / max(0.01, _Hull.w - _Hull.z));
                 float3 n = normalize(cross(ddy(world), ddx(world)));
                 half up = saturate((abs(n.y) - 0.35) * 2.5);
                 half a = mask * _Color.a * height * up;

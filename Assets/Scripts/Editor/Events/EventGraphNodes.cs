@@ -516,6 +516,20 @@ namespace GoF2Remake.EditorTools
     }
 
     [Serializable]
+    [Node("Event", null, "Set Flight Model")]
+    public class EventFlightModelNode : EventCommandNode
+    {
+        public const string Model = "Model";
+
+        protected override void OnDefineOptions(IOptionDefinitionContext context) =>
+            context.AddOption<EventFlightModel>(Model).WithTooltip("Free flight (EVERSPACE 2 style) or the original's flight for " +
+                "these players, before their own option, their ship's or the mod campaign's; Players Choice gives it back. Undone " +
+                "when the event ends.").Build();
+
+        protected override void DefineInputs(IPortDefinitionContext context) => PlayersIn(context);
+    }
+
+    [Serializable]
     [Node("Event", null, "Clear Respawn Point")]
     public class EventClearRespawnNode : EventCommandNode
     {

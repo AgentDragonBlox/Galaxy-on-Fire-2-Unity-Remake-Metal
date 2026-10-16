@@ -59,6 +59,7 @@ namespace GoF2Remake.Multiplayer
         readonly NetworkVariable<int> toll = new NetworkVariable<int>();   // NetFactions.Toll
         readonly NetworkVariable<int> rules = new NetworkVariable<int>();   // NetRules: the session's gameplay options
         readonly NetworkVariable<byte> kaamoLevel = new NetworkVariable<byte>();   // NetRules.HostKaamoLevel
+        readonly NetworkVariable<byte> flightModel = new NetworkVariable<byte>();  // NetRules.HostFlight + 2 (0 = not arrived)
         readonly NetworkVariable<FixedString64Bytes> serverId = new NetworkVariable<FixedString64Bytes>();   // their key on the client
         readonly NetworkVariable<bool> freeForAll = new NetworkVariable<bool>();     // /pvp, an event's Free For All: every player an enemy
         readonly NetworkVariable<Unity.Collections.FixedString4096Bytes> sessionMods = new NetworkVariable<Unity.Collections.FixedString4096Bytes>();   // NetMods.SessionList
@@ -99,6 +100,11 @@ namespace GoF2Remake.Multiplayer
         /// <summary>The session's Kaamo upgrade limit (NetRules.HostKaamoLevel; 0 before it has arrived).</summary>
         public int KaamoLevel => kaamoLevel.Value;
         internal void SetKaamoLevel(int level) { if (IsServer && kaamoLevel.Value != level) kaamoLevel.Value = (byte)level; }
+
+        /// <summary>The session's flight model (NetRules.HostFlight; FlightKnown false before it has arrived).</summary>
+        public int FlightModel => flightModel.Value - 2;
+        public bool FlightKnown => flightModel.Value > 0;
+        internal void SetFlightModel(int style) { if (IsServer && flightModel.Value != style + 2) flightModel.Value = (byte)(style + 2); }
 
         /// <summary>The factions' claimed stations, "station|TAG|Name|VAT %" per line (NetFactions, NetFactionsClient).</summary>
         public string Claims => claims.Value.ToString();
@@ -166,6 +172,7 @@ namespace GoF2Remake.Multiplayer
                 freePvp.Value = NetGame.FreePvp;
                 rules.Value = NetRules.Host;
                 kaamoLevel.Value = (byte)NetRules.HostKaamoLevel;
+                flightModel.Value = (byte)(NetRules.HostFlight + 2);
                 NetFactions.OnStateSpawned();   // the claims, now that this object exists
                 PirateReports.ServerReset();   // the Pirate activity board starts empty (filled by the next sweep)
                 sessionMods.Value = NetMods.SessionList;

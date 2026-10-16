@@ -35,6 +35,13 @@
 // the radar's lock), with the smoke trail; "turretRange" (attr 109) is how far an auto turret looks for a target.
 // The turret's model, aim, gun and shots are TurretCore's, its auto pick TurretTargeting's (Retarget), shared with the NPC
 // turrets and the sentry guns; this keeps the player's own: the turret view, the auto switch, collectors, the loop sound.
+// Remake mods: a mount marked 'builtIn' (a customizable ship's turret socket, Modding.ModShipKits) takes no turret model of
+// the game: the turret item keeps its gun, stats, turn rates, auto or manual aiming and turret view, with an invisible pivot
+// at the mount that the shots and the muzzle flash come from (the hangar and other players' ships show no model either).
+// A plasma collector there keeps only its stream (sn_plasma_stream_anim_add, lifted out of the item's model onto the
+// stand-in gun at the mount, aimed and shown in the turret view like the model's). A kit with a turret model (ModHardpoints)
+// shows that instead of the stand-in: its pivot turns, its gun tilts, the shots and the stream leave from its muzzle
+// (TurretCore.ForItemModel on it).
 
 using System;
 using System.Collections.Generic;
@@ -95,6 +102,8 @@ namespace GoF2Remake.Flight
         /// <summary>The auto turret's pick (PlayerEgo::handleAutoTurret): attr 109 (mods), else the original's 60000 units.</summary>
         TurretTargeting picking;
         Target target => picking?.Current;
+        /// <summary>Remake mods: the kit hardpoint's sound for this turret (Modding.ModShipSounds), null = the item's own.</summary>
+        Modding.ModShipSounds.WeaponSound modSound;
         GameObject stream;
         AudioSource collectLoop;
 
@@ -110,9 +119,9 @@ namespace GoF2Remake.Flight
                 if (m >= mounts.Count) break;
                 var it = db.Item(item);
                 var fx = WeaponFx.Load(it.index);
-                if (fx == null || fx.turretMounted == null) continue;
+                if (fx == null || (fx.turretMounted == null && !mounts[m].builtIn)) continue;
                 var t = player.AddComponent<PlayerTurret>();
-                t.Setup(it, fx, mounts[m], m, chase);
+                t.Setup(it, fx, mounts[m], m, chase, shipIndex);
                 list.Add(t);
                 m++;
             }
@@ -173,11 +182,42 @@ namespace GoF2Remake.Flight
         /// raised by its per-item offset) on the ship's slot-2 mount, turned (0, pi, 0) against the ship except the plasma
         /// collectors 198-200; still. Re-run after equipment changes. Null without a mount or turret. Remake: every turret
         /// item on its own mount (the n-th on the n-th, upside down where the mount says so), under one "Turrets" object.
-        /// Shared with the other players' ships and the NPC ships in the hangar (TurretCore.Display).</summary>
-        public static GameObject BuildStatic(Database db, int shipIndex, IList<ItemStack> equipment, Transform shipModel) =>
-            TurretCore.DisplayAll(db, shipIndex, TurretItems(db, equipment), shipModel);
+        /// Shared with the other players' ships and the NPC ships in the hangar (TurretCore.Display). Remake mods: 'shown' is
+        /// the build the model shows (another player's kit ship; null = Database.MountsOf, the local player's); a built-in
+        /// mount shows its kit's turret model (ModHardpoints), else nothing.</summary>
+        public static GameObject BuildStatic(Database db, int shipIndex, IList<ItemStack> equipment, Transform shipModel, Modding.ModShipKits.Build shown = null)
+        {
+            var mounts = shown != null ? Modding.ModShipKits.MountsShown(db, shipIndex, 2, shown) : db.MountsOf(shipIndex, 2);
+            bool builtIn = false;
+            foreach (var m in mounts) if (m.builtIn) builtIn = true;
+            if (shown == null && !builtIn) return TurretCore.DisplayAll(db, shipIndex, TurretItems(db, equipment), shipModel);
+            var items = TurretItems(db, equipment);
+            if (mounts.Count == 0 || items.Count == 0) return null;
+            GameObject root = null;
+            for (int m = 0; m < items.Count && m < mounts.Count; m++)
+            {
+                int item = items[m];
+                var kitTurret = mounts[m].builtIn ? Modding.ModHardpoints.TurretModel(shipIndex, db.Item(item), shown) : null;
+                if (mounts[m].builtIn && kitTurret == null) continue;
+                if (!mounts[m].builtIn && TurretCore.DisplayPrefab(db, item, out _) == null) continue;
+                if (root == null)
+                {
+                    root = new GameObject("Turrets");
+                    root.transform.SetParent(shipModel, false);
+                }
+                if (kitTurret != null)
+                {
+                    kitTurret.transform.SetParent(root.transform, false);
+                    TurretCore.PlaceOnMount(kitTurret.transform, mounts[m], Quaternion.identity);
+                    foreach (var t in kitTurret.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = shipModel.gameObject.layer;
+                    continue;
+                }
+                TurretCore.Display(db, item, mounts[m], root.transform);
+            }
+            return root;
+        }
 
-        void Setup(ItemData item, WeaponFx fx, WeaponMount mount, int mountIndex, ChaseCamera chaseCamera)
+        void Setup(ItemData item, WeaponFx fx, WeaponMount mount, int mountIndex, ChaseCamera chaseCamera, int shipIndex)
         {
             ship = GetComponent<ShipController>();
             weapons = GetComponent<WeaponSystem>();
@@ -199,7 +239,17 @@ namespace GoF2Remake.Flight
             // assembly's (0, pi, 0)): it starts turned to the ship's nose (TurretCore.ForItem).
             var parent = ship != null && ship.visualModel != null ? ship.visualModel : transform;
             string name = mountIndex == 0 ? "Turret" : "Turret " + (mountIndex + 1);
-            core = TurretCore.ForItem(item, fx, parent, mount, null, name, transform.forward);
+            // A built-in mount (a kit's turret socket): the kit's turret model (ModHardpoints), else an invisible stand-in.
+            var kitModel = mount.builtIn ? Modding.ModHardpoints.TurretModel(shipIndex, item) : null;
+            if (mount.builtIn)
+            {
+                var model = kitModel != null ? kitModel : BuiltInTurret(IsCollector ? fx.turretMounted : null);
+                model.transform.SetParent(parent, false);
+                model.name = name;
+                TurretCore.PlaceOnMount(model.transform, mount, model.transform.localRotation);
+                core = TurretCore.ForItemModel(item, fx, model, null, name, transform.forward);
+            }
+            else core = TurretCore.ForItem(item, fx, parent, mount, null, name, transform.forward);
             mountRoot = core.Root;
             if (IsCollector)
                 foreach (Transform t in core.Root.GetComponentsInChildren<Transform>(true))
@@ -209,6 +259,7 @@ namespace GoF2Remake.Flight
             if (!core.Valid) { enabled = false; return; }
             gun.owner = GetComponent<Target>();
             gun.Ignores = t => t.playerProof;   // multiplayer: through squadmates
+            core.Rig?.Tint(WeaponTint.For(item, WeaponTint.PlayerColor()));   // an energy turret in the build's weapon colour
             gun.Hit += OnHit;
             if (fx.shot != null)
             {
@@ -218,9 +269,76 @@ namespace GoF2Remake.Flight
                 loop.playOnAwake = false;
                 loop.spatialBlend = 0f;
             }
+            modSound = Modding.ModShipSounds.Weapon(shipIndex, item);
+            if (modSound != null)
+            {
+                // A kit turret's own sound: its loop while it fires, else its shots one by one (ShotVoices).
+                if (modSound.loop?.Clip is AudioClip ownLoop)
+                {
+                    if (loop == null)
+                    {
+                        loop = gameObject.AddComponent<AudioSource>();
+                        loop.playOnAwake = false;
+                        loop.spatialBlend = 0f;
+                    }
+                    loop.clip = ownLoop;
+                    loop.loop = true;
+                }
+                else if (loop != null) { Destroy(loop); loop = null; }
+            }
             camAnchor = new GameObject(name + " camera").transform;
             camAnchor.SetParent(core.Pivot, false);
-            camAnchor.localPosition = core.GunNode.localPosition;
+            camAnchor.localPosition = mount.builtIn && kitModel == null ? new Vector3(0f, BuiltInCameraRise, 0f) * M : core.GunNode.localPosition;
+            if (mount.builtIn)
+            {
+                // The kit turret's muzzle (its weapon's tip), else the gun's origin; the shots a little ahead of it.
+                var kitMuzzle = kitModel != null ? core.GunNode.Find("muzzle") : null;
+                core.Muzzle.localPosition = kitMuzzle != null ? kitMuzzle.localPosition : Vector3.zero;
+                var at = core.Muzzle.localPosition / M;
+                core.shotOffsetUnits = new Vector3(-at.x, at.y, at.z + (kitMuzzle != null ? KitBulletAhead : BuiltInBulletAhead));
+                if (kitModel != null && IsCollector)
+                {
+                    MoveStream(fx.turretMounted, core.GunNode, core.Muzzle.localPosition);
+                    foreach (Transform t in core.GunNode) if (t.name.Contains("plasma_stream")) { stream = t.gameObject; break; }
+                }
+            }
+        }
+
+        const float M = Gun.MetersPerUnit;
+        const float BuiltInCameraRise = 60f, BuiltInBulletAhead = 120f;   // game units: the view just above the socket, shots a little ahead
+        const float KitBulletAhead = 40f;   // game units past a kit turret's muzzle
+
+        /// <summary>A built-in turret's stand-in for the model: the "pivot" -> "_gun" hierarchy the aiming turns, the gun facing
+        /// the ship's nose (TurretAim starts it there). Empty, except for a plasma collector ('streamSource', its ship-mounted
+        /// model): its stream (a child of the model's gun node) is moved from a copy of the model under the stand-in gun with the
+        /// same local pose (its origin at the gun's, running along the gun's +Z), the rest of the copy thrown away.</summary>
+        static GameObject BuiltInTurret(GameObject streamSource)
+        {
+            var root = new GameObject("Turret");
+            var pivot = new GameObject("pivot").transform;
+            pivot.SetParent(root.transform, false);
+            var gun = new GameObject("builtin_gun").transform;
+            gun.SetParent(pivot, false);
+            if (streamSource != null) MoveStream(streamSource, gun, Vector3.zero);
+            return root;
+        }
+
+        /// <summary>A plasma collector's stream lifted out of a copy of its model onto another gun ('at': the stream's origin in
+        /// the gun's space; the collectors' streams sit at their gun's origin), the rest of the copy thrown away. Setup finds it
+        /// there as the turret's stream.</summary>
+        static void MoveStream(GameObject source, Transform gun, Vector3 at)
+        {
+            if (source == null) return;
+            var copy = Instantiate(source);
+            foreach (Transform t in copy.GetComponentsInChildren<Transform>(true))
+                if (t.name.Contains("plasma_stream"))
+                {
+                    t.SetParent(gun, false);   // its rotation under the gun kept
+                    t.localPosition += at;
+                    t.gameObject.SetActive(false);
+                    break;
+                }
+            Destroy(copy);
         }
 
         void OnDestroy()
@@ -360,7 +478,14 @@ namespace GoF2Remake.Flight
                 fire = AutoAim(dtMs);
 
             // Bullets from the gun + R * (0, 0, 300) (48: x +-80 alternating, 181: z -300), TurretCore.Fire.
-            if (fire && core.Fire() >= 0 && loop != null && (!loop.isPlaying || !loop.loop)) { loop.volume = 0.7f * Settings.SfxVolume; loop.Play(); }
+            if (fire && core.Fire() >= 0)
+            {
+                bool starting = loop != null && (!loop.isPlaying || !loop.loop);
+                if (starting) { loop.volume = (modSound?.loop != null ? modSound.loop.vol0 : 0.7f) * Settings.SfxVolume; loop.Play(); }
+                // A mod sound's shot: every shot, or with a loop once as it starts.
+                if (modSound?.shot is Modding.ModShipSounds.Sound own && (loop == null || starting) && own.Clip is AudioClip shotClip)
+                    ShotVoices.Play(shotClip, own.vol0 * Settings.SfxVolume, own.RandomPitch);
+            }
             core.SinceShotMs += dtMs;
             if (core.SinceShotMs > IdleStopMs && loop != null && loop.loop && loop.isPlaying) loop.Stop();
             // The animations run only while shots are going out (within one reload of the last shot).

@@ -9,6 +9,11 @@
 // controller A / B / Menu) so no binding can lock the player out; the pause key (Esc / Menu) isn't rebindable either.
 // A key or button can be bound to several controls at once (the controller has too few buttons for one each): a rebind
 // never takes it from another row.
+// Remake: two key layouts, one per flight style (Settings.FlightStyle): the original's defaults above, and the free flight's
+// (FreeFlightDefaults: EVERSPACE 2's layout, W / S thrust, A / D strafe, Space / L-Ctrl up / down, Q / E roll, L-Shift
+// boost, the mouse aims and fires, the menus moved off Q / E). Each layout keeps its own overrides ("controls_bindings" /
+// "controls_bindings_free"); switching the style reloads them (ApplyStyle). Rows only one style reads are hidden in the
+// other's bindings list (ControlRow.visible).
 
 using System;
 using System.Collections.Generic;
@@ -33,6 +38,8 @@ namespace GoF2Remake.Flight
         public readonly int[][] slots = new int[3][];
         /// <summary>The control type the controller slot takes ("Button" / "Vector2").</summary>
         public string padType = "Button";
+        /// <summary>Shown in the bindings list (null = always): rows only one flight style reads.</summary>
+        public Func<bool> visible;
 
         public bool HasSlot(BindSlot s) => slots[(int)s] != null;
     }
@@ -53,7 +60,8 @@ namespace GoF2Remake.Flight
         public static readonly InputAction Steer, Throttle, Brake, Boost, LevelOut, Roll, StrafeLeft, StrafeRight, DodgeLeft, DodgeRight, Drill,
             FirePrimary, FireSecondary, SwitchSecondary, Action, AutopilotMenu, ActionsMenu, Wingmen, KhadorDrive, FastForward,
             Camera, AutoTurret, Cloak, TimeExtender, MouseSteering, Chat, ChatSend, ChatChannel, Screenshot,
-            MultiplayerWindow, DistressCall;
+            MultiplayerWindow, DistressCall,
+            Thrust, StrafeAxis, Hover, Dampeners, FreeLookHold;
 
         static string X(string key, string english) => Localization.Extra(key, english);
 
@@ -121,6 +129,108 @@ namespace GoF2Remake.Flight
             // Added last: the saved overrides are by action and binding index.
             MultiplayerWindow = Button("multiplayerWindow", () => X("ctlMultiplayerWindow", "Multiplayer window"), "<Keyboard>/n", null, null);
             DistressCall = Button("distressCall", () => X("ctlDistressCall", "Distress call (multiplayer)"), null, null, null);
+            // Remake: the free flight's own rows (Settings.FlightStyle, FreeFlight; unbound in the original layout, which doesn't
+            // read them), and free look while held (both styles).
+            Thrust = Composite("thrust", () => X("ctlThrust", "Thrust"), InputActionType.Value, "Axis", "1DAxis",
+                new[] { "Positive", "Negative" },
+                new Func<string>[] { () => X("ctlForward", "forward"), () => X("ctlBackward", "backward") },
+                new string[] { null, null }, padParts: new string[] { null, null });
+            StrafeAxis = Composite("strafe", () => X("ctlStrafeAxis", "Strafe"), InputActionType.Value, "Axis", "1DAxis",
+                new[] { "Negative", "Positive" },
+                new Func<string>[] { () => X("ctlLeft", "left"), () => X("ctlRight", "right") },
+                new string[] { null, null }, padParts: new string[] { null, null });
+            Hover = Composite("hover", () => X("ctlHover", "Up / down"), InputActionType.Value, "Axis", "1DAxis",
+                new[] { "Positive", "Negative" },
+                new Func<string>[] { () => X("ctlUp", "up"), () => X("ctlDown", "down") },
+                new string[] { null, null }, padParts: new string[] { null, null });
+            Dampeners = Button("dampeners", () => X("ctlDampeners", "Inertial dampeners on / off"), null, null, null);
+            FreeLookHold = Button("freeLookHold", () => X("ctlFreeLookHold", "Free look (hold)"), null, null, null);
+
+            bool Free() => loadedStyle == FlightStyles.Free;
+            foreach (var r in rows)
+                switch (r.id)
+                {
+                    case "throttle": case "brake": case "strafeLeft": case "strafeRight": r.visible = () => !Free(); break;
+                    case "thrust": case "strafe": case "hover": case "dampeners": r.visible = Free; break;
+                }
+        }
+
+        // ---- the free flight's key layout (EVERSPACE 2's defaults; FlightStyles.Free) ----------------------------
+
+        /// <summary>Per row id and slot: the free flight's default paths (a composite: its parts, "" = unbound). Rows and
+        /// slots not listed keep the original's.</summary>
+        static readonly Dictionary<string, Dictionary<BindSlot, string[]>> FreeFlightDefaults = new Dictionary<string, Dictionary<BindSlot, string[]>>
+        {
+            // The right stick aims (the left one moves); the keyboard's arrows still turn; the mouse aims through its reticle.
+            ["steer"] = new Dictionary<BindSlot, string[]> { [BindSlot.Pad] = new[] { "<Gamepad>/rightStick" } },
+            ["thrust"] = new Dictionary<BindSlot, string[]>
+            {
+                [BindSlot.Key1] = new[] { "<Keyboard>/w", "<Keyboard>/s" },
+                [BindSlot.Pad] = new[] { "<Gamepad>/leftStick/up", "<Gamepad>/leftStick/down" },
+            },
+            ["strafe"] = new Dictionary<BindSlot, string[]>
+            {
+                [BindSlot.Key1] = new[] { "<Keyboard>/a", "<Keyboard>/d" },
+                [BindSlot.Pad] = new[] { "<Gamepad>/leftStick/left", "<Gamepad>/leftStick/right" },
+            },
+            ["hover"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "<Keyboard>/space", "<Keyboard>/leftCtrl" } },
+            ["roll"] = new Dictionary<BindSlot, string[]>
+            {
+                [BindSlot.Key1] = new[] { "<Keyboard>/q", "<Keyboard>/e" },
+                [BindSlot.Pad] = new[] { "<Gamepad>/leftShoulder", "<Gamepad>/rightShoulder" },
+            },
+            ["boost"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "<Keyboard>/leftShift" } },
+            ["dampeners"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "<Keyboard>/z" } },
+            ["freeLookHold"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "<Keyboard>/leftAlt" } },
+            // Not read in free flight: unbound so their keys don't double up.
+            ["throttle"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "", "" }, [BindSlot.Pad] = new[] { "", "" } },
+            ["brake"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "" } },
+            ["strafeLeft"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "" } },
+            ["strafeRight"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "" } },
+            // The right stick aims: no dodge on it.
+            ["dodgeLeft"] = new Dictionary<BindSlot, string[]> { [BindSlot.Pad] = new[] { "" } },
+            ["dodgeRight"] = new Dictionary<BindSlot, string[]> { [BindSlot.Pad] = new[] { "" } },
+            // Space is up: the mouse fires.
+            ["firePrimary"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "<Mouse>/leftButton" }, [BindSlot.Key2] = new[] { "" } },
+            ["fireSecondary"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "<Mouse>/rightButton" }, [BindSlot.Key2] = new[] { "" } },
+            // Q / E roll: the menus move to R (route) and Tab, fast-forward to H.
+            ["autopilotMenu"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "<Keyboard>/r" } },
+            ["actionsMenu"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "<Keyboard>/tab" } },
+            ["fastForward"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key1] = new[] { "<Keyboard>/h" } },
+            // The mouse always aims in free flight; M still frees the cursor.
+            ["mouseSteering"] = new Dictionary<BindSlot, string[]> { [BindSlot.Key2] = new[] { "" } },
+        };
+
+        /// <summary>The style whose layout is loaded (FlightStyles.Current when it was last applied).</summary>
+        static int loadedStyle = -1;
+        /// <summary>The flight style whose key layout is loaded (FlightStyles).</summary>
+        public static int LoadedStyle => loadedStyle;
+        static string StylePrefsKey => loadedStyle == FlightStyles.Free ? PrefsKey + "_free" : PrefsKey;
+
+        /// <summary>The layout of the flight style now in use (FlightStyles.Current: the option, or a mod's / an event's):
+        /// its defaults and its own overrides. Called when the option changes and every frame by the flight (ShipController)
+        /// and the bindings page, for a style a mod or an event switches; a no-op when that style is loaded already.</summary>
+        public static void ApplyStyle()
+        {
+            if (loadedStyle == FlightStyles.Current) return;
+            CancelRebind();
+            Load();
+            Changed?.Invoke();
+        }
+
+        /// <summary>A binding's default in the loaded style (null = the action's own path).</summary>
+        static string StyleDefault(InputAction action, int index)
+        {
+            if (loadedStyle != FlightStyles.Free) return null;
+            var row = RowOf(action);
+            if (row == null || !FreeFlightDefaults.TryGetValue(row.id, out var slots)) return null;
+            foreach (var kv in slots)
+            {
+                var idx = row.slots[(int)kv.Key];
+                if (idx == null) continue;
+                for (int i = 0; i < idx.Length && i < kv.Value.Length; i++) if (idx[i] == index) return kv.Value[i] ?? "";
+            }
+            return null;
         }
 
         static InputAction Button(string id, Func<string> label, string key1, string key2, string pad, bool padSlot = true)
@@ -178,6 +288,8 @@ namespace GoF2Remake.Flight
             suspended = 0;
             Load();
             Map.Enable();
+            Settings.Changed -= ApplyStyle;
+            Settings.Changed += ApplyStyle;   // the flight style option (and Default settings) switch the layout
         }
 
         /// <summary>Chat typing (NetChat) and rebinding switch the game's controls off; nested calls count.</summary>
@@ -200,7 +312,16 @@ namespace GoF2Remake.Flight
         static void Load()
         {
             Map.RemoveAllBindingOverrides();
-            string json = PlayerPrefs.GetString(PrefsKey, "");
+            loadedStyle = FlightStyles.Current;
+            // The style's defaults first (as overrides of the original's paths), the player's own on top.
+            foreach (var action in Map.actions)
+                for (int i = 0; i < action.bindings.Count; i++)
+                {
+                    if (action.bindings[i].isComposite) continue;
+                    string d = StyleDefault(action, i);
+                    if (d != null) action.ApplyBindingOverride(i, d);
+                }
+            string json = PlayerPrefs.GetString(StylePrefsKey, "");
             if (json.Length == 0) return;
             try
             {
@@ -224,9 +345,13 @@ namespace GoF2Remake.Flight
                 for (int i = 0; i < action.bindings.Count; i++)
                 {
                     var b = action.bindings[i];
-                    if (b.overridePath != null) saved.bindings.Add(new SavedOverride { action = action.name, index = i, path = b.overridePath });
+                    if (b.isComposite || b.overridePath == null) continue;
+                    // Only what differs from the loaded style's default (the free layout's defaults are overrides too).
+                    string d = StyleDefault(action, i);
+                    if (d != null && b.overridePath == d) continue;
+                    saved.bindings.Add(new SavedOverride { action = action.name, index = i, path = b.overridePath });
                 }
-            PlayerPrefs.SetString(PrefsKey, JsonUtility.ToJson(saved));
+            PlayerPrefs.SetString(StylePrefsKey, JsonUtility.ToJson(saved));
             PlayerPrefs.Save();
         }
 
@@ -234,9 +359,9 @@ namespace GoF2Remake.Flight
         public static void ResetToDefaults()
         {
             CancelRebind();
-            Map.RemoveAllBindingOverrides();
-            PlayerPrefs.DeleteKey(PrefsKey);
+            PlayerPrefs.DeleteKey(StylePrefsKey);   // the loaded style's own; the other layout keeps its
             PlayerPrefs.Save();
+            Load();
             Changed?.Invoke();
         }
 

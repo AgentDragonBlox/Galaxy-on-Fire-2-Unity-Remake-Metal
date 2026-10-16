@@ -84,6 +84,12 @@ namespace GoF2Remake.Multiplayer
                         SessionRules.MinKaamoLevel, SessionRules.MaxKaamoLevel, () => NetRules.HostKaamoLevel, NetRules.SetKaamoLevel,
                         "profiles above it are cut back at sign-in"));
             }
+            list.Insert(at++, new Setting
+            {
+                key = NetRules.FlightKey, option = NetRules.FlightFlag, label = NetRules.FlightLabel, kind = Kind.Text,
+                get = () => SessionRules.FlightText(NetRules.HostFlight),
+                apply = v => { int s = SessionRules.ParseFlight(v); if (s < -1) throw new FormatException(); NetRules.SetFlight(s); },
+            });
             return list;
         }
 
@@ -135,6 +141,12 @@ namespace GoF2Remake.Multiplayer
                     {
                         if (NetFactions.ParseToll(value) is not int t) return Localization.Extra("mpSetToll", "toll is a number of credits or a percentage (0-100%).");
                         value = NetFactions.TollText(t);
+                    }
+                    if (s.key == NetRules.FlightKey)
+                    {
+                        int f = SessionRules.ParseFlight(value);
+                        if (f < SessionRules.PlayerFlight) return Localization.Extra("mpSetFlight", "flightmodel is gof2, es2 or player.");
+                        value = SessionRules.FlightText(f);
                     }
                     break;
             }

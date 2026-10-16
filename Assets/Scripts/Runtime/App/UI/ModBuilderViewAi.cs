@@ -119,6 +119,7 @@ namespace GoF2Remake.UI
                 case ModBuilder.Kind.Characters: o["entry"] = currentCharacter?.Ref; break;
                 case ModBuilder.Kind.Skins: o["entry"] = ModBuilder.SkinShip; break;
                 case ModBuilder.Kind.Blueprints: o["entry"] = currentBlueprint?.Ref; break;
+                case ModBuilder.Kind.Kits: o["entry"] = currentKit?.Id; o["part"] = currentPart?.Id; if (gizmo.Selected >= 0) o["hardpoint"] = gizmo.Selected; break;
                 case ModBuilder.Kind.Campaigns: o["entry"] = currentOption?.Ref ?? (Project.Campaign != null ? "campaign" : null); break;
                 case ModBuilder.Kind.Interiors: o["entry"] = currentInterior?.Ref; break;
                 case ModBuilder.Kind.Quests: o["entry"] = currentQuest?.Name ?? currentGraph; o["graphView"] = GraphMode; break;

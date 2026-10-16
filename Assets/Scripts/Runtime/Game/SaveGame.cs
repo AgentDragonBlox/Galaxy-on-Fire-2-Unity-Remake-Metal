@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace GoF2Remake.Data
@@ -102,6 +103,8 @@ namespace GoF2Remake.Data
         public string runId;
         // version 16: the mods' new-game options on in this game (Session.ModGameOptions, Modding.ModGameOptions)
         public List<string> modGameOptions;
+        // version 17 (with the pirate board): the player's builds of the mods' customizable ships (Session.ShipBuilds, Modding.ModShipKits): "key|build"
+        public List<string> shipBuilds;
         /// <summary>v17: the Pirate activity board (PirateReports).</summary>
         public List<PirateSighting> pirateSightings;
         public int nextPirateSightingId;
@@ -313,6 +316,7 @@ namespace GoF2Remake.Data
                 hardcore = Session.Hardcore,
                 runId = Session.RunId ?? "",
                 modGameOptions = new List<string>(Session.ModGameOptions),
+                shipBuilds = Session.ShipBuilds.Select(kv => kv.Key + "|" + kv.Value).ToList(),
                 pirateSightings = new List<PirateSighting>(Session.PirateSightings), nextPirateSightingId = Session.NextPirateSightingId,
                 campaignMission = Session.CampaignMission,
                 station = Session.StationIndex,
@@ -518,6 +522,12 @@ namespace GoF2Remake.Data
             Session.FreePlay = s.freePlay;
             Session.ModCampaign = s.modCampaign ?? "";
             Session.ModGameOptions = new HashSet<string>(s.modGameOptions ?? new List<string>());
+            Session.ShipBuilds = new Dictionary<string, string>();
+            foreach (var e in s.shipBuilds ?? new List<string>())
+            {
+                int bar = e?.IndexOf('|') ?? -1;
+                if (bar > 0) Session.ShipBuilds[e.Substring(0, bar)] = e.Substring(bar + 1);
+            }
             // A session (a server profile) reads the session's board instead (NetState, PirateReports.ApplyShared).
             if (NetSession.Active) PirateReports.ApplyShared(GameHooks.SharedPirateBoard?.Invoke());
             else Session.PirateSightings = s.pirateSightings != null ? s.pirateSightings.FindAll(p => p != null) : new List<PirateSighting>();

@@ -96,6 +96,7 @@ Menu items (from `Scripts/Editor`), grouped in submenus; **GoF2 > Tools Overview
 - **GoF2 > Build > Linux Dedicated Server** (`LinuxServerBuild`): `Build/LinuxServer/GoF2Server.x86_64`, Unity's Dedicated Server build (Linux, subtarget Server, IL2CPP, the dedicated server optimizations on: no texture / shader data; no audio either: `ServerAudioStrip` clears the AudioClip references of the Resources assets for the build, 4346 clips / 171 MB, backed up in `Library/GoF2ServerAudioBackup` and put back afterwards (also on the next Editor load after a crash), the scene's clips in the build's copy (`AssetPostprocessor.OnProcessScene`); Minimal managed stripping (the server target had it off) and IL2CPP's OptimizeSize code generation, restored after the build like the target: GameAssembly.so 206 -> 82 MB, the zip 323 -> 126 MB), only the first scene; it starts as a server by itself (`UNITY_SERVER` in `DedicatedServer.Enabled`), `start-server.sh` beside it. Needs the Hub module "Linux Dedicated Server Build Support"; switches the active target for the build and back: the menu items switch, wait for the scripts to recompile and build after the domain reload (SessionState carries the job), since the toolchain packages only join the Linux build while the scripts are compiled for Linux (`UnityEditor.Sysroot` behind `UNITY_STANDALONE_LINUX_API`; built in the switch's own call: "No Linux sysroot found for x64"); `LinuxServerBuild.Busy` / `LastResult` for scripts. The game's code is 10 % of the server's generated C++ (packages, UI Toolkit, .NET and IL2CPP's generics the rest), so splitting client code into assemblies the server leaves out was judged not worth its refactor (2026-10-14). `LinuxServerBuild.Batch` is its command line (exits 1 on a failed build). Docker (`docker/`, SERVER.md "Docker"): `build-server.sh` builds it in GameCI's base image with the Editor of `ProjectVersion.txt` (the account only for the licence calls, never in the Editor's environment); **GoF2 > Build > Linux Dedicated Server (Release Zip)** (`LinuxServerBuild.ReleaseZip`) is the same build as `Build/Release/GoF2Remake-LinuxServer-<tag>.zip` (top folder GoF2Server, the tag = GOF2_BUILD_VERSION's date; the entries marked as made on Unix with their modes, `MarkMadeOnUnix`: .NET writes the host it runs on and unzip ignored the modes), built with a release's other platforms and attached to it. Every published release runs `.github/workflows/server-image.yml`: with that zip in the release it unpacks it (only `docker/` checked out, no licence) into the image, so the image is the release's own build; without it it builds the release's commit (textures, Reference/, Modding/ left as LFS pointers; secrets UNITY_EMAIL / UNITY_PASSWORD; a manual run takes a tag and optionally the shown version, GOF2_BUILD_VERSION) and attaches that zip to the release; either way it checks the server starts and pushes `ghcr.io/joppietoppie/gof2-server:<tag>` and `:latest` (not for a pre-release). The release tag must be the commit the release was built from, or the fingerprints differ.
 - **GoF2 > Build > Event Audio**: `Resources/GoF2Events/EventAudio`, the sounds and music the event graphs play (see "Multiplayer", Events).
 - **GoF2 > Build > Hangar Heights**: `Resources/GoF2Data/hangar_heights.json`, how far each ship is lifted off each hangar pad (see "Station scene"). Run it again after changing a hangar room or a ship model.
+- **GoF2 > Build > Nozzle Shapes** (`NozzleShapesBuilder`): `Resources/GoF2Data/nozzle_shapes.json`, each game ship's (0..63) exhaust nozzles as their outline (radius at 32 angles), extents and centre, measured on its player engine glow mesh (vertices to the nearest slot-3 mount; the game's meshes are only readable in the Editor), for the mods' exhaust styles (see "Mods", Exhaust styles). Run it again after changing a ship model or its exhaust mounts.
 - **GoF2 > Build > Void Station Collision** (`VoidStationCollisionBuilder`): `Resources/GoF2Data/void_station_extra.json`, extra collision boxes for the Void station's outer blades and lower spire (see "Space scene", Alien orbit). Run it again after changing the station's model or animation.
 - **GoF2 > Build > Hangar Shadows**: `Resources/GoF2Station/ShipShadows` (+ `ShipShadows.asset`, `HangarShipShadow.mat`), each ship's contact shadow in the hangars (see "Station scene"). Run it again after changing a ship model.
 - **GoF2 > Build > HUD Images**: `Resources/GoF2Hud`, the HUD / star map images and the alien font glyphs cut from the original interface atlases (rects in `Reference/research/mining.md`, `autopilot_travel.md`, `starmap_travel.md`). Also run by Create Space Scene.
@@ -579,6 +580,8 @@ Research: `Reference/research/mining.md` (+ `Reference/tools/mining/mining_table
   - Layout: header; system, tech level and race; Hangar (opens the shop window, see "Shop"), Space Lounge and Map (the star map, see "Star map and system travel") buttons; **Launch**, refused while the cargo hold is overloaded (204); the original's "Depart the station?" (397) is left out (remake: it launches at once).
   - Input modes work like the flight HUD: touch; keyboard 1 / 2 / M / L / Esc (Launch shows its key: L / the controller's X glyph before its text); controller LB / RB / Y / X / B / Menu. The number keys are the PC version's "Menu button 1 - 9" (3356, its key table is still in the Android binary: a tap on `Globals::sub_menu_buttons`): on the main view 1 Hangar, 2 Lounge, 3 Map, 4 Missions, 5 Status; in the Space Lounge 1-9 (and the keypad's) pick its visitors in the list's order instead, numbered "1." on the rows with keys and mouse (remake, #75, `LoungePanel.NumberKey`); in the hangar window 1 / 2 / 3 = Ship / Shop (Store) / Blueprints (`HangarWindow::initialize`), 4 / 5 nothing; Q / E (LB / RB) cycle the tabs. No hint row on the main view (the buttons say it); toasts sit at the bottom, above the ticker.
   - Esc or B steps back: dialog, then lounge, then the system menu (Save game, Back to Main Menu).
+  - The mouse takes the selection to the `station-button` it is over (`PointerOverEvent` on the root, like MainMenu's
+    `HookFocusSound`): a menu opened with the mouse focused its first entry, which stayed lit beside the hovered one.
   - Music per race and station; ambience per screen as the FMOD cycle events (`CycleSound`): 122 Mainview, 95 Hangar while the hangar window is open (`StationLevel.SetHangarWindowOpen`, `ModStation::OnKeyPress`), 108 Lounge.
 - Missions (129, unlocks with the Map) and Status (169): see "Bar and freelance".
 - **System menu** (`StationMenu`, `SysPage` Main / Save / Load / Options): 30 Save game, 29 Load (the slot list), 28 New game (the main menu's campaign panel, `MainMenu.OpenPanelOnStart`), 31 Options (the `OptionControl` rows), 43 About (text 45), 522 Back to Main Menu.
@@ -603,14 +606,14 @@ Research: `Reference/research/mining.md` (+ `Reference/tools/mining/mining_table
 - **Ship shadows** (remake; the original's hangars have none, and the hangar light comes from the camera's side, so a real
   shadow falls behind the ship and out of URP's 50 m shadow distance): `HangarShipShadow` on every ship `SpawnShip` puts in
   the hangar (the turntable, the parked ships, the flights, other players' ships) projects a soft contact shadow like a decal:
-  `GoF2/HangarShadow` on a box around the footprint (only the ship's yaw, 6 m below to 8 m above the resting hull's lowest
+  `GoF2/HangarShadow` on a box around the footprint (only the ship's yaw, 12 m below (6 until 2026-10-16: the Terran turntable's inner ring, sloping ~7 m under a low kit ship's bottom into its pit, stayed lit) to 8 m above the resting hull's lowest
   point, a little wider as it lifts) rebuilds each pixel's scene point from the station camera's depth texture (switched on
   by it) and darkens it by the ship's map from **GoF2 > Build > Hangar Shadows** (`ShipShadowSet`, `HangarShadowsBuilder`:
   the hull's triangles rasterised from above into 128 x 128 over a square 2.2 x the hull, linear, uncompressed; R the
   underside's height over each texel (spread outward), G the silhouette, A a wide soft halo): under the silhouette and in
   the halo around it (the part a camera looking down past the hull sees), only below the hull's underside there (so the
   hull never shades itself; 3 m above it past the hull, the rims around a sunk hull), only on surfaces facing up (normals
-  from the depth's derivatives), full over the box's lower 60 %. Shown at once for a ship spawned on its pad (the turntable, the parked ships, a guest), fading out
+  from the depth's derivatives), full up to 2.4 m above the floor, fading out to 8 m (`_Hull.zw`). Shown at once for a ship spawned on its pad (the turntable, the parked ships, a guest), fading out
   over 15 m as it lifts off and staying on the pad; an arriving ship's fades in the same way as it comes down
   (`HangarFlight.Arrival` -> `ExpectLanding`: the pad's floor is known from the start, the hover over the pad isn't
   taken for the landing; verified: none during the approach at 32 m, 16 % at 12.6 m, full at touch-down). The bake is `ShipShadowBaker` (shared by the builder): the mods' ships
@@ -793,6 +796,65 @@ The FMOD data comes from the FEV's LGCY chunk (`Reference/tools/audio/fev_lgcy.p
   keys (arrows, Enter, Esc, controller A / B / Menu) and pause. The HUD hints (`InputGlyph.For`, rebuilt on
   `GameControls.Changed`; an unbound control's hint is left out), the action prompt's glyph and the hint texts' `#KEY_*`
   tokens (`FlightHints.KeyTokens`) show the current bindings.
+- **Free flight** (remake, Options > Controls toggle "Free flight (EVERSPACE 2 style)", `Settings.FlightStyle`,
+  `FlightStyles`; off by default, and off is the original flight and key layout unchanged; single player and sessions, it only changes how the player's own ship flies): built
+  after EVERSPACE 2 (not from its code): its numbers come from recordings of the game measured by
+  `Reference/tools/es2flight/es2measure.py` and from its asset values (`Reference/research/es2_flight_measurements.md`).
+  `FlightModel.StepFree` (plain C#): thrust / strafe / up-down held instead of a throttle, per axis in the ship's frame
+  (`FreeAxis`): top speeds forward the original's 2 u/ms (100 m/s; EVERSPACE 2's cockpit speed gauge read 343 km/h = 95.3),
+  backward, strafe and up / down x0.5 (the gauge: 172 km/h each); every axis eases out cubically to its top speed in a
+  fixed time, v = V (1 - (1 - t/T)^3) (the game's EaseAccelerationExponent 3), written as a rate of the speed still missing
+  so it continues from any speed: forward T 1750 ms, the others 1270 ms, at handling 100 (sqrt-scaled by the handling,
+  + `AccelMs`). Turning: every axis (roll too) at
+  EVERSPACE 2's 125 deg/s at handling 100 (scaled by (H / 20)^0.75, `FreeTurnExponent`, so the ships and Steering Nozzles
+  spread wider than a square root, though less than the original's linear rate: a bare Rhino 51, a Dace with the Pulsed
+  Plasma Thrust 335; the steering
+  sensitivity option x0.6..1.6, 1 at its default, read from `Settings.Sensitivity`: `FlightModel.Sensitivity` is the
+  original's ramp setting, a fixed 2.7 under mouse steering, which turned free flight x1.6 too fast; x0.85 boosting, measured), reached by a linear 400 ms ramp (`FreeTurnRampMs`, measured in
+  EVERSPACE 2's cockpit view, which follows the ship rigidly); speed doesn't change it. No auto-level (Level out still works). Inertial dampeners (`ShipController.Dampeners`, toggled by
+  `GameControls.Dampeners`, on at start): each axis flies the speed asked for and what isn't asked for brakes away at
+  33 m/s^2 (the gauge, linear on every axis; `FreeDecelMs` 3000: a stop from top speed; the asset says 60, probably
+  scaled by the player's dampener strength setting), which also eases a boost's speed off afterwards; off: the thrust
+  adds to the momentum, above the soft cap (top speed, the boost's while boosting) the speed eases back at that rate. A
+  held boost on an energy pool: to the booster's original boost speed x 3.2 / 3 (`FreeBoostFactor`: the Me'al's x3 is
+  EVERSPACE 2's measured x3.2, the gauge's 1110 of 343 km/h; Linear / Cyclotron x1.6, Synchrotron x2.67, Polytron x4.27;
+  a booster without a boost speed x3.2), eased out cubically over 3.1 s from the
+  top speed (`FreeBoostEaseMs`, over the gap), a full pool lasts the booster's duration (attribute 27; 3.5 s without one: EVERSPACE 2's boost lasted 4.5 s held, so its equipment sets it)
+  and refills in its recharge time, restarts from 20 % and only on a fresh press after running empty (`BoostHeld`,
+  `BoostRechargePercent` = the pool). The forward
+  thrust held is `Throttle` (0 with no key, whatever the momentum) and the forward speed `MoveSpeed`; with no forward
+  thrust and no boost the main engines are off (`FlightModel.EnginesOff` -> `EngineDrive.Off`: mod flames shrink into the
+  nozzles, the nozzle / throttle glows go dark, `ShipExhaust` stops, `ShipController.UpdateEngineParts` stops drawing the
+  model's player engine parts (Renderer.enabled, not the jets), `NetPlayer`'s engine flag), so a ship at rest or coasting
+  burns nothing; after the launch / arrival fly-in the ship comes to rest (`ShipController.freeSettle`: braked like the
+  dampeners even with them off, until the player thrusts). With the dampeners off the thrust never pushes past the soft
+  cap (before, the cap's easing was weaker than the thrust and a held key climbed on for good). The sideways part of the
+  move goes to `StrafeSlide`, so the chase camera stays square behind a sliding ship. `ShipController.FreeFlightActive`: the
+  option with keyboard / mouse or a controller (touch, tilt and VR keep the original); the autopilot, the launch / arrival
+  camera, the turret view, the dodge and computer control (mining, object docking) run the original path and hand back
+  the velocity (`SyncFree`). Mods can tune each style or set the style (see "Mods", Flight styles). The mouse: EVERSPACE 2's virtual joystick (`ReadVirtualStick`: the mouse moves a reticle
+  inside a circle of 0.5 x the screen height, `StickRadius`, EVERSPACE 2's measured ~0.52: the rate grows linearly with the
+  reticle's offset; it stays where the mouse leaves it; beyond the mouse steering dead zone (a hard one, not rescaled, like
+  the game's ~8 % of the screen height) the deflection is the whole offset over the radius (measured to 478 px: 0.229 deg/s
+  per px, linear); still during free look, centred while the autopilot steers; the HUD
+  draws the circle, `.mouse-stick`, faded in (150 ms) only while the aim dot is outside the dead zone and out (400 ms) when it is centred: always shown it read as a second radar ellipse, `FlightHud.UpdateStickRing`). Free look while held
+  (`GameControls.FreeLookHold`, `FreeLookCamera`; both styles; in free flight the aim is ignored meanwhile). Its own key
+  layout (`GameControls.FreeFlightDefaults`, overrides under `controls_bindings_free`, `ApplyStyle` on the option's
+  change): W / S thrust, A / D strafe, Space / L-Ctrl up / down, Q / E roll, L-Shift boost, Z dampeners, L-Alt free
+  look, LMB / RMB fire, R autopilot menu, Tab actions menu, H fast-forward; controller: left stick thrust / strafe, right
+  stick aims, LB / RB roll (up / down unbound), the rest as before; the original-only rows (throttle, brake, strafe
+  left / right) and the free-only rows hide in the other style's bindings list (`ControlRow.visible`); the Key bindings
+  page's first line names the layout shown ("Key layout: ...", `bindingsLayout`), and its Reset resets only that layout.
+  EVERSPACE 2's own defaults (its Input.ini) match the layout but for Z (its photo mode; its dampener toggle has no
+  default key). Verified in Play mode before the measured numbers (keyboard events and a virtual controller): thrust, the
+  dampened stop, the drift with the dampeners off, strafe and up / down, the roll, the right stick's turn, the boost's
+  pool, the hints and the circle; the measured numbers checked on `FlightModel` alone (125 deg/s in 0.23 s, forward / strafe
+  against the gauge within 0.04 of the top speed at every sampled time, the 3.0 s stop, reverse half the forward speed). Played in Play mode with the measured numbers (2026-10-10, the Phantom, handling 150; keys held by
+  re-queueing the keyboard state before every Input System update, the Input System set to ignore focus for the test): 100
+  m/s forward reached as the cubic ease predicts (90 % 0.77 s, 99 % 1.12 s), stopped in 2.96 s; strafe and up 50 m/s,
+  stopped in 1.48 s; the boost 209 / 306 / 320 m/s at +1 / +2 / +3 s, braking 33 m/s^2 after it; the heading turning
+  153.1 deg/s (125 x sqrt(1.5), the square root of then; now 169); the mouse's yaw the offset's horizontal share of the radius x the top rate (94.1 / 55.6
+  deg/s for 232 / 137 px of 377), nothing back in the dead zone.
 - **D-pad taps** (`DpadTapNavigation`): UI Toolkit's runtime input samples UI/Navigate once a frame and drops a D-pad press released within the frame (the Steam controller's trackpad D-pad); the main and station menus send those taps (`wasPressedThisFrame` and already up) to the panel as NavigationMoveEvents.
 - **Input modes:** `InputMode` tracks the last input kind (Touch / KeyboardMouse / Gamepad, switching on the first real input of another kind, on any platform). The flight HUD (`UI/Flight`, `FlightHud`) shows the touch controls (see **Touch controls** below) only for touch, keycap hints for keyboard and **Xbox** button hints for any controller (always Xbox labels). Touch steering goes through `ShipController.SetSteer` (the stronger of touch and the built-in actions wins); touch mode also switches the chase camera to the original's fixed touch damping. Esc / Android back / controller Menu / the touch pause button open the **pause menu** (`PauseMenu`, MenuTouchWindow mode 1: 40 Pause; Resume 41, Missions 129 (remake: also in the alien orbit, where the original hides it, and with the Most Wanted criminals on the move), Cargo hold 166, Options 31 (every option but the language), Skip 395 during the prologue / rescue, Back to Main Menu 522 → 523): game time and sounds pause (`Navigation.PauseMenuOpen`, `AudioListener.pause`); after the player's death Esc goes straight to the main menu. **Action Freeze** (59, `PhotoMode`, the pause menu's state 0xd / `MGame::setCinematicMode`): the world stays frozen, the HUD hides, an orbit camera around the ship (drag −0.005 rad/px, the pitch free all the way round and clamped to ±200 px only by a fling (`MGame::OnUpdate` 0x1aec2c; the in-flight free look clamps always), ×0.9 fling, the camera turning with the orbit (no flip over the top), pinch / wheel / triggers zoom 1500..20000 units, arrows / sticks), the logo 0x534 (the Full HD logo) and a footer with Back (170); the original's share buttons are dead code (no upload). Remake: the overlay is Inspect ship's (`OrbitViewUi`, `.orbit-view-*` in GoF2Common.uss, shared by both): "ACTION FREEZE" at the top left, the controls as hints at the top right (rotate, zoom, Hide UI H / Y, Screenshot Enter / P / A, Back; the last three clickable), Back and the title screen's remake logo (`logo_gof2_remake.png`, `.photo-logo`) in the footer; Screenshot is the original's 60 "Save to library" (PNG to Pictures/Galaxy on Fire 2, Android MediaStore; 55 / 56); Hide UI clears the screen until a short click / tap or H / Y again; + / - (Page Up / Down) zoom too; the overlay fades while the camera is dragged. **Tilt steering** (`TiltSteering`, `MGame::handleAccelerometer`; Controls: 490 Touch / 491 Accelerometer when the device has one, 492 Steering Calibration (493, calibrates on first use), the tilt sensitivity 0..1): yaw clamp(Y·2.5)², pitch 3·max(x' − cal1, Z − cal2) squared, no dead zone; in tilt mode the flight model's pitch ramps use 1.45 / 1.25 × the tilt sensitivity (the stick, keys and pads now use the plain sensitivity, like the original); the touch stick is squared per axis (`Hud::getAnalog`²); dimmed stick (alpha 50).
 - **Touch controls** (`TouchControls`, `Reference/research/touch_hud.md`): the original's flight controls as UI Toolkit elements with the original images (`GoF2Hud/touch_*`, **GoF2 > Build > HUD Images**) and their own pointer events, placed like `Globals::setCoordsSteer` / `setCoordsFire` with the Android defaults S = 415 / F = 365 in the safe area (panel units = HD pixels): the left group (fast-forward / time extender and autopilot on their pill from `NavigationView`, the pill only behind a shown icon, the autopilot hidden at campaign 0 / 1; the fixed stick 0x4c1 / 0x4b6 / 0x4b7 at centre (165, S + 277), travel 94, touch area ±112 × ±216, no dead zone, a double tap within 499 ms levels out; boost 0x4b2 / 0x4b3, alpha by the charge, the ready blink (the original's 2 s of one lit frame per 80 ms strobed at 120 Hz; remake: 5 flashes in 1 s, lit the last 100 of every 200 ms, in time at any frame rate)), the right cluster (background 0x6aa / 0x4c6 at (w − 321, F); fire 0x4b4 / 0x4b5, also the action button: autopilot / planet jump / docking target / asteroid approach / undock with the arrow 0x536 when fire acts, the rest is Mining's own fire handling; a second press within 249 ms latches autofire; quick menu 0x4ba (opens the quick menu when it has entries), camera (the next mode's icon), secondary 0x4bc (hidden at 0 ammo; held 350 ms: the weapon strip, see "NPCs and combat", HUD), the auto-turret toggle), pause 0x4b8 at (w − 121, 24) in the HUD root (also during cutscenes, the launch / arrival camera and jump scenes, there at 12 % opacity, opaque while held (remake, `Frame.cinematic`, for immersion), at its last place in flight: a cutscene hides the safe area (display: none), which zeroes the touch layer's size, and the width's 1920 fallback pushed it off a narrower HUD; sounds 124 / 123; the top-right readout moves left of it), the secondary plate 0x4c2 at the bottom centre ("<name> (<n>)", remake: a tap switches). Buttons act on release over them (sliding off cancels), fast-forward while held. The empty screen behind them (`.touch-gesture-zone`): a vertical drag sets the throttle after 160 px (400 px = 100 %, up = faster) with the gauge 0x548 under the crosshair (2 s fade), a sideways flick dodges, in free look the drag orbits. No Level button, throttle slider or action prompt on touch (the original has none). The original's Configure screen (Options > Controls, 494 / 495: S and F dragged up and down) is two sliders in Options > Controls (remake, #61; shown with touch input): "Touch controls height: stick / fire buttons", `Settings.TouchLeftHeight` / `TouchRightHeight` 0..1 between the highest (300) and lowest place the original allows (h − 425 / h − 311), -1 = the defaults 415 / 365 (`TouchControls.Height01`). Hidden under dialogues, the pause menu, the star map and death; only the pause button in cutscenes, jumps and the launch camera; only the stick under the autopilot menu.
@@ -1788,7 +1850,15 @@ now takes an option right after another (a dash and a letter) as no value). `Boo
   (`-cloakhides`, `-capitalships`, `-informeroriginal`, `-nopirateevents`, `-nokaamostacking`, `-nokaamoequipment`, `-nocloakbay`, `-noempcloak`) turns
   one the other way, and the server settings (`cloakhides` ...) change them while running. The Kaamo Club upgrade limit
   is a number beside the bits (`NetRules.HostKaamoLevel`, `NetState.KaamoLevel`, `GameHooks.SessionKaamoLevel`;
-  `-kaamomaxlevel N`, `/set kaamomaxlevel`, 2..20, default 5). The other players' rows are
+  `-kaamomaxlevel N`, `/set kaamomaxlevel`, 2..20, default 5). So is the flight model (2026-10-16; players flying free
+  flight beside the original in PvP had other turn rates, strafing and drift): `NetRules.HostFlight` (`SessionRules`:
+  FlightStyles.Original "gof2" by default, Free "es2", or `PlayerFlight` -1 "player" = each player's own option; no Host
+  card switch, the user found "free" confusing there): a player host's session starts at gof2, a dedicated server's
+  `-flightmodel gof2 | es2 | player` (the launchers' `FLIGHT`), and admins' `/flightmodel [gof2 | es2 | player]` (no
+  argument shows it; `NetCommands.FlightModel` -> `NetServerSettings.Set`, saved where the server keeps its settings) or
+  `/set flightmodel`; `NetState.FlightModel` (sent as style + 2, 0 = not
+  arrived), `GameHooks.SessionFlightStyle` -> `ModFlight.Decide` right after an event's style (an admin's /flightstyle still
+  wins), before a mod ship's or campaign's; the Options row then says "Now set by the multiplayer session". The other players' rows are
   hidden (`OptionsCatalog.SessionRule`, `NetRules.ClientLocked`). Options that only change what one player sees or how
   they steer (target lock, salvage markers, cameras, dialogue, hints) stay each player's own.
 - **Medals** are off in sessions (`Achievements.Check` / `Elite` award nothing, the Status window hides the medal column).
@@ -1852,7 +1922,7 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   (`items.<id>.name`). `Database.Load` merges after the economy overlay (`ModContent.Apply`, only for the GoF2Data folder).
   A mod item's 0 occurrence means never (the add-on items' random roll in `Shop.GenerateItems` skips them).
 - **Ships** (ships.json; the format of PR #34's custom_ships.json, `CustomShipData` in Database.cs): `{ "id", "model": glb,
-  stats, slots, race, hangarHeight, mounts (slotType 0-3, `upsideDown` turrets), icon, modelLength / modelYaw,
+  stats, slots, race, hangarHeight, mounts (slotType 0-4 (4: manoeuvring jets with a `direction`, `LateralThrusters`), `upsideDown` turrets, `builtIn` turrets: `PlayerTurret` puts an empty pivot / gun stand-in at the point instead of the item's `turretMounted` model (the item's gun, stats, aim, auto fire, turret view; shots from the point + 120 units, the view 60 units above it), `BuildStatic` (hangar, other players) shows nothing there; a plasma collector keeps only its stream, `sn_plasma_stream_anim_add` moved from a copy of the item's model onto the stand-in gun, so it pours from the point and turns with the aim; the ES2 kit's turret sockets), icon, modelLength / modelYaw,
   engineGlowRadius, materials, throttleGlow / extraGlows, lounge }` adds a ship (numbered after the original 64,
   `ModRegistry.Kind.Ship`, assembly "ship_NNN_mod", pack "mod"); `{ "override", armor, cargo, price, priceDefault, slots,
   handling, mounts }` changes one (`mounts` replaces its hardpoints, with or without a new model). Both take `npcTurrets`
@@ -1906,6 +1976,75 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   ship names (no sprite). Code that sizes a ship by its renderers must skip trails (empty at the origin): the item window and
   `NetPlayer` use mesh renderers only. Another player's ship built before the session's mods were on (they join before
   NetState applies them) is built again on `ModShips.ModelsChanged`.
+- **Engine effect** (`EngineFx`, ships.json `engineFx`, `CustomEngineFx`; the GoF3 Ships mod): Galaxy on Fire 3's engine at every
+  exhaust mount in place of the glow discs (`BuildEngineGlow` without discs: the empty part marks the engines on / off) and the
+  exhaust particles (`ShipExhaust` skips the ship): GoF3's NivelianEngine / TerranEngine / VosskEngine scenes
+  (`assets/vfx/engines/<race>`: the flare `glow_mesh`, two camera-facing quads, a 9 x 9 unit square and a 27 x 2.7 streak at half
+  brightness with the texture turned a quarter; the exhaust, four crossed cards 12.1 x 1.62 units with the texture's middle band
+  u 0.39 -> 0.69 along and vertex brightness 0 / 0.77 / 0.2 / 0 at 0 / 1.73 / 6.91 / 12.09) and its VfxList trail (TrailNivelian =
+  `particles/ship_engine_nivelian.psb`, Fork Particle Studio, unreadable: `beam_001.bmp` streaks drifting apart), the trail rebuilt
+  as camera-facing ribbons of points that keep the ship's velocity plus their own backward speed (they bend when the ship turns,
+  as in GoF3's ship viewer) and sway in smooth waves (each trail eases toward random sideways speeds, `SwayEase`; independent
+  points made a zigzag), the streak's middle row across them (whole copies per segment read as beads) and a random brightness
+  per point. EngineDrive levels (thrust 0.3..1 length, boost longer; a third of the glow at idle, unlike the ES2 flames); in the station capped; materials copies of
+  `ModAssets.fxAdditive` (`ModMaterials.CopyOf`) at `_Glow` 0.75 / 0.5 / 1 / 0.45 (flare, cone, trail, helix). A mount's `fxScale` sizes it (GoF3's helper scale:
+  the Retro 0.5 / 1.62) and its `rotation` turns it (`ModHardpoints.MountTurn`; five Vossk hulls' engines 8.5-10 deg inward).
+  The helix (`spiral*`, only the Nivelian engine has one: `_spiral.ae4meshgroup`, two ribbon strands, radius 0.5 -> 0.1 over
+  10.5 units, spun by its animation): camera-facing strands rebuilt each frame round the exhaust's axis, the texture (GoF3's
+  `vfx_generic_electricity_000`, a guess: the spiral's material names its flow textures by GUID only) along them, scrolled, faded
+  by (1 - s)^2 (in flight GoF3's crackle is gone well before the strands' end). Part colours (`flareColor` / `coneColor` / `trailColor` /
+  `spiralColor`, over the exhaust's; the flare's until then was always the exhaust's): the builder reads them from GoF3's materials for the helix engine (Colorize_Color1 = the
+  EngineAttachment colour, unless Colorize_Custom; times DiffuseColor when DiffuseColorMultiply: cone 0.08 / 0.51 / 1, helix and
+  trails 0.22 / 0.56 / 1) with the flare 0.75, cone 0.4 and trails 0.35 dimmer under it; the Terran / Vossk engines keep the hull's
+  nozzle colour (their hulls light the nozzles orange / yellow-green while their effect materials colour blue / green; nothing
+  shows which GoF3 draws; corrected for the Terran engine below). The Terran engine (checked against a clip of the Argus rotating in
+  GoF3's ship viewer): its materials' Colorize_Options 1 draw the textures in their own colour, so every part takes the decoded
+  textures' brightness-weighted colour (amber: flare 1 / 0.65 / 0.28, cone and trail 1 / 0.54 / 0.27; `texture_colour`), not the
+  EngineAttachment's blue or the hull's pale nozzle colour; no wavering streams but one thin straight streak (`RACE_TRAIL`: 1 per
+  exhaust, 0.45 units wide, wander 0.6, x2 the cards' length, intensity 0.35) behind a cone 2.5 x brighter, the spike GoF3
+  shows. A Terran engine on a hull whose nozzles glow yellower than that amber takes its parts halfway to the
+  nozzles' colour (the builder's `nozzle_tinted`: GoF3 draws the flare additively over the lit nozzle; the Retro / Groza
+  Gr'Gath's gold nozzles, checked against a GoF3 video: (1, 0.75, 0.35) measured, (1, 0.80, 0.35) the blend; also the
+  Acheron and Cronus). Matched by eye against two clips of the Moornta (GoF3's ship viewer, and in flight from the side and
+  behind; Play mode: behind, below, above, the side, a hard turn; the Terran, Vossk and Retro hulls; the hangar hides it).
+- **Exhaust styles** (`ModExhausts`, a mod's `exhausts.json`; the guide's "Exhaust styles"): engine effects any ship can wear,
+  picked in the hangar's Customize screen (`ShipCustomizePanel`'s Exhaust row and the style's two colour rows; with styles in
+  the mods that are on every ship has the screen: `ModShipKits.CustomizationOf` gives a ship without other customizations a
+  kit of its own with nothing else, `Kit.weaponColorRow` false). A style is a GoF3 `engineFx` (`EngineFx.Create`; its colours:
+  flare + cone, trails + helix) or a flame `model` with flame `materials` (an ES2 thruster: loaded with the mod ships as the one
+  part of the style's own kit, `ModShips.LoadAll` / `EnsureExhaust`; per exhaust an instance named `exhaust_nozzle_N` at the
+  mount, `MountTurn` x the style's `yaw`, scaled by `NozzleRadius` against the style's `nozzle`, driven by an `EngineFlame` on
+  the holder that blows each along its nozzle's -Z; colours: copies of the flame materials with `_EmissionColor` / `_BoostColor`
+  at their own intensity; a flame style's boost cards are its own mod's ships' boost jets (`OwnShip`: the ship's key in the
+  style's mod): on any other ship the holder's `EngineFlame.boostOverride` sets GoF2/ModEngineFlame's `_BoostOverride`, the boost
+  cards stay hidden and the boost turns the main cards to the boost colour). The player's Exhaust size row (`exhaustsize=`,
+  `ModExhausts.ParseSize`: 0.5..2 in 0.1 steps) multiplies each exhaust's fitted scale. Each exhaust takes its nozzle's outline
+  (`ModExhausts.ShapesOf`, `NozzleShape`: the convex hull of the nozzle's geometry in the mount's plane, its area centroid as the
+  centre, kept as `profile`, its radius at 32 angles; `FromPoints`): the mount's `outline` (game units, position_engine's axes:
+  the GoF3 builder writes it from the nozzle's glowing surface, `engine_glows.engines`), else a mod ship's readable meshes with
+  "nozzle" materials measured on the instance (`Measure`: vertices to the nearest mount; an ES2 hexagonal rear), else the mount's
+  `glowSize` as an oval, else the game ship's measured glow (`nozzle_shapes.json`, x1.1: the glow sits inside the nozzle, median
+  0.91 of the round size), else round (`NozzleRadius`). Sized by its mean radius; the shape itself: a flame model's meshes are
+  copied per nozzle and bent to the outline (`Warp`: each vertex's distance from the axis x the profile's factor at its angle;
+  freed with the holder's `EngineFlame.ownedMeshes`), an engineFx's cone cards reach the outline (a cone mesh per shaped
+  nozzle), its helix runs along it and its trails spread along the long side (`EngineFx.profiles`, `Trail.start`), centred on
+  the nozzle. Checked in Play mode: ship 7's wide nozzle blocks (both styles fill them), an ES2 Sentinel's hexagon (measured
+  from its nozzle meshes) with a GoF3 drive, the Moornta's GoF3 outlines with an ES2 thruster. `NozzleRadius`: a mount's `glowSize`, a mod ship's `engineGlowRadius`, else 55 game units x the game
+  ship's exhaust anchor scale (`turretAngles`). The build carries it (`exhaust=mod_id:id;exhaustcolor=;exhaustcolor2=;exhaustsize=`,
+  `ModShipKits.Build`, kept out of `VariantAssembly`'s name like the weapon colour) and `ModExhausts.Apply` puts it on each model
+  instance (the player's in `SpaceLevel` spawn / swap, the turntable and hangar guests in `StationLevel.SpawnShip`, other players'
+  ships in `NetPlayer.BuildModel`): a holder `exhaust_style` under the engine glow part aligned with the ship's root (it goes with
+  the engines), the model's own exhaust hidden (the glow part's renderers `forceRenderingOff`: `ShipController.UpdateEngineParts`
+  only toggles `enabled`; a built-in `EngineFx` disabled; the model's `EngineFlame` `suppressed`, its own flames dark; no
+  particles: `ShipExhaust` finds the holder's effect), the manoeuvring jets kept. The Customize screen runs the turntable's
+  engines (`StationLevel.PreviewEngines` / `PreviewEngineDrive`, `Visuals.EnginePreview` read by `EngineDrive`, past the
+  station's full-throttle cap: boosting while a boost colour row is selected, `ShipCustomizePanel.BoostRowSelected`). The GoF3
+  Ships mod's builder writes GoF3's Nivelian (helix), Terran and Vossk drives (`exhaust_styles`, GoF3's engine colours as the
+  palette); the ES2 importer three thrusters cut from one-nozzle rear parts (`exhaust_module`: the flame cards with their UV1,
+  the main cards' nozzle ring at the origin, ES2's +X nose turned to +Z; ES2's exhaust palette). Verified in Play mode: the
+  Nivelian helix and an ES2 thruster on the Phantom, a GoF3 Terran drive on an ES2 Sentinel (its flames dark), an ES2 ring
+  thruster in custom colours on the GoF3 Moornta (its engine effect off, the boost cards in the second colour), the Customize
+  screen's rows and the turntable preview. Not tested in multiplayer.
 - **From PR #34, now general** (for any ship with the data): several turret mounts (`PlayerTurret.AttachAll`, one item per
   mount in equipment order, `upsideDown` / `turretUp` mounts; `FreeLookCamera` visits Turret 1, 2...; the HUD's auto-fire and turret-view
   hints for each kind; `Hangar` takes a second turret into a second slot), `ThrottleGlow`, lounge ship sellers
@@ -2038,6 +2177,22 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   everywhere; `ModSounds.Get(clip)` wraps every `PlayOneShot` and `.clip =` site (57, not the music sources: ModMusic's),
   memoised per clip (AudioClip.name allocates), a no-op without mod sounds; later mods win; loaded decoded
   (`ModAudio.Load(..., compressed: false)`). Verified: `Target_Lock_v08` replaced.
+- **Ship and weapon sounds** (`ModShipSounds`): ships.json `"sounds"` (a new ship or an override; `ShipDef.sounds`,
+  `ModContent.ShipSounds`) = engine / boostStart / boostLoop / boostStop / charger, each a file, a list (random) or { file(s),
+  volume, pitch } with a value or [from, to]; a kit hardpoint rule's `"sound"` { shot, loop, release } (`Rule.sound`,
+  `ModHardpoints.SoundOf` by the item's type as the slot). A file missing under its name is taken in another audio format of
+  the same name (`Resolve`: the ES2 importer always names .ogg and keeps a .wav where it couldn't encode, and lists `audio/` in
+  `multiplayerIgnore`, so builds on different computers still match). Files anywhere in the mod (not `sounds/`, ModSounds' replacements by
+  name), loaded decoded with the rest (`Preload`, counted in `ModLoading`'s sounds). `PlayerEngine.UpdateOwn`: the engine by
+  speed (standstill -> top speed: `MoveSpeed`, free flight `FreeVelocity`), boostStart / Stop on the boost's edges (random pitch
+  in the range), boostLoop by `BoostVisualPercent`, the charger while recharging by `BoostRechargePercent`; a missing one keeps
+  the game's. The engine also for `PlayerEngine.EngineClip` (hangar flights, other players) at 0.6 and NPCs flying the ship
+  (`NpcShip`, event 46's voice slot) at 0.8. Weapons: `WeaponSystem` (`Rig.modSound`: `PlayShot` per shot via ShotVoices, a
+  loop while held with the shot once at its start, released over `release` ms), `PlayerTurret`, `NetShotMirror` (the shooter's
+  ship, `NetPlayer`; a looping rule keeps the weapon's own there). The ES2 importer writes them from EVERSPACE 2's cues
+  (`tools/audio.py`, vgmstream through Wine). Verified in Play mode (the Gunship): every sound loads and resolves per
+  weapon type, the engine plays, a boost runs the loop to pitch 1.5 and the stop, the charger climbs 0.7 -> 1.9 as it refills
+  and stops when full. Not yet: the shots fired by hand, multiplayer.
 - **Textures / skins** (`ModTextures`, a mod's `textures/<game texture name>.png | .jpg`, e.g. `ship_028_terran_diffuse` for
   the Veteran's hull; `textures/<assembly>/<name>` for one model only, e.g. `textures/ship_028_terran/glow_terran.png`: the
   shared lights / engine glow on the Veteran alone, before the every-object file; the scope is `AssembledObject.ModScope`,
@@ -2081,6 +2236,203 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   game's at `BeginGame` (`ApplyChoices`, `Session.ModGameOptions`, save v16 `modGameOptions`); a multiplayer session plays
   with each option's default. Verified in Play mode with 8 options from two mods (with and without images, a missing image
   warned), the arrow-key navigation and the scrolling, and 3 mod campaigns (6 cards).
+- **Customizable ships** (`ModShipKits`, the guide's "Customizable ships"; EVERSPACE 2's ship modules): a mod's
+  `shipkits.json` lists kits (id, slots in assembly order, `scale` = Unity metres per model unit for every build, `yaw`,
+  `materials`, parts { id, slot, name, model, `types` (the ship types allowed, EVERSPACE 2's wing whitelist), `tiers`
+  (extension meshes per build tier) }, all at one origin); a ships.json ship with `kit` (made "mod_id:kit_id" by
+  `ModContent.ShipData`), `kitType` and `build` (`CustomShipData.kit` / `kitType` / `defaultBuild`, the build text
+  "slot=part;...;tier=N") instead of `model`. `ModShips` loads each kit's part files once (`partTemplates`, the kit's materials
+  applied, `ModShipBuilder.ApplyMaterials`), and only those a build uses: the kit ships' default builds and the player's saved
+  builds at the start, any other when a build first needs it (`EnsureBuild` / `Template` start it; `KitPartsLoaded` and
+  `ModelsChanged` follow, `StationLevel` / `SpaceLevel.OnModShipModels` rebuild the player's ship, the Customize screen keeps
+  the last build with "Loading parts..." meanwhile; the ES2 kits: 39 of 205 files at the start), assembles the default build as the ship's "ship_NNN_mod" template and a player's
+  build as "ship_NNN_mod#<build>" the first time `Template` asks (`variants`, the newest 48 kept; `Database.AssemblyByName`
+  answers a variant name); `ModShipBuilder.Build`'s kitScale / kitYaw keep the kit's size. `Session.ShipBuilds` (by the ship's
+  key, save v17 `shipBuilds` "key|build"), `ModShipKits.PlayerBuild` (normalized: every slot a part the type may fit, the tier
+  clamped) -> `PlayerHull.Assembly` (the hangar turntable, flight). The hangar's **Customize ship** button (under Inspect ship,
+  only for a kit ship, `StationMenu.BeginCustomize`) opens `UI.ShipCustomizePanel` over Inspect ship's orbit view (the orbit turned aside so the ship stands in the middle of the screen right of the panel, `StationLevel.InspectFrameX`; the footer's Back hidden, it lay under Apply; the rows scroll in a list sized to the screen, `FitToScreen`, so the stats, buttons and help stay on it): a row per
+  slot and the tier, up / down / left / right (W A S D, D-pad, left stick) and the arrows' clicks, every change shown on the
+  turntable (`ReplacePlayerShip`), Enter / A applies (autosave), Esc / B / Back cancels (the old build back). Verified in Play
+  mode with a box-part test kit (Mods/kit_test): parsing, the default builds, a variant, the type whitelist and tier clamp, the
+  panel changing the turntable, cancel, the build in flight. Colours: a kit's `palettes` / `colorSlots` (targets: a material
+  name filter and base / emission / engine) / `presets`, the build's `colors` ("color.slot=value": a palette id or
+  "#RRGGBB/metallic/smoothness", `ModShipKits.Resolve`); `ModShips.Assemble` recolours copies of the matching materials
+  (`ApplyColors`) and passes an engine slot's colour as the build's engineGlowColor; kit `materials` entries are named by their
+  `material` filter (`ModShipBuilder.ApplyMaterials`, `CustomShipMaterial.material`: matching the model's own material names)
+  so colour targets find them; the panel's Colour scheme row (the matching preset, else Custom) and a row per slot with a
+  swatch. Verified with the private EVERSPACE 2 kits built from the user's own export (git-ignored `Mods/es2_ships`,
+  `tools/build.py` reads the exported glTF parts, textures and DT_ShipModules / DT_ShipColors / DT_ShipColorSets /
+  DT_DebugShipsKS JSON: never committed or shared): Light / Medium / Heavy kits (37 / 39 / 29 parts), nine ships with ES2's named
+  default builds, ES2's 4 palettes, 7 slots and 22 schemes, the hull split into Paint1-3 by its vertex-colour masks; its
+  `tools/phone.py` makes a phone build (the same mod id; Blender decimation to a quarter, 2.9 M -> 0.73 M triangles, half-size
+  maps; `Build/es2_ships_phone.zip`, 43 MB). Mounts per part: a part's `mounts` / `tierMounts` (`ModShipKits.MountsFor`: per slot type the
+  build's parts', else the ship's own), `Database.MountsOf` -> `ModShipKits.BuildMounts` (the player's build for the player's
+  ship, else the default build: guns, secondaries, turrets, exhaust particles, the mining beam), `ModShips.Assemble` passes them
+  as the build's mounts (the engine glow). Weapon and turret models (`ModHardpoints`, a kit's `hardpoints`: `turret` + `weapons`
+  rules by slot, items (also by the look) or categories; loaded with the start's parts as part templates, `ModShips.PartTemplate`):
+  the turret is rebuilt in the ship's frame (`TurretModel`: "Turret" -> "pivot" -> "kit_gun" -> "muzzle", the meshes in holders at
+  the kit's turn and scale, the item's turret weapon on the gun with its muzzle on the turret's) and replaces `PlayerTurret`'s
+  stand-in on `builtIn` mounts (its muzzle for the shots, 40 units ahead, and a collector's stream; `BuildStatic` shows it in the
+  hangar and on other players' ships); the primary / secondary models go on the mounts in `WeaponSystem`'s order
+  (`AttachWeapons`, from `SpaceLevel` and `StationLevel.RefreshTurret`, rebuilt when the weapons change) and `WeaponSystem`
+  moves each gun to its model's `muzzle` node (`MuzzleOffset`); a mount's `rotation` (`WeaponMount.rotation`, Euler degrees or
+  a quaternion in the ship model's frame, `ModHardpoints.MountTurn`) turns its weapon model and muzzle (the GoF3 hulls'
+  slanted hardpoints; the shots still fly along the nose), and a turret model without a `muzzle` node carries its weapon on
+  the gun node and fires from the weapon's muzzle; the weapon and turret models take the build's colours
+  (`ModHardpoints.Colour` -> `ModShips.ApplyColors` with a cache of copies per build's colours: ES2's missile pod lights its
+  bay frame in Emissive 2 and is painted in the hull colours; they kept the template's white before); a primary / secondary mount's `nodes` (`WeaponMount.nodes`, ship model node
+  names: the GoF3 hulls' pylons) show only while that mount carries a weapon (`ModHardpoints.ShowMountNodes`, from every
+  `AttachWeapons`: flight, the hangar turntable, other players' ships and hangar guests). **Skins** (a kit's `skins`, `ModShipKits.Skin`; `Build.skin`, text
+  "skin=id", "none" = the model's own look over a default build's skin, `Build.Reserved` keeps "skin" / "tier" / "color." out
+  of the slot names): texture sets per material name (diffuse, emission, metallicSmoothness in URP's layout, normal, colours)
+  put on copies of the build's materials (`ModShips.ApplySkin`, before the colours) and an optional `engineColor` for every
+  exhaust; their textures load with the build's parts (`SkinTextures` / `SkinReady` in `PartsReady`, `LoadOnDemand` preloads
+  them, a failed one falls back to `ModMaterials.Texture`; `ModMaterials.Has`); the Customize panel's Skin row
+  ("Standard" + the type's skins). **Weapon colour** (`Build.weaponColor`, "weaponcolor=id|#RRGGBB", "none" = the weapons'
+  own; the kit's palette "weapons" else `ModShipKits.WeaponPalette`; left out of the variant assembly's name, the model doesn't
+  change): the Customize panel's Weapon colour row on every kit ship (so the Customize button shows for every kit ship);
+  `Flight.WeaponTint` colours the energy weapons (categories 0 / 1 / 3 by the Look, and the blaster-bolt turrets 47 / 48 / 49 /
+  224) through `GunRig.Tint` (projectiles, muzzle flash, impacts, and thermo trails when called before `EnableTrails`): cached
+  copies of their materials with the main texture blitted by `Hidden/GoF2/WeaponTint` (`Resources/GoF2Weapons`: brightness x
+  the colour, the hottest part kept white; a red laser can't just be multiplied blue) and a grey `_Color` at its own intensity,
+  `PartAnimation.RefreshMaterials` re-reading the fades; the player's guns (`WeaponSystem.BuildRig`), turret (`PlayerTurret`)
+  and other players' mirrored shots (`NetShotMirror`'s weaponColor, from `NetPlayer.ShownBuild`). Verified in Play mode: the
+  classification (a Micro Gun kept its own), green and blue bolts, beams and impacts, the row, Apply into flight.
+  **Customizations of ships without a kit** (the game's own, one-model mod ships): a ships.json entry's `skins` / `weaponColors`
+  (`ModShipKits.CustomizationOf`: a kit with no parts per ship, merged from every mod that is on, `ReadShipCustomizations`;
+  `Skin.mod` the mod whose files it uses); builds saved under `BuildKey` ("gof2:<n>" for the game's ships), `TypeOf` "",
+  `DefaultBuildOf` none; a skin shows on a skinned copy of the model (`VariantAssembly` -> "<model>#ship=N;skin=id",
+  `ModShips.SkinnedTemplate` from `AssembledObject.LoadPrefab` / `ModShips.Template`, `ParseSkinned`; `Database.AssemblyByName`
+  keeps the model's own pack for "#" names); the Customize screen, weapon colour, the rebuild hooks (`SpaceLevel` /
+  `StationLevel.OnModShipModels`) and other players' views (`NetPlayer` build text) take `CustomizationOf`. Verified in Play
+  mode with throwaway skin mods: the Phantom's Customize screen (Skin + Weapon colour rows), its crimson skin on the
+  turntable and in flight with a mod weapon colour, the game's Groza (22) skinned in the hangar, the mod turned off (plain). Used by the GoF3 Ships mod (version 2: one kit "gof3", a hull part per ship, its GoF3 paint schemes as
+  skins, the GoF3 guns as hardpoint models by weapon, a GoF3-parts turret on every hull, GoF3's projectile colours as its
+  "weapons" palette (Colorize_Color1 of the GoF3 weapon effects' materials); built by
+  `~/Downloads/gof3assets/tools/build_gof3_mod.py`). The ES2 converter adds ES2's player turret
+  (`SK_Turret_PlayerShip_001`, skinned, split by bone into rigid base / pivot / gun meshes) and its weapon models
+  (`SM_PrimaryWeapon_*`, the missile pod) with their muzzle sockets, mapped onto GoF2's weapons by item / category. Verified in
+  Play mode on the Gunship: the hangar turntable's guns, pod and turret, the guns firing from the models' muzzles, the turret
+  aiming, tilting and firing from its barrel, a plasma collector's stream from the kit turret. Other players' ships too (`NetPlayer.weapons`,
+  an owner-written "p,p|s,s" of the mounted primaries / secondaries, `PackWeapons` / `WeaponStacks`; `NetPlayer.BuildTurret` and
+  `NetHangar.ShowTurret` build them with the turret). **Other players' builds** (`NetPlayer.build`, FixedString512, the owner's
+  `PlayerBuild` text, "" for another ship or past 500 bytes; `ShownBuild` = `ModShipKits.RemoteBuild`, normalized against this
+  game's kit): their ship is the build's variant (`VariantAssembly`; parts not loaded yet load through `ModShips.Template` /
+  `EnsureBuild` and `ModelsChanged` builds it again), its turret, weapons and exhaust particles on that build's mounts
+  (`ModShipKits.MountsShown(db, ship, slot, build)`; `Database.MountsOf` answers with the local player's build); parked in the
+  hangar the same (`HangarTraffic.SpawningGuest` -> `NetHangar.GuestAssembly` in `StationLevel.SpawnShip`, the exhausts from
+  `ModShipKits.BuildOfAssembly`; a guest is parked again when its build changes or its parts finish loading). Verified in a session (the Editor hosting
+  with mods allowed, a Linux development build joining on 127.0.0.1): the host's custom Gunship (Gunship B wings, body 7, a
+  yellow hull) parked in the client's hangar and flying in front of it in space in that build with its turret. Not yet: the
+  other eight ES2 ships looked at; the hangar's NPC ships of a kit type show the local player's build (`PlayerHull.Assembly`).
+  **Hangar height of kit ships** (`ModHardpoints.HangarHeight`, from `StationTables.ShipY` through `KitShipY`; a guest's own build
+  through `NetHangar.GuestShipY` in `StationLevel.ParkedPosition`, `HangarTraffic.SpawningGuest` now also around the pad
+  placement): the shown model's lowest point (its mesh boxes without the glow parts) and the weapon models under it, an
+  upside-down turret too, `HoverGap` 1.5 m above the pad; kept per model and weapons once the build's parts are loaded; ships.json
+  `hangarHeight` is ignored for kit ships (the converter's value ignored the wing tiers: four default builds sat 2-7.5 m in the
+  floor, other wings up to 15 m). **Engine materials** (`CustomShipMaterial.engine`, `EngineMaterialGlow` on the template from
+  `ModShips.Assemble` / `ModShipBuilder.Build`): their emission follows the engine glow part on ships a station spawns
+  (`StationLevel.SpawnShip` sets `followEngine`: dark parked, lit in a hangar flight, 0.25 s fade, this ship's material copies);
+  always lit in space. Verified in Play mode: the nine ships' heights, the Sentinel's default build 2.1 m clear of the Midorian
+  turntable (7.5 m into the floor before). **Engine flames** (`CustomShipMaterial.flame` / `flameLength` / `flameIdle` /
+  `boostColor` / `flameNoise`; `GoF2/ModEngineFlame` from `ModAssets.engineFlame` (the Mod Assets builder resets the
+  template to the shader's defaults), `ModMaterials.Flame`; `EngineFlame` on the template, `EngineDrive` the throttle reader
+  it shares with `ThrottleGlow` and `EngineMaterialGlow`): EVERSPACE 2 draws its flames from small `M_Vehicle_EngineExhaust`
+  sections of the rear / wing parts, flat cards with UV u from the nozzle to the tip that its material stretches with the
+  thrust (its graph can't be exported: rebuilt from its parameters and matched against EVERSPACE 2 running, the player's
+  Sentinel (Body_014, Rear_009, Nemesis tier 4) behind, beside and chased at full thrust, boosting, strafing in all four
+  directions and reversing, through its photo mode). The cards' vertex colours say what they are: red the main flame (the
+  thrust, the engine colour, also through a boost), green the boost jets (only while boosting, in the boost colour); the
+  converter (`flame_across`) writes each card's coordinate across it into UV1.x and its kind into UV1.y, read as
+  |y - 0.5| (glTFast flips V): 0 main, 0.25 boost, 0.5 none. The vertex shader moves each vertex u x the length backward
+  (`_FlameDir`, the ship root's -Z in the renderer's object space, per renderer and submesh through a MaterialPropertyBlock,
+  the renderer's bounds grown to match): main cards by thrust 0..1 (none at idle: below a drive of 0.02 the flames shrink into the nozzles like free flight's engines off; the user's ES2 shots of a ship at rest), +30 % at a full boost, boost cards by the
+  boost alone, both x the engines' level (the engine glow part active, 0.25 s fade: shrunk into the nozzles and dark on a
+  parked ship; in the station capped at full throttle). The fragment: additive, the colour gold near the nozzle (boost
+  cards a tight near-white head, `_BoostCore`, then saturated in the boost colour at `_BoostBrightness` 1.6: matched to the
+  user's ES2 customization-screen shots of the Wraith boosting; they were half as bright with a faint head), ES2's T_Noise_018_M stretched into fine streaks, faded hard toward the tip (`_Fade` 4), each card
+  softened toward its long edges (UV1.x) and, for main cards, faded as it turns edge-on (|N.V|^2, ES2's OpacityExponent:
+  from behind only thin rays remain, as in ES2; the remake had widened the cards toward the camera, `_Widen`, now 0, which
+  turned Rear_009's boost cards into fans above and below the ring). A ship with flames keeps an empty `engine_glow` part
+  (no discs) and has no exhaust particles (`ShipExhaust.Setup`). The nozzle glow (`M_Vehicles_Floaters_Emissive`, split by
+  vertex colour by `glow_split`: green NozzleCore, black NozzleOff, the rest NozzleGlow) takes the engine colour slot through
+  the brighter of its mask's red and green channels (T_Vehicles_Floaters_Emissive_M: the rings and grilles, and the dotted
+  band Rear_009's ring samples), `engine`: `EngineMaterialGlow` lights it with the thrust, dark at idle (it kept 18 % at idle
+  before; ES2's nozzles at rest are dark), dark parked. Intensities: flames 4, nozzles 1.6 (brighter clips to pale yellow under
+  the remake's tone mapping; ES2 adds a bloom halo the remake's bloom can't without washing it out). **Manoeuvring jets**
+  (`LateralThrusters`, mounts of slotType 4 with `WeaponMount.direction`; the converter reads every part's
+  `SKT_LateralThruster` sockets, `thruster_mounts`: the Unreal rotator's forward axis): ES2 fires `P_Vehicle_LateralThruster`
+  at them, each jet blowing along its socket whenever the ship moves against it (strafe right fires the left body and
+  under-wing jets, down the upward ones on the wing tops, reverse the forward-facing wing tips; turning fires none). Each jet
+  is two crossed boost cards drawn by the flame shader (5 m at full strength) plus a glow disc facing along it, in the
+  ship's flames' boost colour; under the engine glow part (hidden with the engines, left out of the hangar heights and
+  shadows). Input: the player's free-flight keys (`FlightModel.ThrustInput`, set by `StepFree`), in the original flight the
+  strafe and the brake, other ships their measured acceleration; none in the station, except a small glow on every jet
+  (0.35) while the Customize screen runs the engines (`Visuals.EnginePreview`), as ES2's customization screen shows them. `LateralThrusters.TestInput` overrides
+  it for Editor tests. Colours like EVERSPACE 2's (TrailColorEngine / Boost / Lateral): a kit colour slot's target "property": "boost" sets a
+  flame material's `_BoostColor` (`ModShips.ApplyColors`); the ES2 kits' slots Main thrusters (the flames and nozzles), Booster
+  (the boost cards) and Side thrusters (the "lateral thruster" material: the jets and, through `LateralThrusters.Setup`, their
+  discs; without a slot on it they take the ship's flames' boost colour). Strength slots (`ColorSlot.steps` / `scales`, no palette; the Customize
+  panel's percentage rows; `ModShipKits.StrengthOf`) scale another slot's emission: the ES2 kits' Cybernetic glow (Emissive 3)
+  and its intensity. Materials marked `"boost"` glow only while boosting (`EngineMaterialGlow.boostMaterials`, EngineDrive
+  above 1); `"hologram"` materials are copies of `GoF2/ModHologram` (`ModAssets.hologram`, `ModMaterials.Hologram`): additive
+  rings whose pattern turns and which bob, per ring by UV1 (x spin, y 1 - bob share), rebuilt from EVERSPACE 2's
+  M_ShipModules_Holograms parameters (the converter's `holo_rings` reads the rings' vertex colours: red spin, blue bob);
+  `"shimmer"` materials (`GoF2/ModNozzleShimmer`, `ModAssets.nozzleShimmer`, `ModMaterials.Shimmer`) draw additively over the
+  nozzle glow's faces (the converter splits them twice, "NozzleShimmer"): the glow pattern times T_Noise_001_M scrolling at
+  M_Vehicles_Floaters_Emissive's ScrollSpeed 0.3, driven by `EngineMaterialGlow` like the glow (which keeps 60 % then). `"damageEmission"` (a mask PNG, the emission of a
+  material that has none): battle damage embers, `DamageEmbers` lighting them ember-orange with the ship's `Target.HullFraction`
+  (a third lost to full at 90 %, a slow flicker; EVERSPACE 2's DamageAmount / Ember* parameters); the ES2 converter builds
+  the mask from T_Vehicles_Damage_C_R_M_H (the blurred height's burn blobs, cracks from its colour) for the hull and details.
+  `"damageDetail"` / `"damageNormal"`: charring through URP Lit's detail layer (detail colour with the burn mask in its alpha as
+  `_DetailMask`, the damage normals), `DamageEmbers` raising `_DetailAlbedoMapScale` / `_DetailNormalMapScale` from a fifth
+  of the hull lost to full at 75 %; the mod detail templates use `_DETAIL_SCALED` (MULX2 ignores the scale). `Hitpoints.hull`
+  is an int (an eval setting it needs a cast). The
+  ES2 export's skeletal animations (AnimSequence JSON) carry no keyframes and none targets the ship modules. Kit parts' `anchors` / `anchor` (`ModShipKits.Part`): a part sits on a named point another part of the build offers
+  (`ModShips.Assemble` offsets its models; the ES2 bodies offer their SKT_Cockpit socket to the canopy and interior). The ES2
+  lights (converter, matched against EVERSPACE 2's customization screen with Emissive 1 / 2 / 3 apart): TechDetails lights
+  by `T_ShipModules_TechDetails_00N_E`'s sector IDs into Lamp<N>_S4..S7 (S4 Emissive 1, S5-S7 Emissive 2);
+  M_Vehicles_Floaters_Emissive by vertex colour and glow atlas region (`glow_split`: Emissive 1 / 2 rings, the exhaust
+  grilles and nozzles in the engine colour, the boost vents "BoostVent", the hot discs); the cybernetic glow lights the floater
+  strips (T_ShipModules_Floaters_001's strip graphic, "CyberStrip", `floater_split`); the rest of the floaters are alpha-cut
+  detail cards that never glow. The Wraith (Okkar hull, `okkar_split`): its glow faces are all white, so `glow_split`'s rules took its small lights for engine
+  glow; only the faces within 1.5 m of its engine socket keep the engine colour, the rest (blade and wing-tip lights, the
+  nose's bars) are Emissive 1, the spine's ribs Emissive 2; its plates don't glow (MI_Vehicles_Okkar_TechDetail_PlayerShip's
+  EmissiveColor is #100801; they were in Emissive 1). Checked against the user's ES2 photo-mode shots with Emissive 1 blue
+  and 2 red. The glow atlas (T_Vehicles_Floaters_Emissive_M) row 0.40..0.50 by the user's shots of a Nemesis-B9-1 I and a Raptor
+  D1-1 I+ (Emissive 1 / 2 in different colours): its V-shaped triangles (u 0.34..0.50) Emissive 1 (engine glow before: body
+  B's forward keel lamps, the small lamps beside body D's nose frame), the rest from u 0.5 Emissive 2 as before (the nose
+  frame, the round dots of body B's rear keel lamps); cyan glow faces Emissive 2 (the missile pod's bay frame); the fin
+  edges' dotted bars (u < 0.5) keep the engine colour. Verified in Play mode: thrust (chase, behind, side), a forced boost (the cyan slots in ES2's places),
+  the jets in all four strafe directions and in reverse, parked in the hangar (flames, nozzles and jets off). The ES2 converter reads the meshes' sockets (SKT_PWSlot / SWSlot / Turret / Engine,
+  Unreal cm -> the export's glTF metres (X, Z, Y); at most 4 exhausts per part). Stats and slots per part (`Part.armor` / `cargo` /
+  `handling` %, `equipment`, flight %, `primarySlots` / `secondarySlots` / `turretSlots`; `ModShipKits.EffectOf` /
+  `BuildEffect`, the player's build for the player's ship): `ModShipKits.Armor` / `Cargo` / `Handling` / `Slots` /
+  `Effective` feed `Shop.BaseHp` / `MaxLoad`, `PlayerHealth`, `StationLevel` (the arrival's max hull), `Hangar.SlotCount` /
+  `FitToSlots`, `Database.BuildFlightStats` (handling, the flight bonuses in both styles) and the stat rows (`ItemInfo`,
+  `ItemInfoWindow`); the Customize panel's stats line (`StationMenu.CustomStatsText`) and Apply's `FitToSlots`; the tier is
+  cosmetic. The ES2 kits' numbers are the converter's design (ES2's modules carry none): bodies hull / cargo / equipment by
+  size, rears speed / acceleration by nozzles, wings turning / armour by span and gun / missile slots +-1 around the type's
+  base by their sockets, turret slots by their turret sockets. Not yet: other players' builds in multiplayer (they see the
+  default build), decals.
+- **Flight styles** (`ModFlight`; the guide's "Flight styles"): mods choose per content whether they touch the original
+  flight, free flight or both. Items: attributes 105-116 (`ItemStats`): `flightScope` (105: 0 both, 1 original, 2 free) keeps
+  the item's booster / Steering Nozzle attributes 25-28 to one style; % bonuses `topSpeed` / `turnRate` / `strafeSpeed` (both),
+  `original*` (109-111), `free*` + `freeAcceleration` (112-115) and `freeBoostFactor` (116, x100, instead of the booster's).
+  Ships (new or override): `flightStyle` and `flight` { topSpeed, turnRate, strafeSpeed, acceleration, boostFactor, original {},
+  free {} } (`ShipData.flightStyle` / `flightBoth` / `flightOriginal` / `flightFree`, non-serialized, set by
+  `ModFlight.ApplyShip`). `Database.BuildFlightStats` fills `FlightStats.original` / `free` (`FlightTuning`: the style's
+  booster, agility and summed `FlightBonus`; the ship's first, so an item's freeBoostFactor wins); `FlightModel.Configure`
+  makes a `StyleState` per style and `FreeFlight` picks one (`Handling`, the booster, `TopSpeed`, the turn / strafe / ease
+  factors; totals never below -90 %); the original scales its speed and boost by the top speed bonus, its target rate, ramp and
+  decay by the turn bonus, its strafe by the strafe bonus (it has no acceleration). The style: `FlightStyles.Current` = the
+  first of `EventFlight` (`/flightstyle [players] <free | original | player>`, NetAdmin.Order.Flight 30, the graphs' Set Flight
+  Model node, undone at the event's end, re-applied when a quest resumes), the ship's, the mod campaign's, an on new-game
+  option's (`"flightStyle"` in campaign.json / gameoptions.json), else `Settings.FlightStyle`; `ShipController.FreeFlightActive`,
+  the HUD hints and the key layout (`GameControls.ApplyStyle`, polled by the flight and the bindings page) follow it, and the
+  Options page names who sets it (`OptionsCatalog.FlightStyleForcedNote`). Expression `freeflight`. Verified on `FlightModel`
+  in the Editor (the bonuses per style, a free-only booster, freeBoostFactor, a ship's JSON, the validation, a ship-forced
+  style); not yet played with a real mod.
 - **Conditions** (`Events.EventRunner.Condition(expression, out error)`: the event graphs' expression language outside an
   event, a throwaway run like the quests' "Starts when"; new words `option(mod:id)`, `won(main | valkyrie | supernova)`
   (or the multiplayer finished world), `systemsvisited` (distinct systems of `Session.VisitedStations`)): items.json /
@@ -2089,6 +2441,27 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   unreadable one is false with a warning on its mod. ships.json "dealer" { chance %, systemRace, minTechLevel }
   (`CustomShipData.dealer`, `ModUnlocks.AddDealerShips` at the end of `Shop.GenerateShipsOriginal`'s ordinary path: not the
   special yards).
+- **Mod ships in traffic** (`ModTraffic`, Options > Gameplay "Mod ships in traffic", `Settings.ModShipTraffic`: Off / 10 /
+  25 % (default) / 50 %, each player's own, not a session rule): `NpcTables.RandomFighter` / `StrongFighter` (every NPC
+  fighter roll: locals, raiders, pirates, jumpers, escorts, guards, battle wings) take one of the mods' ships of the race
+  (`ModTraffic.Pick`) at that chance; candidates: the mods that are on, `race` (or ships.json `traffic.races`; minor races
+  count as pirates, no Specters), `ModUnlocks.ShipAvailable`, the model built (`ModShips.Built`) and at most 150 m long (its
+  meshes along the nose, cached per `ModManager.Revision`), weighted by `traffic.weight` (`CustomTraffic`, 0 = never); a
+  strong fighter one of the dearer half; a mod campaign's `trafficShips` for the race skip it (`ModCampaigns.HasTrafficShips`).
+  The hull and gun come from `NpcTables` as before (only the look changes); freighters / capital ships / story ships keep
+  theirs. Verified in Play mode (gof3_ships, 50 %): 37 of its 38 hulls qualify (the 159 m Bl'Arek doesn't), Dis's Terran
+  fighters 4 of 5 GoF3 hulls with their GoF3 exhausts, the freighters untouched. Candidates are cached per race for 5 s
+  (a scan cost ~2 ms a roll). A kit ship's NPCs fly random builds (`Traffic.Create` -> `ModTraffic.Assembly` ->
+  `RandomBuild` -> `ModShipKits.VariantAssembly`, the variant in `NpcShip.ModelPath` for the proxies; `traffic.randomBuild`,
+  default true): per slot a part the type may fit, a tier, a kit preset's colours (75 %) else a palette colour per slot, a
+  skin 30 %; only from what is loaded (`ModShips.PartLoaded` / `BuildLoaded`: the tier steps down, then the skin goes, else
+  the default build), so it assembles at once; `ModTraffic.Warm` (each `StationLevel.Awake`) starts 3 (phones 1) random
+  full builds' parts loading through `ModShips.Warm` (`LoadOnDemand` quiet: no KitPartsLoaded / ModelsChanged of its own,
+  unless a player build waited on the same files, `notifyPending`) until a kit has 150 (phones 40) part files loaded. A
+  proxy whose build isn't loaded in that game shows the default build. The ES2 importer gives every ES2 ship
+  `"traffic": { "races": [0, 1, 2, 3, 8, 9] }` (every race but the Specters). Verified in Play mode (es2_ships + gof3_ships,
+  50 %): all six races roll ES2 ships (Void / pirates only those), 12 random Sentinel builds all different, four warm-ups
+  taking its slot parts from ~7 to 15, a random-build Sentinel (Tormentor wings, body C) patrolling Dis, 2400 rolls in 57 ms.
 - **Mod blueprints** (`ModBlueprints`, a mod's `blueprints.json`, parsed with the rest in `ModContent.Parse`): a "ship" or
   "item" product, ingredients, requiresShip (a skin: built only while flying that ship, which it rebuilds, the Kaamo upgrades
   kept), autocomplete (true / false / a price: `Blueprints.AutoCompletePrice` / `CanAutocomplete`, the hangar hides the row),
@@ -2329,6 +2702,23 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   without one: `WeaponFx.trail` (`TrailLook`, not serialized), `RocketTrail.For(gun, look)`, `GunRig.EnableTrails`); a
   range where the parked ship fires at a target ship 300-450 m off, seen from the side (Gun + GunRig like NetShotMirror; the
   target's hit cube 35 m: at 900 m every shot hit as it left the gun). Tests: `ModBuilderKindsTests`.
+  **Ship kits** (2026-10-16, #87's customizable ships as a builder kind; `ModBuilder.Kind.Kits`, before AiTools, KindCount
+  14; `ModBuilderViewKits`, `ProjectKit` / `ProjectKitPart` in ProjectKits.cs, `ModProject.Kits`, file shipkits.json, in the
+  undo steps as "kits", MCP entry kind `kits`): the kit (name, scale, yaw), its slots (add, rename, reorder, remove; a
+  build text's own keys refused, `ModShipKits.Build.Reserved`), parts per slot from a .glb (copied to models/), a part's
+  name, slot, ship types, model, tier models, stats, weapon slots and hardpoints (the hangar gizmo edits
+  `ModBuilderView.EditedMounts`: the part's in this kind, else the ship's; slot counts follow the points only for ships,
+  `SlotsFollow`), paint / lights slots (`ProjectKit.AddColorSlot`, a "paint" palette made once); colours, presets, skins,
+  hardpoint models by Edit as JSON. The turntable shows the kit's first ship with the selected part (and preview tier) in
+  its slot: `ModBuilder.PreviewBuild` written into `Session.ShipBuilds` by `ApplyShip` only in this kind (cleared for the
+  builder's ships otherwise, so Ships shows the default build); the station rebuilding the ship once the parts load is
+  picked up by `ModBuilderView.RebindShip`. Ships kind: "+ New ship from a kit", a kit ship's section (kit from the project
+  or a dependency, kit type, default build per slot, tier; `ProjectShip.Kit` / `KitType` / `BuildPart` / `BuildTier`), no
+  model section, no auto layout; its icon from the default build. A kit with `"parts": []` is a warning and left out
+  (it was an error that broke the mod). `ProjectShip.MountJson` / `Copy` keep #87's mount fields (outline, builtIn,
+  direction, rotation, nodes, fxScale): the builder used to drop them. Tests: `ModBuilderKitsTests`. Verified in Play mode
+  (a two-part test kit): the kind's page, the part swap on the turntable, a turret point added to a part, the Ships page's
+  kit section and icon, a test flight in the kit ship.
   **Quest graph** (2026-10-15, user's request "a full graph in the game just like in Unity"): every step type is a row of
   `Events.QuestSteps` (type, picker group, fields with their kind, the line it makes; the steps needing more, blocks
   included, are written by `QuestFile`), so a new step there is editable at once. Blocks (if / while / repeat / parallel /
@@ -2475,7 +2865,11 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   (`PrepareSession` → `BeginClient`); the host's `BeginHost` sets `ModManager.BeginSession` and `NetMods.SessionList`
   ("id@version#hash;..."), NetState carries it (`sessionMods`, FixedString4096) and a joining game turns exactly those on
   (`ApplyFromServer`) before `EnterWorld`. The connection data's 4th line lists the joiner's installed mods ("id#hash;...");
-  `NetMods.Refusal` turns away a game lacking one (same files, on or off doesn't matter) with their names. Lobby keys `mods` /
+  `NetMods.Refusal` turns away a game lacking one (same files, on or off doesn't matter) with their names. "Same files" is
+  `ModInfo.NetHash` (`NetSignature` in the session list): every file but those mod.json's `multiplayerIgnore` lists
+  (`ModManifest.MultiplayerIgnores`: "folder/" or `*` patterns; never root `.json` files or `events/`), and mod.json only as its
+  id / version / dependencies / that list, so a phone build with decimated models and halved textures plays with the PC build
+  (the es2_ships importer writes `parts/`, `maps/`, `icons/`, `preview.png`); `ModInfo.Hash` (every file) stays the saves' signature. Lobby keys `mods` /
   `modnames`: the browser tags such games "Modded", shows the mods and "needs mods: ..." when this game lacks some (not
   joinable). `NetGame.OnMainMenu` → `NetMods.End` (single player's mods back); `NetGame.ResetDb` on every change.
 - Verified in Play mode (ships): the three PR mods load without warnings; every ship on the turntable and the Falcon in flight

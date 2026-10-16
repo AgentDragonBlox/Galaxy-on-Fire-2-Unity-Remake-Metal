@@ -14,6 +14,8 @@
 //   -cloakhides -capitalships -informeroriginal -nopirateevents -nokaamostacking -nokaamoequipment -nocloakbay -noempcloak
 //                    the session's gameplay options (NetRules), each the other way from the game's default
 //   -kaamomaxlevel N how many times one Kaamo Club upgrade can be fitted to a ship (2..20, default 5; NetRules)
+//   -flightmodel M   the flight model everyone flies: gof2 (the game's, default), es2 (EVERSPACE 2 style) or player (each
+//                    player's own option; NetRules.HostFlight)
 //   -noprofiles      no player profiles (NetProfiles; on by default: credits, ships, cargo, Kaamo Club, squad kept
 //                    per player between sessions; no limit, one unused for 30 days is pruned); -maxearn N (worth a profile may gain
 //                    per minute online without -allowdebug, default 1 000 000), -profiledir PATH (default
@@ -113,6 +115,8 @@ namespace GoF2Remake.Multiplayer
             NetRules.Host = NetRules.Defaults;   // the session's gameplay options: the defaults, a flag turns one the other way
             foreach (var r in NetRules.All) if (HasFlag(r.flag)) NetRules.Host ^= r.bit;
             NetRules.HostKaamoLevel = SessionRules.ClampKaamoLevel(int.TryParse(Value(NetRules.KaamoLevelFlag), out int kaamo) ? kaamo : SessionRules.DefaultKaamoLevel);
+            int flight = SessionRules.ParseFlight(Value(NetRules.FlightFlag));
+            NetRules.HostFlight = flight >= -1 ? flight : SessionRules.DefaultFlight;
             NetProfiles.Configure(!HasFlag("-noprofiles"),
                 int.TryParse(Value("-maxearn"), out int earn) ? earn : NetProfiles.DefaultEarnPerMinute,
                 Value("-profiledir"));

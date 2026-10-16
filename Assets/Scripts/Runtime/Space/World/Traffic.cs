@@ -142,7 +142,7 @@ namespace GoF2Remake.World
                       // Ship 13 is the Vossk freighter whatever the race (Globals::getShipGroup; its boxes too): step 40's
                       // Errkt flies it as race 0 until it appears (createShip(0, 1, 0xd)) and showed the Terran model.
                       : spec.freighter ? db.AssemblyByName(NpcTables.FreighterAssembly(spec.ship == 13 ? 1 : spec.race))
-                                       : ShipAssembly(spec.ship, spec.race);
+                                       : Modding.ModTraffic.Assembly(spec.ship) ?? ShipAssembly(spec.ship, spec.race);   // remake mods: a kit ship's random build
             var prefab = AssembledObject.LoadPrefab(entry);
             // Remake: a turret object built from a turret item shows the item's turret (a mod's own model too).
             var itemTurret = spec.turretAssembly != null && spec.turretItem >= 0 ? WeaponFx.Load(spec.turretItem)?.turretMounted : null;

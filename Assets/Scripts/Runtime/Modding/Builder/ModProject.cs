@@ -122,6 +122,8 @@ namespace GoF2Remake.Modding
         public readonly List<ProjectStation> Stations = new List<ProjectStation>();
         public readonly List<ProjectInterior> Interiors = new List<ProjectInterior>();
         public readonly List<ProjectBlueprint> Blueprints = new List<ProjectBlueprint>();
+        /// <summary>shipkits.json: the customizable ships' kits of parts (ModShipKits).</summary>
+        public readonly List<ProjectKit> Kits = new List<ProjectKit>();
         public readonly List<ProjectGameOption> GameOptions = new List<ProjectGameOption>();
         public readonly List<ProjectQuest> Quests = new List<ProjectQuest>();
         /// <summary>campaign.json, null = the mod has no campaign.</summary>
@@ -211,7 +213,7 @@ namespace GoF2Remake.Modding
                 p.Id = Str(p.manifest, "id") ?? Path.GetFileName(folder);
                 p.Modified = Directory.GetLastWriteTimeUtc(folder);
                 foreach (var f in new[] { ModManifest.FileName, ModContent.ShipsFile, ModContent.ItemsFile, ModCharacters.File, BuilderFile,
-                                          ModWorld.SystemsFile, ModWorld.StationsFile, InteriorsFile, ModBlueprints.File, ModGameOptions.File, CampaignFile })
+                                          ModWorld.SystemsFile, ModWorld.StationsFile, InteriorsFile, ModBlueprints.File, ModGameOptions.File, CampaignFile, ProjectKit.File })
                 {
                     string path = Path.Combine(folder, f);
                     if (File.Exists(path)) { var t = File.GetLastWriteTimeUtc(path); if (t > p.Modified) p.Modified = t; }
@@ -232,6 +234,7 @@ namespace GoF2Remake.Modding
                 p.ReadList(ModWorld.StationsFile, o => p.Stations.Add(new ProjectStation(o)));
                 p.ReadList(InteriorsFile, o => p.Interiors.Add(new ProjectInterior(o)));
                 p.ReadList(ModBlueprints.File, o => p.Blueprints.Add(new ProjectBlueprint(o)));
+                p.ReadList(ProjectKit.File, o => p.Kits.Add(new ProjectKit(o)));
                 p.ReadList(ModGameOptions.File, o => p.GameOptions.Add(new ProjectGameOption(o)));
                 string campaign = Path.Combine(folder, CampaignFile);
                 if (File.Exists(campaign))
@@ -281,6 +284,7 @@ namespace GoF2Remake.Modding
             WriteList(ModWorld.StationsFile, Stations.Select(c => c.ToJson()));
             WriteList(InteriorsFile, Interiors.Select(c => c.ToJson()));
             WriteList(ModBlueprints.File, Blueprints.Select(c => c.ToJson()));
+            WriteList(ProjectKit.File, Kits.Select(c => c.ToJson()));
             WriteList(ModGameOptions.File, GameOptions.Select(c => c.ToJson()));
             string campaign = Path.Combine(Folder, CampaignFile);
             if (Campaign != null) Write(CampaignFile, Campaign.ToJson().ToString(Formatting.Indented));
@@ -315,6 +319,7 @@ namespace GoF2Remake.Modding
                 ["stations"] = new JArray(Stations.Select(c => c.ToJson())),
                 ["interiors"] = new JArray(Interiors.Select(c => c.ToJson())),
                 ["blueprints"] = new JArray(Blueprints.Select(c => c.ToJson())),
+                ["kits"] = new JArray(Kits.Select(c => c.ToJson())),
                 ["gameOptions"] = new JArray(GameOptions.Select(c => c.ToJson())),
                 ["campaign"] = Campaign != null ? (JToken)Campaign.ToJson() : JValue.CreateNull(),
                 ["quests"] = quests,
@@ -342,6 +347,7 @@ namespace GoF2Remake.Modding
             Stations.Clear(); Stations.AddRange(Objects(state, "stations").Select(o => new ProjectStation(o)));
             Interiors.Clear(); Interiors.AddRange(Objects(state, "interiors").Select(o => new ProjectInterior(o)));
             Blueprints.Clear(); Blueprints.AddRange(Objects(state, "blueprints").Select(o => new ProjectBlueprint(o)));
+            Kits.Clear(); Kits.AddRange(Objects(state, "kits").Select(o => new ProjectKit(o)));
             GameOptions.Clear(); GameOptions.AddRange(Objects(state, "gameOptions").Select(o => new ProjectGameOption(o)));
             Campaign = state["campaign"] is JObject c ? new ProjectCampaign((JObject)c.DeepClone()) : null;
             Quests.Clear();
@@ -505,7 +511,7 @@ namespace GoF2Remake.Modding
         public string ItemIdFor(string name) => UniqueId(name, "item", id => Items.Any(s => s.LocalId == id));
         public string CharacterIdFor(string name) => UniqueId(name, "character", id => Characters.Any(s => s.Id == id));
 
-        static string UniqueId(string name, string fallback, Func<string, bool> taken)
+        internal static string UniqueId(string name, string fallback, Func<string, bool> taken)
         {
             var chars = (name ?? "").Trim().ToLowerInvariant().Select(c => c >= 'a' && c <= 'z' || c >= '0' && c <= '9' ? c : '_').ToArray();
             string id = new string(chars).Trim('_');
@@ -687,6 +693,7 @@ namespace GoF2Remake.Modding
         public string StationIdFor(string name) => UniqueId(name, "station", id => Stations.Any(s => s.LocalId == id));
         public string InteriorIdFor(string name) => UniqueId(name, "room", id => Interiors.Any(s => s.Id == id));
         public string BlueprintIdFor(string name) => UniqueId(name, "blueprint", id => Blueprints.Any(s => s.Id == id));
+        public string KitIdFor(string name) => UniqueId(name, "kit", id => Kits.Any(s => s.Id == id));
         public string GameOptionIdFor(string name) => UniqueId(name, "option", id => GameOptions.Any(s => s.Id == id));
         /// <summary>A quest's file name: one word (a-z 0-9 _), unique among the project's quests and event graphs.</summary>
         public string QuestNameFor(string name) => UniqueId(name, "quest", id => Quests.Any(q => string.Equals(q.Name, id, StringComparison.OrdinalIgnoreCase))
@@ -740,6 +747,33 @@ namespace GoF2Remake.Modding
             b.Ingredients = new List<ProjectStack>();
             Blueprints.Add(b);
             return b;
+        }
+
+        /// <summary>A new kit with no parts yet (the game skips it until it has one).</summary>
+        public ProjectKit AddKit(string name)
+        {
+            var k = new ProjectKit(new JObject { ["id"] = KitIdFor(name), ["name"] = name, ["scale"] = 1, ["slots"] = new JArray("body", "wings", "rear"), ["parts"] = new JArray() });
+            Kits.Add(k);
+            return k;
+        }
+
+        public ProjectKit FindKit(string id) => Kits.Find(k => string.Equals(k.Id, id, StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>A new customizable ship flying 'kit' (this project's): sensible stats, its type 'kitType', the default
+        /// build each slot's first part (the game's Normalize does that for a slot left out).</summary>
+        public ProjectShip AddKitShip(string id, string name, ProjectKit kit, string kitType)
+        {
+            var s = new ProjectShip(new JObject
+            {
+                ["id"] = id, ["name"] = name, ["description"] = "",
+                ["race"] = 0, ["armor"] = 300, ["cargo"] = 60, ["handling"] = 110,
+                ["price"] = 400000,
+                ["slots"] = new JObject { ["primary"] = 2, ["secondary"] = 1, ["turret"] = 0, ["equipment"] = 8 },
+                ["kit"] = kit.Id, ["kitType"] = kitType, ["build"] = new JObject { ["tier"] = 0 },
+                ["mounts"] = new JArray(),
+            });
+            Ships.Add(s);
+            return s;
         }
 
         public ProjectGameOption AddGameOption(string name)
@@ -1046,6 +1080,10 @@ namespace GoF2Remake.Modding
             glowColor = m.glowColor != null ? (float[])m.glowColor.Clone() : null,
             glowSize = m.glowSize != null ? (float[])m.glowSize.Clone() : null,
             turretUp = m.turretUp != null ? (float[])m.turretUp.Clone() : null,
+            outline = m.outline != null ? (float[])m.outline.Clone() : null, builtIn = m.builtIn,
+            direction = m.direction != null ? (float[])m.direction.Clone() : null,
+            rotation = m.rotation != null ? (float[])m.rotation.Clone() : null,
+            nodes = m.nodes != null ? (string[])m.nodes.Clone() : null, fxScale = m.fxScale,
         };
 
         public bool IsOverride => json["override"] != null;
@@ -1124,6 +1162,49 @@ namespace GoF2Remake.Modding
 
         public int MountCount(int slotType) => Mounts.Count(m => m.slotType == slotType);
 
+        // ---- a customizable ship (ModShipKits) ----
+
+        /// <summary>The kit it flies ("kit": this mod's kit id, or "mod_id:kit_id"), null = a ship with a model.</summary>
+        public string Kit { get => S("kit"); set { if (string.IsNullOrEmpty(value)) json.Remove("kit"); else json["kit"] = value; } }
+        public bool IsKitShip => !string.IsNullOrEmpty(Kit);
+        /// <summary>Which of the kit's parts it may fit (the parts' "types").</summary>
+        public string KitType { get => S("kitType") ?? ""; set => json["kitType"] = value ?? ""; }
+
+        /// <summary>The default build's part in a slot (null = the slot's first part the type may fit).</summary>
+        public string BuildPart(string slot) => json["build"] is JObject b && b[slot] is JValue v && v.Type == JTokenType.String ? (string)v : null;
+
+        public void SetBuildPart(string slot, string part)
+        {
+            if (!(json["build"] is JObject b)) json["build"] = b = new JObject();
+            if (string.IsNullOrEmpty(part)) b.Remove(slot); else b[slot] = part;
+        }
+
+        public int BuildTier
+        {
+            get => json["build"] is JObject b && b["tier"] is JValue v && v.Type == JTokenType.Integer ? (int)v : 0;
+            set { if (!(json["build"] is JObject b)) json["build"] = b = new JObject(); b["tier"] = Mathf.Max(0, value); }
+        }
+
+        /// <summary>The default build's parts as build text ("slot=part;...;tier=N"), for a preview of another part.</summary>
+        public string BuildText()
+        {
+            if (!(json["build"] is JObject b)) return "tier=0";
+            var parts = b.Properties().Where(p => p.Value.Type == JTokenType.String && p.Name != "skin" && p.Name != "weaponColor"
+                                                  && !p.Name.StartsWith("exhaust")).Select(p => p.Name + "=" + (string)p.Value);
+            return string.Join(";", parts.Append("tier=" + BuildTier));
+        }
+
+        /// <summary>The ship flies a kit: its model's own fields go.</summary>
+        public void UseKit(string kit, string kitType)
+        {
+            foreach (var k in new[] { "model", "modelLength", "modelYaw", "modelPitch", "modelRoll", "modelOffset", "materials", "hangarHeight", "engineGlowRadius" })
+                json.Remove(k);
+            Kit = kit;
+            KitType = kitType;
+            if (!(json["build"] is JObject)) json["build"] = new JObject { ["tier"] = 0 };
+            NeedsLayout = false;
+        }
+
         /// <summary>The ship flies one of the game's own models ("gof2:<name>", GameModels), not a file.</summary>
         public bool HasGameModel => GameModels.Is(Model);
 
@@ -1167,22 +1248,32 @@ namespace GoF2Remake.Modding
         public JObject ToJson()
         {
             var o = (JObject)json.DeepClone();
-            var a = new JArray();
-            foreach (var m in Mounts)
-            {
-                var e = new JObject { ["slotType"] = m.slotType, ["position_engine"] = new JArray(m.position_engine ?? new int[3]) };
-                if (m.turretAngles != null && m.turretAngles.Length > 0) e["turretAngles"] = new JArray(m.turretAngles.Select(f => (float)Math.Round(f, 3)));
-                // A turret's facing: turretUp, but a plain top / under-hull one as before (none / upsideDown).
-                var up = m.TurretUpLocal;
-                if (m.slotType == 2 && m.turretUp != null && m.turretUp.Length >= 3 && up.y < 0.9999f && up.y > -0.9999f)
-                    e["turretUp"] = new JArray(m.turretUp.Select(f => (float)Math.Round(f, 3)));
-                else if (m.slotType == 2 && up.y <= -0.9999f) e["upsideDown"] = true;
-                if (m.glowColor != null && m.glowColor.Length >= 3) e["glowColor"] = new JArray(m.glowColor.Select(f => (float)Math.Round(f, 3)));
-                if (m.glowSize != null && m.glowSize.Length >= 3) e["glowSize"] = new JArray(m.glowSize.Select(f => (float)Math.Round(f, 1)));
-                a.Add(e);
-            }
-            o["mounts"] = a;
+            o["mounts"] = new JArray(Mounts.Select(MountJson));
             return o;
+        }
+
+        /// <summary>A hardpoint as ships.json / shipkits.json write it (the remake's mod fields only when set: a mount the
+        /// builder doesn't edit keeps them).</summary>
+        public static JObject MountJson(WeaponMount m)
+        {
+            JArray Floats(float[] a, int digits) => new JArray(a.Select(f => (float)Math.Round(f, digits)));
+            var e = new JObject { ["slotType"] = m.slotType, ["position_engine"] = new JArray(m.position_engine ?? new int[3]) };
+            if (m.turretAngles != null && m.turretAngles.Length > 0) e["turretAngles"] = Floats(m.turretAngles, 3);
+            // A turret's facing: turretUp, but a plain top / under-hull one as before (none / upsideDown).
+            var up = m.TurretUpLocal;
+            if (m.slotType == 2 && m.turretUp != null && m.turretUp.Length >= 3 && up.y < 0.9999f && up.y > -0.9999f)
+                e["turretUp"] = Floats(m.turretUp, 3);
+            else if (m.slotType == 2 && up.y <= -0.9999f) e["upsideDown"] = true;
+            else if (m.slotType != 2 && m.upsideDown) e["upsideDown"] = true;
+            if (m.glowColor != null && m.glowColor.Length >= 3) e["glowColor"] = Floats(m.glowColor, 3);
+            if (m.glowSize != null && m.glowSize.Length >= 3) e["glowSize"] = Floats(m.glowSize, 1);
+            if (m.outline != null && m.outline.Length >= 6) e["outline"] = Floats(m.outline, 1);
+            if (m.builtIn) e["builtIn"] = true;
+            if (m.direction != null && m.direction.Length >= 3) e["direction"] = Floats(m.direction, 3);
+            if (m.rotation != null && m.rotation.Length >= 3) e["rotation"] = Floats(m.rotation, 3);
+            if (m.nodes != null && m.nodes.Length > 0) e["nodes"] = new JArray(m.nodes);
+            if (m.fxScale > 0f) e["fxScale"] = (float)Math.Round(m.fxScale, 3);
+            return e;
         }
     }
 }

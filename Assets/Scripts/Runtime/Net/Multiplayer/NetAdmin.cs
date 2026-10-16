@@ -62,7 +62,7 @@ namespace GoF2Remake.Multiplayer
     [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class NetAdmin
     {
-        public enum Order : byte { Kill = 1, Heal = 2, Give = 3, Credits = 4, Spawn = 5, Ship = 6, Ammo = 7, Reveal = 8, Peace = 9, Cheat = 10, Object = 11, Title = 12, Timer = 13, Dialog = 14, Reward = 15, Scoreboard = 16, Sound = 17, Music = 18, Respawn = 19, Rules = 20, Ask = 21, Provoke = 22, Radio = 23, Waypoint = 24, Cutscene = 25, Camera = 26, Fade = 27, Letterbox = 28, Npc = 29 }
+        public enum Order : byte { Kill = 1, Heal = 2, Give = 3, Credits = 4, Spawn = 5, Ship = 6, Ammo = 7, Reveal = 8, Peace = 9, Cheat = 10, Object = 11, Title = 12, Timer = 13, Dialog = 14, Reward = 15, Scoreboard = 16, Sound = 17, Music = 18, Respawn = 19, Rules = 20, Ask = 21, Provoke = 22, Radio = 23, Waypoint = 24, Cutscene = 25, Camera = 26, Fade = 27, Letterbox = 28, Npc = 29, Flight = 30 }
 
         const int MaxGive = 1000, MaxSpawn = 10, MaxCredits = 999999999;
         /// <summary>A /spawn name's length, and its separator in the order's text (taken out of names).</summary>
@@ -528,6 +528,16 @@ namespace GoF2Remake.Multiplayer
             }
             Send(t, Order.Rules, flags, 0, 0, by, $"travel restricted ({flags})");
             if (flags != 0) EventRunner.NoteRulesSet();
+            return "";
+        });
+
+        /// <summary>/flightstyle [players] &lt;free | original | player&gt;: the flight style their games fly with (Events.EventFlight,
+        /// before the ship's, the mod campaign's and their own option: Modding.ModFlight); "player" gives it back.</summary>
+        public static string FlightStyle(string args, IPilot by) => ForTargets(args, by, true, (t, rest) =>
+        {
+            if (!Modding.ModFlight.TryParseStyle(rest, out int style) || string.IsNullOrWhiteSpace(rest)) return Usage("flightstyle");
+            Send(t, Order.Flight, style, 0, 0, by, $"flight style {(style < 0 ? "player" : style == FlightStyles.Free ? "free" : "original")}");
+            if (style >= 0) EventRunner.NoteFlightSet();
             return "";
         });
 
@@ -1043,6 +1053,9 @@ namespace GoF2Remake.Multiplayer
                     break;
                 case Order.Rules:
                     EventRules.Apply(a);
+                    break;
+                case Order.Flight:
+                    EventFlight.Apply(a);
                     break;
                 case Order.Waypoint:
                     EventWaypoint.Apply(text);

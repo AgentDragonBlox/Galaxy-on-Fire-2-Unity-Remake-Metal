@@ -138,7 +138,7 @@ namespace GoF2Remake.Data
 
         public int SlotCount(int type)
         {
-            var s = Ship?.slots;
+            var s = Modding.KitRules.Slots(Ship);   // a kit ship's build decides some (ModShipKits)
             if (s == null) return 0;
             // mod 2: +1 equipment slot per level; the cloak bay (remake option) holds a mounted cloak besides the slots
             return type switch { 0 => s.primary, 1 => s.secondary, 2 => s.turret, 3 => s.equipment + Session.ModLevel(2) + BaySlot(db, Session.ShipIndex, Session.Equipment), _ => 0 };
@@ -167,7 +167,7 @@ namespace GoF2Remake.Data
         /// like a bought ship's (SwitchTo); the story's unsaleable items keep their place. Returns how many moved.</summary>
         public static int FitToSlots(Database db)
         {
-            var s = db.Ship(Session.ShipIndex)?.slots;
+            var s = Modding.KitRules.Slots(db.Ship(Session.ShipIndex));   // a kit ship's build decides some (ModShipKits)
             if (s == null) return 0;
             int Slots(int type) => type switch { 0 => s.primary, 1 => s.secondary, 2 => s.turret, 3 => s.equipment + Session.ModLevel(2) + BaySlot(db, Session.ShipIndex, Session.Equipment), _ => int.MaxValue };
             int TypeOfItem(int item) => db.Item(item)?.TypeId ?? 4;

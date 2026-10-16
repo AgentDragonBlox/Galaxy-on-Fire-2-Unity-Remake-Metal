@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using GoF2Remake.Data;
 using GoF2Remake.Visuals;
 using UnityEngine;
@@ -98,6 +99,8 @@ namespace GoF2Remake.World
 
         Database db;
         int dbRevision;                       // ModManager.Revision when db was loaded
+        /// <summary>The station's game database (the Customize panel's stats).</summary>
+        public Database Db => db;
         Transform hangarRoot, barRoot, playerShip;
         int shipIndex;
         Vector3 shipPivot;                    // Unity, the camera parent (0, Y[ship at entry], 0)
@@ -166,6 +169,8 @@ namespace GoF2Remake.World
 
         void Awake()
         {
+            Modding.ModShips.ModelsChanged += OnModShipModels;
+            Modding.ModTraffic.Warm();   // remake mods: more kit parts for the NPCs' random builds, loaded while docked
             // Multiplayer: loaded after its session ended (a docking queued behind the menu): on to the menu (nothing is
             // saved, SaveGame.SessionGame).
             if (GoF2Remake.Data.NetSession.SessionLost) SceneManager.LoadScene("MainMenu");
@@ -199,7 +204,7 @@ namespace GoF2Remake.World
             // Docking repairs the ship (the original launches with Status hull / shield / armor = -1, "full", StarMap::
             // depart; assumed for every launch) and autosaves (ModStation::autosave).
             // Survivor medal: the hull % this ship arrived with (before the repair).
-            int maxHull = (db.Ship(Session.ShipIndex)?.armor ?? 100) + 40 * Session.ModLevel(0);
+            int maxHull = Modding.ModShipKits.Armor(db.Ship(Session.ShipIndex), 100) + 40 * Session.ModLevel(0);
             Session.LastArrivalHullPercent = Session.PlayerHull < 0 ? 100 : Mathf.RoundToInt(100f * Session.PlayerHull / Mathf.Max(1, maxHull));
             Session.ArrivedWithoutGear = Achievements.NoWeaponOrEquipment(db);   // Harum-Scarum: the loadout docked with
             Session.HighestCredits = Mathf.Max(Session.HighestCredits, Session.Credits);
@@ -363,7 +368,9 @@ namespace GoF2Remake.World
             if (npcTraffic || (slots && GoF2Remake.Data.NetSession.Active))
                 traffic = new HangarTraffic(Lane, ParkedSlotCount, ParkedMaxCount,
                                             parkedShips, db, NewParkedShip, ParkedPosition,
-                                            (ship, pos, rot) => SpawnShip(ship, pos, rot, hangarRoot, "Visiting ship"),
+                                            (ship, pos, rot) => SpawnShip(ship, pos, rot, hangarRoot, "Visiting ship",
+                                                                          // another player's: their build of a customizable ship
+                                                                          traffic != null && traffic.SpawningGuest >= 0 ? SpaceHooks.GuestAssembly?.Invoke((ulong)traffic.SpawningGuest, ship) : null),
                                             npcTraffic, Settings.HangarFlights, FitParkingYaw);
             if (traffic != null) traffic.NpcSpawned = (go, ship) => AddNpcTurrets(go, ship, null);
             if (traffic != null && GoF2Remake.Data.NetSession.Active)
@@ -391,20 +398,55 @@ namespace GoF2Remake.World
             if (playerShip != null) PlayerHull.FitHangar(playerShip);   // remake debug: a freighter / capital ship shrunk
             RefreshTurret(true);
             ApplyShipYaw();
+            ApplyEnginePreview();
         }
 
-        GameObject turret;
+        bool enginePreview;
+        float enginePreviewDrive = 1f;
+
+        /// <summary>How hard the previewed engines run (1 full throttle, 2 a full boost; EnginePreview).</summary>
+        public void PreviewEngineDrive(float drive)
+        {
+            enginePreviewDrive = drive;
+            var preview = playerShip != null ? playerShip.GetComponent<GoF2Remake.Visuals.EnginePreview>() : null;
+            if (preview != null) preview.drive = drive;
+        }
+
+        /// <summary>Remake mods: the turntable ship's engines run (the Customize screen: its exhaust can be seen) or stop again.</summary>
+        public void PreviewEngines(bool on)
+        {
+            enginePreview = on;
+            ApplyEnginePreview();
+        }
+
+        void ApplyEnginePreview()
+        {
+            if (playerShip == null) return;
+            var asm = playerShip.GetComponent<AssembledObject>();
+            if (asm != null && asm.playerVariantParts != null)
+                foreach (var p in asm.playerVariantParts) if (p != null) p.SetActive(enginePreview);
+            var preview = playerShip.GetComponent<GoF2Remake.Visuals.EnginePreview>();
+            if (enginePreview && preview == null) playerShip.gameObject.AddComponent<GoF2Remake.Visuals.EnginePreview>().drive = enginePreviewDrive;
+            else if (!enginePreview && preview != null) Destroy(preview);
+        }
+
+        GameObject turret, hardpoints;
         string turretItems = "";
 
         /// <summary>CutScene::checkForTurret 0xa4594: the mounted turret on the turntable ship, rebuilt whenever the turret
-        /// item changes (the original re-runs it after every equipment change). Remake: every turret, each on its mount.</summary>
+        /// item changes (the original re-runs it after every equipment change). Remake: every turret, each on its mount, and a
+        /// kit ship's weapon models (ModHardpoints), rebuilt when the weapons change too.</summary>
         void RefreshTurret(bool force)
         {
-            string items = string.Join(",", GoF2Remake.Flight.PlayerTurret.TurretItems(db, Session.Equipment));
+            string items = string.Join(",", GoF2Remake.Flight.PlayerTurret.TurretItems(db, Session.Equipment)) + "|"
+                         + string.Join(",", Modding.ModHardpoints.WeaponItems(db, Session.Equipment, false).Select(i => i.index)) + "|"
+                         + string.Join(",", Modding.ModHardpoints.WeaponItems(db, Session.Equipment, true).Select(i => i.index));
             if (!force && items == turretItems) return;
             turretItems = items;
             if (turret != null) Destroy(turret);
+            if (hardpoints != null) Destroy(hardpoints);
             turret = playerShip != null ? GoF2Remake.Flight.PlayerTurret.BuildStatic(db, shipIndex, Session.Equipment, playerShip) : null;
+            hardpoints = playerShip != null ? Modding.ModHardpoints.AttachWeapons(db, shipIndex, Session.Equipment, playerShip) : null;
         }
 
         readonly List<HangarTraffic.Parked> parkedShips = new List<HangarTraffic.Parked>();
@@ -480,10 +522,16 @@ namespace GoF2Remake.World
 
         /// <summary>The Unity pivot of 'ship' parked on 'slot' at 'rotation' (the slot plus the ship's height, lifted where the
         /// hull would cut into the pad: StationTables.PadPivotY).</summary>
-        Vector3 ParkedPosition(int slot, int ship, Quaternion rotation) => customHangar != null
-            ? customHangar.parked[slot] + Vector3.up * (StationTables.ShipY(ship) * M)   // a custom hangar's marker
-            : new Vector3(0f, StationTables.PadPivotY(HangarIndex, slot, ship, rotation), 0f)
-              + Vector3.Scale(OrbitLayout.ToUnity(StationTables.ParkedSlots[HangarIndex][slot]), new Vector3(1f, 0f, 1f));
+        Vector3 ParkedPosition(int slot, int ship, Quaternion rotation)
+        {
+            // Another player's customizable ship floats at the height of their build (multiplayer, HangarTraffic.SpawningGuest).
+            float guestY = traffic != null && traffic.SpawningGuest >= 0 && NetSession.Active && SpaceHooks.GuestShipY != null
+                ? SpaceHooks.GuestShipY((ulong)traffic.SpawningGuest, ship) : float.NaN;
+            return customHangar != null
+                ? customHangar.parked[slot] + Vector3.up * ((float.IsNaN(guestY) ? StationTables.ShipY(ship) : guestY) * M)   // a custom hangar's marker
+                : new Vector3(0f, StationTables.PadPivotY(HangarIndex, slot, ship, rotation, guestY), 0f)
+                  + Vector3.Scale(OrbitLayout.ToUnity(StationTables.ParkedSlots[HangarIndex][slot]), new Vector3(1f, 0f, 1f));
+        }
 
         int RandomParkedShip()
         {
@@ -603,9 +651,9 @@ namespace GoF2Remake.World
         }
 
         /// <summary>createShip(race, 0, idx, null, false): NPC mesh group, setExhaustVisible(false), asleep.</summary>
-        GameObject SpawnShip(int index, Vector3 gamePos, float gameYaw, Transform parent, string label)
+        GameObject SpawnShip(int index, Vector3 gamePos, float gameYaw, Transform parent, string label, AssemblyData assembly = null)
         {
-            var entry = PlayerHull.Assembly(db, index);   // the player's own ship: remake debug, the Ships tab's pick
+            var entry = assembly ?? PlayerHull.Assembly(db, index);   // the player's own ship: remake debug, the Ships tab's pick
             if (entry == null) return null;
             var go = Spawn(entry.name, OrbitLayout.ToUnity(gamePos), OrbitLayout.RotationToUnity(new Vector3(0f, gameYaw, 0f)), parent, label);
             var asm = go != null ? go.GetComponent<AssembledObject>() : null;
@@ -613,6 +661,12 @@ namespace GoF2Remake.World
             {
                 asm.SetPlayerVariant(false);
                 if (asm.npcVariantParts != null) foreach (var p in asm.npcVariantParts) if (p != null) p.SetActive(false);   // exhaust off
+                // Remake mods: the exhaust style of the player's build, or of a guest's (ModExhausts; before the particles,
+                // which it replaces).
+                var exhaustBuild = label == "Player ship" ? (PlayerHull.OwnEngines(db) ? Modding.ModShipKits.PlayerBuild(index) : null)
+                                 : traffic != null && traffic.SpawningGuest >= 0 && NetSession.Active
+                                   ? SpaceHooks.GuestBuild?.Invoke((ulong)traffic.SpawningGuest, index) : null;
+                if (exhaustBuild != null) Modding.ModExhausts.Apply(db, index, go, exhaustBuild);
                 // Remake: the hangar flights and bar flybys fly on the player's engine (its glow mesh and exhaust particles)
                 // instead of the NPC flame meshes, like the NPCs in space (Settings.NpcPlayerEngines; the player's own ship
                 // always): some hulls' _engine_add parts showed nothing, and the VoidX's was blue where the player's is purple.
@@ -621,19 +675,25 @@ namespace GoF2Remake.World
                     && (Settings.NpcPlayerEngines || !asm.HasNpcExhaust || label == "Player ship"))
                 {
                     var glow = asm.playerVariantParts[0];
+                    // A customizable ship's exhausts where its build has them (a guest's build, the player's).
+                    var build = Modding.ModShipKits.BuildOfAssembly(entry.name);
                     GoF2Remake.Flight.ShipExhaust.AttachRemote(go, db, go.transform, index, () => glow != null && glow.activeInHierarchy,
-                                                               () => 0f, () => 0f, scaled: true);
+                                                               () => 0f, () => 0f, scaled: true,
+                                                               mounts: build != null ? Modding.ModShipKits.MountsShown(db, index, 3, build) : null);
                 }
             }
+            // Remake mods: a ship's "engine" materials (its nozzles) glow only while its engine glow shows: dark parked, lit in a
+            // hangar flight (EngineMaterialGlow).
+            if (go != null && go.GetComponent<Modding.EngineMaterialGlow>() is Modding.EngineMaterialGlow nozzles) nozzles.followEngine = true;
             // Remake: a soft shadow on the floor under every hangar ship (not the bar's flybys); it shows once the ship rests
             // (the "Hangar ship shadows" option: off, the player's own ship only, every ship).
             if (go != null && hangarRoot != null && parent == hangarRoot) HangarShipShadow.Attach(go, entry.name, true, label == "Player ship");   // at once; a landing flight hides it (ExpectLanding)
             return go;
         }
 
-        GameObject SpawnShip(int index, Vector3 unityPos, Quaternion unityRot, Transform parent, string label)
+        GameObject SpawnShip(int index, Vector3 unityPos, Quaternion unityRot, Transform parent, string label, AssemblyData assembly = null)
         {
-            var go = SpawnShip(index, Vector3.zero, 0f, parent, label);
+            var go = SpawnShip(index, Vector3.zero, 0f, parent, label, assembly);
             if (go != null) go.transform.SetPositionAndRotation(unityPos, unityRot);
             return go;
         }
@@ -642,8 +702,17 @@ namespace GoF2Remake.World
         /// camera swayed: SMAA works within one frame. The station camera takes URP's temporal AA instead (its slow camera
         /// and still rooms are where TAA has nothing to smear), unless a temporal upscaler (DLSS, FSR 2+, STP) already
         /// anti-aliases or MSAA is on (URP's TAA needs it off); then SMAA as before. Again when the options change.</summary>
+        /// <summary>Remake mods: a customizable ship's parts arrived (loaded on demand, ModShips.EnsureBuild): the turntable shows
+        /// the player's build.</summary>
+        void OnModShipModels()
+        {
+            if (this == null || playerShip == null || PlayerFlying || Modding.ModShipKits.CustomizationOf(Session.ShipIndex) == null) return;
+            ReplacePlayerShip(Session.ShipIndex);
+        }
+
         void OnDestroy()
         {
+            Modding.ModShips.ModelsChanged -= OnModShipModels;
             Settings.Changed -= ApplyAntialiasing;
             if (dofProfile != null) Destroy(dofProfile);
             var copies = new HashSet<Material>();
@@ -1167,7 +1236,17 @@ namespace GoF2Remake.World
                 {
                     Inspect.Tick(Time.unscaledDeltaTime * 1000f);
                     mainCamera.nearClipPlane = Inspect.Apply(cam, cam.position, cam.rotation, mainCamera.nearClipPlane);
+                    // A panel over part of the screen (the Customize screen): the view turns aside so the ship stands in the
+                    // middle of the free part (InspectFrameX), eased, with the orbit's blend.
+                    inspectFrame = Mathf.MoveTowards(inspectFrame, InspectFrameX, Time.unscaledDeltaTime * 1000f / InspectFrameMs);
+                    float off = (inspectFrame - 0.5f) * Inspect.Blend;
+                    if (Mathf.Abs(off) > 0.0005f)
+                    {
+                        float halfTanX = Mathf.Tan(mainCamera.fieldOfView * 0.5f * Mathf.Deg2Rad) * mainCamera.aspect;
+                        cam.rotation *= Quaternion.AngleAxis(-Mathf.Atan(halfTanX * 2f * off) * Mathf.Rad2Deg, Vector3.up);
+                    }
                 }
+                else inspectFrame = 0.5f;
             }
             else
             {
@@ -1224,6 +1303,12 @@ namespace GoF2Remake.World
                 cam.SetPositionAndRotation(pos, rot);
             }
         }
+
+        /// <summary>Remake: where the Inspect ship orbit puts the ship across the screen, from the left (0) to the right (1);
+        /// 0.5 = the middle. The Customize screen sets it to the middle of the part its panel leaves free.</summary>
+        public float InspectFrameX = 0.5f;
+        float inspectFrame = 0.5f;
+        const float InspectFrameMs = 450f;
 
         /// <summary>Remake: the bar camera's zoom toward the visitor talked to (the share of the field of view taken off), eased
         /// over ChatZoomMs.</summary>

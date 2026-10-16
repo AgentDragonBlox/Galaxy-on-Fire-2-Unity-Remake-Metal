@@ -148,6 +148,8 @@ namespace GoF2Remake.UI
             ShipData current, IEnumerable<int> currentMods)
         {
             string T(int id) => Localization.Get(id);
+            s = Modding.ModShipKits.Effective(s);   // a customizable ship: as its build makes it
+            current = Modding.ModShipKits.Effective(current);
             int Lv(int mod) => Session.ModLevel(mods, mod);
             int CurLv(int mod) => Session.ModLevel(currentMods, mod);
             string Plus(int mod) => Lv(mod) > 0 ? " (+)" : "";

@@ -56,6 +56,21 @@ namespace GoF2Remake.UI
         static string X(string key, string english) => Localization.Extra(key, english);
         static string Percent(float v) => $"{Mathf.RoundToInt(v * 100f)} %";
 
+        /// <summary>Remake (Modding.ModFlight): who sets the flight style now instead of the Free flight toggle.</summary>
+        static string FlightStyleForcedNote()
+        {
+            string who = Modding.ModFlight.ForcedBy switch
+            {
+                "event" => X("flightForcedEvent", "an event"),
+                "session" => X("flightForcedSession", "the multiplayer session"),
+                "ship" => X("flightForcedShip", "the ship you fly"),
+                "campaign" => X("flightForcedCampaign", "this mod campaign"),
+                _ => X("flightForcedOption", "a game option of a mod"),
+            };
+            string style = FlightStyles.Current == FlightStyles.Free ? X("flightStyleFree", "Free flight (EVERSPACE 2 style)") : X("flightStyleOriginal", "Original");
+            return string.Format(X("flightForcedNote", "Now set by {0}: {1}."), who, style);
+        }
+
         public static string PageTitle(OptionPage page) => page switch
         {
             OptionPage.Sound => X("tabSound", "Sound"),
@@ -234,6 +249,12 @@ namespace GoF2Remake.UI
             list.Add(Toggle("showFps", OptionPage.Graphics, () => X("showFps", "Show FPS"), () => Settings.ShowFps, v => Settings.ShowFps = v));
 
             // ---- controls
+            // Remake: free flight after EVERSPACE 2 (Settings.FlightStyle, FlightModel.StepFree); it switches the key layout too.
+            // A toggle: off = the original's flight and key layout, untouched.
+            var freeFlight = Toggle("flightStyle", OptionPage.Controls, () => X("flightStyleFree", "Free flight (EVERSPACE 2 style)"),
+                () => Settings.FlightStyle == FlightStyles.Free, v => Settings.FlightStyle = v ? FlightStyles.Free : FlightStyles.Original);
+            freeFlight.description = () => (FlightStyles.Forced ? FlightStyleForcedNote() + " " : "") + X("flightStyleHelp", "Original: a throttle, the ship always flies forward. Free flight, after EVERSPACE 2: hold W / S to thrust, A / D to strafe, Space / Ctrl for up and down, Q / E to roll and Shift to boost; the mouse aims, Z toggles the inertial dampeners (off: the ship keeps drifting), Alt held looks around. It has its own key layout (Key bindings). Keyboard, mouse and controller; touch keeps the original.");
+            list.Add(freeFlight);
             // MenuTouchWindow state 8: 490 Touch / 491 Accelerometer pictures (options[0x11]), 492 Steering Calibration
             // (493, then OK stores the device's position), the sensitivity slider per mode (+0x14 / +0x18).
             if (Flight.TiltSteering.Available)
@@ -316,12 +337,23 @@ namespace GoF2Remake.UI
             {
                 id = "resetBindings", page = OptionPage.Bindings, kind = OptionKind.Button,
                 label = () => X("resetBindings", "Reset key bindings"),
-                description = () => X("bindingsHelp", "Keys, second keys and controller buttons: pick one to change it. Esc (or the controller's B, or a tap) cancels; nothing pressed for 10 seconds cancels too. To clear one: its ×, a right click, Delete (or the controller's X) on the selected row, or Backspace while it waits for a key. The menu keys stay fixed."),
+                // Which layout the list shows: each flight style has its own (GameControls.ApplyStyle).
+                description = () =>
+                {
+                    Flight.GameControls.ApplyStyle();   // the layout of the style in use (a mod's or an event's too)
+                    return string.Format(X("bindingsLayout", "Key layout: {0}. The Free flight toggle under {1} switches it."),
+                                         FlightStyles.Current == FlightStyles.Free ? X("flightStyleFree", "Free flight (EVERSPACE 2 style)")
+                                                                                    : X("flightStyleOriginal", "Original"),
+                                         PageTitle(OptionPage.Controls))
+                           + (FlightStyles.Forced ? " " + FlightStyleForcedNote() : "")
+                           + " " + X("bindingsHelp", "Keys, second keys and controller buttons: pick one to change it. Esc (or the controller's B, or a tap) cancels; nothing pressed for 10 seconds cancels too. To clear one: its ×, a right click, Delete (or the controller's X) on the selected row, or Backspace while it waits for a key. The menu keys stay fixed.");
+                },
                 action = Flight.GameControls.ResetToDefaults,
                 extra = BindingRow.Header,
             });
             foreach (var row in Flight.GameControls.Rows)
-                list.Add(new OptionDef { id = "bind_" + row.id, page = OptionPage.Bindings, kind = OptionKind.Binding, label = row.label, control = row });
+                list.Add(new OptionDef { id = "bind_" + row.id, page = OptionPage.Bindings, kind = OptionKind.Binding, label = row.label, control = row,
+                                         visible = row.visible });   // rows only one flight style reads
 
             // ---- gameplay
             list.Add(Toggle("launchCamera", OptionPage.Gameplay, () => X("launchCamera", "Launch and arrival camera"),
@@ -383,6 +415,11 @@ namespace GoF2Remake.UI
                 () => new[] { X("targetLockSmart", "Smart"), X("targetLockOriginal", "Original") },
                 () => Settings.OriginalTargetLock ? 1 : 0, i => Settings.OriginalTargetLock = i == 1,
                 () => X("targetLockHelp", "Smart: hostile ships are locked first, then the one nearest the crosshair, and a neutral or friendly ship passing through can't take over a hostile lock (your missiles stay on your target). Original: the first ship in the box is locked, whoever it is.")));
+            // Remake mods: NPC fighters in the mods' ships of their race (Modding.ModTraffic).
+            list.Add(Choice("modShipTraffic", OptionPage.Gameplay, () => X("modShipTraffic", "Mod ships in traffic"), true,
+                () => new[] { X("modShipTrafficOff", "Off"), "10 %", "25 %", "50 %" },
+                () => Settings.ModShipTraffic, i => Settings.ModShipTraffic = i,
+                () => X("modShipTrafficHelp", "How often an NPC fighter flies one of your mods' ships of its race instead of the game's. Their hulls and guns stay those of the game's fighters.")));
             list.Add(Toggle("autoAdvance", OptionPage.Gameplay, () => X("autoPlayDialogue", "Auto-play dialogue"),
                 () => Settings.AutoAdvanceDialogue, v => Settings.AutoAdvanceDialogue = v));
             list.Add(Toggle("animatedDialogue", OptionPage.Gameplay, () => X("animatedDialogue", "Animated dialogue"),

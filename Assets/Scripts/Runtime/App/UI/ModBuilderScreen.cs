@@ -52,7 +52,7 @@ namespace GoF2Remake.UI
         static readonly (string key, string english, ModBuilder.Kind kind)[] KindTabs =
         {
             ("mbShips", "Ships", ModBuilder.Kind.Ships), ("mbItems", "Items", ModBuilder.Kind.Items), ("mbFx", "Weapon fx", ModBuilder.Kind.WeaponFx),
-            ("mbSkins", "Skins", ModBuilder.Kind.Skins), ("mbBlueprints", "Blueprints", ModBuilder.Kind.Blueprints),
+            ("mbSkins", "Skins", ModBuilder.Kind.Skins), ("mbKits", "Ship kits", ModBuilder.Kind.Kits), ("mbBlueprints", "Blueprints", ModBuilder.Kind.Blueprints),
             ("mbCharacters", "Characters", ModBuilder.Kind.Characters), ("mbQuests", "Quests", ModBuilder.Kind.Quests), ("mbAudio", "Audio", ModBuilder.Kind.Audio),
             ("mbSystems", "Systems", ModBuilder.Kind.Systems), ("mbStations", "Stations", ModBuilder.Kind.Stations),
             ("mbInteriors", "Hangars & bars", ModBuilder.Kind.Interiors), ("mbCampaigns", "Campaign", ModBuilder.Kind.Campaigns),

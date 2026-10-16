@@ -171,6 +171,11 @@ namespace GoF2Remake.World
         public static PoseQuery TeleportPose;
 
         /// <summary>The arena match this game plays (NetArenaClient.Current), null = none.</summary>
+        // ---- remake mods (PR #87): another player's customizable ship parked in this hangar (NetHangar) ----
+        public static Func<ulong, int, AssemblyData> GuestAssembly;
+        public static Func<ulong, int, float> GuestShipY;
+        public static Func<ulong, int, Modding.ModShipKits.Build> GuestBuild;
+
         public static Func<ArenaMatchInfo> ArenaProvider;
         /// <summary>In a match of the running session (NetArenaClient.InMatch).</summary>
         public static Func<bool> InArenaMatch;

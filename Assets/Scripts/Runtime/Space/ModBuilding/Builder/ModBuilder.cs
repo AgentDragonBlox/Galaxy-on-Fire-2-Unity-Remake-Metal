@@ -71,8 +71,8 @@ namespace GoF2Remake.Modding
         public static ProjectShip Ship { get; set; }
         /// <summary>The kinds of content the builder edits (its top tabs).</summary>
         /// <summary>The kinds of content (and AiTools: the MCP server's tab, ModBuilderScreen; shown wherever the builder is).</summary>
-        public enum Kind { Ships, Items, Characters, Skins, WeaponFx, Systems, Stations, Interiors, Quests, Campaigns, Audio, Blueprints, AiTools }
-        public const int KindCount = 13;
+        public enum Kind { Ships, Items, Characters, Skins, WeaponFx, Systems, Stations, Interiors, Quests, Campaigns, Audio, Blueprints, Kits, AiTools }
+        public const int KindCount = 14;
 
         /// <summary>Where a kind is edited: in the game's own place for it.</summary>
         public enum Place { Hangar, Lounge, Map, Space }
@@ -175,6 +175,11 @@ namespace GoF2Remake.Modding
         public static List<ItemStack> PreviewLoadout { get; set; }
         static bool ShowingPreview => (OpenKind == Kind.Blueprints || OpenKind == Kind.Campaigns) && PreviewShip >= 0 && Database.Shared.Ship(PreviewShip) != null;
 
+        /// <summary>The build the turntable and test flights show of a customizable ship in the Kits kind (the part being
+        /// edited in place of the default build's), build text; null = its default build (Session.ShipBuilds is cleared for
+        /// the builder's ships, ApplyShip).</summary>
+        public static string PreviewBuild { get; set; }
+
         /// <summary>A reference (a game number or a key) as this game's ship / item / station number, -1 = not in this game.</summary>
         public static int ShipNumber(string r) => string.IsNullOrEmpty(r) ? -1 : int.TryParse(r, out int n) ? n : ModContent.ShipIndexOf(r);
         public static int ItemNumber(string r) => string.IsNullOrEmpty(r) ? -1 : int.TryParse(r, out int n) ? n : ModContent.ItemIndexOf(r);
@@ -188,7 +193,7 @@ namespace GoF2Remake.Modding
         static void ResetStatics()
         {
             Active = TestFlying = InSpace = PlayTesting = false; Project = null; Ship = null; History = null; OpenKind = Kind.Ships; SkinShip = -1;
-            InteriorIsBar = false; PreviewInterior = null; SpaceStation = -1; shownSpaceStation = -1; PreviewShip = -1; PreviewLoadout = null; RoomViewSet = false; SpaceStationRef = null;
+            InteriorIsBar = false; PreviewInterior = null; SpaceStation = -1; shownSpaceStation = -1; PreviewShip = -1; PreviewLoadout = null; RoomViewSet = false; SpaceStationRef = null; PreviewBuild = null;
         }
 
         /// <summary>Opens 'project': the builder's game; the caller loads the Station scene (after the mods have loaded).</summary>
@@ -334,6 +339,13 @@ namespace GoF2Remake.Modding
         {
             var db = Database.Shared;
             Session.ShipIndex = CurrentIndex;
+            // A customizable ship shows its default build, or in the Kits kind the build with the part being edited.
+            string buildKey = ModShipKits.BuildKey(Session.ShipIndex);
+            if (buildKey != null)
+            {
+                if (OpenKind == Kind.Kits && !string.IsNullOrEmpty(PreviewBuild)) Session.ShipBuilds[buildKey] = PreviewBuild;
+                else Session.ShipBuilds.Remove(buildKey);
+            }
             // A skinned game ship flies with a loadout of its own slots (it has none saved).
             var loadout = ShowingSkin ? DefaultLoadout(db, Session.ShipIndex)
                         : ShowingPreview ? PreviewLoadout ?? DefaultLoadout(db, Session.ShipIndex)

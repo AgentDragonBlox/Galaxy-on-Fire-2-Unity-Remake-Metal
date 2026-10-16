@@ -39,6 +39,7 @@ namespace GoF2Remake.UI
             ("stations", "stations.json", "id or override", ModBuilder.Kind.Stations),
             ("interiors", "interiors.json", "id", ModBuilder.Kind.Interiors),
             ("blueprints", "blueprints.json", "id", ModBuilder.Kind.Blueprints),
+            ("kits", "shipkits.json", "id (a kit of ship parts; a ships.json ship flies it with kit / kitType / build)", ModBuilder.Kind.Kits),
             ("gameOptions", "gameoptions.json", "id", ModBuilder.Kind.Campaigns),
             ("quests", "events/<name>.gof2quest", "name (the file name: letters, digits, _)", ModBuilder.Kind.Quests),
             ("campaign", "campaign.json", "(one per mod)", ModBuilder.Kind.Campaigns),
@@ -238,7 +239,7 @@ namespace GoF2Remake.UI
                     ["entries"] = new JObject
                     {
                         ["ships"] = p.Ships.Count, ["items"] = p.Items.Count, ["characters"] = p.Characters.Count, ["systems"] = p.Systems.Count,
-                        ["stations"] = p.Stations.Count, ["interiors"] = p.Interiors.Count, ["blueprints"] = p.Blueprints.Count,
+                        ["stations"] = p.Stations.Count, ["interiors"] = p.Interiors.Count, ["blueprints"] = p.Blueprints.Count, ["kits"] = p.Kits.Count,
                         ["gameOptions"] = p.GameOptions.Count, ["quests"] = p.Quests.Count, ["campaign"] = p.Campaign != null,
                     },
                     ["dependencies"] = new JArray(p.Dependencies),

@@ -261,6 +261,7 @@ namespace GoF2Remake.Events
         internal static void NoteFreeForAll(bool on) { if (executing != null) executing.eventPvp = on; }
         internal static void NoteRespawnSet() { if (executing != null) executing.eventRespawn = true; }
         internal static void NoteRulesSet() { if (executing != null) executing.eventRules = true; }
+        internal static void NoteFlightSet() { if (executing != null) executing.eventFlight = true; }
         internal static void NoteWaypointSet() { if (executing != null) executing.eventWaypoint = true; }
         internal static void NoteCutsceneSet() { if (executing != null) executing.eventCutscene = true; }
         internal static void NoteFadeSet() { if (executing != null) executing.eventFade = true; }
@@ -1030,7 +1031,7 @@ namespace GoF2Remake.Events
             public readonly HashSet<ulong> team;
             public readonly int station;   // a mission: where it was taken (-1: none)
             public bool ended;
-            public bool eventPvp, eventRespawn, eventRules, eventWaypoint, eventCutscene, eventFade;   // it turned the free for all on / set respawn points / restricted travel / a waypoint
+            public bool eventPvp, eventRespawn, eventRules, eventWaypoint, eventCutscene, eventFade, eventFlight;   // it turned the free for all on / set respawn points / restricted travel / a waypoint
             public GraphQuestState record;   // single player's lasting run (a quest, a bar mission): what a save keeps (null: none)
             public string objective = "";
             public int target = -1;
@@ -1125,6 +1126,7 @@ namespace GoF2Remake.Events
                         EventHost.Send(p.OwnerClientId, NetAdmin.Order.Music, -1, 0, 0, "", "Server");
                         if (eventRespawn) EventHost.Send(p.OwnerClientId, NetAdmin.Order.Respawn, -1, 0, 0, "off", "Server");
                         if (eventRules) EventHost.Send(p.OwnerClientId, NetAdmin.Order.Rules, 0, 0, 0, "", "Server");
+                        if (eventFlight) EventHost.Send(p.OwnerClientId, NetAdmin.Order.Flight, -1, 0, 0, "", "Server");
                         if (eventWaypoint) EventHost.Send(p.OwnerClientId, NetAdmin.Order.Waypoint, 0, 0, 0, "off", "Server");
                         if (eventCutscene) EventHost.Send(p.OwnerClientId, NetAdmin.Order.Cutscene, 0, 0, 0, "end", "Server");
                         if (eventFade) EventHost.Send(p.OwnerClientId, NetAdmin.Order.Fade, 0, 0, 0, "clear", "Server");
@@ -1188,7 +1190,7 @@ namespace GoF2Remake.Events
                             case Op.Command:
                             {
                                 string word = s.a.Split(' ')[0].ToLowerInvariant();
-                                if (word == "music" || word == "waypoint" || word == "respawn" || word == "restrict")
+                                if (word == "music" || word == "waypoint" || word == "respawn" || word == "restrict" || word == "flightstyle")
                                     try { RunCommand(Fill(s.a)); } catch (Exception e) { Debug.LogWarning($"Event {running}: {e.Message}"); }
                                 break;
                             }
@@ -2033,6 +2035,7 @@ namespace GoF2Remake.Events
                     case "ship": return Session.ShipIndex;
                     case "kills": return Session.Kills;
                     case "systemsvisited": return VisitedSystems();   // remake: 2+ = the player has left the starting system
+                    case "freeflight": return FlightStyles.Current == FlightStyles.Free ? 1 : 0;   // the flight style in use (ModFlight)
                 }
                 throw new Exception(string.Format(X("mpEventNoVar", "no variable \"{0}\" (set it first)."), name));
             }

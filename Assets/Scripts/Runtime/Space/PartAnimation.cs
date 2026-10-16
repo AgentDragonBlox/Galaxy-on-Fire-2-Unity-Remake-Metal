@@ -148,6 +148,12 @@ namespace GoF2Remake.Visuals
             timeMs = loopStartMs;
         }
 
+        /// <summary>The renderers' materials were swapped (Flight.WeaponTint): their fade colours are read again.</summary>
+        public void RefreshMaterials()
+        {
+            foreach (var tk in tracks) tk.initialised = false;
+        }
+
         static void InitMaterialTrack(Track tk)
         {
             if (tk.initialised) return;

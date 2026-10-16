@@ -59,6 +59,8 @@ namespace GoF2Remake.Flight
             public float fadeLeft, fadeTotal;
             /// <summary>Secondaries: the mounted stack this gun draws its ammo from (Gun+0xf4).</summary>
             public ItemStack stack;
+            /// <summary>Remake mods: the kit hardpoint's sound for this weapon (Modding.ModShipSounds), null = the weapon's own.</summary>
+            public GoF2Remake.Modding.ModShipSounds.WeaponSound modSound;
         }
 
         readonly List<Rig> rigs = new List<Rig>();
@@ -86,7 +88,8 @@ namespace GoF2Remake.Flight
             if (!r.releasing)
             {
                 r.releasing = true;
-                var (playToEnd, fadeMs) = LoopRelease.TryGetValue(r.gun.lookIndex, out var rule) ? rule : (true, 100f);
+                var (playToEnd, fadeMs) = r.modSound != null ? (false, r.modSound.releaseMs)
+                                        : LoopRelease.TryGetValue(r.gun.lookIndex, out var rule) ? rule : (true, 100f);
                 src.loop = !playToEnd;   // play to end: this pass is the last one
                 r.fadeLeft = playToEnd ? -1f : fadeMs;
                 r.fadeTotal = Mathf.Max(1f, fadeMs);
@@ -95,7 +98,7 @@ namespace GoF2Remake.Flight
             }
             if (r.fadeLeft < 0f) return;   // playing out; the fade-out itself is the clip's own tail
             r.fadeLeft -= dtMs;
-            src.volume = shotVolume * Settings.SfxVolume * Mathf.Clamp01(r.fadeLeft / r.fadeTotal);
+            src.volume = LoopVolume(r) * Mathf.Clamp01(r.fadeLeft / r.fadeTotal);
             if (r.fadeLeft <= 0f) { src.Stop(); src.loop = true; r.releasing = false; }
         }
 
@@ -233,6 +236,9 @@ namespace GoF2Remake.Flight
             // Overcharge (-10 %) gives a negative value the original skips: no change (#76).
             primaryPitch = 1f - fireRate > 0f ? Mathf.Pow(2f, 4f * (1f - fireRate)) : 1f;
             int p = 0, s = 0;
+            // Remake mods (ModHardpoints): a mount showing a kit's weapon model fires from that model's muzzle.
+            var primaryItems = Modding.ModHardpoints.WeaponItems(db, equipment, false);
+            var secondaryItems = Modding.ModHardpoints.WeaponItems(db, equipment, true);
             for (int e = 0; e < equipment.Count; e++)
             {
                 var item = db.Item(equipment[e].item);
@@ -244,6 +250,11 @@ namespace GoF2Remake.Flight
                 // Remake: more weapons than the model has mounts (a mod's or a Kaamo upgrade's extra slots) reuse the mounts in
                 // turn, the ship's centre without any; they were skipped, so an extra secondary could be neither selected nor fired.
                 var at = mounts.Count > 0 ? MountToLocal(mounts[slot % mounts.Count]) : Vector3.zero;
+                if (mounts.Count > 0)
+                {
+                    var shown = (secondary ? secondaryItems : primaryItems)[slot % mounts.Count];   // the mount's model is its first weapon's
+                    at += Modding.ModHardpoints.MuzzleOffset(shipIndex, shown, secondary, mounts[slot % mounts.Count]);
+                }
                 var gun = new Gun(item, at, secondary);
                 gun.Ignores = t => t.playerProof;   // multiplayer: through squadmates
                 if (!secondary)
@@ -278,12 +289,16 @@ namespace GoF2Remake.Flight
         Rig BuildRig(Gun gun)
         {
             var rig = new Rig { visuals = new GunRig(gun, WeaponFx.Load(gun.itemIndex), fxRoot, FirePose) };
+            rig.visuals.Tint(WeaponTint.For(Database.Shared.Item(gun.itemIndex), WeaponTint.PlayerColor()));   // the build's weapon colour
             rig.visuals.EnableTrails();   // RocketGun::setRadar: the player's rockets / missiles / thermo shots trail smoke
             var fx = rig.fx;
-            if (fx != null && fx.shotLoops && fx.shot != null)
+            // Remake mods: a kit ship's weapon model may bring its own sound (its shots, or a loop while held).
+            rig.modSound = GoF2Remake.Modding.ModShipSounds.Weapon(Session.ShipIndex, Database.Shared.Item(gun.itemIndex));
+            var ownLoop = rig.modSound?.loop?.Clip;
+            if (ownLoop != null || (rig.modSound == null && fx != null && fx.shotLoops && fx.shot != null))
             {
                 rig.loop = gameObject.AddComponent<AudioSource>();
-                rig.loop.clip = GoF2Remake.Modding.ModSounds.Get(fx.Shot);
+                rig.loop.clip = ownLoop != null ? ownLoop : GoF2Remake.Modding.ModSounds.Get(fx.Shot);
                 rig.loop.loop = true;
                 rig.loop.playOnAwake = false;
                 rig.loop.spatialBlend = 0f;
@@ -441,8 +456,12 @@ namespace GoF2Remake.Flight
                         // Held again while ending: it just carries on.
                         r.releasing = false;
                         r.loop.loop = true;
-                        r.loop.volume = shotVolume * Settings.SfxVolume;
-                        if (!r.loop.isPlaying) r.loop.Play();
+                        r.loop.volume = LoopVolume(r);
+                        if (!r.loop.isPlaying)
+                        {
+                            r.loop.Play();
+                            if (r.modSound?.shot != null) PlayShot(r);   // a mod loop's start (a beam's ignition)
+                        }
                     }
                     else if (r.loop.isPlaying || r.releasing) UpdateLoopRelease(r, Time.unscaledDeltaTime * 1000f);
                 }
@@ -514,8 +533,18 @@ namespace GoF2Remake.Flight
             if (chaseCam != null && chaseCam.enabled) chaseCam.Shake(50f, 2f);
         }
 
+        /// <summary>A shot loop's volume: the weapon's, or a mod hardpoint loop's own.</summary>
+        float LoopVolume(Rig r) => (r.modSound?.loop != null ? r.modSound.loop.vol0 : shotVolume) * Settings.SfxVolume;
+
         void PlayShot(Rig r)
         {
+            if (r.modSound?.shot is GoF2Remake.Modding.ModShipSounds.Sound own)
+            {
+                // Remake mods: the kit hardpoint's shot (one of its files, a random pitch in its range).
+                if (own.Clip is AudioClip ownClip)
+                    ShotVoices.Play(ownClip, own.vol0 * Settings.SfxVolume, own.RandomPitch * (r.gun.isSecondary ? 1f : primaryPitch));
+                return;
+            }
             var clip = r.fx != null ? r.fx.Shot : null;
             // Two voices per shot sound (FEV max_playbacks); the primaries at the weapon mod's pitch (pitchAllPrimaryGuns).
             if (clip != null) ShotVoices.Play(clip, shotVolume * Settings.SfxVolume, r.gun.isSecondary ? 1f : primaryPitch);

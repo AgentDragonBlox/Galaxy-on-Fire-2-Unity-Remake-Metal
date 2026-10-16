@@ -1201,6 +1201,14 @@
     background-color: rgba(120, 220, 255, 0.6);
 }
 
+/* Remake, free flight (FlightStyles.Free): the mouse's virtual joystick reach, a faint circle round the centre. */
+.mouse-stick {
+    display: none;
+    position: absolute;
+    border-width: 1px;
+    border-color: rgba(120, 220, 255, 0.18);
+}
+
 /* ---- remake: incoming missiles (MissileWarningView): the pulsing banner with the boost hint, a red diamond on each
    missile (off screen on the radar ellipse) -------------------------------------------------------------------------- */
 

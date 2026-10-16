@@ -118,6 +118,36 @@ namespace GoF2Remake.Multiplayer
             if (NetGame.IsServer) SetKaamoLevel(level);
         }
 
+        // ---- the flight model: a number beside the bits ----
+
+        public const string FlightKey = "flightmodel", FlightFlag = "-flightmodel",
+                            FlightLabel = "Flight model: gof2 (the game's), es2 (EVERSPACE 2 style) or player (each player's own)";
+
+        /// <summary>The server's flight model (SessionRules.ParseFlight's values; NetGame.StartHost: the game's;
+        /// DedicatedServer.Boot: -flightmodel, else the game's; an admin's /flightmodel or /set flightmodel). NetState carries
+        /// it.</summary>
+        public static int HostFlight { get; set; } = SessionRules.DefaultFlight;
+
+        /// <summary>The session's flight model (SessionRules.PlayerFlight = each player's own); false outside a session or
+        /// before NetState has arrived.</summary>
+        public static bool TryGetFlight(out int style)
+        {
+            style = SessionRules.PlayerFlight;
+            if (!NetGame.Active) return false;
+            if (NetGame.IsServer) { style = HostFlight; return true; }
+            var s = NetState.Instance;
+            if (s == null || !s.IsSpawned || !s.FlightKnown) return false;
+            style = s.FlightModel;
+            return true;
+        }
+
+        /// <summary>Server: the flight model (NetServerSettings).</summary>
+        public static void SetFlight(int style)
+        {
+            HostFlight = style == FlightStyles.Free || style == SessionRules.PlayerFlight ? style : FlightStyles.Original;
+            NetState.Instance?.SetFlightModel(HostFlight);
+        }
+
         /// <summary>The options' rows: hidden for a player in someone else's session (the host decides).</summary>
         public static bool ClientLocked => NetGame.Active && !NetGame.IsServer;
 

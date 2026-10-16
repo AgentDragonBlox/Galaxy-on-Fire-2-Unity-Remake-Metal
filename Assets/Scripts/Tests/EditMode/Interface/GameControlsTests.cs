@@ -47,12 +47,13 @@ namespace GoF2Remake.Tests
             "firePrimary", "fireSecondary", "switchSecondary", "camera", "autoTurret", "action", "autopilotMenu", "actionsMenu",
             "fastForward", "wingmen", "khadorDrive", "cloak", "timeExtender", "mouseSteering", "chat", "chatSend", "chatChannel",
             "screenshot", "multiplayerWindow", "distressCall",
+            "thrust", "strafe", "hover", "dampeners", "freeLookHold",   // free flight (PR #87)
         };
 
         [Test]
-        public void ThereAreThirtyOneFlightRows()
+        public void ThereAreThirtySixFlightRows()
         {
-            Assert.AreEqual(31, GameControls.Rows.Count);
+            Assert.AreEqual(36, GameControls.Rows.Count);
             CollectionAssert.AreEqual(RowIds, GameControls.Rows.Select(r => r.id).ToArray(), "in the options' order (the overrides are kept by action name)");
             foreach (var r in GameControls.Rows)
             {

@@ -70,6 +70,7 @@ my_mod/
   blueprints.json     blueprints for ships and items
   gameoptions.json    cards in the new game's Game options panel
   campaign.json       a whole new game under Start new game
+  exhausts.json       exhaust styles any ship can wear (the hangar's Customize screen)
   systems.json, stations.json, interiors.json   new star systems, stations, hangars and bars
   characters.json     speakers with portraits
   events/*.gof2event  quests and bar missions as Unity event graphs
@@ -93,7 +94,9 @@ my_mod/
 }
 ```
 
-`id` is required; `name`/`description` can be per language; `preview` defaults to `preview.png`.
+`id` is required; `name`/`description` can be per language; `preview` defaults to `preview.png`. Optional `"multiplayerIgnore": ["parts/", "maps/", "icons/", "preview.png"]`: files multiplayer doesn't compare (models,
+textures, icons; "folder/" or `*` patterns), so a phone build with lighter models and textures under the same names plays with
+the PC build. Root `.json` files, `events/` and mod.json's id / version / dependencies always count.
 
 ## items.json
 
@@ -140,7 +143,11 @@ cloak based on 94-96 whose ship passes through asteroids, stations, gates, ships
 missiles 105 (1 = a gun's or turret's shots are homing missiles: a turret's home on its target, else on the scanner lock;
 smoke trail, rocket burst; not for beams, bombs, mines or cluster missiles), salvoShots 106 (shots side by side per trigger),
 salvoCount 107 (salvos per magazine, then reloadMs), salvoGapMs 108 (ms between them), turretRange 109 (auto turret search
-range, units, default 60000).
+range, units, default 60000), flightScope
+110 (the item's booster / nozzle stats count in 0 both flight styles, 1 the original only, 2 free flight only), topSpeed 111,
+turnRate 112, strafeSpeed 113 (% bonuses, both styles), originalTopSpeed 114, originalTurnRate 115, originalStrafeSpeed 116,
+freeTopSpeed 117, freeTurnRate 118, freeStrafeSpeed 119, freeAcceleration 120, freeBoostFactor 121 (free flight's boost, 350 =
+x3.5; default the booster's original boost speed x 3.2 / 3). See Flight styles.
 items.json's own names (`loadingTimeMs`, `range`, `projectileSpeed`...) work too. An unknown stat name is an error.
 
 ### Weapon fx
@@ -207,18 +214,24 @@ stays a beam) except through the stats above.
 | `modelLength`, `modelYaw` | Nose-to-tail length in game units (Phantom ~1000); yaw degrees if the nose isn't +Z. |
 | `icon` | Shop icon PNG 180 x 88, or a game icon `"gof2:ship_028"` (items: `"gof2:item_046"`). Default: the Phantom's (a game model: its ship's). |
 | `hangarHeight` | Pivot height above the hangar pad (originals 140-400). |
-| `mounts` | Game units from the ship centre (x the pilot's left, y up, z forward). `slotType` 0 primary, 1 secondary, 2 turret (`turretUp` [x, y, z]: the way its base faces, default [0, 1, 0]; [0, -1, 0] under the hull (= `upsideDown`), [±1, 0, 0] the sides, [0, 0, 1] the nose, any slant), 3 engine exhaust (`turretAngles[0]` particle size, `glowColor` [r,g,b], `glowSize` [halfW, halfH, length]). Give each gun slot its own mount where possible (the originals do). |
+| `mounts` | Game units from the ship centre (x right, y up, z forward). `slotType` 0 primary, 1 secondary, 2 turret (`upsideDown`; `builtIn`: no game turret model, the turret item fires from the point), 3 engine exhaust (`turretAngles[0]` particle size, `glowColor` [r,g,b], `glowSize` [halfW, halfH, length]), 4 manoeuvring jet (`direction` [x,y,z], the way it blows: fires when the ship strafes, rises, sinks or reverses against it). Give each gun slot its own mount where possible (the originals do). |
 | `engineGlowRadius`, `engineGlowColor` | Flame size (default 24) / colour for all exhausts. |
-| `materials` | Replace materials: entries `{ "mesh", "submesh", "diffuse", "color", "normal", "normalScale", "metallicSmoothness", "metallic", "smoothness", "emission", "emissionColor", "emissionIntensity", "alphaClip", "opacity", "detailAlbedo", "detailNormal", "detailTiling", "detailNormalScale", "doubleSided" }`. Without it the GLB's own materials are used. |
+| `materials` | Replace materials: entries `{ "mesh", "submesh", "diffuse", "color", "normal", "normalScale", "metallicSmoothness", "metallic", "smoothness", "emission", "emissionColor", "emissionIntensity", "alphaClip", "opacity", "detailAlbedo", "detailNormal", "detailTiling", "detailNormalScale", "doubleSided", "engine" (true: glows only while the engines run, dark parked in a hangar), "boost" (true: glows only while boosting), "damageEmission" (mask PNG: embers glowing with hull damage), "damageDetail" / "damageNormal" (charring detail colour with mask alpha, and normals, blended in with hull damage), "shimmer" (true: additive layer over the nozzle glow, emission pattern x scrolling flameNoise), "hologram" (true: additive rings whose emission pattern turns and which bob; UV2 x = spin -1..1, y = 1 - bob share), "flame" (true: engine flame cards, UV u 0 at the nozzle to 1 at the tip, stretched backward with the throttle; colour = emissionColor x emissionIntensity), "flameLength" (model units at full throttle, 5), "flameIdle" (share at idle, 0.15), "boostColor", "flameNoise" (tiling grey PNG); a second UV channel x 0..1 across each card softens its edges, its y the kind: 0.5 a main card (the engine colour, edge-on cards fade), 0.25 a boost card (only while boosting, in boostColor); a ship with flames gets no glow discs or exhaust particles; "engine" materials dim at idle, full at full throttle }`. Without it the GLB's own materials are used. |
 | `throttleGlow`, `extraGlows` | Hull parts glowing with the throttle: `{ "mask", "mesh", "submesh", "color", "idle", "full", "boost", "offset", "trailWidth", "trailTime", "trailBrightness", "trailCount" }`. |
+| `engineFx` | A Galaxy on Fire 3 style engine effect at every exhaust instead of the flame and particles: `{ "glow", "glowSize": [square, streakW, streakH], "glowIntensity", "cone", "coneLength", "coneWidth", "coneIntensity", "trail", "trailCount", "trailLength", "trailWidth", "trailWander", "trailTime", "trailIntensity", "spiral", "spiralCount", "spiralLength", "spiralRadius": [nozzle, end], "spiralWidth", "spiralTurns", "spiralSpin", "spiralScroll", "spiralRepeat", "spiralIntensity", "color", "flareColor", "coneColor", "trailColor", "spiralColor" }` (additive PNGs, tinted by the part's colour, else each exhaust's `glowColor`; game units; the spiral is a helix of strands with the picture along them); an exhaust mount may add `"fxScale"` and `"rotation"`. |
 | `lounge` | A Space Lounge visitor sells it: systemRace (-1 any), minCampaign (story step), minRank (free play), chance %. |
 | `npcTurrets` | Also in an override: turret items (numbers or "mod:id") the NPC ships of this type carry on its turret mounts (n-th item on n-th slotType-2 mount); they aim and fire by themselves, and show in hangars. 45 / 51 swap their built-in turret for them. |
 | `dealer` | Ordinary ship dealers stock it: chance % (decimals ok) per dealer list, systemRace, minTechLevel. Not the special yards. |
-| `available` | Condition before dealers / lounges sell it. |
+| `traffic` | `{ "weight": 1, "races": [8] }`: NPC fighters of those races (default its `race`) fly it at the "Mod ships in traffic" option's chance (default 25 %), weighted; `weight` 0 = never. Ships over 150 m never. Hull / guns stay the game's fighter's. A kit ship's NPCs fly random builds (parts, tier, colours, skin); `"randomBuild": false` = its default build. |
+| `available` | Condition before dealers / lounges sell it (and NPCs fly it). |
+| `flightStyle` | `"free"` / `"original"`: the ship always flies so (default the player's option). |
+| `kit`, `kitType`, `build` | A customizable ship instead of `model` (see shipkits.json). |
+| `sounds` | The ship's own sounds (new ships and overrides): `{ "engine", "boostStart", "boostLoop", "boostStop", "charger" }`, each a file, a list of files (random) or `{ "file" / "files", "volume": v or [from, to], "pitch": v or [from, to] }`. Loops go from the first value to the second along: engine standstill -> top speed, boostLoop boost start -> full, charger empty -> full; one-shots (boostStart / Stop) take a random pitch in the range. Files anywhere in the mod but not sounds/. The game's volumes: engine ~0.27, booster start 0.8, shots 0.7. Also played by NPCs flying the ship and other players' copies. |
+| `flight` | % bonuses `{ "topSpeed", "turnRate", "strafeSpeed", "acceleration" (free only), "boostFactor" (free, 350 = x3.5), "original": {...}, "free": {...} }`. |
 
 `override` changes an original (number) or another mod's ship (key) in both economies (only the price has a Default twin,
 `priceDefault`): armor, cargo, price, priceDefault, slots, handling, name,
-description, `mounts` (mod ships also race, hangarHeight), and an original can get a new `model` (+ its fields). `slots` merges
+description, `mounts`, `flightStyle`, `flight`, `sounds` (mod ships also race, hangarHeight), and an original can get a new `model` (+ its fields). `slots` merges
 (give only the changed counts); `mounts` replaces the ship's whole list (exhausts too). More weapon slots than gun mounts: the
 extra weapons share the mounts; fewer slots: what doesn't fit goes to the hold on the next docking.
 
@@ -269,6 +282,58 @@ Found blueprints come in a data container the tractor beam pulls in. Sources sto
 Useful ingredients (see reference.md): 122 Energy Cells, 127 Microchips, 154 Gold, 155 Titanium, 157 Orichalzine, 165 Golden
 Core, 114 Explosives, 118 Electronics.
 
+## shipkits.json (customizable ships)
+
+The in-game Mod Builder has a **Ship kits** kind for these (slots, parts, their hardpoints and stats, paint slots); its MCP
+tools read and write them as entry kind `kits`. A kit with an empty `parts` list is skipped with a warning.
+
+Ships built from parts the player swaps in the hangar's Customize ship screen (EVERSPACE 2-style modules).
+`[ { "id": "medium", "slots": ["body","rear","cockpit","wings"], "scale": 1.0 (Unity m per model unit; one for the whole kit),
+"yaw": 0, "materials": [...], "parts": [ { "id": "reaver", "slot": "wings", "name": "Reaver", "model": "parts/w.glb",
+"types": ["sentinel"] (ship types allowed; none = all), "tiers": ["parts/w_t1.glb", ...] (extension meshes per tier),
+"mounts": [ ...like a ship's mounts... ], "tierMounts": [ [ ... ], ... ] } ] } ]` (a build uses its parts' mounts per slot type,
+the ship's own only for a type no part has; turret mounts with `"builtIn": true` take the turret item's gun and stats but no turret model, for parts whose mesh has the turret). A kit's `"hardpoints": { "turret": "x.glb" (nodes `pivot`, a `...gun` under it, optional `muzzle`; shown on `builtIn` mounts), "weapons": [ { "slot": "primary" | "secondary" | "turret", "model": "y.glb" ("" = none), "items": [numbers or "mod:id"], "categories": [numbers], "sound": { "shot": S, "loop": S, "release": ms } } ] }` shows the mounted weapons and turret as models (first matching rule per slot, one without filters = the default; a rule's optional `sound` replaces the weapon's sound on these ships: `shot` per shot (random file / pitch range), `loop` while held (a beam; `shot` then once at the start, faded out over `release` ms); S as in ships.json `sounds`; a `muzzle` node is where the shots leave; a turret weapon's muzzle lands on the turret's; a turret without `muzzle` carries the weapon on its `gun` node and fires from the weapon's muzzle). A primary / secondary mount may carry `"rotation"` (Euler degrees `[x, y, z]` or quaternion `[x, y, z, w]`, ship frame x right, y up, z forward) turning its weapon model; shots still fly along the nose; `"nodes": ["<model node name>"]` on such a mount shows those parts of the ship's model (its pylon) only while the mount carries a weapon. A kit ship's hangar height is measured from its build (lowest point incl. weapon models + 1.5 m); `hangarHeight` is ignored for it. Parts may also carry `"stats": { "armor", "cargo", "handling" (% of the ship's),
+"equipment" (slots), "topSpeed", "turnRate", "acceleration", "strafeSpeed" (%) }` and `"slots": { "primary", "secondary",
+"turret" }`: a build sums them (slots per type: its parts' sum, else the ship's); the tier is cosmetic.
+All parts share one origin (export in place). A ship in ships.json uses `"kit": "medium"` instead of `"model"`, with
+`"kitType": "sentinel"` (required) and `"build": { "wings": "reaver", "body": "body_a", "tier": 1 }` (the default: dealers'
+and NPCs'; missing slots take the first allowed part). The player's build is
+saved per ship type and shown in the hangar and in flight; changing it is free. Colours (optional, in the kit):
+`"palettes": { "main": [ { "id", "name", "color": "#RRGGBB", "metallic", "smoothness" } ] }`, `"colorSlots": [ { "id", "name",
+"palette", "default", "targets": [ { "material": "<name contains>", "property": "base"|"emission"|"boost"|"engine", "intensity" } ] } ]` (boost = a flame's boost colour; the manoeuvring jets' material is "lateral thruster"); a strength slot `{ "id", "name", "steps": [0..1 numbers], "default": "0.5", "scales": "<colour slot id>" }` (no palette) scales that slot's emission,
+`"presets": [ { "id", "name", "colors": { "<slot>": "<palette id or #RRGGBB/metallic/smoothness>" } } ]`; a ship's build may
+carry `"colors": { ... }`. Give separately paintable areas their own materials in the model.
+Skins (optional, in the kit): texture paint jobs, a Skin row in Customize ("Standard" = the model's own):
+`"skins": [ { "id" (not "none"), "name", "types": [ship types; none = all], "engineColor": [r, g, b] (optional, every
+exhaust's glow), "materials": [ { "material": "<model material name contains>", "diffuse", "emission", "metallicSmoothness"
+(URP layout: R metallic, A smoothness), "normal" (PNG / JPG paths), "color", "emissionColor" ([r, g, b]), "emissionIntensity" } ] } ]`;
+fields left out keep the model's own, no stats change; a build may carry `"skin": "<id>"`.
+Any other ship (an original's "override", or a new ship without "kit") may carry `"skins"` (as above, no "types"; materials by the ship's own material names, e.g. "ship_010_terran_diffuse" for the Phantom's hull) and / or `"weaponColors"` (palette list or true): it then gets the Customize screen with Skin and Weapon colour rows; saved per ship; engineColor works only on kit ships.
+Every kit ship also gets a Weapon colour row (energy weapons and energy-bolt turrets' shots, flashes, impacts; "Original" = their
+own): the game's colour list, or the kit's palette `"weapons"`; a build may carry `"weaponColor": "<palette id or #RRGGBB>"`.
+
+## exhausts.json (exhaust styles for every ship)
+
+`[ { "id", "name", "engineFx": { ...as ships.json engineFx } | "model": "exhausts/x.glb" + "materials": [ { "material": "...",
+"flame": true, ... } ] + "yaw", "nozzle" (radius the effect is made for: game units for engineFx, default its coneWidth; model
+units for a model, default 1), "palette": [ { "id", "name", "color": "#RRGGBB" } ], "mainName", "secondName" } ]`. A flame model:
+origin at the nozzle exit, flame along -Z. Any ship (the game's too) then has a Customize screen with Exhaust ("Ship's own" or a
+style) and its two colours (engineFx: flare+cone / trails+helix; model: flame / boost cards); each exhaust scaled by its nozzle
+against "nozzle" by its nozzle's mean radius, its cross-section bent to the nozzle's outline (a mount's `"outline": [x0, y0, ...]`
+game units around it; else meshes with "nozzle" in a material name; else glowSize as an oval; game ships measured) and the
+player's Exhaust size (0.5-2); the model's own exhaust hidden; a flame model's boost cards only on its own
+mod's ships (elsewhere the boost recolours the main flame). Builds: `"exhaust": "mod_id:id"`, `"exhaustColor"`, `"exhaustColor2"`,
+`"exhaustSize"`.
+
+## Flight styles
+
+Two ways to fly: the **original** (throttle, always forward) and **free flight** (the EVERSPACE 2-style option: held thrust /
+strafe / up-down, held boost, dampeners). Mods pick per content: item stats 105-116 (above; bonuses add up over the ship and
+every mounted item, never below -90 %; an item's freeBoostFactor beats the ship's), ships' `flightStyle` / `flight`, and
+`flightStyle` in campaign.json and gameoptions.json. Who decides, first match: an event (Set Flight Model, `/flightstyle`),
+the ship flown, the mod campaign, a new-game option that is on, the player's option. Touch, tilt and VR always fly the
+original. The original has no acceleration (the throttle is at once); its top speed bonus scales the boost too.
+
 ## gameoptions.json
 
 Cards in Start new game's **Game options** panel, each a switch saved with the game; content asks for it with `option(...)`.
@@ -283,6 +348,7 @@ Cards in Start new game's **Game options** panel, each a switch saved with the g
 `id` required. `image` is card art like the game's campaign cards: **290 x 448** or a multiple (580 x 896), portrait; cropped
 to the card. `showTitle` false when the art carries its own title (else a name plate is drawn at the foot). `default` is the
 first-time position and what multiplayer uses. A game started before the mod was installed has the option off.
+`"flightStyle": "free" | "original"`: while the option is on, the game flies so.
 
 ## Conditions
 
@@ -317,7 +383,7 @@ A whole new game under Start new game, shown as a card next to the three campaig
 
 `startStation` and `startShip` required. `image` 290 x 448 card art. `standing` = [Terran/Vossk, Nivelian/Midorian] -100..100
 (default [30, 0]). `galaxy`/`items`/`ships` `"mod"` limit the game to mods' content. `quest` = an event graph started with
-the game.
+the game. `"flightStyle": "free" | "original"`: the campaign's games always fly so.
 
 ## systems.json, stations.json
 
@@ -417,7 +483,8 @@ to the mod's `events/` folder; the file name is the graph's name. The Start node
 Nodes include Dialog, Radio, Spawn (named ships), Wait / Wait Until, On (docked, entered orbit, destroyed, cleared, near a
 point), Set Waypoint, Set Objective, Checkpoint, Quest Orbit, Give Item, Reward, Mission Complete / Failed, Start Quest, ship
 orders (Fly To, Fly Route, Follow, Attack, Ship Action), cutscene nodes (Start Cutscene, Camera Shot, Fade, End Cutscene),
-Play Music. A Checkpoint (and a quest's start) is kept by the game's next save: the auto-save at the next docking or a manual
+Play Music, Set Flight Model (free flight / original / the player's choice, undone at the graph's end; expression
+`freeflight` = 1 in free flight). A Checkpoint (and a quest's start) is kept by the game's next save: the auto-save at the next docking or a manual
 save; a quest started while docked isn't in that docking's auto-save. Quest Orbit takes effect the next time the orbit is built
 (launching from its station counts). You can't write the file; describe the graph as an ordered list of nodes with their settings and wires for the
 user to build, using the exact node, option and port names (and option choices) from `events.md`.

@@ -71,18 +71,19 @@ namespace GoF2Remake.Flight
         /// <summary>Multiplayer (NetPlayer): the exhaust of another player's ship 'model', driven by their game's engine state
         /// (on: the engine glow shows), boost (0..1) and cloak (0..100).</summary>
         /// 'scaled': the plume shrinks with the ship's own scale (the hangar flights shrink a ship to nothing at the view's edge).
+        /// 'mounts': the exhaust mounts the model shows (another player's kit ship build), null = Database.MountsOf's.
         public static ShipExhaust AttachRemote(GameObject host, Database db, Transform model, int shipIndex, Func<bool> on, Func<float> boost, Func<float> cloak,
-                                               bool scaled = false)
+                                               bool scaled = false, System.Collections.Generic.IList<WeaponMount> mounts = null)
         {
             var e = host.AddComponent<ShipExhaust>();
             e.remoteOn = on;
             e.remoteBoost = boost;
             e.remoteCloak = cloak;
-            e.Setup(db, model, shipIndex, scaled);
+            e.Setup(db, model, shipIndex, scaled, mounts);
             return e;
         }
 
-        void Setup(Database db, Transform parent, int shipIndex, bool scaled = false)
+        void Setup(Database db, Transform parent, int shipIndex, bool scaled = false, System.Collections.Generic.IList<WeaponMount> mounts = null)
         {
             var mat = ExhaustMaterial(CombatAssets.Load()?.particlesMaterial);
             int value = shipIndex >= 0 && shipIndex < ShipCell.Length ? ShipCell[shipIndex] : 0;
@@ -90,7 +91,10 @@ namespace GoF2Remake.Flight
             var asm = parent.GetComponent<Visuals.AssembledObject>();
             if (asm != null && asm.playerVariantParts != null && asm.playerVariantParts.Length > 0) glow = asm.playerVariantParts[0];
             var custom = CustomShips.Get(shipIndex);
-            foreach (var m in db.MountsOf(shipIndex, 3))
+            // A mod ship with its own engine flames (Modding.EngineFlame: EVERSPACE 2's) or Galaxy on Fire 3's engine effect
+            // (Modding.EngineFx) has no particle plume.
+            bool flames = parent.GetComponentInChildren<Modding.EngineFlame>(true) != null || parent.GetComponentInChildren<Modding.EngineFx>(true) != null;
+            foreach (var m in flames ? new WeaponMount[0] : mounts ?? db.MountsOf(shipIndex, 3))
             {
                 var want = m.glowColor != null && m.glowColor.Length >= 3 ? m.glowColor : custom?.engineGlowColor;
                 int mountCell = cell;
@@ -276,7 +280,8 @@ namespace GoF2Remake.Flight
                 if (health == null) health = GetComponent<PlayerHealth>();
                 // Only ships with a cloak have one: looked for twice a second, not every frame (added later by a debug mount).
                 if (cloak == null && Time.frameCount >= nextCloakLook) { cloak = GetComponent<PlayerCloak>(); nextCloakLook = Time.frameCount + 30; }
-                want = (glow == null || glow.activeInHierarchy) && (health == null || !health.Dead)
+                // Free flight with no forward thrust held: the engines are off (FlightModel.EnginesOff).
+                want = (glow == null || glow.activeInHierarchy) && (health == null || !health.Dead) && (ship.Model == null || !ship.Model.EnginesOff)
                        && (ship.visualModel == null || ship.visualModel.gameObject.activeInHierarchy);
             }
             if (want != on)

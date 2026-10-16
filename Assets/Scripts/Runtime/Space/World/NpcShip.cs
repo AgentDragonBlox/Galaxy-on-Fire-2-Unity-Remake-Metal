@@ -449,7 +449,14 @@ namespace GoF2Remake.World
             engine.loop = true;
             engine.clip = GoF2Remake.Modding.ModSounds.Get(assets == null || spec.fixedObject != null || spec.turretAssembly != null || spec.ship == 14 ? null
                         : CombatAssets.Pick(spec.freighter ? assets.freighterEngines : assets.enemyEngines));
-            EngineVoices.Register(engine, spec.freighter ? 47 : 46, (spec.freighter ? 0.195f : 0.0759f) * Sfx.EventGain);   // event volumes 47 / 46
+            float engineVolume = (spec.freighter ? 0.195f : 0.0759f) * Sfx.EventGain;   // event volumes 47 / 46
+            // Remake mods: a mod ship's own engine loop (ModShipSounds), at its volume near top speed.
+            if (engine.clip != null && !spec.freighter && GoF2Remake.Modding.ModShipSounds.EngineClip(spec.ship, 0.8f, out float ownVolume) is AudioClip ownEngine)
+            {
+                engine.clip = ownEngine;
+                engineVolume = ownVolume;
+            }
+            EngineVoices.Register(engine, spec.freighter ? 47 : 46, engineVolume);
             if (engine.clip != null) engine.Play();
 
             if (spec.startsDead) SetDead();

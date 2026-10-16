@@ -466,6 +466,7 @@ player, `@r` a random one, `@alive`, `@space`, `@docked`, `@dead`, `@survivors`,
 | `/cheat [players] <god \| ammo \| cooldown \| primary \| boost \| onehit \| locks \| shopping \| jumps> [on \| off]` | A cheat for those players, this session only. |
 | `/title`, `/timer`, `/dialog`, `/reward`, `/radio`, `/sound`, `/music` | Titles, countdowns, conversations, rewards and sound (mostly for events). |
 | `/event <name \| stop \| list>` | Run an event graph. |
+| `/flightmodel [gof2 \| es2 \| player]` | The flight model everyone flies: `gof2` (the game's, the default), `es2` (EVERSPACE 2 style) or `player` (each player's own Options choice). One model for everyone keeps PvP fair. No argument shows it. |
 
 ## What works differently from single player
 

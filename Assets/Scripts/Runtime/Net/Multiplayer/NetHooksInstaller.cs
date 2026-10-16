@@ -54,12 +54,17 @@ namespace GoF2Remake.Multiplayer
             GameHooks.RuleChangedByHost = NetRules.HostChanged;
             GameHooks.SessionKaamoLevel = NetRules.TryGetKaamoLevel;
             GameHooks.KaamoLevelChangedByHost = NetRules.HostKaamoLevelChanged;
+            GameHooks.SessionFlightStyle = NetRules.TryGetFlight;
+            GameHooks.EventFlightStyle = () => Events.EventFlight.Forced;   // PR #87: the Set Flight Model node, /flightstyle
 
             InstallSpace();
         }
 
         static void InstallSpace()
         {
+            SpaceHooks.GuestAssembly = NetHangar.GuestAssembly;   // PR #87: guests' customizable ships
+            SpaceHooks.GuestShipY = NetHangar.GuestShipY;
+            SpaceHooks.GuestBuild = NetHangar.GuestBuild;
             SpaceHooks.PeersProvider = () => NetPlayer.All;
             SpaceHooks.LocalPeerProvider = () => NetPlayer.Local;
             SpaceHooks.ProxiesProvider = () => Object.FindObjectsByType<NetProxy>();

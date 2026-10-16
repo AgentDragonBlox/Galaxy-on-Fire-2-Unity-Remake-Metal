@@ -31,6 +31,14 @@ namespace GoF2Remake.Modding
             // salvoGapMs fire several shots at once and several salvos per reload (Gun.TryFire); turretRange is how far an
             // auto turret looks for a target (PlayerTurret.PickTarget).
             ["missiles"] = 105, ["salvoShots"] = 106, ["salvoCount"] = 107, ["salvoGapMs"] = 108, ["turretRange"] = 109,
+            // The flight (Modding.ModFlight, Database.BuildFlightStats): flightScope keeps a booster's / Steering Nozzle's
+            // attributes (25-28) to one flight style (0 both, 1 the original only, 2 free flight only); the bonuses are
+            // percentages (20 = +20 %) for both styles, the original only or free flight only; freeBoostFactor = free
+            // flight's boost top speed in hundredths of the top speed (350 = x3.5) instead of the booster's.
+            ["flightScope"] = 110, ["topSpeed"] = 111, ["turnRate"] = 112, ["strafeSpeed"] = 113,
+            ["originalTopSpeed"] = 114, ["originalTurnRate"] = 115, ["originalStrafeSpeed"] = 116,
+            ["freeTopSpeed"] = 117, ["freeTurnRate"] = 118, ["freeStrafeSpeed"] = 119, ["freeAcceleration"] = 120,
+            ["freeBoostFactor"] = 121,
             // items.json's statList names
             ["steerable"] = 15, ["handling"] = 17,
             ["loadingTimeMs"] = 11, ["range"] = 12, ["projectileSpeed"] = 13, ["magnitude"] = 14, ["shieldRegenTime"] = 19,

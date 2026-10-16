@@ -91,7 +91,7 @@ namespace GoF2Remake.Data
         }
 
         /// <summary>Ship::getBaseHP: the hull (+40 per mod 0).</summary>
-        public static int BaseHp(Database db) => (db.Ship(Session.ShipIndex)?.armor ?? 0) + 40 * Session.ModLevel(0);
+        public static int BaseHp(Database db) => Modding.KitRules.Armor(db.Ship(Session.ShipIndex), 0) + 40 * Session.ModLevel(0);   // a kit ship's build too
 
         /// <summary>Ship::getCombinedHP: the hull + the shield (attr 18) + the armor (attr 20).</summary>
         public static int CombinedHp(Database db)
@@ -105,7 +105,7 @@ namespace GoF2Remake.Data
         /// compression (attr 22, category 12) % / 100).</summary>
         public static int MaxLoad(Database db)
         {
-            int b = (db.Ship(Session.ShipIndex)?.cargo ?? 0) + 30 * Session.ModLevel(1), pct = 0;
+            int b = Modding.KitRules.Cargo(db.Ship(Session.ShipIndex), 0) + 30 * Session.ModLevel(1), pct = 0;   // a kit ship's build too
             foreach (var e in Session.Equipment) { var it = db.Item(e.item); if (it != null && it.categoryId == 12) pct += it.Attr(22); }
             return b + (int)(b * pct / 100f);
         }

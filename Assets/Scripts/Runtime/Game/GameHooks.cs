@@ -67,6 +67,21 @@ namespace GoF2Remake.Data
         public static NumberQuery SessionKaamoLevel;
         /// <summary>A player host changed the Kaamo upgrade limit (NetRules.HostKaamoLevelChanged).</summary>
         public static Action<int> KaamoLevelChangedByHost;
+        /// <summary>The session's flight model (NetRules.TryGetFlight: FlightStyles.Original / Free, SessionRules.PlayerFlight);
+        /// false = no session, the player's own option.</summary>
+        public static NumberQuery SessionFlightStyle;
+
+        // ---- remake mods: customizable ships and flight styles (PR #87; ModShipKits / ModShipSounds in GoF2.Space) ----------
+        /// <summary>A customizable ship's build effect (ModShipKits.BuildEffect), null = not a kit ship.</summary>
+        public static Func<int, Modding.KitEffect> KitBuildEffect;
+        /// <summary>A kit ship's mounts of a slot type in its build (ModShipKits.BuildMounts), null = not a kit ship.</summary>
+        public static Func<int, int, List<WeaponMount>> KitMounts;
+        /// <summary>A ships.json entry's "sounds" parsed (ModShipSounds.ParseShip), null without one.</summary>
+        public static Func<Newtonsoft.Json.Linq.JObject, Modding.ModInfo, string, object> ParseShipSounds;
+        /// <summary>A ships.json "build" object as build text (ModShipKits.Build).</summary>
+        public static Func<Newtonsoft.Json.Linq.JObject, string> KitBuildText;
+        /// <summary>The flight style an event sets (Events.EventFlight.Forced), -1 = none.</summary>
+        public static Func<int> EventFlightStyle;
 
         // ---- the flight (GoF2.Space) ---------------------------------------------------------------------------------
 

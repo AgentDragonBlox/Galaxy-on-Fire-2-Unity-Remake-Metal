@@ -36,6 +36,8 @@ namespace GoF2Remake.Events
     public enum EventPlayersWho { Everyone, AliveInSpace, InSpace, Docked, Destroyed, Survivors, RandomOne }
     /// <summary>The Fade node: to the colour (held), from it, or gone at once.</summary>
     public enum EventFade { Out, In, Clear }
+    /// <summary>The Set Flight Model node (/flightstyle): free flight, the original, or the player's own option again.</summary>
+    public enum EventFlightModel { FreeFlight, Original, PlayersChoice }
     /// <summary>What a ship does when its Fly To / Fly Route order is done (NpcOrder.Then).</summary>
     public enum EventShipThen { Resume, Hold, Vanish, JumpOut }
     /// <summary>The Ship Action node.</summary>
@@ -665,6 +667,12 @@ namespace GoF2Remake.Events
                     case "EventClearRespawnNode":
                         Line(Join("respawn", Text(n, "Players"), "off"));
                         break;
+                    case "EventFlightModelNode":
+                    {
+                        var model = (EventFlightModel)Int(n, "Model");
+                        Line(Join("flightstyle", Text(n, "Players"), model == EventFlightModel.FreeFlight ? "free" : model == EventFlightModel.Original ? "original" : "player"));
+                        break;
+                    }
                     case "EventRestrictTravelNode":
                     {
                         bool jumps = Bool(n, "NoJumps"), docking = Bool(n, "NoDocking");

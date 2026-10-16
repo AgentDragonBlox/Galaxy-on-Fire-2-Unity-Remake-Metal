@@ -26,6 +26,7 @@
 // instead (NetHangar).
 
 using System.Collections.Generic;
+using System.Linq;
 using GoF2Remake.Data;
 using GoF2Remake.Flight;
 using GoF2Remake.UI;
@@ -88,6 +89,8 @@ namespace GoF2Remake.Multiplayer
         readonly NetworkVariable<bool> siegeRun = new NetworkVariable<bool>(false, Read, Write);   // KaamoSiege: builds the siege here
         readonly NetworkVariable<bool> atObject = new NetworkVariable<bool>(false, Read, Write);   // docked at an object (ObjectDocking)
         readonly NetworkVariable<int> turretItem = new NetworkVariable<int>(-1, Read, Write);   // the mounted turrets (PackTurrets)
+        readonly NetworkVariable<FixedString128Bytes> weapons = new NetworkVariable<FixedString128Bytes>(default, Read, Write);   // primaries | secondaries (PackWeapons)
+        readonly NetworkVariable<FixedString512Bytes> build = new NetworkVariable<FixedString512Bytes>(default, Read, Write);   // a kit ship's build (BuildText)
         readonly NetworkVariable<bool> hangarRun = new NetworkVariable<bool>(false, Read, Write);   // runs its hangar's NPC ships (NetHangar)
         readonly NetworkVariable<bool> arrivedFlying = new NetworkVariable<bool>(false, Read, Write);   // docked by flying in (StationLevel)
         readonly NetworkVariable<int> miningAsteroid = new NetworkVariable<int>(-1, Read, Write);   // drilling this asteroid (NetOrbit index)
@@ -149,6 +152,49 @@ namespace GoF2Remake.Multiplayer
             if (packed < 0) return new int[0];
             int first = packed & 0xffff, second = ((packed >> 16) & 0x7fff) - 1;
             return second >= 0 ? new[] { first, second } : new[] { first };
+        }
+
+        /// <summary>The mounted primary and secondary weapons, "p,p|s,s" (PackWeapons): a kit ship shows them as models
+        /// (Modding.ModHardpoints), on its model in space and in the hangar (NetHangar).</summary>
+        public string Weapons => weapons.Value.ToString();
+
+        /// <summary>The build of this player's customizable ship (Modding.ModShipKits: parts, tier, colours, the save's text),
+        /// "" = not a kit ship or its default build; the others show their ship so (its parts load on demand).</summary>
+        public string BuildText => build.Value.ToString();
+
+        /// <summary>This player's ship build as the others' games show it (normalized; the default for "" or unknown parts),
+        /// null = no kit ship.</summary>
+        public Modding.ModShipKits.Build ShownBuild => Modding.ModShipKits.RemoteBuild(ship.Value, BuildText);
+
+        /// <summary>The local player's build text to share: their kit ship's build, "" for another ship (or a text past the
+        /// variable's 512 bytes: the default build shows then).</summary>
+        static string LocalBuildText()
+        {
+            if (Modding.ModShipKits.CustomizationOf(Session.ShipIndex) == null) return "";
+            string text = Modding.ModShipKits.PlayerBuild(Session.ShipIndex)?.ToString() ?? "";
+            return System.Text.Encoding.UTF8.GetByteCount(text) <= 500 ? text : "";
+        }
+
+        /// <summary>The primary and secondary weapon items of 'equipment' in their order (at most 12 of each, within the
+        /// variable's 128 bytes); "" = none.</summary>
+        public static string PackWeapons(Database db, System.Collections.Generic.IList<ItemStack> equipment)
+        {
+            string List(bool secondary) => string.Join(",", Modding.ModHardpoints.WeaponItems(db, equipment, secondary).Take(12).Select(i => i.index));
+            string text = List(false) + "|" + List(true);
+            if (text == "|") return "";
+            if (text.Length > 120) text = text.Substring(0, text.LastIndexOf(',', 120));   // never a cut number
+            return text;
+        }
+
+        /// <summary>PackWeapons' text as equipment stacks (unknown or unreadable numbers left out).</summary>
+        public static System.Collections.Generic.List<ItemStack> WeaponStacks(Database db, string packed)
+        {
+            var list = new System.Collections.Generic.List<ItemStack>();
+            if (string.IsNullOrEmpty(packed) || db == null) return list;
+            foreach (var part in packed.Split('|', ','))
+                if (int.TryParse(part, out int n) && db.Item(n) is ItemData it && (it.type == "primary" || it.type == "secondary"))
+                    list.Add(new ItemStack(n, 1));
+            return list;
         }
 
         /// <summary>The packed turret items as equipment stacks (PlayerTurret.BuildStatic).</summary>
@@ -269,6 +315,8 @@ namespace GoF2Remake.Multiplayer
             position.OnValueChanged += (_, p) => smoothing.Push(p);
             ship.OnValueChanged += (_, s) => BuildModel(s);
             turretItem.OnValueChanged += (_, _) => BuildTurret();
+            weapons.OnValueChanged += (_, _) => BuildTurret();
+            build.OnValueChanged += (_, _) => BuildModel(ship.Value);
             smoothing.Push(position.Value);
 
             target = gameObject.AddComponent<Target>();
@@ -285,7 +333,7 @@ namespace GoF2Remake.Multiplayer
             Target.NetShips.Add(target);
             obstacle = gameObject.AddComponent<Obstacle>();
             obstacle.projectFromVolume = false;
-            mirror = new NetShotMirror(transform, () => target, ThroughSquad);
+            mirror = new NetShotMirror(transform, () => target, ThroughSquad, () => WeaponTint.ShipColor(ship.Value, ShownBuild), () => ship.Value);
             BuildModel(ship.Value);
             // A mod's ship: this player can arrive before the session's mods are on and their models built (NetMods); the
             // model is built again then.
@@ -325,16 +373,21 @@ namespace GoF2Remake.Multiplayer
             ownSparks?.Clear();
         }
 
-        GameObject turretModel;
+        GameObject turretModel, weaponModels;
         static bool testDocked;
 
-        /// <summary>The mounted turret on the model (CutScene::checkForTurret's static turret: the shots are mirrored).</summary>
+        /// <summary>The mounted turret on the model (CutScene::checkForTurret's static turret: the shots are mirrored), and a
+        /// kit ship's weapon models (ModHardpoints; the shots come mirrored from the owner's muzzles).</summary>
         void BuildTurret()
         {
             if (turretModel != null) Destroy(turretModel);
-            turretModel = null;
-            if (model == null || turretItem.Value < 0) return;
-            turretModel = PlayerTurret.BuildStatic(NetGame.Db, ship.Value, TurretStacks(turretItem.Value), model.transform);
+            if (weaponModels != null) Destroy(weaponModels);
+            turretModel = weaponModels = null;
+            if (model == null) return;
+            // On the mounts of the build their model shows (a kit ship: theirs; else the ship's own).
+            var kitBuild = ShownBuild;
+            if (turretItem.Value >= 0) turretModel = PlayerTurret.BuildStatic(NetGame.Db, ship.Value, TurretStacks(turretItem.Value), model.transform, kitBuild);
+            weaponModels = Modding.ModHardpoints.AttachWeapons(NetGame.Db, ship.Value, WeaponStacks(NetGame.Db, Weapons), model.transform, kitBuild);
         }
 
         /// <summary>The local player and 'other' (in the same orbit) may shoot each other: in an arena match (its own orbit
@@ -436,7 +489,10 @@ namespace GoF2Remake.Multiplayer
         {
             if (model != null) Destroy(model);
             if (index < 0 || NetGame.Dedicated) return;   // a dedicated server shows nobody
-            var prefab = AssembledObject.LoadPrefab(Database.Shared.ShipAssembly(index));
+            // A customizable ship in this player's build (its parts loading meanwhile show the default build; ModShips.ModelsChanged
+            // builds it again), any other ship its own model.
+            var kitBuild = Modding.ModShipKits.RemoteBuild(index, BuildText);
+            var prefab = AssembledObject.LoadPrefab(kitBuild != null ? Modding.ModShipKits.VariantAssembly(index, kitBuild) : Database.Shared.ShipAssembly(index));
             if (prefab == null) return;
             model = Instantiate(prefab, transform, false);
             model.GetComponent<AssembledObject>()?.SetPlayerVariant(true);
@@ -453,11 +509,15 @@ namespace GoF2Remake.Multiplayer
             model.SetActive(shown);
             HullCollision.Attach(model, target, obstacle);   // shots hit and the local ship slides along its real shape
             BuildTurret();
-            // Its look and sound: the exhaust, the cloak, the engine loop (3D, at space distances).
+            // Its look and sound: the exhaust (their build's exhaust style, ModExhausts, in place of the particles), the cloak,
+            // the engine loop (3D, at space distances).
+            if (kitBuild != null) Modding.ModExhausts.Apply(Database.Load(), index, model, kitBuild,
+                                                            Modding.ModShipKits.MountsShown(Database.Load(), index, 3, kitBuild));
             asm = model.GetComponent<AssembledObject>();
             if (exhaust != null) Destroy(exhaust);
             exhaust = ShipExhaust.AttachRemote(gameObject, Database.Shared, model.transform, index, () => shown && engine.Value && cloak.Value < 25f,
-                                               () => boost.Value, () => cloak.Value);
+                                               () => boost.Value, () => cloak.Value,
+                                               mounts: kitBuild != null ? Modding.ModShipKits.MountsShown(Database.Shared, index, 3, kitBuild) : null);
             cloakLook?.Dispose();
             cloakLook = new World.NpcCloak(model.transform, keepEngine: true);
             if (engineLoop != null) Destroy(engineLoop);
@@ -675,6 +735,10 @@ namespace GoF2Remake.Multiplayer
             if (missionHeld.Value != held) missionHeld.Value = held;
             int turretNow = PackTurrets(PlayerTurret.TurretItems(NetGame.Db, Session.Equipment));   // also changed in the hangar
             if (turretItem.Value != turretNow) turretItem.Value = turretNow;
+            string weaponsNow = PackWeapons(NetGame.Db, Session.Equipment);   // also changed in the hangar
+            if (weapons.Value.ToString() != weaponsNow) weapons.Value = weaponsNow;
+            string buildNow = LocalBuildText();   // the hangar's Customize ship
+            if (build.Value.ToString() != buildNow) build.Value = buildNow;
             bool runsHangar = dock != null && NetHangar.Running;
             if (hangarRun.Value != runsHangar) hangarRun.Value = runsHangar;
             bool flew = dock != null && dock.ArrivedFlying;
@@ -716,7 +780,9 @@ namespace GoF2Remake.Multiplayer
             // The look the others see: the engine glow (off while mining, docking at an object, cloaked, dead), boost, cloak.
             var ownAsm = level.Player.visualModel != null ? level.Player.visualModel.GetComponent<AssembledObject>() : null;
             var glowPart = ownAsm != null && ownAsm.playerVariantParts != null && ownAsm.playerVariantParts.Length > 0 ? ownAsm.playerVariantParts[0] : null;
-            bool glowOn = (glowPart == null || glowPart.activeInHierarchy) && (level.Health == null || !level.Health.Dead);
+            // (also off in free flight with no forward thrust: FlightModel.EnginesOff)
+            bool glowOn = (glowPart == null || glowPart.activeInHierarchy) && (level.Health == null || !level.Health.Dead)
+                          && (level.Player.Model == null || !level.Player.Model.EnginesOff);
             if (level.Health != null && level.Health.Dead) NetAggression.Clear();   // a respawn starts clean
             if (engine.Value != glowOn) engine.Value = glowOn;
             float b = level.Player.Model != null ? level.Player.Model.BoostVisualPercent : 0f;
