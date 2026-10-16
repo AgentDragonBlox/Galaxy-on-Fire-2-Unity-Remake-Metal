@@ -1371,5 +1371,14 @@
  "kaamoModMaxed": "No puedo ir más allá: tu #SHIP_NAME ya tiene esta mejora en el nivel {0}.",
  "padGlyphs": "Iconos de botones del mando",
  "padGlyphsAuto": "Automático",
- "padGlyphsHelp": "Automático: botones de PlayStation (cruz, círculo, cuadrado, triángulo) mientras se usa un DualSense o DualShock, botones de Xbox con cualquier otro mando."
+ "padGlyphsHelp": "Automático: botones de PlayStation (cruz, círculo, cuadrado, triángulo) mientras se usa un DualSense o DualShock, botones de Xbox con cualquier otro mando.",
+ "importOriginalSave": "Importar partida original",
+ "exportOriginalSaves": "Exportar al juego original",
+ "originalImportFailed": "No se pudo importar la partida:",
+ "originalImportHint": "Elige un archivo gof2_save_game_N de la carpeta de partidas del juego original (Android: Android/data/net.fishlabs.gof2hdallandroid2012/files).",
+ "originalImportNoSlot": "No hay ninguna ranura libre. Borra primero una partida (mantenla pulsada en la lista).",
+ "originalImportAsk": "{0}\nde {1}.\n¿Importarla en la ranura {2}?",
+ "originalImportDone": "Importada en la ranura {0}. Cárgala desde la lista.",
+ "originalExportAsk": "Cada ranura se escribe como archivos de partida del juego original de Android (gof2_save_game_N con su vista previa) en una carpeta nueva. Cópialos en Android/data/net.fishlabs.gof2hdallandroid2012/files: se cargan en las versiones de la comunidad (de KiritoJPK, PB-207); la versión de Fishlabs rechaza partidas hechas en otro teléfono. Se omiten los objetos de mods y el progreso exclusivo del remake. ¿Exportar?",
+ "originalSaveStep": "paso"
 }

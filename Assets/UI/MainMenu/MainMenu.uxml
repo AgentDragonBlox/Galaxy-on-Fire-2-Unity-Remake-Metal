@@ -116,6 +116,11 @@
                         <ui:Button name="exportSavesButton" class="mods-action gof-semibold" />
                         <ui:Button name="importSavesButton" class="mods-action gof-semibold" />
                     </ui:VisualElement>
+                    <!-- Remake: the original game's saves in and out (OriginalSaveTransfer). -->
+                    <ui:VisualElement name="originalSaveRow" class="mods-actions save-transfer-row">
+                        <ui:Button name="importOriginalButton" class="mods-action gof-semibold" />
+                        <ui:Button name="exportOriginalButton" class="mods-action gof-semibold" />
+                    </ui:VisualElement>
                     <ui:Label name="saveTransferNote" class="save-transfer-note" />
                     <ui:Button name="loadBack" class="menu-button back-button gof-semibold" />
                 </ui:VisualElement>

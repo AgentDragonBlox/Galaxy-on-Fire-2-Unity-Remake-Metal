@@ -1371,5 +1371,14 @@
  "saveTransferFolder": "Geëxporteerde saves komen in deze map en worden hieruit geïmporteerd:",
  "padGlyphs": "Knoppictogrammen van de controller",
  "padGlyphsAuto": "Automatisch",
- "padGlyphsHelp": "Automatisch: PlayStation-knoppen (kruisje, rondje, vierkantje, driehoekje) zolang een DualSense of DualShock wordt gebruikt, Xbox-knoppen bij elke andere controller."
+ "padGlyphsHelp": "Automatisch: PlayStation-knoppen (kruisje, rondje, vierkantje, driehoekje) zolang een DualSense of DualShock wordt gebruikt, Xbox-knoppen bij elke andere controller.",
+ "importOriginalSave": "Originele save importeren",
+ "exportOriginalSaves": "Exporteren voor het originele spel",
+ "originalImportFailed": "De save kon niet worden geïmporteerd:",
+ "originalImportHint": "Kies een bestand gof2_save_game_N uit de savemap van het originele spel (Android: Android/data/net.fishlabs.gof2hdallandroid2012/files).",
+ "originalImportNoSlot": "Er is geen vrij opslagvak. Verwijder eerst een save (houd hem ingedrukt in de lijst).",
+ "originalImportAsk": "{0}\nuit {1}.\nImporteren in opslagvak {2}?",
+ "originalImportDone": "Geïmporteerd in opslagvak {0}. Laad hem vanuit de lijst.",
+ "originalExportAsk": "Elk opslagvak wordt als savebestanden van het originele Android-spel (gof2_save_game_N met de preview) in een nieuwe map geschreven. Kopieer ze naar Android/data/net.fishlabs.gof2hdallandroid2012/files: ze laden in de communityversies (van KiritoJPK, PB-207); de eigen versie van Fishlabs weigert saves van een andere telefoon. Mod-items en voortgang die alleen de remake kent vallen weg. Exporteren?",
+ "originalSaveStep": "stap"
 }

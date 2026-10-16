@@ -1371,5 +1371,14 @@
  "saveTransferFolder": "Wyeksportowane zapisy trafiają do tego folderu i są z niego importowane:",
  "padGlyphs": "Ikony przycisków kontrolera",
  "padGlyphsAuto": "Automatycznie",
- "padGlyphsHelp": "Automatycznie: przyciski PlayStation (krzyżyk, kółko, kwadrat, trójkąt), gdy używany jest DualSense lub DualShock, przyciski Xbox dla każdego innego kontrolera."
+ "padGlyphsHelp": "Automatycznie: przyciski PlayStation (krzyżyk, kółko, kwadrat, trójkąt), gdy używany jest DualSense lub DualShock, przyciski Xbox dla każdego innego kontrolera.",
+ "importOriginalSave": "Importuj zapis z oryginału",
+ "exportOriginalSaves": "Eksportuj do oryginalnej gry",
+ "originalImportFailed": "Nie udało się zaimportować zapisu:",
+ "originalImportHint": "Wybierz plik gof2_save_game_N z folderu zapisów oryginalnej gry (Android: Android/data/net.fishlabs.gof2hdallandroid2012/files).",
+ "originalImportNoSlot": "Brak wolnego miejsca na zapis. Najpierw usuń zapis (przytrzymaj go na liście).",
+ "originalImportAsk": "{0}\nz {1}.\nZaimportować do miejsca {2}?",
+ "originalImportDone": "Zaimportowano do miejsca {0}. Wczytaj go z listy.",
+ "originalExportAsk": "Każde miejsce zapisu zostanie zapisane jako pliki zapisu oryginalnej gry na Androida (gof2_save_game_N z podglądem) w nowym folderze. Skopiuj je do Android/data/net.fishlabs.gof2hdallandroid2012/files: wczytują się w wersjach społeczności (KiritoJPK, PB-207); własna wersja Fishlabs odrzuca zapisy z innego telefonu. Przedmioty z modów i postęp istniejący tylko w remake'u zostaną pominięte. Eksportować?",
+ "originalSaveStep": "krok"
 }

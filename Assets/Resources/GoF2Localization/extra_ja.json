@@ -1371,5 +1371,14 @@
  "saveTransferFolder": "エクスポートしたセーブはこのフォルダに保存され、ここからインポートされます：",
  "padGlyphs": "コントローラーのボタン表示",
  "padGlyphsAuto": "自動",
- "padGlyphsHelp": "自動：DualSense または DualShock の使用中は PlayStation のボタン（バツ、マル、シカク、サンカク）、それ以外のコントローラーでは Xbox のボタン。"
+ "padGlyphsHelp": "自動：DualSense または DualShock の使用中は PlayStation のボタン（バツ、マル、シカク、サンカク）、それ以外のコントローラーでは Xbox のボタン。",
+ "importOriginalSave": "オリジナルのセーブをインポート",
+ "exportOriginalSaves": "オリジナル版用にエクスポート",
+ "originalImportFailed": "セーブをインポートできませんでした：",
+ "originalImportHint": "オリジナル版のセーブフォルダーから gof2_save_game_N ファイルを選んでください（Android：Android/data/net.fishlabs.gof2hdallandroid2012/files）。",
+ "originalImportNoSlot": "空きセーブスロットがありません。先にセーブを削除してください（リストで長押し）。",
+ "originalImportAsk": "{0}\n{1}から。\nセーブスロット {2} にインポートしますか？",
+ "originalImportDone": "セーブスロット {0} にインポートしました。リストからロードしてください。",
+ "originalExportAsk": "すべてのセーブスロットをオリジナルの Android 版のセーブファイル（gof2_save_game_N とそのプレビュー）として新しいフォルダーに書き出します。Android/data/net.fishlabs.gof2hdallandroid2012/files にコピーしてください。コミュニティ版（KiritoJPK、PB-207）で読み込めます。Fishlabs 公式版は別の端末で作られたセーブを拒否します。MOD のアイテムとリメイク独自の進行は含まれません。エクスポートしますか？",
+ "originalSaveStep": "ステップ"
 }

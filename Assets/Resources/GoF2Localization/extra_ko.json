@@ -1371,5 +1371,14 @@
  "saveTransferFolder": "내보낸 저장 파일은 이 폴더에 저장되고 여기서 가져옵니다:",
  "padGlyphs": "컨트롤러 버튼 아이콘",
  "padGlyphsAuto": "자동",
- "padGlyphsHelp": "자동: DualSense 또는 DualShock 사용 중에는 PlayStation 버튼(엑스, 원, 네모, 세모), 다른 컨트롤러는 Xbox 버튼."
+ "padGlyphsHelp": "자동: DualSense 또는 DualShock 사용 중에는 PlayStation 버튼(엑스, 원, 네모, 세모), 다른 컨트롤러는 Xbox 버튼.",
+ "importOriginalSave": "원작 세이브 가져오기",
+ "exportOriginalSaves": "원작 게임용으로 내보내기",
+ "originalImportFailed": "세이브를 가져올 수 없습니다:",
+ "originalImportHint": "원작 게임의 세이브 폴더에서 gof2_save_game_N 파일을 선택하세요 (Android: Android/data/net.fishlabs.gof2hdallandroid2012/files).",
+ "originalImportNoSlot": "빈 세이브 슬롯이 없습니다. 먼저 세이브를 삭제하세요 (목록에서 길게 누르기).",
+ "originalImportAsk": "{0}\n{1}에서.\n세이브 슬롯 {2}(으)로 가져올까요?",
+ "originalImportDone": "세이브 슬롯 {0}(으)로 가져왔습니다. 목록에서 불러오세요.",
+ "originalExportAsk": "모든 세이브 슬롯을 원작 Android 게임의 세이브 파일(gof2_save_game_N과 미리보기)로 새 폴더에 저장합니다. Android/data/net.fishlabs.gof2hdallandroid2012/files에 복사하세요. 커뮤니티 빌드(KiritoJPK, PB-207)에서 불러올 수 있으며, Fishlabs 공식 빌드는 다른 휴대폰에서 만든 세이브를 거부합니다. 모드 아이템과 리메이크 전용 진행은 제외됩니다. 내보낼까요?",
+ "originalSaveStep": "단계"
 }

@@ -1371,5 +1371,14 @@
   "saveTransferFolder": "导出的存档会保存到此文件夹，并从这里导入：",
  "padGlyphs": "手柄按键图标",
  "padGlyphsAuto": "自动",
- "padGlyphsHelp": "自动：使用 DualSense 或 DualShock 时显示 PlayStation 按键（叉、圆、方块、三角），其他手柄显示 Xbox 按键。"
+ "padGlyphsHelp": "自动：使用 DualSense 或 DualShock 时显示 PlayStation 按键（叉、圆、方块、三角），其他手柄显示 Xbox 按键。",
+ "importOriginalSave": "导入原版存档",
+ "exportOriginalSaves": "导出到原版游戏",
+ "originalImportFailed": "无法导入存档：",
+ "originalImportHint": "请从原版游戏的存档文件夹中选择一个 gof2_save_game_N 文件（Android：Android/data/net.fishlabs.gof2hdallandroid2012/files）。",
+ "originalImportNoSlot": "没有空的存档位。请先删除一个存档（在列表中长按）。",
+ "originalImportAsk": "{0}\n来自{1}。\n导入到存档位 {2}？",
+ "originalImportDone": "已导入到存档位 {0}。请从列表中读取。",
+ "originalExportAsk": "每个存档位都会以原版 Android 游戏的存档文件（gof2_save_game_N 及其预览）写入一个新文件夹。请将它们复制到 Android/data/net.fishlabs.gof2hdallandroid2012/files：它们可在社区版本（KiritoJPK、PB-207 的版本）中读取；Fishlabs 官方版本会拒绝在其他手机上创建的存档。模组物品和重制版独有的进度不会保留。要导出吗？",
+ "originalSaveStep": "步骤"
 }

@@ -1371,5 +1371,14 @@
  "kaamoModMaxed": "لا يمكنني أن أذهب أبعد من ذلك: سفينتك #SHIP_NAME لديها هذه الترقية بالفعل في المستوى {0}.",
  "padGlyphs": "أيقونات أزرار وحدة التحكم",
  "padGlyphsAuto": "تلقائي",
- "padGlyphsHelp": "تلقائي: أزرار PlayStation (إكس، دائرة، مربع، مثلث) أثناء استخدام DualSense أو DualShock، وأزرار Xbox لأي وحدة تحكم أخرى."
+ "padGlyphsHelp": "تلقائي: أزرار PlayStation (إكس، دائرة، مربع، مثلث) أثناء استخدام DualSense أو DualShock، وأزرار Xbox لأي وحدة تحكم أخرى.",
+ "importOriginalSave": "استيراد حفظ من اللعبة الأصلية",
+ "exportOriginalSaves": "تصدير للعبة الأصلية",
+ "originalImportFailed": "تعذر استيراد الحفظ:",
+ "originalImportHint": "اختر ملف gof2_save_game_N من مجلد حفظ اللعبة الأصلية (Android: Android/data/net.fishlabs.gof2hdallandroid2012/files).",
+ "originalImportNoSlot": "لا توجد خانة حفظ فارغة. احذف حفظًا أولًا (اضغط عليه مطولًا في القائمة).",
+ "originalImportAsk": "{0}\nمن {1}.\nاستيراده إلى خانة الحفظ {2}؟",
+ "originalImportDone": "تم الاستيراد إلى خانة الحفظ {0}. حمّله من القائمة.",
+ "originalExportAsk": "تُكتب كل خانة حفظ كملفات حفظ للعبة Android الأصلية (gof2_save_game_N مع معاينتها) في مجلد جديد. انسخها إلى Android/data/net.fishlabs.gof2hdallandroid2012/files: تُحمَّل في إصدارات المجتمع (KiritoJPK وPB-207)؛ أما إصدار Fishlabs نفسه فيرفض الحفظ المصنوع على هاتف آخر. تُستبعد عناصر التعديلات والتقدم الخاص بالنسخة المعاد إنتاجها. تصدير؟",
+ "originalSaveStep": "خطوة"
 }

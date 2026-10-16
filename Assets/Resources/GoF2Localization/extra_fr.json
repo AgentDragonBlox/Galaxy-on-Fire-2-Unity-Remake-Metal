@@ -1371,5 +1371,14 @@
  "kaamoModMaxed": "Je ne peux pas aller plus loin : ton #SHIP_NAME a déjà cette amélioration au niveau {0}.",
  "padGlyphs": "Icônes des boutons de la manette",
  "padGlyphsAuto": "Auto",
- "padGlyphsHelp": "Auto : boutons PlayStation (croix, rond, carré, triangle) quand une DualSense ou une DualShock est utilisée, boutons Xbox pour toute autre manette."
+ "padGlyphsHelp": "Auto : boutons PlayStation (croix, rond, carré, triangle) quand une DualSense ou une DualShock est utilisée, boutons Xbox pour toute autre manette.",
+ "importOriginalSave": "Importer une sauvegarde originale",
+ "exportOriginalSaves": "Exporter pour le jeu original",
+ "originalImportFailed": "La sauvegarde n'a pas pu être importée :",
+ "originalImportHint": "Choisissez un fichier gof2_save_game_N dans le dossier de sauvegarde du jeu original (Android : Android/data/net.fishlabs.gof2hdallandroid2012/files).",
+ "originalImportNoSlot": "Aucun emplacement de sauvegarde libre. Supprimez d'abord une sauvegarde (maintenez-la dans la liste).",
+ "originalImportAsk": "{0}\nde {1}.\nL'importer dans l'emplacement {2} ?",
+ "originalImportDone": "Importée dans l'emplacement {0}. Chargez-la depuis la liste.",
+ "originalExportAsk": "Chaque emplacement est écrit sous forme de fichiers de sauvegarde du jeu Android original (gof2_save_game_N avec son aperçu) dans un nouveau dossier. Copiez-les dans Android/data/net.fishlabs.gof2hdallandroid2012/files : ils se chargent dans les versions communautaires (de KiritoJPK, PB-207) ; la version de Fishlabs refuse les sauvegardes faites sur un autre téléphone. Les objets de mods et la progression propre au remake sont omis. Exporter ?",
+ "originalSaveStep": "étape"
 }
