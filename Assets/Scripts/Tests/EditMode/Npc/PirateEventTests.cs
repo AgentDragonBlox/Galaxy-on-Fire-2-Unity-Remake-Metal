@@ -147,29 +147,35 @@ namespace GoF2Remake.Tests
 
         // ---- how often (Build) -------------------------------------------------------------------------------------
 
-        static (int outposts, int bosses) CountEvents(int station, int n, int seed)
+        /// <summary>Events among the visits without a raider group ('visits' counts those; an unreported event never comes
+        /// with raiders).</summary>
+        static (int outposts, int bosses, int visits) CountEvents(int station, int n, int seed)
         {
-            int o = 0, b = 0;
+            int o = 0, b = 0, v = 0;
             Repeat(station, n, seed, list =>
             {
-                if (list.Any(x => x.pirateEvent == SpawnSpec.EventOutpost)) o++;
-                if (list.Any(x => x.pirateEvent == SpawnSpec.EventBoss)) b++;
+                bool raiders = list.Any(x => x.group == NpcGroup.Raider);
+                bool outpost = list.Any(x => x.pirateEvent == SpawnSpec.EventOutpost), boss = list.Any(x => x.pirateEvent == SpawnSpec.EventBoss);
+                if (raiders) { Assert.IsFalse(outpost || boss, "an unreported event on top of a raider group"); return; }
+                v++;
+                if (outpost) o++;
+                if (boss) b++;
             });
-            return (o, b);
+            return (o, b, v);
         }
 
         [Test]
         public void UnannouncedEventsWithTheBoard()
         {
-            // the board is part of the option: Dangerous 5 %, Risky 2 %, half outposts, half bosses.
+            // the board is part of the option: Dangerous 5 %, Risky 2 % of the visits without raiders, half outposts, half
+            // bosses.
             Settings.PirateEvents = true;
             InFreePlay(5);
-            const int n = 6000;
-            var d = CountEvents(20, n, 1);
-            Assert.AreEqual(0.05, (d.outposts + d.bosses) / (double)n, 0.012);
-            Assert.AreEqual(0.5, d.outposts / (double)(d.outposts + d.bosses), 0.12);
-            var r = CountEvents(5, n, 2);
-            Assert.AreEqual(0.02, (r.outposts + r.bosses) / (double)n, 0.008);
+            var d = CountEvents(20, 18000, 1);
+            Assert.AreEqual(0.05, (d.outposts + d.bosses) / (double)d.visits, 0.015);
+            Assert.AreEqual(0.5, d.outposts / (double)(d.outposts + d.bosses), 0.15);
+            var r = CountEvents(5, 12000, 2);
+            Assert.AreEqual(0.02, (r.outposts + r.bosses) / (double)r.visits, 0.008);
             var none = CountEvents(15, 2000, 3);
             Assert.AreEqual(0, none.outposts + none.bosses, "Average");
         }
@@ -218,6 +224,24 @@ namespace GoF2Remake.Tests
             for (int i = 0; i < 20; i++) Assert.IsFalse(Build(20).Any(x => x.pirateEvent != 0));
             Session.FreelanceMission = new FreelanceMission();
             Assert.IsTrue(Build(20).Any(x => x.pirateEvent == SpawnSpec.EventBoss), "the report waits for a later visit");
+        }
+
+        [Test]
+        public void AReportedEventComesEvenWithRaiders()
+        {
+            // Only the unannounced roll gives way to a raider group (players' report 2026-10-16); a report is a contract.
+            Settings.PirateEvents = true;
+            InFreePlay(5);
+            Session.PirateSightings.Add(Sighting(20, true, 3));
+            Random.InitState(8);
+            int withRaiders = 0;
+            for (int i = 0; i < 200; i++)
+            {
+                var list = Build(20);
+                Assert.IsTrue(list.Any(x => x.pirateEvent == SpawnSpec.EventBoss));
+                if (list.Any(x => x.group == NpcGroup.Raider)) withRaiders++;
+            }
+            Assert.Greater(withRaiders, 0);
         }
 
         [Test]

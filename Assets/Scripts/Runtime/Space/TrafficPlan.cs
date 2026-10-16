@@ -253,9 +253,10 @@ namespace GoF2Remake.Flight
             if (terran || vossk) freighters--;
             // A pirate raid on a traveller (initStreamOutPosition): rnd(100) < rank + 20 (40 Extreme) moves the pirates'
             // point toward the arriving player (Route::setNewCoords(player position / f); f is lost in the decompile,
-            // the remake takes half the way).
+            // the remake takes a quarter of the way: half the way put up to 19 Extreme pirates on a player just arrived within
+            // a minute, players' report 2026-10-16).
             if (raidersOn && raiderRace == Standing.Pirate && Session.ArrivedByTravel && !lootOrbit && Random.Range(0, 100) < rank + (hardcore ? 40 : 20))
-                raiderSpawn = playerGame / 2f;
+                raiderSpawn = playerGame * AmbushShare;
 
             // Campaign step 59 (type 0xa3) at one of its target stations still to do (Status+0x90): the rival arms convoy
             // and the local fighters instead of the rest of the traffic.
@@ -350,7 +351,7 @@ namespace GoF2Remake.Flight
                 for (int i = 0; i < specters; i++)
                     list.Add(new SpawnSpec { group = NpcGroup.Special, race = Standing.Specter, ship = 44, alwaysEnemy = true, position = sp + Jitter() });
             }
-            AddPirateEvent(list, db, station, system, secEff, story, cm, baseSystem);
+            AddPirateEvent(list, db, station, system, secEff, story, cm, baseSystem, raiders > 0);
             return list;
         }
 
@@ -391,7 +392,12 @@ namespace GoF2Remake.Flight
         /// more escorts and more of the costlier goods, and the bounty is half as much again. Not below rank 2, at a station
         /// any campaign step sends the player to, in Mido before Keith leaves it (campaign 0x10), the special orbits (Loma, the
         /// empty ones, the supernova system, the pirates' own systems), a pirate base's system or the Kaamo siege.</summary>
-        static void AddPirateEvent(List<SpawnSpec> list, Database db, int station, SystemData system, int secEff, bool story, int cm, bool baseSystem)
+        /// <summary>The arrival ambush's raider point: this share of the way from the station to the arriving player.</summary>
+        public const float AmbushShare = 0.25f;
+
+        /// <param name="hasRaiders">The orbit already has a raider group: no unreported event on top of it (a reported
+        /// sighting still comes; players' report 2026-10-16: on Extreme the two together overwhelmed a pilot on arrival).</param>
+        static void AddPirateEvent(List<SpawnSpec> list, Database db, int station, SystemData system, int secEff, bool story, int cm, bool baseSystem, bool hasRaiders = false)
         {
             // A reported sighting here (the Missions window's Pirate activity): its outpost or named boss, whatever this pilot's
             // rank (the rank only decides which reports are made: a session's board is the server's, its pilots start at 0).
@@ -400,7 +406,7 @@ namespace GoF2Remake.Flight
             if (InformerOrbit(station)) return;
             var sighting = PirateReports.At(station);
             if (sighting != null && PirateEventAllowed(db, station, system, true)) { AddPirateEventShips(list, !sighting.boss, sighting.tier, sighting); return; }
-            if (!PirateEventAllowed(db, station, system)) return;
+            if (hasRaiders || !PirateEventAllowed(db, station, system)) return;
             int sec = system.securityLevel;
             var chance = PirateReports.Enabled ? UnreportedChance : EventChance;
             if (Random.Range(0, 100) >= chance[sec]) return;
