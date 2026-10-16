@@ -2253,7 +2253,9 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   (any model; `TurretRig` makes the missing `pivot` / `*_gun`, as for a plain GLB) or `"turret": { "item": n }` (that
   item's `*_ship_mounted` model and its `TurretCore.MuzzleUnits` / `ShotOffsetUnits`); `scale` / `offset` on both. Fx parts:
   `"model": "gof2:<name>"` (`GameModel`; with `texture` the meshes get copies for the white vertex colours, the game's
-  own mesh assets untouched). Mod Builder: **+ New ship on a game model** and the Ship tab's **Game model…**
+  own mesh assets untouched); also `"gof2:bra"` / `"gof2:beer"`, the ending's single-mesh props without an assembly, from
+  `StoryAssets.menuStatics`, `GameModels.Prop`: the community's exploding bra, `Modding/Examples/exploding_bra`, a
+  Fireworks-based bomb with the bra as its projectile). Mod Builder: **+ New ship on a game model** and the Ship tab's **Game model…**
   (`PickGameShip`, `NewShipOnGameModel` / `UseGameShipModel`, `ProjectShip.UseGameModel`: the model ship's stats, slots,
   race and hardpoints copied, the file-model fields dropped, no box-guessed first hardpoints (`NeedsLayout` false; the
   builder had put two guns, a secondary and an engine over the copied set), no auto hangar height or rendered icon; the
