@@ -65,9 +65,9 @@ namespace GoF2Remake.Flight
         /// <summary>Multiplayer: the other players' ships (NetPlayer) and, on a client, the host's NPC ships (NetProxy): the
         /// radar locks them and the HUD marks them like the traffic's ships.</summary>
         public static readonly System.Collections.Generic.List<Target> NetShips = new System.Collections.Generic.List<Target>();
-        /// <summary>Multiplayer: a hit (amount, hit vector, by an NPC) is passed on to the game that owns the ship (NetProxy,
-        /// NetPlayer) instead of applied here.</summary>
-        [NonSerialized] public Action<float, Vector3, bool> RemoteDamage;
+        /// <summary>Multiplayer: a hit (amount, hit vector, by an NPC, the weapon's shield factor) is passed on to the game
+        /// that owns the ship (NetProxy, NetPlayer) instead of applied here.</summary>
+        [NonSerialized] public Action<float, Vector3, bool, float> RemoteDamage;
         /// <summary>Multiplayer: EMP (points) passed on to the game that owns the ship (NetProxy, NetPlayer).</summary>
         [NonSerialized] public Action<int> RemoteEmp;
         /// <summary>Multiplayer: the killing hit came from another player (NetProxy): counts as the player's for a freelance
@@ -131,19 +131,20 @@ namespace GoF2Remake.Flight
         void OnEnable() { if (!All.Contains(this)) All.Add(this); }
         void OnDisable() => All.Remove(this);
 
-        /// <summary>Player::damage: 'byNpc' = an NPC gun fired it (friendGun); 'hitVector' = the bullet velocity.</summary>
-        public void Damage(float amount, bool byNpc = false, Vector3 hitVector = default)
+        /// <summary>Player::damage: 'byNpc' = an NPC gun fired it (friendGun); 'hitVector' = the bullet velocity;
+        /// 'shieldFactor' = the weapon's x on the shield (remake, Flight.Gun.ShieldFactor; Hitpoints.Damage).</summary>
+        public void Damage(float amount, bool byNpc = false, Vector3 hitVector = default, float shieldFactor = 1f)
         {
             if (!Alive || invulnerable || phased) return;
             if (isPlayer && Data.Cheats.GodMode) return;   // remake: the Debug panel's god mode
             if (playerProof && !byNpc) return;
-            if (RemoteDamage != null) { RemoteDamage(amount, hitVector, byNpc); return; }
+            if (RemoteDamage != null) { RemoteDamage(amount, hitVector, byNpc, shieldFactor); return; }
             int dmg = Mathf.Max(0, (int)amount);
             lastHitVector = hitVector;
             bool dead;
             if (hitpoints != null)
             {
-                dead = hitpoints.Damage(dmg);
+                dead = hitpoints.Damage(dmg, shieldFactor);
                 hp = hitpoints.hull;
                 maxHp = hitpoints.maxHull;
             }

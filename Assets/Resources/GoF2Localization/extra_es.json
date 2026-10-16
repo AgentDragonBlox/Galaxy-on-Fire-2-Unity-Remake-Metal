@@ -1383,5 +1383,6 @@
  "originalSaveStep": "paso",
  "blueprintMountAsk": "¿Instalarlo ahora?",
  "mpAdmWreck": "Creando un pecio hackeable junto a {0}.",
- "mpAdmWreckRace": "Un pecio es un carguero terrano, vossk, niveliano o midoriano."
+ "mpAdmWreckRace": "Un pecio es un carguero terrano, vossk, niveliano o midoriano.",
+ "statShieldDamage": "Daño a los escudos"
 }

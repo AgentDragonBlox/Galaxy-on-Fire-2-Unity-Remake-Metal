@@ -325,7 +325,7 @@ namespace GoF2Remake.Multiplayer
             target.maxHp = 100f;
             // This player's weapons hitting them count toward them being this player's enemy too (NetAggression, both ways); an NPC's shot
             // relayed by this orbit's authority isn't.
-            target.RemoteDamage = (amount, hitVector, byNpc) => { if (!byNpc) NetAggression.Hit(OwnerClientId, amount); HitUpRpc(amount, hitVector, byNpc); };
+            target.RemoteDamage = (amount, hitVector, byNpc, shieldFactor) => { if (!byNpc) NetAggression.Hit(OwnerClientId, amount); HitUpRpc(amount, hitVector, byNpc, shieldFactor); };
             target.RemoteEmp = emp => { NetAggression.Hit(OwnerClientId, emp); EmpUpRpc(emp); };
             ApplyName();
             pilot.OnValueChanged += (_, _) => ApplyName();
@@ -417,21 +417,23 @@ namespace GoF2Remake.Multiplayer
         /// other's line of fire), a finite damage up to NetGuard.MaxDamage, at its rate. (A direct RPC to the owner let a
         /// modified client destroy any player anywhere, or send NaN damage.)</summary>
         [Rpc(SendTo.Server)]
-        void HitUpRpc(float amount, Vector3 hitVector, bool byNpc, RpcParams rpc = default)
+        void HitUpRpc(float amount, Vector3 hitVector, bool byNpc, float shieldFactor, RpcParams rpc = default)
         {
             ulong shooter = rpc.Receive.SenderClientId;
             if (shooter == OwnerClientId || !NetRateLimit.Allow(shooter, NetRateLimit.Kind.Hit)) return;
             if (!NetGuard.Damage(amount) || !NetGuard.Finite(hitVector)) { NetRateLimit.Reject(shooter, $"a hit of {amount}"); return; }
+            // a weapon's shield factor (Flight.Gun.ShieldFactor: 0.01 .. 10); an NPC's shot has none
+            shieldFactor = byNpc || float.IsNaN(shieldFactor) ? 1f : Mathf.Clamp(shieldFactor, 0.01f, 10f);
             var by = NetSquad.Find(shooter);
             if (!NetGuard.SameOrbit(by, this)) return;   // gone from the orbit a moment ago, or a hit from elsewhere
             if (!byNpc && NetSquad.Same(by, this)) return;
             NetState.Instance?.NoteHit(NetworkObjectId, shooter);
-            HitRpc(amount, hitVector, byNpc, shooter);
+            HitRpc(amount, hitVector, byNpc, shooter, shieldFactor);
         }
 
         /// <summary>The checked hit (HitUpRpc): this player's own ship takes it; destroyed by a player = a notice for everyone.</summary>
         [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
-        void HitRpc(float amount, Vector3 hitVector, bool byNpc, ulong shooter)
+        void HitRpc(float amount, Vector3 hitVector, bool byNpc, ulong shooter, float shieldFactor)
         {
             var own = level != null && level.Health != null ? level.Health.Target : null;
             if (own == null) return;
@@ -444,7 +446,7 @@ namespace GoF2Remake.Multiplayer
             }
             bool alive = own.Alive;
             if (alive && !byNpc) NetAggression.Hit(shooter, amount);   // an attack makes them an enemy here (NetAggression)
-            own.Damage(amount, byNpc, hitVector);
+            own.Damage(amount, byNpc, hitVector, shieldFactor);
             if (alive && !own.Alive && !byNpc && NetState.Instance != null) NetState.Instance.DestroyedByRpc(shooter);
         }
 

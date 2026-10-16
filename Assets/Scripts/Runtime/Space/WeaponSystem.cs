@@ -588,7 +588,7 @@ namespace GoF2Remake.Flight
             target.lastPlayerWeapon = r.gun.itemIndex;
             float damage = missile && target.isAsteroid ? 9999f : r.gun.damage;
             if (Cheats.OneHitKills && !target.isPlayer) damage = 99999999f;
-            target.Damage(damage, false, r.gun.bullets[bullet].velocity);
+            target.Damage(damage, false, r.gun.bullets[bullet].velocity, r.gun.shieldFactor);
             if (wasAlive && !target.Alive && target.isAsteroid) { Session.AsteroidsDestroyed++; CountAsteroidMedals(r.gun); }   // Status+0xd8
             ApplyEmp(target, (int)r.gun.emp);
             r.visuals.ShowImpact(point);

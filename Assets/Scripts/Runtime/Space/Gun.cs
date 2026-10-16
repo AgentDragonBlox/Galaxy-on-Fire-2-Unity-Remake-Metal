@@ -155,6 +155,23 @@ namespace GoF2Remake.Flight
                                                  or Kind.ShockBlast or Kind.Sentry or Kind.PlasmaCollector);
         }
 
+        /// <summary>Remake: what a hit does to a shield, x the damage (items.json stat shieldDamage, attribute 124, a percentage;
+        /// the Disruptor Laser (183) and items based on it 200 %: its description's "destabilizes" shield systems, which the
+        /// original never made true; a players' request, 2026-10-16). The players' weapons only: the NPCs' guns (the generic
+        /// NPC gun, Level::assignGuns, the Disruptor at step 0x46 too) stay at 1. Only ships with a shield feel it: the players
+        /// (in multiplayer each other), not the original's NPCs.</summary>
+        [System.NonSerialized] public float shieldFactor = 1f;
+
+        public const int ShieldDamageAttr = 124, DisruptorShieldPercent = 200;
+
+        public static float ShieldFactor(ItemData item)
+        {
+            if (item == null) return 1f;
+            int pct = item.Attr(ShieldDamageAttr);
+            if (pct <= 0) pct = item.Look == 183 ? DisruptorShieldPercent : 100;
+            return Mathf.Clamp(pct, 1, 1000) / 100f;
+        }
+
         public Gun(ItemData item, Vector3 mountLocal, bool secondary)
         {
             itemIndex = item.index;
@@ -165,6 +182,7 @@ namespace GoF2Remake.Flight
             int look = item.Look;   // a mod's item works like its base (Modding.ModContent)
             isBeam = IsBeamLook(look);
             damage = item.Attr(9);
+            shieldFactor = ShieldFactor(item);
             emp = item.Attr(10);
             reloadMs = Mathf.Max(1, item.Attr(11, 500));
             lifetimeMs = kind == Kind.ShockBlast ? 1f : item.Attr(12, 2000);

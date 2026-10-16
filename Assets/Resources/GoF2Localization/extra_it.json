@@ -1383,5 +1383,6 @@
  "originalSaveStep": "passo",
  "blueprintMountAsk": "Montarlo ora?",
  "mpAdmWreck": "Creazione di un relitto hackerabile presso {0}.",
- "mpAdmWreckRace": "Un relitto è un mercantile terrestre, vossk, niveliano o midoriano."
+ "mpAdmWreckRace": "Un relitto è un mercantile terrestre, vossk, niveliano o midoriano.",
+ "statShieldDamage": "Danni agli scudi"
 }
