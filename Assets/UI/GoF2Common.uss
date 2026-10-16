@@ -1235,3 +1235,99 @@
 .orbit-view-hint--action:active {
     background-color: rgba(62, 200, 255, 0.4);
 }
+
+/* ---- remake: the photo tools of Action Freeze and Inspect ship (PhotoTools): the Camera settings panel at the left and the
+   frame / thirds guides; Hide UI clears them too ------------------------------------------------------------------- */
+
+.photo-panel {
+    display: none;
+    position: absolute;
+    left: 40px;
+    top: 104px;
+    bottom: 130px;
+    width: 600px;
+    padding: 18px 20px 14px 20px;
+    background-color: var(--gof-panel);
+    border-width: 1px;
+    border-color: var(--gof-line);
+    border-left-width: 3px;
+    border-left-color: var(--gof-cyan);
+    border-radius: 2px;
+}
+
+.photo-panel--open {
+    display: flex;
+}
+
+.photo-panel-title {
+    font-size: 24px;
+    letter-spacing: 4px;
+    color: #FFFFFF;
+    margin: 0 0 10px 10px;
+}
+
+.photo-panel-scroll {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.photo-panel .option-item {
+    margin: 0;
+}
+
+.photo-panel .option-item .option-button {
+    margin: 10px 10px 4px 10px;
+}
+
+.photo-frame {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.photo-frame--shown {
+    display: flex;
+}
+
+.photo-frame-bar {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.55);
+}
+
+.photo-frame-box {
+    position: absolute;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.photo-grid {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.photo-grid-v {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: rgba(255, 255, 255, 0.35);
+}
+
+.photo-grid-h {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: rgba(255, 255, 255, 0.35);
+}
+
+.orbit-view--clean .photo-panel,
+.orbit-view--clean .photo-frame {
+    display: none;
+}

@@ -1913,8 +1913,11 @@ namespace GoF2Remake.UI
         // Hide UI (H, the controller's Y) clears the screen (a short click / tap or H / Y again brings it back; a drag still
         // turns); Screenshot (Enter / P, the controller's A) saves the view without the UI, like Action Freeze's 60 Save to
         // library (PhotoMode.Store: PC Pictures/Galaxy on Fire 2, Android MediaStore; 55 / 56). Their hints are clickable
-        // (a tap on touch, which has no keys).
+        // (a tap on touch, which has no keys). Remake (players' suggestion, 2026-10-17): Action Freeze's photo tools
+        // (PhotoTools): the free camera (F / X) within six ship radii of the hull, above the pad, and the Camera settings
+        // panel (Tab / View); not in the Customize screen.
         VisualElement inspectOverlay, inspectHints, inspectFooter;
+        PhotoTools inspectTools;
         Label inspectTitle, inspectMessage;
         Button inspectBack;
         bool inspectDragging, inspectUiHidden, inspectCapturing;
@@ -1941,6 +1944,9 @@ namespace GoF2Remake.UI
             customize.Applied += ApplyCustomize;
             customize.Cancelled += CancelCustomize;
             inspectOverlay.Add(customize.Root);
+            inspectTools = new PhotoTools(inspectOverlay, push => Play(push ? buttonPush : buttonRelease));
+            inspectTools.Changed += () => BuildInspectHints(InputMode.Current);
+            inspectTools.Tapped += () => { if (inspectUiHidden) SetInspectUiHidden(false); };
             root.Add(inspectOverlay);   // the last child: over the blocker that keeps the menu's own input out meanwhile
         }
 
@@ -1957,6 +1963,9 @@ namespace GoF2Remake.UI
             SetInspectUiHidden(false);
             if (root.focusController?.focusedElement is VisualElement f) f.Blur();
             inspectTitle.text = GameNames.Ship(Session.ShipIndex).ToUpperInvariant();
+            var insp = level.Inspect;
+            inspectTools.Begin(Camera.main, level.PlayerShip, () => insp.Centre, insp.Radius, insp.Radius * 6f, insp.FloorY,
+                               () => (insp.OrbitPosition, insp.OrbitRotation), true);
             BuildInspectHints(InputMode.Current);
             if (inspectOverlay != null) inspectOverlay.AddToClassList("inspect-overlay--shown");
         }
@@ -1967,6 +1976,7 @@ namespace GoF2Remake.UI
             if (level == null || !level.Inspect.Active) return;
             Play(buttonRelease);
             SetInspectUiHidden(false);
+            inspectTools.End();   // the free pose, roll and lens stay with HangarInspect through the blend back
             level.EndInspect();
             if (inspectOverlay != null) inspectOverlay.RemoveFromClassList("inspect-overlay--shown");
             Select(inspectButton);   // back where it was opened (keys / controller)
@@ -1999,6 +2009,10 @@ namespace GoF2Remake.UI
             if (kit == null || build == null) return;
             BeginInspect();
             if (!level.Inspect.Active) return;
+            inspectTools.End();   // the Customize screen has its own panel and keys: no photo tools
+            level.Inspect.ClearFree();
+            level.Inspect.RollDeg = 0f;
+            level.Inspect.FovDeg = 0f;
             string key = ModShipKits.BuildKey(ship);
             customizeBefore = key != null && Session.ShipBuilds.TryGetValue(key, out var text) ? text : null;
             customizing = true;
@@ -2102,23 +2116,12 @@ namespace GoF2Remake.UI
         System.Collections.IEnumerator CaptureInspect()
         {
             inspectCapturing = true;
-            FpsCounter.Suppressed = true;
-            inspectOverlay.style.visibility = Visibility.Hidden;
-            yield return null;   // a frame drawn without the overlay
-            yield return new WaitForEndOfFrame();
-            bool ok = false;
-            try
-            {
-                var shot = ScreenCapture.CaptureScreenshotAsTexture();
-                byte[] png = shot.EncodeToPNG();
-                Destroy(shot);
-                ok = PhotoMode.Store(png, $"GoF2_{System.DateTime.Now:yyyyMMdd_HHmmss}.png");
-            }
-            catch (System.Exception e) { Debug.LogWarning("Inspect screenshot: " + e.Message); }
-            inspectOverlay.style.visibility = StyleKeyword.Null;
+            bool saved = false;
+            // The photo tools' capture: the overlay hidden, cut to the frame, twice the size if asked.
+            yield return inspectTools.Capture(inspectOverlay, ok => saved = ok);
             inspectCapturing = false;
             FpsCounter.Suppressed = inspectUiHidden;
-            inspectMessage.text = Localization.Get(ok ? 55 : 56);   // "Screenshot saved." / "Error saving screenshot."
+            inspectMessage.text = Localization.Get(saved ? 55 : 56);   // "Screenshot saved." / "Error saving screenshot."
             inspectMessageMs = 3000f;
         }
 
@@ -2127,12 +2130,14 @@ namespace GoF2Remake.UI
             OrbitViewUi.BuildHints(inspectHints, kind, new[] { "W", "A", "S", "D" },
                 () => { Play(buttonRelease); SetInspectUiHidden(true); },
                 () => { Play(buttonRelease); TakeInspectScreenshot(); },
-                EndInspect, () => Play(buttonPush));
+                EndInspect, () => Play(buttonPush),
+                customizing ? null : inspectTools.ToggleFree, customizing ? null : inspectTools.ToggleSettings, !customizing && inspectTools.Free);
         }
 
         /// <summary>A pointer on one of the footer's buttons (while they show): a click there isn't a drag (screen pixels, y up).</summary>
         bool OverInspectButton(Vector2 screen) => !inspectUiHidden && (OrbitViewUi.OverControl(root, inspectBack, inspectHints, screen)
-                                                                       || (customize != null && customize.Contains(root, screen)));
+                                                                       || (customize != null && customize.Contains(root, screen))
+                                                                       || inspectTools.OverPanel(screen));
 
         /// <summary>The orbit camera's input; 'customize' (the Customize screen): its panel takes the arrows, the left stick,
         /// Enter / Esc and the face buttons, the camera keeps the drag, the wheel / pinch / triggers, the right stick (and
@@ -2143,7 +2148,24 @@ namespace GoF2Remake.UI
             float frames = Time.unscaledDeltaTime * 1000f / (1000f / 30f);
             var kb = GoF2Remake.Multiplayer.NetChat.Keys;   // null while a multiplayer chat line is typed
             var pad = Gamepad.current;
+            // The photo tools (not in the Customize screen): their keys first, the settings panel takes the arrows / Enter /
+            // Esc while open; the free camera replaces the orbit.
+            bool panelKeys = false, backTaken = false;
             if (!customize)
+            {
+                panelKeys = inspectTools.TickKeys(kb, pad, out backTaken);
+                insp.RollDeg = PhotoSettings.Roll;
+                insp.FovDeg = PhotoSettings.Fov;
+                if (inspectTools.Free)
+                {
+                    inspectTools.TickFree(kb, pad, Time.unscaledDeltaTime, OverInspectButton, out _);
+                    var (fp, fr) = inspectTools.FreePose;
+                    insp.SetFreePose(fp, fr);
+                }
+                else insp.ClearFree();
+                inspectTools.LateTick();
+            }
+            if (!customize && !panelKeys && !backTaken)
             {
                 if ((kb != null && (kb.escapeKey.wasPressedThisFrame || kb.backspaceKey.wasPressedThisFrame || kb.iKey.wasPressedThisFrame || kb.digit6Key.wasPressedThisFrame))
                     || (pad != null && (pad.buttonEast.wasPressedThisFrame || pad.rightStickButton.wasPressedThisFrame)))
@@ -2155,6 +2177,8 @@ namespace GoF2Remake.UI
                     TakeInspectScreenshot();
             }
             if (inspectMessageMs > 0f && (inspectMessageMs -= Time.unscaledDeltaTime * 1000f) <= 0f) inspectMessage.text = "";
+            if (!customize && inspectTools.Free) return;   // the free camera took the input above; the orbit rests
+            if (panelKeys) { kb = null; pad = null; }      // the settings panel has the keys and the controller
 
             float scale = 1080f / Mathf.Max(1, Screen.height);   // PhotoMode's pixels: a 1080-high screen
             Vector2 delta = Vector2.zero;   // x: + takes the camera to its left (the ship turns with a drag right); y: + up
@@ -2225,7 +2249,7 @@ namespace GoF2Remake.UI
                 float trig = pad.leftTrigger.ReadValue() - pad.rightTrigger.ReadValue();   // RT closer, LT further
                 if (Mathf.Abs(trig) > 0.05f) insp.Zoom(Mathf.Pow(1.03f, trig * frames));
             }
-            if (Mouse.current != null)
+            if (Mouse.current != null && !inspectTools.OverPanel(Mouse.current.position.ReadValue()))
             {
                 float steps = Mathf.Clamp(Mouse.current.scroll.ReadValue().y, -1f, 1f);   // a notch reads 1 or 120
                 if (Mathf.Abs(steps) > 0f) insp.Zoom(Mathf.Pow(0.85f, steps));
