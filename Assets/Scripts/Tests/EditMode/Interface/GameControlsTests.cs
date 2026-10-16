@@ -9,7 +9,7 @@
 // fire, D-pad right / up / down switch secondary / camera / auto turret, X action, View autopilot menu, D-pad left
 // actions menu, RS / LS press cloak / time extender, RS left / right dodge; the drill: arrows, W A S D second, LS). The
 // overrides are kept in PlayerPrefs "controls_bindings" as { version 2, bindings [action, index, path] } (an empty path
-// unbinds); every other version is ignored. Short names: the Xbox labels (CLAUDE.md "Input modes": always Xbox labels).
+// unbinds); every other version is ignored. Short names: the Xbox labels (pinned; PadGlyphStyleTests has the PlayStation ones).
 
 using System;
 using System.Collections.Generic;
@@ -34,6 +34,7 @@ namespace GoF2Remake.Tests
             english = new DataUiTestKit.TextLanguage("en");
             // The GoF2 key layout: a player who chose free flight in Options has its own layout (GameControls.ApplyStyle).
             Settings.FlightStyle = FlightStyles.Original;
+            Settings.PadGlyphs = Settings.PadGlyphsXbox;   // the Xbox names, whatever controller the player last used
             GameControls.ApplyStyle();
             GameControls.ResetToDefaults();
         }

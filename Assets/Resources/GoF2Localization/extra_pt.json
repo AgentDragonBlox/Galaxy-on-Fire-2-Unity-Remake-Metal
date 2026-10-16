@@ -1368,5 +1368,8 @@
  "empBreaksCloakHelp": "Um acerto de PEM numa nave camuflada desfaz a camuflagem na hora, e uma camuflagem ainda carregando falha: a sua, a dos Specters e a de outros jogadores. Desligado: como no original, nada encerra uma camuflagem antes da hora.",
  "cloakDisrupted": "Camuflagem interrompida!",
  "kaamoModMaxed": "Não dá para ir além disso: sua #SHIP_NAME já tem esta melhoria no nível {0}.",
- "saveTransferFolder": "Os jogos salvos exportados vão para esta pasta e são importados dela:"
+ "saveTransferFolder": "Os jogos salvos exportados vão para esta pasta e são importados dela:",
+ "padGlyphs": "Ícones dos botões do controle",
+ "padGlyphsAuto": "Automático",
+ "padGlyphsHelp": "Automático: botões de PlayStation (xis, círculo, quadrado, triângulo) enquanto um DualSense ou DualShock estiver em uso, botões de Xbox para qualquer outro controle."
 }

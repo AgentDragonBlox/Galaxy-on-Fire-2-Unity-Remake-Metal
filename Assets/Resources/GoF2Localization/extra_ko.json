@@ -1368,5 +1368,8 @@
  "empBreaksCloakHelp": "클로킹 중인 함선에 EMP가 명중하면 클로킹이 즉시 풀리고, 충전 중인 클로킹은 실패합니다: 당신, 스펙터, 다른 플레이어의 클로킹 모두 해당됩니다. 끔: 원작처럼 클로킹이 중간에 끝나지 않습니다.",
  "cloakDisrupted": "클로킹 교란됨!",
  "kaamoModMaxed": "더는 안 됩니다: 당신의 #SHIP_NAME은 이 업그레이드가 이미 {0}레벨입니다.",
- "saveTransferFolder": "내보낸 저장 파일은 이 폴더에 저장되고 여기서 가져옵니다:"
+ "saveTransferFolder": "내보낸 저장 파일은 이 폴더에 저장되고 여기서 가져옵니다:",
+ "padGlyphs": "컨트롤러 버튼 아이콘",
+ "padGlyphsAuto": "자동",
+ "padGlyphsHelp": "자동: DualSense 또는 DualShock 사용 중에는 PlayStation 버튼(엑스, 원, 네모, 세모), 다른 컨트롤러는 Xbox 버튼."
 }

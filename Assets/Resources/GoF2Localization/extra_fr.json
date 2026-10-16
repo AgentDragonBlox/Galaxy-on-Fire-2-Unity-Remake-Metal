@@ -1368,5 +1368,8 @@
  "empBreaksCloak": "L'IEM brise le camouflage",
  "empBreaksCloakHelp": "Un tir IEM sur un vaisseau camouflé le rend visible aussitôt, et un camouflage encore en charge échoue : le tien, celui des Spectres et celui des autres joueurs. Désactivé : comme dans l'original, rien n'interrompt un camouflage.",
  "cloakDisrupted": "Camouflage perturbé !",
- "kaamoModMaxed": "Je ne peux pas aller plus loin : ton #SHIP_NAME a déjà cette amélioration au niveau {0}."
+ "kaamoModMaxed": "Je ne peux pas aller plus loin : ton #SHIP_NAME a déjà cette amélioration au niveau {0}.",
+ "padGlyphs": "Icônes des boutons de la manette",
+ "padGlyphsAuto": "Auto",
+ "padGlyphsHelp": "Auto : boutons PlayStation (croix, rond, carré, triangle) quand une DualSense ou une DualShock est utilisée, boutons Xbox pour toute autre manette."
 }

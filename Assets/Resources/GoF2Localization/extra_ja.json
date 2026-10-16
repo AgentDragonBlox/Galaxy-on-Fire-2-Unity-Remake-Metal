@@ -1368,5 +1368,8 @@
  "empBreaksCloakHelp": "クローク中の船にEMPが命中するとクロークが即座に解除され、充電中のクロークは失敗します：あなた、スペクター、他のプレイヤーのクロークが対象です。オフ：オリジナル通り、クロークが途中で終わることはありません。",
  "cloakDisrupted": "クロークが妨害された！",
  "kaamoModMaxed": "これ以上は無理だ：君の#SHIP_NAMEはこのアップグレードがすでにレベル{0}だ。",
- "saveTransferFolder": "エクスポートしたセーブはこのフォルダに保存され、ここからインポートされます："
+ "saveTransferFolder": "エクスポートしたセーブはこのフォルダに保存され、ここからインポートされます：",
+ "padGlyphs": "コントローラーのボタン表示",
+ "padGlyphsAuto": "自動",
+ "padGlyphsHelp": "自動：DualSense または DualShock の使用中は PlayStation のボタン（バツ、マル、シカク、サンカク）、それ以外のコントローラーでは Xbox のボタン。"
 }

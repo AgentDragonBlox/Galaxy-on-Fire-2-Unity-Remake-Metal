@@ -1368,5 +1368,8 @@
  "empBreaksCloakHelp": "Een EMP-treffer op een gecamoufleerd schip heft de camouflage meteen op, en een camouflage die nog laadt mislukt: die van jou, van de Specters en van andere spelers. Uit: zoals in het origineel beëindigt niets een camouflage voortijdig.",
  "cloakDisrupted": "Camouflage verstoord!",
  "kaamoModMaxed": "Verder kan ik niet gaan: je #SHIP_NAME heeft deze upgrade al op niveau {0}.",
- "saveTransferFolder": "Geëxporteerde saves komen in deze map en worden hieruit geïmporteerd:"
+ "saveTransferFolder": "Geëxporteerde saves komen in deze map en worden hieruit geïmporteerd:",
+ "padGlyphs": "Knoppictogrammen van de controller",
+ "padGlyphsAuto": "Automatisch",
+ "padGlyphsHelp": "Automatisch: PlayStation-knoppen (kruisje, rondje, vierkantje, driehoekje) zolang een DualSense of DualShock wordt gebruikt, Xbox-knoppen bij elke andere controller."
 }

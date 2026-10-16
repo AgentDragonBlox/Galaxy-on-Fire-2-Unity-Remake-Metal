@@ -152,6 +152,10 @@ namespace GoF2Remake.Data
         public static bool MouseSteering { get => GetBool("mouseSteering", true); set => SetBool("mouseSteering", value); }
         /// <summary>Remake: mouse steering's dead zone, a fraction of the steering range around the centre (0 = none, the
         /// original's: PlayerEgo::update steers by the raw offset).</summary>
+        /// <summary>Remake: the controller hints' button icons (InputMode.Style): 0 Auto (the controller last used: Sony's
+        /// PlayStation, any other Xbox), 1 always Xbox, 2 always PlayStation.</summary>
+        public static int PadGlyphs { get => Mathf.Clamp(Mathf.RoundToInt(Get("padGlyphs", PadGlyphsAuto)), 0, 2); set => Set("padGlyphs", Mathf.Clamp(value, 0, 2)); }
+        public const int PadGlyphsAuto = 0, PadGlyphsXbox = 1, PadGlyphsPlayStation = 2;
         public static float MouseDeadzone { get => Get("mouseDeadzone", DefaultMouseDeadzone); set => Set("mouseDeadzone", Mathf.Clamp(value, 0f, 0.3f)); }
         public const float DefaultMouseDeadzone = 0.08f;
         /// <summary>Remake: how the player's ship flies (FlightStyles): the original's (a throttle, the ship always flying
@@ -335,7 +339,7 @@ namespace GoF2Remake.Data
         {
             "tiltSteering", "tiltSensitivity", "sensitivity", "keyAutofire", "levelPitch", "invertPitch", "invertYaw", "invertDrillY",
             "invertDrillX", "gyroSteering", "gyroSensitivity", "mouseSteering", "mouseDeadzone", "vrGrabControls", "haptics", "stickDeadzone",
-            "touchLeftHeight", "touchRightHeight", "flightStyle",
+            "touchLeftHeight", "touchRightHeight", "flightStyle", "padGlyphs",
         };
         public static readonly string[] GameplayKeys =
         {

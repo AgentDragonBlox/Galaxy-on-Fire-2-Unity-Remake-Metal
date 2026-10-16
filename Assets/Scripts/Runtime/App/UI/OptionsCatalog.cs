@@ -332,6 +332,11 @@ namespace GoF2Remake.UI
             list.Add(haptics);
             list.Add(Slider("deadzone", OptionPage.Controls, () => X("deadzone", "Stick dead zone"), 0.05f, 0.4f,
                 () => Settings.StickDeadzone, v => Settings.StickDeadzone = v, Percent));
+            // Remake: the controller hints' button icons (InputMode.Style, PadGlyph): the controller in use, or always one style.
+            list.Add(Choice("padGlyphs", OptionPage.Controls, () => X("padGlyphs", "Controller button icons"), true,
+                () => new[] { X("padGlyphsAuto", "Auto"), "Xbox", "PlayStation" },
+                () => Settings.PadGlyphs, i => Settings.PadGlyphs = i,
+                () => X("padGlyphsHelp", "Auto: PlayStation buttons (cross, circle, square, triangle) while a DualSense or DualShock is in use, Xbox buttons for any other controller.")));
             // Remake: every flight control rebindable (GameControls): two keyboard / mouse keys and a controller button each.
             list.Add(new OptionDef
             {

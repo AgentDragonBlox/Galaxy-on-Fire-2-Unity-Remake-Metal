@@ -4,7 +4,7 @@
 // without a controller button names the autopilot menu's (its entry is in that menu). The PC version's #KEY_ACTION_MENU is
 // its E "Actions" menu (CLAUDE.md: "E actions (the quick menu)", "the PC version's E 'Actions'"), which in the remake is
 // the Actions menu row (E / the D-pad left): texts 591 / 594 / 638 tell the player to open it to reach the Khador Drive,
-// the cloak and the wingmen, which are in the quick menu. InputGlyph: the controller hints use Xbox labels; a binding the
+// the cloak and the wingmen, which are in the quick menu. InputGlyph: the controller hints use Xbox labels (the option pinned to Xbox; PadGlyphStyleTests: PlayStation); a binding the
 // HUD names is a keycap for keys and mouse buttons (wide past three letters) or a controller button; nothing for touch.
 
 using System.Linq;
@@ -31,6 +31,7 @@ namespace GoF2Remake.Tests
             english = new DataUiTestKit.TextLanguage("en");
             // The GoF2 key layout: a player who chose free flight in Options has its own layout (GameControls.ApplyStyle).
             Settings.FlightStyle = FlightStyles.Original;
+            Settings.PadGlyphs = Settings.PadGlyphsXbox;   // the Xbox names, whatever controller the player last used
             GameControls.ApplyStyle();
             GameControls.ResetToDefaults();
             mode = InputMode.Current;

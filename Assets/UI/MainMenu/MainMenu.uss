@@ -627,7 +627,8 @@
     border-color: rgba(255, 110, 90, 1);
 }
 
-/* The controller's X on the Turn on / off button (MainMenu toggles the selected mod with it); only with a controller. */
+/* The controller's X / square on the Turn on / off button (MainMenu toggles the selected mod with it); only with a
+   controller. A PadGlyph (InputGlyph.Pad): the main menu doesn't load GoF2InputGlyphs.uss, so both styles are here. */
 .mods-pad-x {
     display: none;
     position: absolute;
@@ -642,6 +643,12 @@
     color: #0B1016;
     background-color: #3F8FE8;
     -unity-text-align: middle-center;
+}
+
+.mods-pad-x.pad-face--ps {
+    background-color: rgb(16, 21, 28);
+    border-width: 2px;
+    border-color: rgba(216, 236, 247, 0.55);
 }
 
 .input-gamepad .mods-pad-x {

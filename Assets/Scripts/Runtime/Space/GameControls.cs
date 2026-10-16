@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using GoF2Remake.Data;
+using GoF2Remake.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -54,7 +55,8 @@ namespace GoF2Remake.Flight
         static readonly List<ControlRow> rows = new List<ControlRow>();
         public static IReadOnlyList<ControlRow> Rows => rows;
 
-        /// <summary>A binding changed (a rebind, a reset): hints and option rows show the new keys.</summary>
+        /// <summary>A binding changed (a rebind, a reset), or the controller's button names (InputMode.StyleChanged): hints
+        /// and option rows show the new keys.</summary>
         public static event Action Changed;
 
         public static readonly InputAction Steer, Throttle, Brake, Boost, LevelOut, Roll, StrafeLeft, StrafeRight, DodgeLeft, DodgeRight, Drill,
@@ -290,7 +292,11 @@ namespace GoF2Remake.Flight
             Map.Enable();
             Settings.Changed -= ApplyStyle;
             Settings.Changed += ApplyStyle;   // the flight style option (and Default settings) switch the layout
+            InputMode.StyleChanged -= StyleChanged;
+            InputMode.StyleChanged += StyleChanged;   // another controller's button names (Xbox / PlayStation)
         }
+
+        static void StyleChanged() => Changed?.Invoke();
 
         /// <summary>Chat typing (NetChat) and rebinding switch the game's controls off; nested calls count.</summary>
         public static void Suspend(bool on)
@@ -387,23 +393,29 @@ namespace GoF2Remake.Flight
             return false;
         }
 
-        /// <summary>The short name the HUD and the options show for one control path ("F", "SPACE", "LMB", "A", "RT", "LS").</summary>
-        public static string ShortName(string path)
+        /// <summary>The short name the HUD and the options show for one control path ("F", "SPACE", "LMB", "A", "RT", "LS"):
+        /// the controller's buttons in the current style (InputMode.Style: "×", "R2", "L3" for a PlayStation pad).</summary>
+        public static string ShortName(string path) => ShortName(path, InputMode.Style);
+
+        /// <summary>ShortName with the controller's buttons in this style.</summary>
+        public static string ShortName(string path, PadStyle style)
         {
             if (string.IsNullOrEmpty(path)) return "";
             string p = path.ToLowerInvariant();
-            if (p.StartsWith("<gamepad>/"))
+            string pad = PadControl(p);
+            if (pad != null)
             {
-                string c = p.Substring("<gamepad>/".Length);
-                return c switch
+                bool ps = style == PadStyle.PlayStation;
+                return pad switch
                 {
-                    "buttonsouth" => "A", "buttoneast" => "B", "buttonwest" => "X", "buttonnorth" => "Y",
-                    "leftshoulder" => "LB", "rightshoulder" => "RB", "lefttrigger" => "LT", "righttrigger" => "RT",
-                    "leftstick" => "LS", "rightstick" => "RS", "leftstickpress" => "LS", "rightstickpress" => "RS",
-                    "leftstick/up" => "LS ↑", "leftstick/down" => "LS ↓", "leftstick/left" => "LS ←", "leftstick/right" => "LS →",
-                    "rightstick/up" => "RS ↑", "rightstick/down" => "RS ↓", "rightstick/left" => "RS ←", "rightstick/right" => "RS →",
+                    "buttonsouth" => ps ? "×" : "A", "buttoneast" => ps ? "○" : "B", "buttonwest" => ps ? "□" : "X", "buttonnorth" => ps ? "△" : "Y",
+                    "leftshoulder" => ps ? "L1" : "LB", "rightshoulder" => ps ? "R1" : "RB", "lefttrigger" => ps ? "L2" : "LT", "righttrigger" => ps ? "R2" : "RT",
+                    "leftstick" => ps ? "L" : "LS", "rightstick" => ps ? "R" : "RS", "leftstickpress" => ps ? "L3" : "LS", "rightstickpress" => ps ? "R3" : "RS",
+                    "leftstick/up" => Stick(ps, "L", "↑"), "leftstick/down" => Stick(ps, "L", "↓"), "leftstick/left" => Stick(ps, "L", "←"), "leftstick/right" => Stick(ps, "L", "→"),
+                    "rightstick/up" => Stick(ps, "R", "↑"), "rightstick/down" => Stick(ps, "R", "↓"), "rightstick/left" => Stick(ps, "R", "←"), "rightstick/right" => Stick(ps, "R", "→"),
                     "dpad" => "D-PAD", "dpad/up" => "D-PAD ↑", "dpad/down" => "D-PAD ↓", "dpad/left" => "D-PAD ←", "dpad/right" => "D-PAD →",
-                    "start" => "MENU", "select" => "VIEW",
+                    "start" => ps ? "OPTIONS" : "MENU", "select" => ps ? (InputMode.DualShock4 ? "SHARE" : "CREATE") : "VIEW",
+                    "touchpadbutton" => "TOUCHPAD",
                     _ => InputControlPath.ToHumanReadableString(path, InputControlPath.HumanReadableStringOptions.OmitDevice).ToUpperInvariant(),
                 };
             }
@@ -437,6 +449,27 @@ namespace GoF2Remake.Flight
             var control = kb != null ? InputControlPath.TryFindControl(kb, path) : null;
             string name = control != null ? control.displayName : InputControlPath.ToHumanReadableString(path, InputControlPath.HumanReadableStringOptions.OmitDevice);
             return string.IsNullOrEmpty(name) ? "?" : name.ToUpperInvariant();
+        }
+
+        // A stick pushed one way: "LS ↑" (Xbox) / "L ↑" (PlayStation, whose sticks are L / R).
+        static string Stick(bool ps, string side, string arrow) => (ps ? side : side + "S") + " " + arrow;
+
+        /// <summary>A controller path's control ("buttonsouth", "leftstick/up"), lower case; null for any other device. The
+        /// bindings name &lt;Gamepad&gt;, a capture of a pad-only control (a DualSense's touchpad) its own layout.</summary>
+        public static string PadControl(string path)
+        {
+            if (string.IsNullOrEmpty(path) || path[0] != '<') return null;
+            int close = path.IndexOf(">/", StringComparison.Ordinal);
+            if (close < 0) return null;
+            string layout = path.Substring(1, close - 1);
+            if (!layout.Equals("gamepad", StringComparison.OrdinalIgnoreCase))
+            {
+                bool basedOn;
+                try { basedOn = InputSystem.IsFirstLayoutBasedOnSecond(layout, "Gamepad"); }
+                catch (ArgumentException) { basedOn = false; }
+                if (!basedOn) return null;
+            }
+            return path.Substring(close + 2).ToLowerInvariant();
         }
 
         /// <summary>The slot as text: its key, or a composite's keys ("↑ ↓ ← →"); "" = unbound.</summary>

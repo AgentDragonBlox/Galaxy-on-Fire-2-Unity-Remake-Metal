@@ -10,7 +10,7 @@
 // a tap in the lounge skips its camera intro. Adapts to InputMode like the flight HUD:
 //   Touch:      buttons, drag to turn the ship, Menu button.
 //   Keyboard:   keycap hints; A/D or arrows turn the ship, 1 hangar, 2 lounge, M map, L launch, Esc back.
-//   Controller: Xbox hints; right stick turns the ship, LB hangar / RB lounge, Y map, X launch, B back, Menu to the main menu.
+//   Controller: Xbox / PlayStation hints (InputMode.Style; Xbox names below); right stick turns the ship, LB hangar / RB lounge, Y map, X launch, B back, Menu to the main menu.
 //   In the hangar window: up / down select, left / right sell / buy, Enter / A confirm, Q / E or LB / RB switch tabs.
 // Esc / B: dialog -> no, hangar window / lounge -> main view, main view -> the system menu.
 // System menu (MenuTouchWindow, "Menu" 172; the Menu button, Esc on the main view, controller Menu): Save game (30) with the

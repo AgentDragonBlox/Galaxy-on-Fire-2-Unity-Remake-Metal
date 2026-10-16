@@ -3,7 +3,7 @@
 //   Touch:      the original's controls (TouchControls: the fixed stick, the right cluster with fire / secondary / quick
 //               menu / camera, boost, pause, the throttle drag and the dodge on the empty screen); fire is the action button.
 //   Keyboard:   keycap hints (WASD, Q/E, Ctrl, F, Space, R, Esc).
-//   Controller: Xbox button hints (LS, LB/RB, RT, LT, A, Y, Menu).
+//   Controller: Xbox or PlayStation button hints (PadGlyph, InputMode.Style: LS / L, LB / L1, RT / R2, A / cross...).
 // Always: speed, throttle and boost readout, and the crosshair: the screen projection of ship + forward * 22000
 // units (where the bullets are after 22000 units), orange for 200 ms after a hit (weapons.md section 9). The chase camera uses the original's fixed touch-mode damping for
 // touch and the handling-dependent damping otherwise (TargetFollowCamera::resetShipHandling / setShipHandling).

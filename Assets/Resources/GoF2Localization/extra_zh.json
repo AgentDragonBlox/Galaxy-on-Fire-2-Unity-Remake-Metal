@@ -1368,5 +1368,8 @@
   "empBreaksCloakHelp": "EMP 命中隐形中的飞船会立即使其隐形失效，正在充能的隐形也会失败：包括你、幽灵以及其他玩家的隐形。关闭：与原版相同，任何东西都不会提前结束隐形。",
   "cloakDisrupted": "隐形被干扰！",
   "kaamoModMaxed": "我只能做到这一步了：你的#SHIP_NAME的这项升级已经是{0}级了。",
-  "saveTransferFolder": "导出的存档会保存到此文件夹，并从这里导入："
+  "saveTransferFolder": "导出的存档会保存到此文件夹，并从这里导入：",
+ "padGlyphs": "手柄按键图标",
+ "padGlyphsAuto": "自动",
+ "padGlyphsHelp": "自动：使用 DualSense 或 DualShock 时显示 PlayStation 按键（叉、圆、方块、三角），其他手柄显示 Xbox 按键。"
 }

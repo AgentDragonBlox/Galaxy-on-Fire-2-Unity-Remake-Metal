@@ -1368,5 +1368,8 @@
  "empBreaksCloak": "El PEM rompe el camuflaje",
  "empBreaksCloakHelp": "Un impacto PEM en una nave camuflada anula su camuflaje al instante, y un camuflaje que aún se carga falla: el tuyo, el de los Spectres y el de otros jugadores. Desactivado: como en el original, nada termina un camuflaje antes de tiempo.",
  "cloakDisrupted": "¡Camuflaje interrumpido!",
- "kaamoModMaxed": "No puedo ir más allá: tu #SHIP_NAME ya tiene esta mejora en el nivel {0}."
+ "kaamoModMaxed": "No puedo ir más allá: tu #SHIP_NAME ya tiene esta mejora en el nivel {0}.",
+ "padGlyphs": "Iconos de botones del mando",
+ "padGlyphsAuto": "Automático",
+ "padGlyphsHelp": "Automático: botones de PlayStation (cruz, círculo, cuadrado, triángulo) mientras se usa un DualSense o DualShock, botones de Xbox con cualquier otro mando."
 }
