@@ -212,8 +212,8 @@ namespace GoF2Remake.UI
                 if (plateFree && locked != null)
                 {
                     lockPlate.EnableInClassList("lock-plate--shown", true);
-                    // Radar::drawCurrentLock 0x158548: "<name or race> NN%"; the Hijacker / the Informer their name alone; a Most
-                    // Wanted criminal in its own colour.
+                    // Radar::drawCurrentLock 0x158548: "<name or race> NN%"; the Hijacker / the Informer their name alone; they and
+                    // a Most Wanted criminal in red.
                     // Built again only when something on it changed (every frame allocated the text and the icon's name), or
                     // when the mining / navigation view wrote its own text on the shared plate meanwhile (an asteroid's ore or a
                     // planet's name stayed on the ship's plate).
@@ -226,7 +226,7 @@ namespace GoF2Remake.UI
                         plateText = lockOre.text;
                         plateIcon = !locked.plateNoIcon && (locked.race >= 0 && locked.race <= 3 || locked.race == 8 || locked.race == 9) ? Tex($"race_{locked.race}") : null;
                     }
-                    lockOre.EnableInClassList("lock-ore--wanted", locked.plateWanted);
+                    lockOre.EnableInClassList("lock-ore--wanted", locked.plateRed);
                     lockClass.style.display = plateIcon != null ? DisplayStyle.Flex : DisplayStyle.None;
                     Image(lockClass, plateIcon);
                 }

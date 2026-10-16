@@ -385,7 +385,9 @@ namespace GoF2Remake.World
             Target.customDeath = true;
             Target.mineProof = spec.fixedObject == "station_pirates";   // KIPlayer+0x3d
             Target.plateNameOnly = spec.nameText == 1611 || spec.nameText == 1663;
-            Target.plateWanted = spec.wantedIndex >= 0;
+            // Radar::drawCurrentLock compares the name with 0x64b "Hijacker" / 0x67f "Informer" (and the Wanted flag): those are
+            // red (a player's report: only the Most Wanted criminals were).
+            Target.plateRed = spec.wantedIndex >= 0 || spec.nameText == 1611 || spec.nameText == 1663;
             Target.radius = (spec.hitRadius > 0f ? spec.hitRadius : NpcTables.HitRadiusUnits) * M;
             Target.hitpoints = new Hitpoints(spec.hitpoints > 0 ? spec.hitpoints : NpcTables.Hull(kind, spec.ship));
             Target.hitpoints.SetEmp(spec.empPoints > 0 ? spec.empPoints : NpcTables.Emp(kind), NpcTables.EmpRecoveryMs(kind));   // also with a hull override

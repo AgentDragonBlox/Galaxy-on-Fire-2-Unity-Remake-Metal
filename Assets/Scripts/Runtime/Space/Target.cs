@@ -51,9 +51,9 @@ namespace GoF2Remake.Flight
         public bool untargetable;
         /// <summary>KIPlayer+0x3d (the pirate outposts): mines neither trigger on nor pull toward it.</summary>
         public bool mineProof;
-        /// <summary>Radar::drawCurrentLock: the Hijacker (1611) and the Informer (1663) show their name alone; a Most Wanted
-        /// criminal is drawn in its own colour.</summary>
-        public bool plateNameOnly, plateWanted;
+        /// <summary>Radar::drawCurrentLock: the Hijacker (1611) and the Informer (1663) show their name alone; they and a Most
+        /// Wanted criminal ("<name> NN%", Player+0x3e) are drawn in red (the plate's other colour, SetColor around them).</summary>
+        public bool plateNameOnly, plateRed;
         /// <summary>No race icon on the lock plate (the space junk).</summary>
         public bool plateNoIcon;
         /// <summary>The space junk's lock plate. PlayerJunk is a KIPlayer of race -1, which Radar::drawCurrentLock turns into
