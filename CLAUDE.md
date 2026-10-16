@@ -1940,7 +1940,7 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
 - **Items** (`ModContent`, items.json): `{ "id", "base": n | "mod:id", fields }` adds an item (a copy of the base: type,
   category and *look* kept, `ItemData.modded` / `modKey` / `Look`), `{ "override": n | "mod:id", fields }` changes one;
   fields: name, description, techLevel, occurrence, prices (`price` n or [min, max]), price systems, `vosskOnly` (attr 60),
-  `alwaysSoldAt` (attr 61), `stats` by name (`ItemStats`: readable names + items.json's statList keys, kept in step with the
+  `alwaysSoldAt` (attr 61; a mod item's always stocks it there, also at the stations whose original filter allows one kind only, Var Destro 105 weapons, Quineros 107 equipment, Valkyrie 101, Sao Perula 106: `Shop.GenerateItemsOriginal` modAlways), `stats` by name (`ItemStats`: readable names + items.json's statList keys, kept in step with the
   attribute), raw `attributes`, `defaultEconomy` (the same, for the Default Economy). Texts inline or `text/<lang>.json`
   (`items.<id>.name`). `Database.Load` merges after the economy overlay (`ModContent.Apply`, only for the GoF2Data folder).
   A mod item's 0 occurrence means never (the add-on items' random roll in `Shop.GenerateItems` skips them).

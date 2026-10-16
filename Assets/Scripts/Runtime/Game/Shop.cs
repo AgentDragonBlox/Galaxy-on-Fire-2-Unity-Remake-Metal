@@ -280,7 +280,12 @@ namespace GoF2Remake.Data
                 int idx = it.index, type = it.TypeId, sort = it.categoryId, techI = it.techLevel, occ = it.occurrence;
                 bool specialty = idx >= 132 && idx <= 153;
                 bool exclusive = it.Attr(61, -1) == station && !((idx == 196 || (idx >= 198 && idx <= 200)) && mission < 142);
-                if (station == 106 && !(SaoPerulaGoods.Contains(idx) || specialty)) continue;
+                // Remake mods: a mod item's "alwaysSoldAt" station always stocks it, also where the original's station filters
+                // below allow only one kind (Var Destro 105 weapons, Quineros 107 equipment, Valkyrie 101 no equipment, Sao
+                // Perula 106 goods). getItemBuyList applies them to its own attr-61 items too; a player's report: a mod's 13
+                // shields, cloaks and gear at Var Destro were never sold.
+                bool modAlways = exclusive && it.modded;
+                if (station == 106 && !modAlways && !(SaoPerulaGoods.Contains(idx) || specialty)) continue;
 
                 // Owned add-ons give items without an occurrence one (Valkyrie for idx < 196, Supernova above); a mod item's 0 means never.
                 if (occ == 0 && !it.modded && !exclusive && type != 4 && idx != 85 && it.blueprint.Count == 0 && !(idx == 181 && mission < 59)
@@ -296,10 +301,13 @@ namespace GoF2Remake.Data
                     if (specialty && idx != 132 + system && station != 106) continue;       // one specialty per system
                 }
                 if (hardcore && (sort == 23 || sort == 24)) continue;
-                if (station == 107 && type != 3) continue;
-                if (station == 105 && !(type <= 2 || sort == 28)) continue;
-                if (station == 101 && type > 2) continue;
-                if (station == 106 && type != 4) continue;
+                if (!modAlways)
+                {
+                    if (station == 107 && type != 3) continue;
+                    if (station == 105 && !(type <= 2 || sort == 28)) continue;
+                    if (station == 101 && type > 2) continue;
+                    if (station == 106 && type != 4) continue;
+                }
 
                 if (!exclusive)
                 {
