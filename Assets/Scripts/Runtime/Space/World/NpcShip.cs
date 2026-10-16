@@ -270,6 +270,11 @@ namespace GoF2Remake.World
         /// <summary>PlayerFixedObject::getDockingType (ObjectDocking.DropOff / Pickup / Hackable, 0 = not dockable); level
         /// scripts change it.</summary>
         public int DockingType { get; set; }
+        /// <summary>Offered as a docking target now (Navigation's landmark, no ship marker or lock): any docking type, but a
+        /// capital ship's resupply deck only while it is open (CapitalShips.DeckOpen). Remake: closed (hostile, in a fleet
+        /// battle, coasting after one) the carrier and the Vossk battleship are ships to mark, lock and scan; before, the
+        /// docking type kept them off the radar for good (a player's report 2026-10-16).</summary>
+        public bool OffersDocking => DockingType > 0 && (DockingType != ObjectDocking.Resupply || CapitalShips.DeckOpen(this));
         public int SpacePointSet => Spec.spacePoints;
         /// <summary>Level::getDockingTarget's index (the hacking game's dock index).</summary>
         public int DockIndex { get; set; } = -1;

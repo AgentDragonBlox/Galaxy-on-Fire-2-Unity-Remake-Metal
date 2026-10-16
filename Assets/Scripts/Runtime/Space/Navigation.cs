@@ -182,8 +182,8 @@ namespace GoF2Remake.Flight
                 if (t.kind != Kind.DockingTarget) continue;
                 var s = t.dockingShip;
                 t.name = s != null ? s.Target.displayName ?? "" : "";
-                t.hidden = s == null || s.Gone || !s.Target.Alive || s.DockingType <= 0 || s.RadarHidden || s.Hidden || s.Inactive
-                           || (s.DockingType == ObjectDocking.Resupply && (s.Target.hostileToPlayer || CapitalShips.InBattle(s)));   // a hostile or fighting carrier (CapitalShips)
+                // a hostile or fighting carrier is a ship then (NpcShip.OffersDocking, CapitalShips.DeckOpen)
+                t.hidden = s == null || s.Gone || !s.Target.Alive || !s.OffersDocking || s.RadarHidden || s.Hidden || s.Inactive;
                 if (t.hidden && (Locked == t || Candidate == t)) { Locked = Candidate = null; LockTimer = 0f; }
             }
         }

@@ -455,6 +455,21 @@ namespace GoF2Remake.Flight
                                             tier == 5 ? Random.Range(8, 13) : Random.Range(3, 7)));
                 }
                 else if (tier == 3) extra.Add(new ItemStack(BossLoot[Random.Range(0, BossLoot.Length)], Random.Range(2, 5)));
+                // Remake (a player's report 2026-10-16: an outpost gave 1 t of something, less than a freighter): the pirates' stash,
+                // freighter cargo rolls by tier (NpcTables.RollLoot) after the tier's own stacks, each kind once (a kind the tier
+                // already gives is left out).
+                int tierStacks = extra.Count;
+                for (int rolls = OutpostStashRolls[t], tries = 0; rolls > 0 && tries < 30; tries++)
+                {
+                    var hold = NpcTables.RollLoot(db, true);
+                    if (hold.Count == 0) continue;
+                    rolls--;
+                    foreach (var s in hold)
+                    {
+                        if (s.item == loot.item || extra.FindIndex(x => x.item == s.item) is int found && found >= 0 && found < tierStacks) continue;
+                        GoF2Remake.World.CapitalShips.Add(extra, s.item, s.amount);
+                    }
+                }
                 list.Add(new SpawnSpec
                 {
                     group = NpcGroup.Outpost, race = Standing.Pirate, ship = -1, position = at,
@@ -508,6 +523,7 @@ namespace GoF2Remake.Flight
         static readonly float[] OutpostHullFactor = { 0.4f, 0.7f, 1f, 1.4f, 2f };
         static readonly int[] OutpostGuardsAdd = { -3, -1, 0, 3, 6 };
         static readonly int[] OutpostTurretCount = { 0, 0, 2, 4, 6 };
+        public static readonly int[] OutpostStashRolls = { 1, 2, 2, 3, 4 };
         static readonly float[] BossHullFactor = { 0.35f, 0.6f, 1f, 1.5f, 2.4f };
         static readonly float[] BossGunFactor = { 1f, 1.5f, 2f, 2.4f, 3f };
         static readonly int[] BossEscortsMin = { 0, 1, 2, 4, 6 }, BossEscortsMax = { 0, 1, 3, 5, 7 };
@@ -650,10 +666,15 @@ namespace GoF2Remake.Flight
 
         /// <summary>A fleet battle in this orbit: the option on, a Terran or Vossk system (the two at war), past step 103 (the
         /// carrier's era; the finished game's world too), 3 % per visit; not in the special orbits, a pirate base system, the
-        /// Kaamo siege or a storyline's orbit while a story runs.</summary>
+        /// Kaamo siege or a storyline's orbit while a story runs; not in a Secure system (a player's report 2026-10-16: a war
+        /// broke out in the safe orbits).</summary>
+        /// <summary>SystemData.securityLevel of a Secure system (text 405).</summary>
+        public const int SecureSystem = 3;
+
         static bool FleetBattleHere(int station, SystemData system, int sysRace, bool baseSystem, bool story)
         {
             if (!Settings.CapitalShips || (sysRace != 0 && sysRace != 1) || Session.CampaignMission <= 0x67) return false;
+            if (system.securityLevel >= SecureSystem) return false;
             if (Session.FreePlay && !Session.CompletedWorld) return false;
             if (baseSystem || KaamoClub.SiegeAt(station) || (story && InStoryline(station))) return false;
             if (station == 100 || station == 101 || station == 108 || station == 10 || (station >= 102 && station <= 104)) return false;
