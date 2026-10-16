@@ -243,7 +243,7 @@ namespace GoF2Remake.Flight
                             }
                             // KIPlayer untargetable (a Rhino's / Myfft's turret, Level::createFighterTurrets): no lock; it was
                             // locked, dropped and locked again every frame, so the Rhino under it couldn't be scanned.
-                            if (s.Gone || !s.Target.Alive || s.Hidden || s.RadarHidden || s.DockingType > 0 || s.Asleep || s.Target.untargetable) continue;
+                            if (s.Gone || !s.Target.Alive || s.Hidden || s.RadarHidden || s.OffersDocking || s.Asleep || s.Target.untargetable) continue;
                             if (!InBox(cam, c, box, s.transform.position, out float d)) continue;
                             // KIPlayer+0x20: a disabled ship with cargo is salvage (it wins over the ship locks).
                             if (s.Hp.empDisabled && s.HasCargo) { if (d < stealD && (Salvaging == null || Salvaging.stolenFrom != s)) { stealD = d; bestSteal = s; } }

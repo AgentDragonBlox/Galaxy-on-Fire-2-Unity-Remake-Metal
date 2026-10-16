@@ -42,6 +42,9 @@ namespace GoF2Remake.Modding
             // A tractor beam (sort 13) with tractorTargets 2+ pulls that many crates at once, by itself, within tractorRange
             // game units, without the salvage lock (Flight.CombatRadar's extra beams; like the transfusion beams' attr 55).
             ["tractorTargets"] = 122, ["tractorRange"] = 123,
+            // A weapon's damage to a shield in percent (Flight.Gun.ShieldFactor; default 100, the Disruptor Laser and items
+            // based on it 200): the part the shield doesn't absorb hits the armor and hull at its plain value.
+            ["shieldDamage"] = 124,
             // items.json's statList names
             ["steerable"] = 15, ["handling"] = 17,
             ["loadingTimeMs"] = 11, ["range"] = 12, ["projectileSpeed"] = 13, ["magnitude"] = 14, ["shieldRegenTime"] = 19,

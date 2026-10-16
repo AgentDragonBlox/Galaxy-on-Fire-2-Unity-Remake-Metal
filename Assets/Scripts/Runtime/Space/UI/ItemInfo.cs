@@ -128,6 +128,10 @@ namespace GoF2Remake.UI
                     case 59: rows.Add((T(163), $"{v} t")); break;
                 }
             }
+            // Remake: a weapon's damage to shields (Flight.Gun.ShieldFactor: the Disruptor's 200 %, a mod's shieldDamage).
+            float shieldFactor = Flight.Gun.ShieldFactor(it);
+            if ((it.TypeId == 0 || it.TypeId == 2) && Mathf.Abs(shieldFactor - 1f) > 0.001f)
+                rows.Add((Localization.Extra("statShieldDamage", "Damage to shields"), $"{Mathf.RoundToInt(shieldFactor * 100f)} %"));
             return rows;
         }
 

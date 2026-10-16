@@ -1385,5 +1385,6 @@
  "originalSaveStep": "krok",
  "blueprintMountAsk": "Zamontować teraz?",
  "mpAdmWreck": "Tworzenie wraku do zhakowania przy {0}.",
- "mpAdmWreckRace": "Wrak to frachtowiec Terran, Vossków, Niwelian lub Midorian."
+ "mpAdmWreckRace": "Wrak to frachtowiec Terran, Vossków, Niwelian lub Midorian.",
+ "statShieldDamage": "Obrażenia tarcz"
 }

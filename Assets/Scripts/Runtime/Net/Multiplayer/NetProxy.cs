@@ -253,7 +253,7 @@ namespace GoF2Remake.Multiplayer
             target.isShip = true;
             target.customDeath = true;
             target.maxHp = 100f;
-            target.RemoteDamage = (amount, hitVector, byNpc) => DamageUpRpc(amount, hitVector, byNpc);
+            target.RemoteDamage = (amount, hitVector, byNpc, _) => DamageUpRpc(amount, hitVector, byNpc);   // NPCs have no shield
             target.RemoteEmp = emp => EmpUpRpc(emp);
             // Space junk is lockable after the ships and a far dot, like the owner's own junk (Target.RadarObjects).
             if (IsJunk) { Target.RadarObjects.Add(target); target.plateNameOnly = target.plateNoIcon = true; }

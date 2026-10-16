@@ -1385,5 +1385,6 @@
  "originalSaveStep": "ステップ",
  "blueprintMountAsk": "今すぐ装備しますか？",
  "mpAdmWreck": "{0}にハッキング可能な残骸を出現させます。",
- "mpAdmWreckRace": "残骸はテラン、ヴォスク、ニヴェリアン、ミドリアンの貨物船です。"
+ "mpAdmWreckRace": "残骸はテラン、ヴォスク、ニヴェリアン、ミドリアンの貨物船です。",
+ "statShieldDamage": "シールドへのダメージ"
 }

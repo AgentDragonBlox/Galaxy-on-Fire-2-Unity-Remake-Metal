@@ -516,7 +516,7 @@ namespace GoF2Remake.Flight
 
         void OnHit(int bullet, Target t, Vector3 point)
         {
-            t.Damage(gun.damage, false, gun.bullets[bullet].velocity);
+            t.Damage(gun.damage, false, gun.bullets[bullet].velocity, gun.shieldFactor);
             core.Rig.ShowImpact(point);
             Hit?.Invoke();
         }

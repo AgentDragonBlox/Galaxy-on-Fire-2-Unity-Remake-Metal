@@ -149,7 +149,8 @@ turnRate 112, strafeSpeed 113 (% bonuses, both styles), originalTopSpeed 114, or
 freeTopSpeed 117, freeTurnRate 118, freeStrafeSpeed 119, freeAcceleration 120, freeBoostFactor 121 (free flight's boost, 350 =
 x3.5; default the booster's original boost speed x 3.2 / 3). See Flight styles. tractorTargets 122 (a tractor beam based on
 68-70 / 194 pulling 1..8 containers at once: the extra beams take the nearest ones by themselves, no lock, the scanner stays
-free), tractorRange 123 (their reach, units, default 30000). A new item also sounds like its base (a booster's boost sound, a
+free), tractorRange 123 (their reach, units, default 30000), shieldDamage 124 (a weapon's damage to shields in %, default 100,
+the Disruptor 183 and items based on it 200; only ships with a shield: players, not NPCs). A new item also sounds like its base (a booster's boost sound, a
 tractor beam's beam).
 items.json's own names (`loadingTimeMs`, `range`, `projectileSpeed`...) work too. An unknown stat name is an error.
 
