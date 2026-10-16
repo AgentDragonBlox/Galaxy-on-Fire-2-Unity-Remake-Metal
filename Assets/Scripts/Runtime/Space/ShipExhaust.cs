@@ -116,7 +116,11 @@ namespace GoF2Remake.Flight
                 main.loop = true;
                 main.playOnAwake = false;
                 main.startLifetime = life;
-                main.startSpeed = 0f;
+                // Backwards along the ship at 4000 k u/s (+-100 u/s), given at emission in the direction the nozzle points
+                // then (the shape below), the particle keeping it in the world: in a turn the plume bends into a streak
+                // behind the ship. #114: as a local-space velocity over the lifetime it was re-applied in the ship's
+                // current orientation every frame, so the plume swung round rigidly with the ship and stayed a blob.
+                main.startSpeed = new ParticleSystem.MinMaxCurve(-4000f * k * M - 100f * M, -4000f * k * M + 100f * M);
                 main.startSize = size * M;
                 main.startColor = (Color)new Color32(0xDD, 0xDD, 0xDD, 0xFF);
                 main.simulationSpace = ParticleSystemSimulationSpace.World;
@@ -126,15 +130,21 @@ namespace GoF2Remake.Flight
                 var em = ps.emission;
                 em.rateOverTime = 0f;
                 em.rateOverDistance = 1f / (8f * M);   // one per 8 units
+                // The emission direction: the emitter's +z (the ship's nose; the negative start speed sends the particle back),
+                // from the anchor itself.
                 var sh = ps.shape;
-                sh.enabled = false;
-                // Backwards along the ship at 4000 k u/s, +-100 u/s jitter, plus 0.8 x the ship's velocity.
+                sh.enabled = true;
+                sh.shapeType = ParticleSystemShapeType.Cone;
+                sh.angle = 0f;
+                sh.radius = 0.0001f;
+                sh.radiusThickness = 0f;
+                // +-100 u/s of jitter across, plus 0.8 x the ship's velocity (inheritVelocity).
                 var vel = ps.velocityOverLifetime;
                 vel.enabled = true;
-                vel.space = ParticleSystemSimulationSpace.Local;
+                vel.space = ParticleSystemSimulationSpace.World;
                 vel.x = new ParticleSystem.MinMaxCurve(-100f * M, 100f * M);
                 vel.y = new ParticleSystem.MinMaxCurve(-100f * M, 100f * M);
-                vel.z = new ParticleSystem.MinMaxCurve(-4000f * k * M - 100f * M, -4000f * k * M + 100f * M);
+                vel.z = new ParticleSystem.MinMaxCurve(-100f * M, 100f * M);
                 var iv = ps.inheritVelocity;
                 iv.enabled = true;
                 iv.mode = ParticleSystemInheritVelocityMode.Initial;

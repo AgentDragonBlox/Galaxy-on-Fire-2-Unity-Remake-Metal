@@ -466,6 +466,18 @@ namespace GoF2Remake.Data
             return false;
         }
 
+        /// <summary>A scene starts (SpaceLevel / StationLevel): a mission still marked won here never had its success
+        /// conversation (that runs within one scene and advances the step), so it is opened again and completes anew. #88:
+        /// step 72's call completed, the scene changed before its conversation (a docking or jump in the 1.5 s before it
+        /// opens) and the save kept the step won: no check reported it again, the Valkyrie story stopped there for good.</summary>
+        public static void ReopenUnshownSuccess()
+        {
+            var m = Mission;
+            if (m == null || !m.won || Session.FreePlay) return;
+            m.won = false;
+            Debug.Log($"Story: step {Index} was won without its success conversation; it completes again.");
+        }
+
         /// <summary>Is the current campaign mission done? (null-safe; a mission already won is not reported again.)</summary>
         public static bool IsComplete(Database db, StoryContext c)
         {

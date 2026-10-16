@@ -27,6 +27,7 @@ Shader "GoF2/ModNozzleShimmer"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             TEXTURE2D(_EmissionMap); SAMPLER(sampler_EmissionMap);
@@ -37,12 +38,14 @@ Shader "GoF2/ModNozzleShimmer"
                 float _NoiseTiling, _ScrollSpeed, _Contrast;
             CBUFFER_END
 
-            struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; };
-            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; };
+            struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
+            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; UNITY_VERTEX_OUTPUT_STEREO };
 
             Varyings vert(Attributes i)
             {
                 Varyings o;
+                UNITY_SETUP_INSTANCE_ID(i);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
                 o.positionCS = TransformObjectToHClip(i.positionOS.xyz);
                 o.uv = i.uv;
                 return o;
@@ -50,6 +53,7 @@ Shader "GoF2/ModNozzleShimmer"
 
             half4 frag(Varyings i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 half mask = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, i.uv).r;
                 float t = _Time.y * _ScrollSpeed;
                 // Two layers drifting apart (one along v, one slower across), multiplied: moving streaks.

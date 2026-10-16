@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using GoF2Remake.Flight;
+using GoF2Remake.Data;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -31,6 +32,9 @@ namespace GoF2Remake.Tests
         {
             prefs = new DataUiTestKit.PrefsSnapshot();
             english = new DataUiTestKit.TextLanguage("en");
+            // The GoF2 key layout: a player who chose free flight in Options has its own layout (GameControls.ApplyStyle).
+            Settings.FlightStyle = FlightStyles.Original;
+            GameControls.ApplyStyle();
             GameControls.ResetToDefaults();
         }
 
@@ -39,6 +43,7 @@ namespace GoF2Remake.Tests
         {
             english?.Dispose();
             prefs?.Dispose();
+            GameControls.ApplyStyle();   // the player's own layout again (the option is back from the snapshot)
         }
 
         static readonly string[] RowIds =

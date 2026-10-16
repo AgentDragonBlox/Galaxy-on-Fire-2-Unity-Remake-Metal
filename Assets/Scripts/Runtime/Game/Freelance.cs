@@ -176,11 +176,16 @@ namespace GoF2Remake.Data
             return n;
         }
 
-        /// <summary>ModStation::OnInitialize: the Stolen goods mission's documents wait in the target station's shop.</summary>
+        /// <summary>A Stolen goods mission's documents are in the hold.</summary>
+        public static bool HasDocuments => CargoCount(Documents) > 0;
+
+        /// <summary>ModStation::OnInitialize: the Stolen goods mission's documents wait in the target station's shop. Remake: not
+        /// again while they are in the hold (#113: every docking at the target put another set in its shop).</summary>
         public static void OnEnterStation(StationStock stock)
         {
             if (!Active || Mission.type != MissionType.StolenGoods || stock == null || stock.station != Mission.target) return;
             if (NetSession.Active && Mission.status > 0) return;   // multiplayer: a squadmate has them
+            if (HasDocuments) return;
             if (stock.items.Find(r => r.item == Documents) == null) Shop.InsertStock(stock, new ItemStack(Documents, 1));
         }
 

@@ -320,6 +320,10 @@ namespace GoF2Remake.UI
 
         bool HangarOpen => hangarWindow != null && hangarWindow.IsOpen;
 
+        /// <summary>The Enter / A press that opened the hangar window is still held: the window ignores Enter / A until it is
+        /// released (#104: the Hangar button took A on its press, and in the same frame the window bought its first row).</summary>
+        bool hangarConfirmHeld;
+
         /// <summary>Station button 0 (ModStation::OnKeyPress): the Hangar window over the main view.</summary>
         void OpenHangar()
         {
@@ -328,6 +332,7 @@ namespace GoF2Remake.UI
             if (level.View != StationView.Hangar) level.SetView(StationView.Hangar);
             FirstVisitHint(8, 622);   // before the first row's selection hint
             hangarWindow.Open();
+            hangarConfirmHeld = true;   // #104: the press that opened it isn't also the hangar's Buy
             level.SetHangarWindowOpen(true);
             boozeAtOpen = BoozeInHold();   // ModStation::OnKeyPress: ModStation+0xcc
             root.AddToClassList("hangar-open");
@@ -2460,7 +2465,10 @@ namespace GoF2Remake.UI
                 }
                 hangarWindow.HoldDirections(System.Math.Sign(v), System.Math.Sign(h), dtMs);
                 hangarWindow.Update(dtMs);
-                if ((kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)) || (pad != null && pad.buttonSouth.wasPressedThisFrame))
+                if (hangarConfirmHeld && !(kb != null && (kb.enterKey.isPressed || kb.numpadEnterKey.isPressed || kb.spaceKey.isPressed))
+                    && !(pad != null && pad.buttonSouth.isPressed))
+                    hangarConfirmHeld = false;
+                if (!hangarConfirmHeld && ((kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)) || (pad != null && pad.buttonSouth.wasPressedThisFrame)))
                     hangarWindow.Action();
                 else if ((kb != null && kb.xKey.wasPressedThisFrame) || (pad != null && pad.buttonWest.wasPressedThisFrame))
                     hangarWindow.SecondaryAction();   // Sell a stored hull (Kaamo Club)

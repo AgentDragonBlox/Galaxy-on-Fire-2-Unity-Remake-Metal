@@ -460,8 +460,10 @@ namespace GoF2Remake.UI
                     UnityEngine.Object.Destroy(ball.GetComponent<Collider>());
                     ball.name = "Marker " + name;
                     var mr = ball.GetComponent<MeshRenderer>();
-                    markerMaterial ??= new Material(Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color"));
-                    mr.sharedMaterial = new Material(markerMaterial) { color = colour };
+                    markerMaterial ??= Vr.VrPanels.FromTemplate("VrGlass", "Universal Render Pipeline/Unlit");   // Unlit is stripped from builds without a template (#115)
+                    var mat = new Material(markerMaterial);
+                    mat.SetColor("_BaseColor", colour);
+                    mr.sharedMaterial = mat;
                     mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                     markerBalls[name] = ball;
                 }

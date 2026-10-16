@@ -169,6 +169,7 @@ namespace GoF2Remake.World
 
         void Awake()
         {
+            Story.ReopenUnshownSuccess();   // #88
             Modding.ModShips.ModelsChanged += OnModShipModels;
             Modding.ModTraffic.Warm();   // remake mods: more kit parts for the NPCs' random builds, loaded while docked
             // Multiplayer: loaded after its session ended (a docking queued behind the menu): on to the menu (nothing is

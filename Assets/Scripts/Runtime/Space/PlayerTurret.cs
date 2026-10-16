@@ -466,6 +466,8 @@ namespace GoF2Remake.Flight
             {
                 // A hanging turret's own axes point the other way round than its upright view's: mirror the stick.
                 var stick = ship != null ? ship.SteerInput : Vector2.zero;
+                // #103: the flight's invert options apply to the turret too (like the Liberator, WeaponSystem).
+                if (ship != null) stick = new Vector2(ship.invertYaw ? -stick.x : stick.x, ship.invertPitch ? -stick.y : stick.y);
                 aim.Drive(Hangs ? -stick : stick, dtMs);
                 // The camera turns with the turret, at half the gun's pitch; its up is the turret's (upright when hanging).
                 var yawAxis = mountRoot != null ? mountRoot.up : transform.up;

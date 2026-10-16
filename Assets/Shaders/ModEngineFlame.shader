@@ -59,6 +59,7 @@ Shader "GoF2/ModEngineFlame"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             TEXTURE2D(_NoiseMap); SAMPLER(sampler_NoiseMap);
@@ -69,8 +70,8 @@ Shader "GoF2/ModEngineFlame"
                 float _FlameThrust, _FlameBoost, _FlameLevel, _BoostOverride;
             CBUFFER_END
 
-            struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; float2 uv1 : TEXCOORD1; };
-            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float3 normalWS : TEXCOORD1; float3 positionWS : TEXCOORD2; float stretch : TEXCOORD3; float2 across : TEXCOORD4; };
+            struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; float2 uv1 : TEXCOORD1; UNITY_VERTEX_INPUT_INSTANCE_ID };
+            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float3 normalWS : TEXCOORD1; float3 positionWS : TEXCOORD2; float stretch : TEXCOORD3; float2 across : TEXCOORD4; UNITY_VERTEX_OUTPUT_STEREO };
 
             // UV1.y's card kind, read as |y - 0.5| (a V flip leaves it): 0 a main flame card, 0.25 a boost card (shown only
             // while boosting), 0.5 (no UV1) neither, the card fading by its bent normals.
@@ -80,6 +81,8 @@ Shader "GoF2/ModEngineFlame"
             Varyings vert(Attributes i)
             {
                 Varyings o;
+                UNITY_SETUP_INSTANCE_ID(i);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
                 float thrust = saturate(_FlameThrust), boost = saturate(_FlameBoost), level = saturate(_FlameLevel);
                 // Off: the flame shrinks back into its nozzle as it fades. A boost card grows only with the boost.
                 float stretch = IsBoostCard(i.uv1.y) ? _Length * boost * level * (1 - saturate(_BoostOverride))
@@ -109,6 +112,7 @@ Shader "GoF2/ModEngineFlame"
 
             half4 frag(Varyings i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 float u = saturate(i.uv.x);
                 float level = saturate(_FlameLevel), boost = saturate(_FlameBoost);
                 // ES2's look: fine streaks along the flame (the noise stretched: _StreakTiling across a card, _NoiseTiling.x

@@ -414,7 +414,8 @@ namespace GoF2Remake.UI
             list.Add(Choice("targetLock", OptionPage.Gameplay, () => X("targetLock", "Target lock"), true,
                 () => new[] { X("targetLockSmart", "Smart"), X("targetLockOriginal", "Original") },
                 () => Settings.OriginalTargetLock ? 1 : 0, i => Settings.OriginalTargetLock = i == 1,
-                () => X("targetLockHelp", "Smart: hostile ships are locked first, then the one nearest the crosshair, and a neutral or friendly ship passing through can't take over a hostile lock (your missiles stay on your target). Original: the first ship in the box is locked, whoever it is.")));
+                () => X("targetLockHelp", "Smart: hostile ships are locked first, then the one nearest the crosshair, and a neutral or friendly ship passing through can't take over a hostile lock (your missiles stay on your target). Original: the first ship in the box is locked, whoever it is.") + " "
+                      + X("targetLockBeams", "With Smart, beam lasers also aim only at hostile ships, or at the ship you have locked.")));
             // Remake mods: NPC fighters in the mods' ships of their race (Modding.ModTraffic).
             list.Add(Choice("modShipTraffic", OptionPage.Gameplay, () => X("modShipTraffic", "Mod ships in traffic"), true,
                 () => new[] { X("modShipTrafficOff", "Off"), "10 %", "25 %", "50 %" },

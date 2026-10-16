@@ -65,7 +65,7 @@ namespace GoF2Remake.Flight
 
         [Header("Visual banking (cosmetic only)")]
         public Transform visualModel;
-        [Tooltip("Degrees of model roll per unit of H while yawing. Tune by eye; not a recovered constant.")]
+        [Tooltip("Free flight only: degrees of model roll per unit of H while yawing (tuned by eye). The original style banks from the turn rates (UpdateVisualBank).")]
         public float bankDegreesPerH = 1.2f;
         public float pitchTiltDegreesPerH = 0.4f;
         public float bankSmoothing = 6f;
@@ -454,14 +454,27 @@ namespace GoF2Remake.Flight
             return Vector2.ClampMagnitude(GameControls.Steer.ReadValue<Vector2>(), 1f);
         }
 
-        // A heavy hull banks less and settles into it slowly (remake debug, mass).
-        void UpdateVisualBank() => UpdateVisualBank(Model.VisualYawBank * bankDegreesPerH * Mathf.Lerp(1f, 0.35f, mass),
-                                                    Model.VisualPitchBank * pitchTiltDegreesPerH * Mathf.Lerp(1f, 0.35f, mass));
+        /// <summary>The turn rates' units (1/4096 of a turn, PlayerEgo +0x278 / +0x27c) in degrees.</summary>
+        public const float RateToDegrees = 360f / 4096f;
 
-        void UpdateVisualBank(float targetBank, float targetTilt)
+        // PlayerEgo::update 0xaa5f4: the model node rolls by -yawRate x 2 pi / 4096 and tilts by pitchRate x 0.25 x 2 pi / 4096,
+        // straight from the turn rates, which ramp in (dt H / ((3.3 - sens) 20) a ms) and decay (dt H / 126): no easing of
+        // its own. #114: the remake eased toward a fixed angle per stick (+0x25c / +0x258, the frame's input) at 6 / s, so the
+        // ship snapped into a bank in ~0.2 s and out of it as fast, where the original's takes ~0.5 s in and ~1.5 s out.
+        // Free flight keeps the remake's stick-driven bank; a heavy hull banks less and settles slowly (remake debug, mass).
+        void UpdateVisualBank()
+        {
+            float heavy = Mathf.Lerp(1f, 0.35f, mass);
+            if (Model.FreeFlight)
+                UpdateVisualBank(Model.VisualYawBank * bankDegreesPerH * heavy, Model.VisualPitchBank * pitchTiltDegreesPerH * heavy);
+            else
+                UpdateVisualBank(Model.YawRate * RateToDegrees * heavy, Model.PitchRate * 0.25f * RateToDegrees * heavy, mass <= 0f);
+        }
+
+        void UpdateVisualBank(float targetBank, float targetTilt, bool direct = false)
         {
             if (visualModel == null) return;
-            float k = 1f - Mathf.Exp(-bankSmoothing * Mathf.Lerp(1f, 0.2f, mass) * Time.deltaTime);
+            float k = direct ? 1f : 1f - Mathf.Exp(-bankSmoothing * Mathf.Lerp(1f, 0.2f, mass) * Time.deltaTime);
             bankAngle = Mathf.Lerp(bankAngle, targetBank, k);
             tiltAngle = Mathf.Lerp(tiltAngle, targetTilt, k);
             visualModel.localRotation = Quaternion.Euler(tiltAngle, 0f, bankAngle);

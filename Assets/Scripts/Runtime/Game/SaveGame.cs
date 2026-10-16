@@ -456,8 +456,9 @@ namespace GoF2Remake.Data
             if (s.freelanceMission != null && !StationOrNone(s.freelanceMission.clientStation)) return "an unknown station in the bar mission";
             if (s.wanted != null && s.wanted.Exists(w => w == null || !StationOrNone(w.current) || !StationOrNone(w.travelsTo) || !StationOrNone(w.lastSeen)))
                 return "an unknown station on the Most Wanted board";
-            if (!StationOrNone(s.voidInvasionStation)) return "an unknown invaded station";
-            if (s.voidInvasionSystem < -1 || s.voidInvasionSystem >= systems) return "an unknown invaded system";
+            // -1 none yet, -10 the game won (Story.OnDepart: nothing is attacked any more; #117 refused every finished game).
+            if (s.voidInvasionStation != -10 && !StationOrNone(s.voidInvasionStation)) return "an unknown invaded station";
+            if (s.voidInvasionSystem != -10 && (s.voidInvasionSystem < -1 || s.voidInvasionSystem >= systems)) return "an unknown invaded system";
             if (s.blueprints != null && s.blueprints.Exists(b => b == null || !Item(b.item))) return "an unknown blueprint";
             if (s.pendingProducts != null && s.pendingProducts.Exists(p => p == null || !Item(p.item) || !StationOrNone(p.station) || p.quantity < 0))
                 return "an unknown item or station in the production queue";
