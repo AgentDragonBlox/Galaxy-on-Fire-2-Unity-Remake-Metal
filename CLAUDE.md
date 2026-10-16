@@ -1185,8 +1185,10 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   officer, else first member; an empty one ends. Console: `factions`, `faction disband <TAG>`.
   Phase 2, territory (`NetFactionsClient` on the player's side): the **bank** (`/faction deposit N`: the server asks the
   player's game to pay, `ChargeRpc` / `ChargedRpc` with a server token; `/faction withdraw N`, officers: `GrantRpc`; both
-  move the profile's recorded worth, `NetProfiles.AdjustWorth`, so the upload check fits them; a game lying about
-  paying is only caught by that check); **claims** (`/faction claim`, officers, docked there: `-claimcost` (500 000) from the
+  move the profile's recorded worth, `NetProfiles.AdjustWorth`, so the upload check fits them; and the credits in its
+  saved game, `NetProfiles.MoveCredits`: a deposit, a toll or a trade's credits must be in the profile's last accepted upload,
+  `SpendableCredits`, else refused and given back to the game (a game claiming credits it never had fed a faction bank 36
+  billion while its own uploads were refused; closing the game before the next upload no longer gets a deposit back)); **claims** (`/faction claim`, officers, docked there: `-claimcost` (500 000) from the
   bank, `-maxclaims` (3) per faction, not 108 or system 25; `/faction unclaim`, `/faction home`, `/faction claims [TAG]`; the first
   claim is the home; a claim no member docked at for `-claimdays` (14) lapses, `NetFactions.Tick` once a minute; a claim
   is announced to everyone); `NetState.Claims` ("station|TAG|Name|VAT" lines, a 4 KB FixedString) shows the holder on the
