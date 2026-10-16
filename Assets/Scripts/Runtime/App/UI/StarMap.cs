@@ -196,7 +196,7 @@ namespace GoF2Remake.UI
         PanelSettings runtimePanel;
         VisualElement root, touch, labels, systemHeader, keyBox, hints, dialog;
         Label energyLine;
-        Button backButton, keyButton, zoomButton, dialogYes, dialogNo;
+        Button backButton, keyButton, zoomButton, voidButton, dialogYes, dialogNo;
         Action dialogAction, dialogNoAction;
         bool dialogInfo;
         int dialogFocus;
@@ -214,8 +214,9 @@ namespace GoF2Remake.UI
 
         /// <summary>Opens the map. promptStation >= 0 (jumpgate with a programmed station) first shows only "Destination: X /
         /// Travel to this station?": Yes returns that station, No opens the map.</summary>
-        /// <param name="askVoid">StarMap::askForJumpIntoAlienWorld: first "Jump to the Void's system?" (422); Yes returns
-        /// toVoid, No opens the map.</param>
+        /// <param name="askVoid">StarMap::askForJumpIntoAlienWorld: the Void is reachable. The original asks "Jump to the
+        /// Void's system?" (422) first; remake: the footer's Jump to the Void button (V / RB) asks it, No preselected, and
+        /// Yes returns toVoid (AskVoid).</param>
         /// <param name="routeFromSystem">Mission map: the route's start system (StarMap::setStart; -1 = the current system).</param>
         /// <param name="revealSystem">The reveal animation of a newly visible system (-1 = none).</param>
         public static StarMap Open(Database db, StarMapMode mode, bool jumpDrive, Action<StarMapResult> closed, int promptStation = -1,
@@ -312,13 +313,15 @@ namespace GoF2Remake.UI
             backButton = root.Q<Button>("backButton");
             keyButton = root.Q<Button>("keyButton");
             zoomButton = root.Q<Button>("zoomButton");
+            voidButton = root.Q<Button>("voidButton");
             dialogYes = root.Q<Button>("dialogYes");
             dialogNo = root.Q<Button>("dialogNo");
             root.Q<Label>("mapTitle").text = T(177).ToUpperInvariant();
             backButton.text = Localization.Extra("hudBack", "BACK");
             keyButton.text = T(400).ToUpperInvariant();
+            voidButton.text = VoidButtonText;
             dialogNo.text = T(135).ToUpperInvariant();
-            foreach (var b in new[] { backButton, keyButton, zoomButton, dialogYes, dialogNo })
+            foreach (var b in new[] { backButton, keyButton, zoomButton, voidButton, dialogYes, dialogNo })
             {
                 b.focusable = false;
                 b.RegisterCallback<PointerDownEvent>(_ => Play(assets.buttonPush), TrickleDown.TrickleDown);
@@ -326,6 +329,7 @@ namespace GoF2Remake.UI
             backButton.clicked += () => { Play(assets.buttonRelease); Back(); };
             keyButton.clicked += () => { Play(assets.buttonRelease); ToggleKey(); };
             zoomButton.clicked += () => { Play(assets.buttonRelease); SetOverview(!overview); };
+            voidButton.clicked += () => { Play(assets.buttonRelease); AskVoid(); };
             touch.RegisterCallback<WheelEvent>(e => { if (e.delta.y > 0.01f) SetOverview(true); else if (e.delta.y < -0.01f) SetOverview(false); e.StopPropagation(); });
             touch.RegisterCallback<PointerDownEvent>(e => PinchTrack(e.pointerId, e.localPosition, true), TrickleDown.TrickleDown);
             touch.RegisterCallback<PointerMoveEvent>(e => PinchTrack(e.pointerId, e.localPosition, false), TrickleDown.TrickleDown);
@@ -354,15 +358,12 @@ namespace GoF2Remake.UI
                     // it, so "its order - 1" kept the map over the builder's panels.
                     if (runtimePanel != null) runtimePanel.sortingOrder = baseSortingOrder - 1;
                     root.AddToClassList("map-builder");
-                    foreach (var n in new[] { "mapTitle", "backButton", "keyButton", "zoomButton", "hints" })
+                    foreach (var n in new[] { "mapTitle", "backButton", "keyButton", "zoomButton", "voidButton", "hints" })
                         if (root.Q(n) is VisualElement el) el.style.display = DisplayStyle.None;
                 }
-                if (askVoid)
-                {
-                    root.AddToClassList("map-dialog-only");
-                    ShowDialog(T(422), () => Close(new StarMapResult { station = -1, toVoid = true }), RevealMap);
-                }
-                else if (promptStation >= 0)
+                // askVoid: the original asks 422 before the map shows; remake: the map opens and the footer's Jump to the Void
+                // button asks it (AskVoid).
+                if (promptStation >= 0)
                 {
                     root.AddToClassList("map-dialog-only");
                     ShowDialog($"{T(574)}: {StationName(promptStation)}\n{T(421)}",
@@ -377,6 +378,17 @@ namespace GoF2Remake.UI
         /// <summary>StarMap::init 0xd6d20: StarMap+0xf4 = campaign mission > 15. Until then (Mido, the tutorial) the map
         /// opens in the current system's system view and Back closes it: no galaxy view (starmap_travel.md 2 / 3).</summary>
         static bool GalaxyAllowed => Session.FreePlay || Session.CampaignMission > 15;
+
+        /// <summary>The Khador map's Jump to the Void button (remake, the user's request 2026-10-16; StarMap::askForJumpIntoAlienWorld
+        /// asked 422 every time the drive's map opened outside the Void, Yes preselected, so Enter / A out of habit jumped
+        /// into it): 422 on demand, No preselected.</summary>
+        void AskVoid()
+        {
+            if (!askVoid || DialogOpen || world == null) return;
+            ShowDialog(T(422), () => Close(new StarMapResult { station = -1, toVoid = true }), null, noFirst: true);
+        }
+
+        static string VoidButtonText => Localization.Extra("mapVoidJump", "Jump to the Void").ToUpperInvariant();
 
         void RevealMap()
         {
@@ -1300,7 +1312,8 @@ namespace GoF2Remake.UI
 
         string pendingHint;
 
-        void ShowDialog(string text, Action onYes, Action onNo, bool info = false)
+        /// <param name="noFirst">No has the keyboard / controller focus when it opens (else Yes).</param>
+        void ShowDialog(string text, Action onYes, Action onNo, bool info = false, bool noFirst = false)
         {
             dialogAction = onYes;
             dialogNoAction = onNo;
@@ -1309,7 +1322,7 @@ namespace GoF2Remake.UI
             dialogYes.text = info ? Localization.Extra("ok", "OK") : T(134).ToUpperInvariant();
             dialogNo.style.display = info ? DisplayStyle.None : DisplayStyle.Flex;
             dialog.AddToClassList("map-dialog-backdrop--shown");
-            dialogFocus = 0;
+            dialogFocus = noFirst && !info ? 1 : 0;
             HighlightDialog();
             Play(assets.infoSound);
             BuildHints(InputMode.Current);
@@ -1610,6 +1623,7 @@ namespace GoF2Remake.UI
             if (world == null || zoomDir != 0) return;
             if (Pressed(k => k.kKey.wasPressedThisFrame, g => g.buttonNorth.wasPressedThisFrame)) { Play(assets.buttonRelease); ToggleKey(); }
             if (!systemView && Pressed(k => k.qKey.wasPressedThisFrame, g => g.buttonWest.wasPressedThisFrame)) SetOverview(!overview);
+            if (askVoid && Pressed(k => k.vKey.wasPressedThisFrame, g => g.rightShoulder.wasPressedThisFrame)) { Play(assets.buttonRelease); AskVoid(); return; }
             if (!systemView && InOverview)
             {
                 if (left || right || up || down) SelectInDirection(left ? Vector2.left : right ? Vector2.right : up ? Vector2.down : Vector2.up);
@@ -1763,12 +1777,15 @@ namespace GoF2Remake.UI
                 // Both push to the right edge: the Key button sits right after the Full map button while that shows.
                 keyButton.style.marginLeft = zoomShown ? new StyleLength(0f) : new StyleLength(StyleKeyword.Null);
             }
+            if (voidButton != null) voidButton.style.display = askVoid && builder == null && !revealing ? DisplayStyle.Flex : DisplayStyle.None;
+            string toVoid = VoidButtonText;
             if (kind == InputKind.KeyboardMouse)
             {
                 Hint(select, InputGlyph.Key(sys ? "A" : "←"), InputGlyph.Key(sys ? "D" : "→"));
                 if (!overview) Hint(sys ? turn : moveText, InputGlyph.Key("W"), InputGlyph.Key("S"));
                 Hint(sys ? confirm : zoom, InputGlyph.Key("ENTER", true));
                 if (!sys) Hint(fullMap, InputGlyph.Key("Q"));
+                if (askVoid) Hint(toVoid, InputGlyph.Key("V"));
                 Hint(key, InputGlyph.Key("K"));
                 Hint(back, InputGlyph.Key("ESC"));
             }
@@ -1778,6 +1795,7 @@ namespace GoF2Remake.UI
                 if (!overview) Hint(sys ? turn : moveText, InputGlyph.Pad(PadButton.LeftStick));
                 Hint(sys ? confirm : zoom, InputGlyph.Pad(PadButton.A));
                 if (!sys) Hint(fullMap, InputGlyph.Pad(PadButton.X));
+                if (askVoid) Hint(toVoid, InputGlyph.Pad(PadButton.RightBumper));
                 Hint(key, InputGlyph.Pad(PadButton.Y));
                 Hint(back, InputGlyph.Pad(PadButton.B));
             }

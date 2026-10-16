@@ -300,6 +300,7 @@ namespace GoF2Remake.World
             // drive itself (its blueprint unlocks at index 34, after the wormhole ride at 24), so the prompt needs no gate; a
             // drive from the Debug panel reaches the Void early. Free play and multiplayer sessions too (Void Crystals), but
             // only with a real drive: free play's gateless-system stand-in (GalaxyMap.HasJumpDrive) doesn't reach the Void.
+            // Remake: the map opens at once and its Jump to the Void button asks 422 (StarMap.AskVoid).
             bool askVoid = GalaxyMap.HasIntegratedDrive(Session.ShipIndex) || Session.Equipment.Exists(e => e.item == GalaxyMap.KhadorDriveItem);
             bool opened = SpaceHooks.OpenStarMap != null && SpaceHooks.OpenStarMap(db, StarMapMode.Khador, true, r =>
             {
