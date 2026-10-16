@@ -570,9 +570,22 @@ namespace GoF2Remake.Modding
 
         static readonly string[] PartNames = { "projectile", "muzzle", "impact" };
 
+        /// <summary>A beam laser's sprite (BuildPart): 'sizeUnits' wide and one game unit long from its parent's origin along
+        /// +Z, which GunRig scales to the beam's length (the quad's y runs along the beam once ModFxPart.beam turns it).</summary>
+        public static void FitBeamSprite(Transform sprite, float sizeUnits)
+        {
+            sprite.localScale = new Vector3(sizeUnits * M, M, M);
+            sprite.localPosition = new Vector3(0f, 0f, 0.5f * M);
+        }
+
         /// <summary>A part's template: a root (GunRig scales and turns it) holding the sprite / model with its ModFxPart.</summary>
         static async Task<GameObject> BuildPart(int rev, Def d, Part p, int kind)
         {
+            // A beam laser's projectile (Gun.IsBeamLook): GunRig scales the part's root to (1, 1, the beam's length in game
+            // units) along the beam (the game's beam mesh is one unit long on +Z), so the sprite / model is made one unit long
+            // from the root forward, 'size' wide; a sprite turns about the beam to face the camera (ModFxPart.beam). Before, a
+            // camera-facing sprite under that scale was smeared across the screen (a modder's report).
+            bool beam = kind == 0 && Flight.Gun.IsBeamLook(ModContent.ItemLook(d.item));
             string tex = p.sprite ?? p.texture;
             if (tex != null) await ModMaterials.PreloadTexture(d.mod, tex, false);
             GameObject visual = null;
@@ -628,11 +641,15 @@ namespace GoF2Remake.Modding
                 visual.AddComponent<MeshRenderer>().sharedMaterial = mat;
                 visual.transform.localScale = new Vector3(p.size, p.size * Mathf.Max(0.01f, p.stretch), p.size) * M;
                 visual.transform.SetParent(root.transform, false);
+                if (beam) FitBeamSprite(visual.transform, p.size);
             }
             else
             {
                 visual.name = "model";
-                visual.transform.SetParent(root.transform, false);
+                // A beam's model: on a node of its own, fitted below to 'size' across and one game unit along +Z.
+                var fit = beam ? new GameObject("beam fit").transform : null;
+                if (fit != null) fit.SetParent(root.transform, false);
+                visual.transform.SetParent(fit != null ? fit : root.transform, false);
                 visual.transform.localRotation = Quaternion.Euler(p.rotate);
                 var renderers = visual.GetComponentsInChildren<Renderer>(true);
                 if (mat != null)
@@ -659,10 +676,20 @@ namespace GoF2Remake.Modding
                     }
                 // The largest extent to 'size' game units, centred on the part's origin.
                 var b = ModShipBuilder.BoundsIn(root.transform, renderers);
-                float largest = Mathf.Max(b.size.x, Mathf.Max(b.size.y, b.size.z));
-                if (largest > 0f) visual.transform.localScale *= p.size * M / largest;
-                b = ModShipBuilder.BoundsIn(root.transform, renderers);
-                visual.transform.localPosition -= b.center;
+                if (fit != null)
+                {
+                    float across = Mathf.Max(b.size.x, b.size.y);
+                    var scale = new Vector3(across > 0f ? p.size * M / across : 1f, across > 0f ? p.size * M / across : 1f, b.size.z > 1e-6f ? M / b.size.z : 1f);
+                    fit.localScale = scale;
+                    fit.localPosition = new Vector3(0f, 0f, 0.5f * M) - Vector3.Scale(b.center, scale);
+                }
+                else
+                {
+                    float largest = Mathf.Max(b.size.x, Mathf.Max(b.size.y, b.size.z));
+                    if (largest > 0f) visual.transform.localScale *= p.size * M / largest;
+                    b = ModShipBuilder.BoundsIn(root.transform, renderers);
+                    visual.transform.localPosition -= b.center;
+                }
             }
             foreach (var r in visual.GetComponentsInChildren<Renderer>(true))
             {
@@ -675,8 +702,9 @@ namespace GoF2Remake.Modding
             fxPart.fade = p.fade && mat != null;
             fxPart.additive = p.additive;
             fxPart.spin = p.spin;
-            fxPart.faceCamera = p.sprite != null && !p.alongFlight;
-            fxPart.alongFlight = p.sprite != null && p.alongFlight;
+            fxPart.beam = beam && p.sprite != null;
+            fxPart.faceCamera = p.sprite != null && !p.alongFlight && !beam;
+            fxPart.alongFlight = p.sprite != null && p.alongFlight && !beam;
             return root;
         }
 

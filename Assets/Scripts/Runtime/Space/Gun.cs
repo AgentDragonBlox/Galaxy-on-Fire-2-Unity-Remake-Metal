@@ -32,6 +32,9 @@ namespace GoF2Remake.Flight
     [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public class Gun
     {
+        /// <summary>The beam lasers (BeamGun: 9-11, 228; a mod's item by its look): one beam mesh scaled along the shot.</summary>
+        public static bool IsBeamLook(int look) => look == 9 || look == 10 || look == 11 || look == 228;
+
         public enum Kind
         {
             Laser = 0, Blaster = 1, AutoCannon = 2, Thermo = 3, Rocket = 4, Missile = 5, EmpBomb = 6, Nuke = 7, Turret = 8,
@@ -160,7 +163,7 @@ namespace GoF2Remake.Flight
             kind = (Kind)item.categoryId;
             isSecondary = secondary;
             int look = item.Look;   // a mod's item works like its base (Modding.ModContent)
-            isBeam = look == 9 || look == 10 || look == 11 || look == 228;
+            isBeam = IsBeamLook(look);
             damage = item.Attr(9);
             emp = item.Attr(10);
             reloadMs = Mathf.Max(1, item.Attr(11, 500));

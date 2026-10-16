@@ -137,5 +137,46 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(7, d.explosionItem);
             Assert.AreEqual(false, d.shotLoops);
         }
+
+        // ---- a beam laser's sprite (a modder's report: under the beam's length scale a camera-facing sprite smeared) -------
+
+        [Test]
+        public void ABeamsSpriteRunsAlongTheBeamFacingTheCamera()
+        {
+            Assert.IsTrue(GoF2Remake.Flight.Gun.IsBeamLook(9) && GoF2Remake.Flight.Gun.IsBeamLook(228));
+            Assert.IsFalse(GoF2Remake.Flight.Gun.IsBeamLook(12), "a laser bolt is no beam");
+            var cam = new UnityEngine.GameObject("test camera") { tag = "MainCamera" };
+            cam.AddComponent<UnityEngine.Camera>();
+            var root = new UnityEngine.GameObject("beam root").transform;
+            try
+            {
+                const float M = 0.05f, Length = 800f, Size = 60f;
+                // GunRig.UpdateBeam: at the mount, along the shot, scaled (1, 1, the beam's length in game units).
+                root.SetPositionAndRotation(new UnityEngine.Vector3(10f, 2f, 5f), UnityEngine.Quaternion.Euler(10f, 35f, 0f));
+                root.localScale = new UnityEngine.Vector3(1f, 1f, Length);
+                cam.transform.position = root.position + root.right * 30f + UnityEngine.Vector3.up * 8f;
+                var sprite = new UnityEngine.GameObject("sprite").transform;
+                sprite.SetParent(root, false);
+                ModWeapons.FitBeamSprite(sprite, Size);
+                var part = sprite.gameObject.AddComponent<ModFxPart>();
+                part.beam = true;
+                part.Restart();
+                var start = sprite.TransformPoint(new UnityEngine.Vector3(0f, -0.5f, 0f));
+                var end = sprite.TransformPoint(new UnityEngine.Vector3(0f, 0.5f, 0f));
+                float width = (sprite.TransformPoint(new UnityEngine.Vector3(0.5f, 0f, 0f)) - sprite.TransformPoint(new UnityEngine.Vector3(-0.5f, 0f, 0f))).magnitude;
+                Assert.Less((start - root.position).magnitude, 1e-3f, "it starts at the mount");
+                Assert.Less((end - (root.position + root.forward * Length * M)).magnitude, 1e-2f, "and ends at the beam's length");
+                Assert.AreEqual(Size * M, width, 1e-3f, "'size' wide, not stretched by the beam's scale");
+                var normal = sprite.TransformDirection(UnityEngine.Vector3.back).normalized;
+                Assert.AreEqual(0f, UnityEngine.Vector3.Dot(normal, root.forward), 1e-3f, "its face turned about the beam");
+                var toCam = UnityEngine.Camera.main.transform.position - sprite.position;   // the Editor's open scene may have its own
+                Assert.Greater(UnityEngine.Vector3.Dot(normal, (toCam - root.forward * UnityEngine.Vector3.Dot(toCam, root.forward)).normalized), 0.999f, "toward the camera");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root.gameObject);
+                UnityEngine.Object.DestroyImmediate(cam);
+            }
+        }
     }
 }
