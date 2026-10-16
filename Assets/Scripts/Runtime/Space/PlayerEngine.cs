@@ -47,6 +47,16 @@ namespace GoF2Remake.Flight
             return e;
         }
 
+        /// <summary>PlayerEgo::PlayerEgo's boost sound (+0xd4) for the mounted booster, by its look: boosters 71-74 -> 0-3 (events
+        /// 38-41), 195 -> 4 (1102); -1 without a booster. Remake: a mod's booster sounds like the original it is based on
+        /// (ItemData.Look: it was silent, its own number matching none), and any other booster like item 71's.</summary>
+        public static int BoostSound(ItemData booster)
+        {
+            if (booster == null) return -1;
+            int look = booster.Look;
+            return look >= 71 && look <= 74 ? look - 71 : look == 195 ? 4 : 0;
+        }
+
         void Setup(Database db, ShipController shipController)
         {
             ship = shipController;
@@ -55,7 +65,7 @@ namespace GoF2Remake.Flight
             var audio = CombatAudio.Load();
             engine = EngineIndex(db, Session.ShipIndex);
             var booster = Shop.FirstMounted(db, 14);
-            boost = booster == null ? -1 : booster.index >= 71 && booster.index <= 74 ? booster.index - 71 : booster.index == 195 ? 4 : -1;
+            boost = BoostSound(booster);
             modSounds = Modding.ModShipSounds.Ship(Session.ShipIndex);
             if (modSounds?.engine?.Clip is AudioClip own)
             {

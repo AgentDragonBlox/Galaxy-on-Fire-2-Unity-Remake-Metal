@@ -341,7 +341,11 @@ namespace GoF2Remake.World
             Navigation.Docking = Docking;
             Navigation.Ships = Traffic.Ships;
             Collision.docking = Docking;
-            Docking.HackWon += ship => Traffic.OnHackWon(ship);   // a Supernova wreck's hidden blueprint
+            Docking.HackWon += ship =>
+            {
+                Traffic.OnHackWon(ship);   // a Supernova wreck's hidden blueprint, a mod's derelict
+                SpaceHooks.WreckHacked?.Invoke(Session.StationIndex, ship != null ? ship.Target.displayName ?? "" : "");   // remake: "on hacked"
+            };
             if (storyOrbit)
             {
                 Campaign = new GameObject("Campaign").AddComponent<CampaignLevel>();

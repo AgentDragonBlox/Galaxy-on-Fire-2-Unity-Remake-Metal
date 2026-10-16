@@ -129,6 +129,9 @@ namespace GoF2Remake.World
         public static Action<int> SiegeWon;
         /// <summary>A pirate sighting's event is destroyed (id, killer's client id; NetState.PirateSightingDoneRpc).</summary>
         public static Action<int, ulong> PirateSightingDone;
+        /// <summary>The player hacked a wreck in this orbit (station, the wreck's name): an event's or quest's "on hacked"
+        /// (EventRunner.OnWreckHacked; in a session through NetState.WreckHackedRpc).</summary>
+        public static Action<int, string> WreckHacked;
         /// <summary>A line in the multiplayer chat as a notice (NetChat.Notice).</summary>
         public static Action<string> Notice;
 

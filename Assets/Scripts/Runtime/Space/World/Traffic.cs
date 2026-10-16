@@ -791,6 +791,7 @@ namespace GoF2Remake.World
                             ship.Spec.race, Crate.LookJunk);
                 return;
             }
+            if (ship != null && ship.Spec.eventWreck) { ship.DockingType = 0; return; }   // an event's wreck: its "on hacked" does the rest
             int k = ship != null ? ship.Spec.hiddenBlueprint : -1;
             if (k < 0 || k >= TrafficPlan.HiddenBlueprints.Length || (Session.HiddenBlueprintsFound & (1 << k)) != 0) return;
             Session.HiddenBlueprintsFound |= 1 << k;

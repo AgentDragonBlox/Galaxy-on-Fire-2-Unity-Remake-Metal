@@ -564,11 +564,12 @@
                 "entered",
                 "near",
                 "respawned",
+                "hacked",
                 "joined",
                 "left",
                 "pvpkill"
               ],
-              "description": "When: died = The player is destroyed, docked = The player docks, launched = The player launches, kill = A spawned ship is destroyed, cleared = Every spawned enemy is gone, entered = The player enters an orbit, near = The player gets near a point, respawned = The player respawns, joined = A player joins, left = A player leaves, pvpkill = A player destroys another",
+              "description": "When: died = The player is destroyed, docked = The player docks, launched = The player launches, kill = A spawned ship is destroyed, cleared = Every spawned enemy is gone, entered = The player enters an orbit, near = The player gets near a point, respawned = The player respawns, hacked = The player hacks a wreck, joined = A player joins, left = A player leaves, pvpkill = A player destroys another",
               "default": "died"
             },
             "station": {
@@ -1400,6 +1401,48 @@
             "turrets": {
               "$ref": "#/$defs/text",
               "description": "Turret items (numbers, a comma between)"
+            },
+            "pos": {
+              "type": "array",
+              "description": "the node's place in the builder's graph view [x, y] (optional)"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "title": "Hackable wreck",
+          "description": "A damaged freighter the player can dock at and hack (\"When something happens\": the player hacks a wreck)",
+          "properties": {
+            "type": {
+              "const": "wreck"
+            },
+            "who": {
+              "$ref": "#/$defs/who",
+              "description": "For",
+              "default": "@a"
+            },
+            "race": {
+              "type": "string",
+              "enum": [
+                "",
+                "terran",
+                "vossk",
+                "nivelian",
+                "midorian"
+              ],
+              "description": "Freighter: \"\" = Any, terran = Terran, vossk = Vossk, nivelian = Nivelian, midorian = Midorian",
+              "default": ""
+            },
+            "name": {
+              "$ref": "#/$defs/text",
+              "description": "Its name (on the HUD; %victim% when hacked)"
+            },
+            "at": {
+              "type": "string",
+              "description": "At (x y z in the orbit; empty: 1.5 km ahead of the player); \"x y z\" in game units (20 = 1 m)"
             },
             "pos": {
               "type": "array",

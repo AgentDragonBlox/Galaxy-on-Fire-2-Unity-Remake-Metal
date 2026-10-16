@@ -200,6 +200,29 @@ namespace GoF2Remake.UI
                     b.Derelict = derelict;
                     BlueprintEdited();
                 });
+                // Where (blueprints.json "derelict" "stations" / "position"): one orbit here (Edit as JSON takes several).
+                string station = derelict["stations"] is JArray sa && sa.Count > 0 ? (string)sa[0] : null;
+                RefField(blueprintPage, T("mbDerelictStation", "Only in the orbit of"), RefKind.Station, station, v =>
+                {
+                    if (string.IsNullOrEmpty(v)) derelict.Remove("stations"); else derelict["stations"] = new JArray(v);
+                    b.Derelict = derelict;
+                    BlueprintEdited();
+                }, T("mbAnyOrbit", "any orbit"));
+                string pos = derelict["position"] is JArray pa && pa.Count == 3 ? $"{(float)pa[0]:0} {(float)pa[1]:0} {(float)pa[2]:0}" : "";
+                Text(blueprintPage, T("mbDerelictAt", "At x y z (game units, /pos; empty: somewhere ahead of the station)"), pos, 40, v =>
+                {
+                    var parts = (v ?? "").Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    var inv = System.Globalization.CultureInfo.InvariantCulture;
+                    if (parts.Length == 3 && float.TryParse(parts[0], System.Globalization.NumberStyles.Float, inv, out float x)
+                        && float.TryParse(parts[1], System.Globalization.NumberStyles.Float, inv, out float y)
+                        && float.TryParse(parts[2], System.Globalization.NumberStyles.Float, inv, out float z))
+                        derelict["position"] = new JArray(x, y, z);
+                    else if (parts.Length == 0) derelict.Remove("position");
+                    else return;
+                    b.Derelict = derelict;
+                    MarkDirty();
+                });
+                Note(blueprintPage, T("mbDerelictWhereNote", "With an orbit the chance is per visit there (100 = always)."));
             }
             // Drops from kills.
             Caption(blueprintPage, T("mbDrops", "Left by destroyed ships"));

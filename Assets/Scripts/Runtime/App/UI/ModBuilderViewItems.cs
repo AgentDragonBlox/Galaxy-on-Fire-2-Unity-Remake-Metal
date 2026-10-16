@@ -234,7 +234,8 @@ namespace GoF2Remake.UI
         }
 
         /// <summary>The remake-only stats this item's kind takes (Flight.Gun.FiresPlainShots: missiles and salvos; turrets:
-        /// their range, automatic and turn speed; drills: the mining beam; cloaks: the phase cloak).</summary>
+        /// their range, automatic and turn speed; drills: the mining beam; cloaks: the phase cloak; tractor beams: several
+        /// containers at once).</summary>
         List<ExtraStat> ExtraStats(ItemData item)
         {
             var list = new List<ExtraStat>();
@@ -262,6 +263,13 @@ namespace GoF2Remake.UI
                 Add(101, (int)Flight.Mining.BeamDefaultRangeUnits, 1000, 200000);
                 Add(102, (int)Flight.MiningGame.LayerMs, 500, 60000);
                 Add(103, 228, 0, 300, T("mbStatNoteBeamLook", "The beam laser item whose beam it draws."));
+            }
+            if (item.categoryId == 13)
+            {
+                Add(Flight.CombatRadar.TractorTargetsAttr, 1, 1, Flight.CombatRadar.MaxTractorTargets,
+                    T("mbStatNoteTractorTargets", "2 or more: it pulls that many containers at once by itself, within its range, without the salvage lock (the scanner stays free)."));
+                Add(Flight.CombatRadar.TractorRangeAttr, (int)Flight.CombatRadar.DefaultTractorRangeUnits, 1000, 200000,
+                    T("mbStatNoteTractorRange", "How far the extra beams reach for containers, in game units (20 = 1 m)."));
             }
             if (item.categoryId == 21)
                 Add(104, 0, 0, 1, T("mbStatNotePhase", "While cloaked the ship also passes through stations, asteroids and other ships, and nothing hits it."), true);

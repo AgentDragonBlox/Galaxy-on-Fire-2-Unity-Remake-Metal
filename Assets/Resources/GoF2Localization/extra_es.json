@@ -1381,5 +1381,7 @@
  "originalImportDone": "Importada en la ranura {0}. Cárgala desde la lista.",
  "originalExportAsk": "Cada ranura se escribe como archivos de partida del juego original de Android (gof2_save_game_N con su vista previa) en una carpeta nueva. Cópialos en Android/data/net.fishlabs.gof2hdallandroid2012/files: se cargan en las versiones de la comunidad (de KiritoJPK, PB-207); la versión de Fishlabs rechaza partidas hechas en otro teléfono. Se omiten los objetos de mods y el progreso exclusivo del remake. ¿Exportar?",
  "originalSaveStep": "paso",
- "blueprintMountAsk": "¿Instalarlo ahora?"
+ "blueprintMountAsk": "¿Instalarlo ahora?",
+ "mpAdmWreck": "Creando un pecio hackeable junto a {0}.",
+ "mpAdmWreckRace": "Un pecio es un carguero terrano, vossk, niveliano o midoriano."
 }

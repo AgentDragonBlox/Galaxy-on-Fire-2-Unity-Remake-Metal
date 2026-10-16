@@ -22,7 +22,11 @@
 //                                           players see it too, NetProxy's label), an object's name as a HUD marker;
 //                                           "turrets 48,182" (remake, generic turrets): turret items (numbers or mod:id) on
 //                                           the ships' turret mounts, aimed and fired by the NPC turrets' rules
-//                                           (World.NpcMountedTurrets; none = the type's, a mod's "npcTurrets")
+//                                           (World.NpcMountedTurrets; none = the type's, a mod's "npcTurrets");
+//                                           "wreck" [terran | vossk | nivelian | midorian] (remake): a hackable freighter
+//                                           wreck (TrafficPlan.HackableWreck, the race's own; any race at random), 1.5 km
+//                                           ahead or at x y z; hacking it fires the events' "on hacked" (once; it is only
+//                                           in that player's game, the others see it but can't dock)
 //   /mute <players> [minutes], /unmute <players>   their chat and whispers dropped on the server (default: the session)
 // The debug panel's tools (Cheats, PlayerHull, DebugSpawner), for one player:
 //   /ship [players] <ship | own>            fly any hull of the Ships tab (a ship's number or name, the capital ships by
@@ -62,7 +66,7 @@ namespace GoF2Remake.Multiplayer
     [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class NetAdmin
     {
-        public enum Order : byte { Kill = 1, Heal = 2, Give = 3, Credits = 4, Spawn = 5, Ship = 6, Ammo = 7, Reveal = 8, Peace = 9, Cheat = 10, Object = 11, Title = 12, Timer = 13, Dialog = 14, Reward = 15, Scoreboard = 16, Sound = 17, Music = 18, Respawn = 19, Rules = 20, Ask = 21, Provoke = 22, Radio = 23, Waypoint = 24, Cutscene = 25, Camera = 26, Fade = 27, Letterbox = 28, Npc = 29, Flight = 30 }
+        public enum Order : byte { Kill = 1, Heal = 2, Give = 3, Credits = 4, Spawn = 5, Ship = 6, Ammo = 7, Reveal = 8, Peace = 9, Cheat = 10, Object = 11, Title = 12, Timer = 13, Dialog = 14, Reward = 15, Scoreboard = 16, Sound = 17, Music = 18, Respawn = 19, Rules = 20, Ask = 21, Provoke = 22, Radio = 23, Waypoint = 24, Cutscene = 25, Camera = 26, Fade = 27, Letterbox = 28, Npc = 29, Flight = 30, Wreck = 31 }
 
         const int MaxGive = 1000, MaxSpawn = 10, MaxCredits = 999999999;
         /// <summary>A /spawn name's length, and its separator in the order's text (taken out of names).</summary>
@@ -210,6 +214,14 @@ namespace GoF2Remake.Multiplayer
                 words.RemoveAt(words.Count - 1);
             }
             string spec = string.Join(" ", words);
+            if (string.Equals(spec, "wreck", StringComparison.OrdinalIgnoreCase))
+            {
+                // Remake: a hackable freighter wreck (its race's freighter: 0-3, any other = rolled).
+                if (race > 3) return X("mpAdmWreckRace", "A wreck is a Terran, Vossk, Nivelian or Midorian freighter.");
+                Send(t, Order.Wreck, race, 0, 0, by, $"spawned a hackable wreck{(at != null ? " at " + at : "")}{(name != null ? " named " + name : "")}",
+                    (at ?? "") + (name != null ? NameSeparator + name : ""));
+                return string.Format(X("mpAdmWreck", "Spawning a hackable wreck at {0}."), t.DisplayName);
+            }
             int ship = FindShip(spec, out string error);
             if (ship < 0)
             {
@@ -1149,6 +1161,13 @@ namespace GoF2Remake.Multiplayer
                 {
                     var parts = (text ?? "").Split('\n');
                     GrantReward(a, parts.Length > 1 ? parts[1] : "", parts[0]);
+                    break;
+                }
+                case Order.Wreck:
+                {
+                    if (level == null) return;
+                    string at = SplitName(text, out string wreckName);
+                    Notice(by, DebugSpawner.SpawnWreck(level, a, ParseAt(at), wreckName));
                     break;
                 }
                 case Order.Object:

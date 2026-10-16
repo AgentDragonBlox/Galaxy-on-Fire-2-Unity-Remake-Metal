@@ -39,6 +39,9 @@ namespace GoF2Remake.Modding
             ["originalTopSpeed"] = 114, ["originalTurnRate"] = 115, ["originalStrafeSpeed"] = 116,
             ["freeTopSpeed"] = 117, ["freeTurnRate"] = 118, ["freeStrafeSpeed"] = 119, ["freeAcceleration"] = 120,
             ["freeBoostFactor"] = 121,
+            // A tractor beam (sort 13) with tractorTargets 2+ pulls that many crates at once, by itself, within tractorRange
+            // game units, without the salvage lock (Flight.CombatRadar's extra beams; like the transfusion beams' attr 55).
+            ["tractorTargets"] = 122, ["tractorRange"] = 123,
             // items.json's statList names
             ["steerable"] = 15, ["handling"] = 17,
             ["loadingTimeMs"] = 11, ["range"] = 12, ["projectileSpeed"] = 13, ["magnitude"] = 14, ["shieldRegenTime"] = 19,

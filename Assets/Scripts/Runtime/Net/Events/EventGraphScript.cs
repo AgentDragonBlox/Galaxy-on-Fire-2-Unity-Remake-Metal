@@ -22,7 +22,7 @@ namespace GoF2Remake.Events
     public enum EventScoreBy { Kills, Time, Points }
     public enum EventWinnerBy { Score, Kills, Time, Points }
     /// <summary>The On node's triggers, by EventRunner' words (TriggerWords).</summary>
-    public enum EventTrigger { PlayerDestroyed, PlayerDocked, PlayerLaunched, PlayerJoined, PlayerLeft, PlayerEntersOrbit, EventShipDestroyed, EnemiesCleared, PlayerKilledPlayer, PlayerRespawned, PlayerArrives }
+    public enum EventTrigger { PlayerDestroyed, PlayerDocked, PlayerLaunched, PlayerJoined, PlayerLeft, PlayerEntersOrbit, EventShipDestroyed, EnemiesCleared, PlayerKilledPlayer, PlayerRespawned, PlayerArrives, WreckHacked }
     public enum EventRace { Maker, Terran, Vossk, Nivelian, Midorian, Pirate, Void, Specter }
     public enum EventBehaviour { Enemy, Friendly, Neutral, Standing }
     public enum EventCheat { God, Ammo, Cooldown, Boost, OneHit, Locks, Shopping, Jumps }
@@ -293,7 +293,7 @@ namespace GoF2Remake.Events
             }
 
             /// <summary>EventRunner' trigger words, by EventTrigger.</summary>
-            static readonly string[] TriggerWords = { "died", "docked", "launched", "joined", "left", "entered", "kill", "cleared", "pvpkill", "respawned", "near" };
+            static readonly string[] TriggerWords = { "died", "docked", "launched", "joined", "left", "entered", "kill", "cleared", "pvpkill", "respawned", "near", "hacked" };
 
             // ---- the steps ----
 
@@ -721,7 +721,15 @@ namespace GoF2Remake.Events
                         bool scenery = false;
                         try { scenery = ship.IndexOf('{') < 0 && EventNames.IsObject(ship); }
                         catch (Exception) { }   // no game data here
-                        if (scenery)   // an object: /spawn takes its whole name (no race, count or behaviour)
+                        if (string.Equals(ship.Trim(), "wreck", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // A hackable freighter wreck: a freighter race only, one, no behaviour ("on hacked" when hacked).
+                            string wr = race == EventRace.Terran || race == EventRace.Vossk || race == EventRace.Nivelian || race == EventRace.Midorian
+                                ? race.ToString().ToLowerInvariant() : "";
+                            if (race != EventRace.Maker && wr.Length == 0) Warning(n, "A wreck is a Terran, Vossk, Nivelian or Midorian freighter: the race is rolled.");
+                            Line(Join("spawn", Text(n, "Players"), "wreck", wr, named, at.Length > 0 ? "at " + at : ""));
+                        }
+                        else if (scenery)   // an object: /spawn takes its whole name (no race, count or behaviour)
                             Line(Join("spawn", Text(n, "Players"), ship, named, at.Length > 0 ? "at " + at : ""));
                         else
                             Line(Join("spawn", Text(n, "Players"), ship, race == EventRace.Maker ? "" : race.ToString().ToLowerInvariant(), count,

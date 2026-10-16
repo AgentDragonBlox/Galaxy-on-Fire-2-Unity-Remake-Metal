@@ -98,7 +98,7 @@ Steps again and again beside the rest, until the quest ends
 
 Steps each time the player is destroyed, docks, kills a ship, gets near a point...
 
-- `trigger`: When: died = The player is destroyed, docked = The player docks, launched = The player launches, kill = A spawned ship is destroyed, cleared = Every spawned enemy is gone, entered = The player enters an orbit, near = The player gets near a point, respawned = The player respawns, joined = A player joins, left = A player leaves, pvpkill = A player destroys another. Default `died`.
+- `trigger`: When: died = The player is destroyed, docked = The player docks, launched = The player launches, kill = A spawned ship is destroyed, cleared = Every spawned enemy is gone, entered = The player enters an orbit, near = The player gets near a point, respawned = The player respawns, hacked = The player hacks a wreck, joined = A player joins, left = A player leaves, pvpkill = A player destroys another. Default `died`.
 - `station` (wirable): Only at (optional); the game's number, its name, or a key "mod_id:id".
 - `at`: The point (x y z); "x y z" in game units (20 = 1 m). Default `0 0 20000`.
 - `radius` (wirable): Within (metres); a number, or an expression as a string. Default `500`.
@@ -249,6 +249,14 @@ Ships (or an object) beside the player, named for the ship orders
 - `name`: Their name (on the lock plate; the orders use it).
 - `at`: At (x y z in the orbit; empty: ahead of the player); "x y z" in game units (20 = 1 m).
 - `turrets`: Turret items (numbers, a comma between).
+
+### `wreck`: Hackable wreck
+
+A damaged freighter the player can dock at and hack ("When something happens": the player hacks a wreck)
+
+- `race`: Freighter: "" = Any, terran = Terran, vossk = Vossk, nivelian = Nivelian, midorian = Midorian. Default ``.
+- `name`: Its name (on the HUD; %victim% when hacked).
+- `at`: At (x y z in the orbit; empty: 1.5 km ahead of the player); "x y z" in game units (20 = 1 m).
 
 ### `shipgoto`: Ship: fly to
 

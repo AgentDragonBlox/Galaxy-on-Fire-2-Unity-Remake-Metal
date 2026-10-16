@@ -1381,5 +1381,7 @@
  "originalImportDone": "Zaimportowano do miejsca {0}. Wczytaj go z listy.",
  "originalExportAsk": "Każde miejsce zapisu zostanie zapisane jako pliki zapisu oryginalnej gry na Androida (gof2_save_game_N z podglądem) w nowym folderze. Skopiuj je do Android/data/net.fishlabs.gof2hdallandroid2012/files: wczytują się w wersjach społeczności (KiritoJPK, PB-207); własna wersja Fishlabs odrzuca zapisy z innego telefonu. Przedmioty z modów i postęp istniejący tylko w remake'u zostaną pominięte. Eksportować?",
  "originalSaveStep": "krok",
- "blueprintMountAsk": "Zamontować teraz?"
+ "blueprintMountAsk": "Zamontować teraz?",
+ "mpAdmWreck": "Tworzenie wraku do zhakowania przy {0}.",
+ "mpAdmWreckRace": "Wrak to frachtowiec Terran, Vossków, Niwelian lub Midorian."
 }

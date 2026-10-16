@@ -30,7 +30,8 @@
 //                                 after a launch or jump), respawned (back in space after being destroyed), kill (an event
 //                                 ship destroyed; the player = its killer), pvpkill (a player destroyed another: the player =
 //                                 the killer, "%victim%" the other's name), cleared (every enemy the event spawned is gone;
-//                                 no player). The station limits a player trigger to
+//                                 no player), hacked (the player hacked a wreck: "spawn ... wreck", a mod's derelict, a
+//                                 Supernova wreck; "%victim%" the wreck's name). The station limits a player trigger to
 //                                 that orbit or station. Handlers start working when the flow passes them (the graph puts them
 //                                 first) and last until the event ends. A free for all (/pvp), the respawn points (/respawn)
 //                                 and the travel restrictions (/restrict) the event set end with it.
@@ -180,7 +181,7 @@ namespace GoF2Remake.Events
         }
 
 
-        static readonly string[] Triggers = { "died", "docked", "launched", "joined", "left", "entered", "kill", "cleared", "pvpkill", "respawned", "near" };
+        static readonly string[] Triggers = { "died", "docked", "launched", "joined", "left", "entered", "kill", "cleared", "pvpkill", "respawned", "near", "hacked" };
         static readonly string[] MissionKeys = { "title", "offer", "client", "reward", "players", "stations", "kind", "starts" };
 
         /// <summary>A bar mission's details: the Start node's Mission settings (the "mission &lt;key&gt; &lt;value&gt;" lines).</summary>
@@ -311,6 +312,13 @@ namespace GoF2Remake.Events
         internal static void OnPlayerKilled(IPilot killer, IPilot victim)
         {
             foreach (var r in runs.ToArray()) r.OnPlayerKilled(killer, victim);
+        }
+
+        /// <summary>A player hacked a wreck (SpaceHooks.WreckHacked; in a session NetState.WreckHackedRpc, checked): "on hacked"
+        /// in every run the player is in, the wreck's name as %victim%.</summary>
+        public static void OnWreckHacked(IPilot pilot, int station, string wreck)
+        {
+            foreach (var r in runs.ToArray()) r.OnWreckHacked(pilot, station, wreck);
         }
 
         // ---- bar missions (EventMissions) ----
@@ -1753,6 +1761,12 @@ namespace GoF2Remake.Events
             {
                 if (ended || killer == null || victim == null || !InScope(killer)) return;
                 Fire("pvpkill", killer.OwnerClientId, killer.DisplayName, victim.Station, victim.DisplayName);
+            }
+
+            internal void OnWreckHacked(IPilot pilot, int station, string wreck)
+            {
+                if (ended || pilot == null || !InScope(pilot)) return;
+                Fire("hacked", pilot.OwnerClientId, pilot.DisplayName, station, wreck ?? "");
             }
 
             /// <summary>A trigger happened: each handler listening for it (in that station, if limited) starts its block.</summary>

@@ -291,10 +291,11 @@ namespace GoF2Remake.Events
                 new[] { new QuestBlock("steps", "Do") }, F("seconds", QuestFieldKind.Float, "Every (seconds)", 10, min: 0.25f)),
             Block("on", "When something happens", "Steps each time the player is destroyed, docks, kills a ship, gets near a point...",
                 new[] { new QuestBlock("steps", "Do") },
-                C("trigger", "When", new[] { "died", "docked", "launched", "kill", "cleared", "entered", "near", "respawned", "joined", "left", "pvpkill" },
+                C("trigger", "When", new[] { "died", "docked", "launched", "kill", "cleared", "entered", "near", "respawned", "hacked", "joined", "left", "pvpkill" },
                     new[] { "The player is destroyed", "The player docks", "The player launches", "A spawned ship is destroyed", "Every spawned enemy is gone",
-                            "The player enters an orbit", "The player gets near a point", "The player respawns", "A player joins", "A player leaves", "A player destroys another" }),
-                When(F("station", QuestFieldKind.Station, "Only at (optional)", optional: true), "trigger", "docked", "launched", "entered", "died", "kill", "respawned"),
+                            "The player enters an orbit", "The player gets near a point", "The player respawns", "The player hacks a wreck",
+                            "A player joins", "A player leaves", "A player destroys another" }),
+                When(F("station", QuestFieldKind.Station, "Only at (optional)", optional: true), "trigger", "docked", "launched", "entered", "died", "kill", "respawned", "hacked"),
                 When(F("station", QuestFieldKind.Station, "In the orbit of"), "trigger", "near"),
                 When(F("at", QuestFieldKind.Xyz, "The point (x y z)", "0 0 20000"), "trigger", "near"),
                 When(F("radius", QuestFieldKind.Float, "Within (metres)", 500, min: 1f), "trigger", "near")),
@@ -372,6 +373,14 @@ namespace GoF2Remake.Events
                F("name", QuestFieldKind.Text, "Their name (on the lock plate; the orders use it)", optional: true),
                F("at", QuestFieldKind.Xyz, "At (x y z in the orbit; empty: ahead of the player)", optional: true),
                F("turrets", QuestFieldKind.Text, "Turret items (numbers, a comma between)", optional: true)),
+            Plain("wreck", "ships", "Hackable wreck", "A damaged freighter the player can dock at and hack (\"When something happens\": the player hacks a wreck)", r =>
+            {
+                string name = r.S("name"), at = r.Xyz("at");
+                return QuestReader.Join("spawn", r.Who, "wreck", r.S("race"), name.Length > 0 ? "named " + name : "", at.Length > 0 ? "at " + at : "");
+            }, Who(),
+               C("race", "Freighter", new[] { "", "terran", "vossk", "nivelian", "midorian" }, new[] { "Any", "Terran", "Vossk", "Nivelian", "Midorian" }),
+               F("name", QuestFieldKind.Text, "Its name (on the HUD; %victim% when hacked)", optional: true),
+               F("at", QuestFieldKind.Xyz, "At (x y z in the orbit; empty: 1.5 km ahead of the player)", optional: true)),
             Plain("shipgoto", "ships", "Ship: fly to", "A named ship flies somewhere", r =>
             {
                 string to = r.Place("to");

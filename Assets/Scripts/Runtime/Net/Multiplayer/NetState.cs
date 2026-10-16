@@ -748,6 +748,18 @@ namespace GoF2Remake.Multiplayer
         /// never by the sender's game: to the killer, or split evenly across the killer's squad (every member online,
         /// wherever they are; players' suggestion).</summary>
         [Rpc(SendTo.Server)]
+        public void WreckHackedRpc(int station, string name, RpcParams rpc = default)
+        {
+            // A player's game hacked a wreck in its orbit: the events' "on hacked" (checked: the sender is in that orbit).
+            ulong client = rpc.Receive.SenderClientId;
+            if (!NetRateLimit.Allow(client, NetRateLimit.Kind.Kill) || !NetGuard.InOrbit(client, station)) return;
+            name = name ?? "";
+            if (name.Length > 64) name = name.Substring(0, 64);
+            var pilot = GoF2Remake.Events.EventHost.Find(client);
+            if (pilot != null) GoF2Remake.Events.EventRunner.OnWreckHacked(pilot, station, name);
+        }
+
+        [Rpc(SendTo.Server)]
         public void PirateSightingDoneRpc(int id, ulong killer, RpcParams rpc = default)
         {
             ulong client = rpc.Receive.SenderClientId;

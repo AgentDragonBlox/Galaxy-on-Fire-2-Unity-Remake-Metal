@@ -367,6 +367,20 @@ remake's own. The original's attributes without a name: 37, 56, 57, 58, 59 (set 
 | 107 | salvoCount |  |
 | 108 | salvoGapMs |  |
 | 109 | turretRange |  |
+| 110 | flightScope |  |
+| 111 | topSpeed |  |
+| 112 | turnRate |  |
+| 113 | strafeSpeed |  |
+| 114 | originalTopSpeed |  |
+| 115 | originalTurnRate |  |
+| 116 | originalStrafeSpeed |  |
+| 117 | freeTopSpeed |  |
+| 118 | freeTurnRate |  |
+| 119 | freeStrafeSpeed |  |
+| 120 | freeAcceleration |  |
+| 121 | freeBoostFactor |  |
+| 122 | tractorTargets |  |
+| 123 | tractorRange |  |
 
 ## Blueprints
 

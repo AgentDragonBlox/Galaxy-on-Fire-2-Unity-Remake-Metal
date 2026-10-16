@@ -147,7 +147,10 @@ range, units, default 60000), flightScope
 110 (the item's booster / nozzle stats count in 0 both flight styles, 1 the original only, 2 free flight only), topSpeed 111,
 turnRate 112, strafeSpeed 113 (% bonuses, both styles), originalTopSpeed 114, originalTurnRate 115, originalStrafeSpeed 116,
 freeTopSpeed 117, freeTurnRate 118, freeStrafeSpeed 119, freeAcceleration 120, freeBoostFactor 121 (free flight's boost, 350 =
-x3.5; default the booster's original boost speed x 3.2 / 3). See Flight styles.
+x3.5; default the booster's original boost speed x 3.2 / 3). See Flight styles. tractorTargets 122 (a tractor beam based on
+68-70 / 194 pulling 1..8 containers at once: the extra beams take the nearest ones by themselves, no lock, the scanner stays
+free), tractorRange 123 (their reach, units, default 30000). A new item also sounds like its base (a booster's boost sound, a
+tractor beam's beam).
 items.json's own names (`loadingTimeMs`, `range`, `projectileSpeed`...) work too. An unknown stat name is an error.
 
 ### Weapon fx
@@ -278,7 +281,7 @@ parked in the Kaamo Club if owned).
 | `available` | Condition before any source offers it. |
 | `unlocked` | `true`: known as soon as available (next docking). |
 | `lounge` | Lounge seller: chance % per bar refresh, price (default half the product price), systemRace. |
-| `derelict` | chance % of orbit visits holding a hackable derelict freighter (race terran/vossk/nivelian/midorian/any) with it. |
+| `derelict` | chance % of orbit visits holding a hackable derelict freighter (race terran/vossk/nivelian/midorian/any) with it; "stations": [ numbers or "mod:id" ] only there (chance then defaults to 100), "position": [ x, y, z ] game units in the orbit (/pos). Hacking fires the `hacked` trigger too. |
 | `drops` | `{ "race", "chance" }`: chance % (decimals ok) that a ship of that race the player destroys drops it. |
 
 Found blueprints come in a data container the tractor beam pulls in. Sources stop once the player knows the blueprint.
@@ -439,9 +442,11 @@ Prefer these over event graphs: plain JSON, no Unity Editor, and the Mod Builder
 "quest" | "mission" | "event", "startsWhen", "reward", "offer", "client", "stations", "players", "variables": [{ name, value,
 setting }], "steps": [...] }`. Every step type, field and default is in `quests.md` (the same as `quest.schema.json`), made
 from the game's own table: read it before writing a quest. In short: story steps (`dialog` pages, `radio`, `objective`,
-`title`), flow and blocks (`wait`, `waituntil`, `if` then / else, `while`, `repeat`, `parallel`, `every`, `on` <trigger>, `ask`
+`title`), flow and blocks (`wait`, `waituntil`, `if` then / else, `while`, `repeat`, `parallel`, `every`, `on` <trigger> (also
+`hacked`: the player hacked a wreck, its name as %victim%), `ask`
 / `vote` answers, `random` branches, `set`, `checkpoint`, `startquest`, `startevent`, `complete`, `fail`), places (`goto`,
-`waypoint`, `target`, `questorbit`, `restrict`, `respawn`, `teleport`), ships (`fight`, `spawn`, `shipgoto`, `shiproute`,
+`waypoint`, `target`, `questorbit`, `restrict`, `respawn`, `teleport`), ships (`fight`, `spawn`, `wreck` (a hackable freighter
+wreck: race, name, at), `shipgoto`, `shiproute`,
 `shipfollow`, `shipattack`, `shipaction`, `provoke`), the player (`reward`, `give`, `cargo`, `credits`, `ship`, `heal`...),
 cutscenes (`cutscene`, `camera`, `fade`, `letterbox`...), `music`, `sound`, `timer`, score steps and `command` (any event
 command line). Steps acting on players take `who` (default `@a`; `@trigger` inside an `on` block). Speakers as in Dialog

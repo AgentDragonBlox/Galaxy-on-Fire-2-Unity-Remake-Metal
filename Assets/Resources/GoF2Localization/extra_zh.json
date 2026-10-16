@@ -1381,5 +1381,7 @@
  "originalImportDone": "已导入到存档位 {0}。请从列表中读取。",
  "originalExportAsk": "每个存档位都会以原版 Android 游戏的存档文件（gof2_save_game_N 及其预览）写入一个新文件夹。请将它们复制到 Android/data/net.fishlabs.gof2hdallandroid2012/files：它们可在社区版本（KiritoJPK、PB-207 的版本）中读取；Fishlabs 官方版本会拒绝在其他手机上创建的存档。模组物品和重制版独有的进度不会保留。要导出吗？",
  "originalSaveStep": "步骤",
- "blueprintMountAsk": "现在装上吗？"
+ "blueprintMountAsk": "现在装上吗？",
+ "mpAdmWreck": "正在{0}附近生成可入侵的残骸。",
+ "mpAdmWreckRace": "残骸是人类、沃斯克、尼维利安或米多利安的货船。"
 }

@@ -1381,5 +1381,7 @@
  "originalImportDone": "تم الاستيراد إلى خانة الحفظ {0}. حمّله من القائمة.",
  "originalExportAsk": "تُكتب كل خانة حفظ كملفات حفظ للعبة Android الأصلية (gof2_save_game_N مع معاينتها) في مجلد جديد. انسخها إلى Android/data/net.fishlabs.gof2hdallandroid2012/files: تُحمَّل في إصدارات المجتمع (KiritoJPK وPB-207)؛ أما إصدار Fishlabs نفسه فيرفض الحفظ المصنوع على هاتف آخر. تُستبعد عناصر التعديلات والتقدم الخاص بالنسخة المعاد إنتاجها. تصدير؟",
  "originalSaveStep": "خطوة",
- "blueprintMountAsk": "تركيبه الآن؟"
+ "blueprintMountAsk": "تركيبه الآن؟",
+ "mpAdmWreck": "سيتم إنشاء حطام قابل للاختراق عند {0}.",
+ "mpAdmWreckRace": "الحطام سفينة شحن بشرية أو فوسك أو نيفيلية أو ميدورية."
 }

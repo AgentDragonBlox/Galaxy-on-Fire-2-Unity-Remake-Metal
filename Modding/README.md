@@ -187,8 +187,8 @@ allowed.
   in your own file.
 
 A new item is a copy of its base. It keeps the base's type and category (a blaster stays a blaster, a missile a missile) and
-looks, sounds and works like it: its icon, projectile, impact, shot sound, turret model and any special behaviour (beam lasers,
-cluster missiles, cloaks...). Everything you give in the entry replaces the base's value. Blueprint recipes aren't copied.
+looks, sounds and works like it: its icon, projectile, impact, shot sound, turret model, a booster's boost sound, a tractor
+beam's beam and any special behaviour (beam lasers, cluster missiles, cloaks...). Everything you give in the entry replaces the base's value. Blueprint recipes aren't copied.
 
 ### Changing items
 
@@ -269,6 +269,8 @@ earlier). Only the fields you give change. Giving `name` or `description` rename
 | `originalTopSpeed`, `originalTurnRate`, `originalStrafeSpeed` | 114 to 116 | The same, in the original flight only |
 | `freeTopSpeed`, `freeTurnRate`, `freeStrafeSpeed`, `freeAcceleration` | 117 to 120 | The same, in free flight only (acceleration: how fast the ship reaches its speed) |
 | `freeBoostFactor` | 121 | Free flight's boost top speed in hundredths of the top speed (350 = x3.5) instead of the booster's own |
+| `tractorTargets` | 122 | Tractor beams: how many containers it pulls at once, 1 to 8 (default 1; see [Multi-grab tractor beams](#multi-grab-tractor-beams)) |
+| `tractorRange` | 123 | Multi-grab tractor beams: how far the extra beams reach for containers (game units, 20 per metre; default 30000 = 1.5 km) |
 
 Which stats an item uses depends on its category, so copy the stats its base item has (see `items.json` and
 `item_attributes.json` in `Assets/Resources/GoF2Data`). items.json's own stat names (`loadingTimeMs`, `range`,
@@ -315,6 +317,28 @@ volume, or the asteroid it sits in destroyed for 20 damage.
     "techLevel": 10,
     "price": [540000, 580000],
     "stats": { "cloakDurationMs": 80000, "cloakChargeMs": 7000, "energyCells": 5, "phaseCloak": 1 }
+}
+```
+
+### Multi-grab tractor beams
+
+A tractor beam (an item based on one of the tractor beams, 68 to 70 or 194) with `"tractorTargets": 2` or more pulls that
+many containers at once. The first beam works as always: the scanner's salvage lock on a container in the crosshair (or a
+disabled ship's cargo, or the Kingfisher's / Octopus' automatic pick, `tractorAuto`). The others reach out by themselves,
+like the transfusion beams: each takes the nearest container within `tractorRange`, on screen or not, pulls it in on a beam
+of its own and goes for the next. They need no lock, so the scanner stays free to lock ships while they work, and they keep
+pulling while you mine or fly the autopilot. With no lock running, all of the beams pick containers. They let go in the turret
+view, and they leave a mission container alone while the hold is full. In multiplayer each container is claimed as usual,
+so two players never pull the same one.
+
+```json
+{
+    "id": "octopus_mk2",
+    "base": 69,
+    "name": "AB-6 Hydra",
+    "techLevel": 8,
+    "price": [210000, 240000],
+    "stats": { "tractorTargets": 4, "tractorRange": 40000, "tractorLockMs": 400 }
 }
 ```
 
@@ -1181,7 +1205,7 @@ autocomplete), and the product is made at the station where the first ingredient
 | `available` | A [condition](#conditions) before any source offers it. |
 | `unlocked` | `true`: the player knows it as soon as it is available (the next docking), without finding it. |
 | `lounge` | A Space Lounge visitor sells it: `chance` % each time a bar fills with new visitors, for `price` (default half the product's price), in `systemRace` systems (-1 = any). |
-| `derelict` | `chance` % of the orbits visited hold a derelict freighter (`race`: terran, vossk, nivelian, midorian or any) to dock at and hack; it leaves the blueprint in a data container. |
+| `derelict` | `chance` % of the orbits visited hold a derelict freighter (`race`: terran, vossk, nivelian, midorian or any) to dock at and hack; it leaves the blueprint in a data container. `stations`: only in those orbits (station numbers or `"mod_id:station_id"`; then `chance` defaults to 100, always there). `position`: `[ x, y, z ]` in game units (what `/pos` shows in that orbit), else somewhere out in front of the station. Hacking it also fires the quests' and events' `hacked` trigger. |
 | `drops` | A ship the player destroys may leave it in a data container: `race` (terran, vossk, nivelian, midorian, pirate, void, specter or any), `chance` % per kill (decimals allowed). |
 
 A blueprint found in a data container is learnt when the tractor beam pulls the container in ("Blueprint found: ..."). A
@@ -1314,13 +1338,31 @@ Nodes made for quests:
 | **Start Quest** | Starts another quest beside this one (a chain of quests, or a bar mission leading into one). |
 
 Everything else is the event graphs' toolbox: **Dialog** (conversations with portraits, see [Voice-over](#voice-over)), **Radio**,
-**Spawn** (ships, friendly or hostile, named; objects as scenery), **Wait Until**, **On** triggers (docked, entered an orbit,
-destroyed, a spawned ship destroyed, all enemies cleared, arriving near a point), **Set Waypoint**, **Restrict Travel**,
+**Spawn** (ships, friendly or hostile, named; objects as scenery; `wreck`: a hackable freighter wreck), **Wait Until**, **On**
+triggers (docked, entered an orbit, destroyed, a spawned ship destroyed, all enemies cleared, arriving near a point, a wreck
+hacked), **Set Waypoint**, **Restrict Travel**,
 **Give Item**, **Reward**, **Title**, **Timer**, **Play Music**, **Set Flight Model** (free flight or the original for a race
 or a chase, undone when the graph ends; see [Flight styles](#flight-styles)) and more. Game values for conditions: `campaign` (the story
 step, -1 without one), `credits`, `rank`, `station`, `system`, `ship`, `kills`, `freeflight` (1 in free flight), and the functions `cargo(item)`, `has(item)`
 (in the hold or mounted), `visited(station)` and `quest(name)` (0 not started, 1 under way, 2 done); items and stations by
 name or number. In single player `%player%` is Keith T. Maxwell.
+
+**Hacked wrecks.** The `wreck` step (the Spawn node with `wreck` as its ship; the command `spawn @a wreck vossk named Hulk
+at 0 0 30000`) puts a damaged freighter (Terran, Vossk, Nivelian or Midorian; left out, one at random) in the player's orbit,
+1.5 km ahead or at the coordinates, with its name on the HUD. The player docks at it and plays the hacking game like the
+Supernova's wrecks; it can be hacked once. Winning fires the `hacked` trigger (`on hacked`, the **On** node's Wreck Hacked;
+limited to a station like the others), with the player as `@trigger` and the wreck's name as `%victim%`, for any hacked wreck
+(yours, a blueprint's derelict, the Supernova's): spawn the ambush, play the radio call or pay the reward there.
+
+```json
+{ "type": "wreck", "race": "vossk", "name": "Hulk", "at": "0 0 30000" },
+{ "type": "on", "trigger": "hacked", "steps": [
+    { "type": "radio", "speaker": "pirate Snake", "text": "That cargo is ours!" },
+    { "type": "spawn", "ship": "Hiro", "count": 3, "race": "pirate" } ] }
+```
+
+In multiplayer the wreck is in the games it was spawned for (each player of `@a` gets their own); the other players see it
+but can't dock at it. Spawn it for one player (`@trigger`, `@p`) when a squad shares the orbit.
 
 Mod quests run beside the game's own story. A quest whose mod is turned off waits in the save until the mod is back.
 
@@ -1371,9 +1413,9 @@ the default; `@trigger` the player a When block is about; any selector). The ste
 | Group | Steps (fields) |
 |---|---|
 | Story | `dialog` (pages: speaker, text, voice), `radio` (speaker, text, voice), `objective` (text, station), `title` (title, subtitle, seconds), `note` (text: a comment) |
-| Flow | `wait` (seconds), `waituntil` (condition, timeout), `if` (condition, `then`, `else`), `while` (condition, `steps`), `repeat` (count, as, `steps`), `parallel` (`steps`: beside the rest), `every` (seconds, `steps`), `on` (trigger: died, docked, launched, kill, cleared, entered, near, respawned, joined, left, pvpkill; station; near: at "x y z", radius; `steps`), `ask` / `vote` (question, speaker, seconds, `answers`: [{ text, steps }]; a vote's `none` runs when nobody voted), `random` (`branches`: [{ weight, steps }]), `set` (variable, value), `checkpoint` (name), `startquest` (quest), `startevent` (event, settings), `complete` (reward, title), `fail` (title), `stop` |
+| Flow | `wait` (seconds), `waituntil` (condition, timeout), `if` (condition, `then`, `else`), `while` (condition, `steps`), `repeat` (count, as, `steps`), `parallel` (`steps`: beside the rest), `every` (seconds, `steps`), `on` (trigger: died, docked, launched, kill, cleared, entered, near, respawned, hacked, joined, left, pvpkill; station; near: at "x y z", radius; `steps`), `ask` / `vote` (question, speaker, seconds, `answers`: [{ text, steps }]; a vote's `none` runs when nobody voted), `random` (`branches`: [{ weight, steps }]), `set` (variable, value), `checkpoint` (name), `startquest` (quest), `startevent` (event, settings), `complete` (reward, title), `fail` (title), `stop` |
 | Places | `goto` (station, `dock` true: docked there, false: in its orbit, objective), `waypoint` (station, at), `target` (station), `questorbit` (station, on), `restrict` (what: jumps / docking / all / off), `respawn` (station, at, spread, delay), `teleport` (station, dock, at) |
-| Ships | `fight` (station, ships: ship / count / race / behaviour, name, quiet; ends when none is left), `spawn` (ship, count, race, behaviour, name, at, turrets), `shipgoto` (ship, to, speed, radius, fight, then), `shiproute` (ship, route "place / place", loop, ...), `shipfollow` (ship, leader, offset, escort, speed), `shipattack` (ship, target), `shipaction` (ship, action: hold / resume / jump / dock / flee, seconds), `provoke` (race, within) |
+| Ships | `fight` (station, ships: ship / count / race / behaviour, name, quiet; ends when none is left), `spawn` (ship, count, race, behaviour, name, at, turrets), `wreck` (race, name, at: a hackable freighter wreck), `shipgoto` (ship, to, speed, radius, fight, then), `shiproute` (ship, route "place / place", loop, ...), `shipfollow` (ship, leader, offset, escort, speed), `shipattack` (ship, target), `shipaction` (ship, action: hold / resume / jump / dock / flee, seconds), `provoke` (race, within) |
 | The player | `reward` (credits, items, title), `give` (item, amount, mount), `cargo` (item, amount, station: waits until the hold has it), `credits` (amount), `ship` (hull, own), `heal`, `ammo`, `kill`, `reveal`, `peace` |
 | Cutscenes | `cutscene` (letterbox, freeze, invulnerable), `camera` (from, to, seconds, look, follow, fov, shake), `chasecamera`, `cutsceneend`, `fade` (direction: out / in / clear, seconds, colour), `letterbox` (on) |
 | Sound and screen | `music` (track), `sound` (sound), `timer` (seconds, label, stop) |

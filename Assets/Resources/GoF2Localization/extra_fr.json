@@ -1381,5 +1381,7 @@
  "originalImportDone": "Importée dans l'emplacement {0}. Chargez-la depuis la liste.",
  "originalExportAsk": "Chaque emplacement est écrit sous forme de fichiers de sauvegarde du jeu Android original (gof2_save_game_N avec son aperçu) dans un nouveau dossier. Copiez-les dans Android/data/net.fishlabs.gof2hdallandroid2012/files : ils se chargent dans les versions communautaires (de KiritoJPK, PB-207) ; la version de Fishlabs refuse les sauvegardes faites sur un autre téléphone. Les objets de mods et la progression propre au remake sont omis. Exporter ?",
  "originalSaveStep": "étape",
- "blueprintMountAsk": "L'installer maintenant ?"
+ "blueprintMountAsk": "L'installer maintenant ?",
+ "mpAdmWreck": "Création d'une épave piratable près de {0}.",
+ "mpAdmWreckRace": "Une épave est un cargo terrien, vossk, nivélien ou midorien."
 }
