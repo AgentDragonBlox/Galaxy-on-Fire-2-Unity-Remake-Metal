@@ -1096,6 +1096,7 @@
  "mpTakingControl": "Übernehme die Steuerung...",
  "mpTollAsk": "Diese Station gehört [{0}] {1}. {2} zahlen, um in Frieden zu passieren? Lehnst du ab, greifen ihre Jäger dich an.",
  "mpTollReceived": "[{0}] {1} hat bei {3} den Wegzoll von {2:N0} Credits bezahlt.",
+ "mpTollRefused": "Der Wegzoll wurde nicht angenommen: Dein gespeichertes Spiel hat weniger als {0:N0} Credits. Docke an, um es zu speichern; bis dahin behandeln dich die Jäger der Station als Nichtzahler.",
  "mpTopEmpty": "Noch keine Arena-Matches ausgetragen.",
  "mpTopNone": "Dieser Server speichert keine Profile, also keine Bestenliste.",
  "mpTopTitle": "Arena-Bestenliste (Siege, Abschüsse / Tode):",

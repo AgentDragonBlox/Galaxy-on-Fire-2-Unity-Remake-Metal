@@ -1096,6 +1096,7 @@
  "mpTakingControl": "Besturing overnemen...",
  "mpTollAsk": "Dit station is van [{0}] {1}. {2} betalen om in vrede door te gaan? Weiger je, dan vallen de jagers je aan.",
  "mpTollReceived": "[{0}] {1} heeft bij {3} de tol van {2:N0} credits betaald.",
+ "mpTollRefused": "De tol is niet aangenomen: je opgeslagen spel heeft minder dan {0:N0} credits. Dock om het op te slaan; tot dan behandelen de jagers van het station je als wanbetaler.",
  "mpTopEmpty": "Nog geen arenawedstrijden gespeeld.",
  "mpTopNone": "Deze server bewaart geen profielen, dus geen ranglijst.",
  "mpTopTitle": "Ranglijst van de arena (overwinningen, vernietigingen / doden):",

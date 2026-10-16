@@ -1222,8 +1222,10 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   **defence** (in a held orbit the fighters of the system's race treat the holder's members as friends and other factions'
   pilots as enemies unless they paid the toll this visit: `NpcShip.TerritoryToLocal`, `NetOrbit.HostileToRemote`,
   `NetFactionsClient.Relation`; pilots without a faction as always); **toll** (`-toll`, 10 000 credits, or `N%` = N % of the pilot's credits (`NetFactions.ParseToll` / `TollFor`, stored as -N; the pilot's game sends the amount, the server caps it at that share of the profile's worth); `TerritoryView` asks on
-  arrival through `Traffic.Ask`, `NetFactionsClient.PayToll` -> `TollPaidRpc`, the holder's bank, `NetPlayer.TollStation`
-  for the others' NPCs); **trade cut** (`Hangar.Buy` through `NetFactionsClient.BuyPrice`: members -10 %, no VAT; the list shows the plain
+  arrival through `Traffic.Ask`, `NetFactionsClient.PayToll` -> `TollPaidRpc` (only from that orbit), the holder's bank,
+  `NetPlayer.TollStation` for the others' NPCs; a toll the profile's saved game doesn't hold is refused: `TollRefusedRpc`
+  gives the game its credits back and marks it unpaid again, `NetFactionsClient.OnTollRefused`: the game marks it paid
+  as it sends it, so the holder's fighters spared a refused pilot until then); **trade cut** (`Hangar.Buy` through `NetFactionsClient.BuyPrice`: members -10 %, no VAT; the list shows the plain
   price); **VAT** (per claim, `Claim.vat`, 0-20 %, default 5, `/faction vat <rate> [station]` or the Faction tab's claim rows,
   officers): everyone else (other factions and factionless pilots) buys items and dealer ships at the list price + a tenth of
   the rate (`NetFactions.VatMarkup`: 20 % -> +2 %; ships through `Hangar.BuyShipPrice` / `NetFactionsClient.ShipBuyPrice`),
@@ -1298,7 +1300,10 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   the wallet and the hold), and only once both paid sends each the other's (`TradeDeliverRpc`); a side that can't pay,
   doesn't answer in 15 s or leaves fails it and whoever paid gets their offer back (a late payment too). Either side
   cancelling, taking off or leaving the station ends it. Profiles: the recorded worth moves with what each gave and got
-  (`NetProfiles.AdjustWorth`), so the upload check stays right. Goods past the hold's capacity are allowed (a warning; the
+  (`NetProfiles.AdjustWorth`), so the upload check stays right; the credits move in the saved games (`MoveCredits`): each
+  side's out as its payment arrives (`NetTrade.Debit`; at the end, a periodic upload sent while the other side still paid
+  already had them out and they were taken twice), back if it fails (`Refund`, also for a side that left), the other
+  side's in when it completes. Goods past the hold's capacity are allowed (a warning; the
   launch refuses as for the shop).
 - **NPCs and the players** (the authority's `NpcShip` hooks, set by NetOrbit): every other player in the orbit is in an
   NPC's hit list (their ships block its shots; a non-hostile NPC's stray hit does 20 % like the local player's). An NPC

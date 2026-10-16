@@ -1096,6 +1096,7 @@
  "mpTakingControl": "Assumindo o controle...",
  "mpTollAsk": "Esta estação pertence a [{0}] {1}. Pagar {2} para passar em paz? Se recusar, os caças dela atacam você.",
  "mpTollReceived": "[{0}] {1} pagou o pedágio de {2:N0} créditos em {3}.",
+ "mpTollRefused": "O pedágio não foi aceito: seu jogo salvo tem menos de {0:N0} créditos. Atraque para salvá-lo; até lá os caças da estação tratam você como inadimplente.",
  "mpTopEmpty": "Nenhuma partida de arena disputada ainda.",
  "mpTopNone": "Este servidor não guarda perfis, então não há placar.",
  "mpTopTitle": "Placar da arena (vitórias, abates / mortes):",

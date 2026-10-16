@@ -807,6 +807,16 @@ namespace GoF2Remake.Multiplayer
         [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
         void GrantRpc(int amount, RpcParams rpc = default) => NetFactionsClient.OnGrant(amount);
 
+        /// <summary>Server: the toll the player's game paid at 'station' wasn't taken (its profile's saved game hasn't the
+        /// credits): 'amount' back to the game, and the toll unpaid.</summary>
+        internal void TollRefused(ulong client, int station, int amount)
+        {
+            if (IsServer) TollRefusedRpc(station, amount, RpcTarget.Single(client, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
+        void TollRefusedRpc(int station, int amount, RpcParams rpc = default) => NetFactionsClient.OnTollRefused(station, amount);
+
         /// <summary>A pilot calls their squad for help ('on') or is safe again: a notice to the squadmates with where (NetDistress).</summary>
         [Rpc(SendTo.Server)]
         public void DistressRpc(bool on, RpcParams rpc = default)

@@ -1096,6 +1096,7 @@
  "mpTakingControl": "Prise de contrôle...",
  "mpTollAsk": "Cette station appartient à [{0}] {1}. Payer {2} pour passer en paix ? Si tu refuses, ses chasseurs t'attaquent.",
  "mpTollReceived": "[{0}] {1} a payé le péage de {2:N0} crédits à {3}.",
+ "mpTollRefused": "Le péage n'a pas été encaissé : ta partie sauvegardée contient moins de {0:N0} crédits. Amarre-toi pour la sauvegarder ; d'ici là, les chasseurs de la station te considèrent comme n'ayant pas payé.",
  "mpTopEmpty": "Aucun match d'arène disputé pour l'instant.",
  "mpTopNone": "Ce serveur ne garde pas de profils, donc pas de classement.",
  "mpTopTitle": "Classement de l'arène (victoires, éliminations / morts) :",

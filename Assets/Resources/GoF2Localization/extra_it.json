@@ -1096,6 +1096,7 @@
  "mpTakingControl": "Presa di controllo...",
  "mpTollAsk": "Questa stazione appartiene a [{0}] {1}. Pagare {2} per passare in pace? Se rifiuti, i suoi caccia ti attaccano.",
  "mpTollReceived": "[{0}] {1} ha pagato il pedaggio di {2:N0} crediti a {3}.",
+ "mpTollRefused": "Il pedaggio non è stato incassato: la tua partita salvata ha meno di {0:N0} crediti. Attracca per salvarla; fino ad allora i caccia della stazione ti considerano insolvente.",
  "mpTopEmpty": "Ancora nessuna partita dell'arena disputata.",
  "mpTopNone": "Questo server non conserva profili, quindi niente classifica.",
  "mpTopTitle": "Classifica dell'arena (vittorie, abbattimenti / morti):",

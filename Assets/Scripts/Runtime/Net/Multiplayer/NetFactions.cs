@@ -1170,6 +1170,7 @@ namespace GoF2Remake.Multiplayer
             string account = NetProfiles.AccountOf(client);
             var payer = Of(account);
             if (held == null || account == null || payer == null || payer.id == held.faction || Toll == 0) return;
+            if (!NetGuard.InOrbit(client, station)) return;   // a toll is paid on arriving there (TerritoryView)
             var owner = list.factions.Find(c => c.id == held.faction);
             if (owner == null) return;
             // A fixed toll is the server's own amount; a percentage is what the pilot's game says it paid, at most that share
@@ -1178,9 +1179,10 @@ namespace GoF2Remake.Multiplayer
             if (!NetProfiles.MoveCredits(client, account, -paid))
             {
                 // Not in the saved game: the game's credits back, nothing to the holder (a game that only claims to pay,
-                // or one sending the toll again and again).
+                // or one sending the toll again and again), and the toll counts as unpaid: the game marked it paid when it
+                // sent it, so the holder's fighters would have spared the pilot for nothing.
                 Debug.LogWarning($"Server: profile {account} ({NameOf(account)}, client {client}) paid a {paid:N0} credits toll its saved game doesn't hold: refused.");
-                NetState.Instance?.Grant(client, paid);
+                NetState.Instance?.TollRefused(client, station, paid);
                 return;
             }
             owner.bank += paid;

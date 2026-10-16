@@ -1096,6 +1096,7 @@
  "mpTakingControl": "Przejmowanie sterowania...",
  "mpTollAsk": "Ta stacja należy do [{0}] {1}. Zapłacić {2}, aby przelecieć w spokoju? Jeśli odmówisz, jej myśliwce cię zaatakują.",
  "mpTollReceived": "[{0}] {1} zapłaciła myto {2:N0} kredytów w {3}.",
+ "mpTollRefused": "Opłata nie została pobrana: twoja zapisana gra ma mniej niż {0:N0} kredytów. Zadokuj, aby ją zapisać; do tego czasu myśliwce stacji traktują cię jak kogoś, kto nie zapłacił.",
  "mpTopEmpty": "Nie rozegrano jeszcze meczów na arenie.",
  "mpTopNone": "Ten serwer nie przechowuje profili, więc nie ma rankingu.",
  "mpTopTitle": "Ranking areny (wygrane, zestrzelenia / śmierci):",
