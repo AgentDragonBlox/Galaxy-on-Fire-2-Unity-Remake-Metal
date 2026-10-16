@@ -577,6 +577,18 @@ Research: `Reference/research/mining.md` (+ `Reference/tools/mining/mining_table
     upscaler (DLSS / FSR 2+ / STP) is active or MSAA is on; the thin glossy parts (the Nivelian bar stools, the Midorian
     window frames) shimmered under SMAA as the camera swayed. Flight keeps SMAA.
   - The Terran bot loops; the Midorian prop replays at random.
+  - Remake: the Vossk bar's bartender arms. The original ships `bar_vossk_bot_a/b/c_anim_alpha` without resource ids and
+    never shows them (CutScene::process's Vossk branch restarts two slots, +0x30 every 20000 ms and +0x34 every 22000 ms,
+    that only the Terran bar fills). Their tracks are two arms behind the counter: bot_b (15.5 s) the arm along the bar,
+    bot_a (15 s, turning in place) and bot_c (20.5 s, down the bar and back) two animations of the arm at its end. They are
+    in the bar_vossk assembly under remake mesh ids 99001-99003 (`build_assemblies.py` MODEL_OVERRIDE; per-mesh prefabs
+    `Prefabs/main/bars/bar_vossk_bot_*` made by hand with the room's material 20059, as the Terran bot has its room's, the
+    game prefabs' rotation signs -1 / -1 / -1; the bar_vossk entry was spliced into `assemblies.json`, whose freighter LOD
+    lists were fixed by hand after the script, and only `bar_vossk.prefab` rebuilt). `VosskBarBots` (plain C#) plays the
+    dead slots: bot_b every 20 s, the end arm bot_a or bot_c at random every 22 s (the other hidden), the first plays
+    within 4 s; `StationLevel.UpdateVosskBots` holds them in their first pose the first time the bar shows (until then the
+    models sit at the room's origin). Tests `VosskBarBotsTests`; checked in Play mode at V'ikka (all three playing, the
+    swap, the rest poses).
   - Remake (`BarFlybys`): every 6-20 s a ship (30 % a small formation) flies past outside the windows. Once per visit, from the
     camera's rest pose, two tiny renders against different background colours find the see-through pixels and one with
     `Hidden/GoF2/BarDistance` the room's nearest surfaces; a path is flown only if no point of it is ever in front of the
