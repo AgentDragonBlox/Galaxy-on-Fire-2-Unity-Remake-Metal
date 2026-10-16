@@ -1380,5 +1380,6 @@
  "originalImportAsk": "{0}\nda {1}.\nImportarlo nello slot {2}?",
  "originalImportDone": "Importato nello slot {0}. Caricalo dall'elenco.",
  "originalExportAsk": "Ogni slot viene scritto come file di salvataggio del gioco Android originale (gof2_save_game_N con l'anteprima) in una nuova cartella. Copiali in Android/data/net.fishlabs.gof2hdallandroid2012/files: si caricano nelle versioni della community (di KiritoJPK, PB-207); la versione di Fishlabs rifiuta i salvataggi fatti su un altro telefono. Gli oggetti delle mod e i progressi esclusivi del remake vengono omessi. Esportare?",
- "originalSaveStep": "passo"
+ "originalSaveStep": "passo",
+ "blueprintMountAsk": "Montarlo ora?"
 }

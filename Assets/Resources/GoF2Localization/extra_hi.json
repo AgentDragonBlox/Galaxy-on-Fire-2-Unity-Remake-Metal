@@ -1380,5 +1380,6 @@
  "originalImportAsk": "{0}\n{1} से।\nइसे सेव स्लॉट {2} में इम्पोर्ट करें?",
  "originalImportDone": "सेव स्लॉट {0} में इम्पोर्ट हो गया। इसे सूची से लोड करें।",
  "originalExportAsk": "हर सेव स्लॉट मूल Android गेम की सेव फ़ाइलों (gof2_save_game_N और उसका प्रीव्यू) के रूप में एक नए फ़ोल्डर में लिखा जाएगा। उन्हें Android/data/net.fishlabs.gof2hdallandroid2012/files में कॉपी करें: वे कम्युनिटी बिल्ड (KiritoJPK, PB-207) में लोड होते हैं; Fishlabs का अपना बिल्ड दूसरे फ़ोन पर बने सेव अस्वीकार करता है। मॉड आइटम और केवल रीमेक की प्रगति छोड़ दी जाती है। एक्सपोर्ट करें?",
- "originalSaveStep": "चरण"
+ "originalSaveStep": "चरण",
+ "blueprintMountAsk": "अभी लगाएँ?"
 }

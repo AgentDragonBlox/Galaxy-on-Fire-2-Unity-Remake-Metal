@@ -1380,5 +1380,6 @@
  "originalImportAsk": "{0}\naus {1}.\nIn Speicherplatz {2} importieren?",
  "originalImportDone": "In Speicherplatz {0} importiert. Lade ihn aus der Liste.",
  "originalExportAsk": "Jeder Speicherplatz wird als Spielstanddateien des originalen Android-Spiels (gof2_save_game_N mit Vorschau) in einen neuen Ordner geschrieben. Kopiere sie nach Android/data/net.fishlabs.gof2hdallandroid2012/files: Sie laden in den Community-Versionen (von KiritoJPK, PB-207); Fishlabs' eigene Version lehnt Spielstände von einem anderen Handy ab. Mod-Gegenstände und Fortschritt, den es nur im Remake gibt, fallen weg. Exportieren?",
- "originalSaveStep": "Schritt"
+ "originalSaveStep": "Schritt",
+ "blueprintMountAsk": "Jetzt einbauen?"
 }

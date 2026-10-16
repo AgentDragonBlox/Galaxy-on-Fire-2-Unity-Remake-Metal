@@ -296,6 +296,11 @@ namespace GoF2Remake.Data
             return MountedOfType(type).Count < SlotCount(type) ? Result.Ok : Result.NoFreeSlot;
         }
 
+        /// <summary>Remake (a player's suggestion): after a blueprint run finished at its production station, whether to ask
+        /// "Mount it now?": only when the product can go into a free slot (not a swap, not a commodity; a secondary of a
+        /// mounted type already joined that stack in Blueprints.Produce, so none is left in the hold).</summary>
+        public bool OffersMountAfterBuild(int item) => CanMount(item, out _) == Result.Ok;
+
         /// <summary>mountItem: secondaries move the whole stack (the amount is the ammo), everything else one unit.</summary>
         public bool Mount(int item)
         {

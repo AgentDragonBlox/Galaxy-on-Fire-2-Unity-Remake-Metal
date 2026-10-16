@@ -1380,5 +1380,6 @@
  "originalImportAsk": "{0}\nde {1}.\nImportar no espaço {2}?",
  "originalImportDone": "Importado no espaço {0}. Carregue-o pela lista.",
  "originalExportAsk": "Cada espaço de save é gravado como arquivos de save do jogo original de Android (gof2_save_game_N com a prévia) numa pasta nova. Copie-os para Android/data/net.fishlabs.gof2hdallandroid2012/files: eles carregam nas versões da comunidade (de KiritoJPK, PB-207); a versão da própria Fishlabs recusa saves feitos em outro celular. Itens de mods e progresso exclusivo do remake ficam de fora. Exportar?",
- "originalSaveStep": "etapa"
+ "originalSaveStep": "etapa",
+ "blueprintMountAsk": "Instalar agora?"
 }

@@ -1380,5 +1380,6 @@
  "originalImportAsk": "{0}\nde {1}.\nL'importer dans l'emplacement {2} ?",
  "originalImportDone": "Importée dans l'emplacement {0}. Chargez-la depuis la liste.",
  "originalExportAsk": "Chaque emplacement est écrit sous forme de fichiers de sauvegarde du jeu Android original (gof2_save_game_N avec son aperçu) dans un nouveau dossier. Copiez-les dans Android/data/net.fishlabs.gof2hdallandroid2012/files : ils se chargent dans les versions communautaires (de KiritoJPK, PB-207) ; la version de Fishlabs refuse les sauvegardes faites sur un autre téléphone. Les objets de mods et la progression propre au remake sont omis. Exporter ?",
- "originalSaveStep": "étape"
+ "originalSaveStep": "étape",
+ "blueprintMountAsk": "L'installer maintenant ?"
 }

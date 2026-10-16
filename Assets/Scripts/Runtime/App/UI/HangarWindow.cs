@@ -1239,9 +1239,21 @@ namespace GoF2Remake.UI
             }
             if (here)
             {
-                menu.ShowDialog(Localization.Get(211).Replace("#N", name), null, true);
+                string done = Localization.Get(211).Replace("#N", name);
                 editing = -1;
                 SetTab(Tab.Shop);
+                // Remake (a player's suggestion): finished (or autocompleted) at the production station with a free slot
+                // for it: offer to mount it at once; No leaves it in the hold as before.
+                if (hangar.OffersMountAfterBuild(product))
+                    menu.ShowChoice(done + "\n\n" + Localization.Extra("blueprintMountAsk", "Mount it now?"),
+                                    Localization.Get(134), Localization.Get(135), () =>
+                    {
+                        if (!hangar.Mount(product)) return;
+                        menu.PlayClip(menu.shopMount);
+                        menu.ShowToast(Localization.Get(208).Replace("#N", name));
+                        SetTab(Tab.Ship);
+                    }, null);
+                else menu.ShowDialog(done, null, true);
             }
             else
             {
