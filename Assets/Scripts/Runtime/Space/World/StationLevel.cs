@@ -10,7 +10,8 @@
 //     AgentGenerator) on random slots as
 //     camera-facing billboards with a glow behind and a floor shadow (updateScreenPositions 0x19ec30); camera eases
 //     from A to B in 3 s on the first visit, then sways around the room origin (SpaceLounge::update 0x19ef20); lit by
-//     the system's sun (StarSystem::initLight); Terran service bot loops, the Midorian prop replays now and then.
+//     the system's sun (StarSystem::initLight); Terran service bot loops, the Midorian prop replays now and then; remake:
+//     the Vossk bar's two bartender arms the original never shows replay every 20 / 22 s (VosskBarBots).
 // Both show the current system's sky behind the room (Level::createSpace builds the StarSystem for these levels).
 // Music per station/race, ambience per screen (Station_Atmo_Mainview / _Lounge).
 // Arrival also rolls or refreshes the station's shop stock (Shop.EnterStation); the shop itself is HangarWindow.
@@ -124,6 +125,10 @@ namespace GoF2Remake.World
         readonly List<Visitor> visitors = new List<Visitor>();
         PartAnimation midorianProp;
         float midorianTimer;
+        // Remake: the Vossk bar's bartender arms (VosskBarBots): bot_a / bot_c the end arm's two animations, bot_b the second arm.
+        VosskBarBots vosskBots;
+        PartAnimation vosskBotA, vosskBotB, vosskBotC;
+        bool vosskBotsPosed;
         CycleSound mainViewAtmo, loungeAtmo, hangarAtmo;
         bool hangarWindowOpen;
 
@@ -562,6 +567,25 @@ namespace GoF2Remake.World
                 foreach (var a in room.GetComponentsInChildren<PartAnimation>(true))
                     if (a.gameObject.name.Contains("alpha_anim")) { midorianProp = a; a.loop = false; a.play = false; }
             }
+            if (room != null && BarRace == 1 && customBar == null)
+            {
+                // Remake: the bartender arms (bar_vossk_bot_*, in the assembly): one-shots, VosskBarBots says when.
+                foreach (var a in room.GetComponentsInChildren<PartAnimation>(true))
+                {
+                    string n = a.gameObject.name;
+                    if (!n.StartsWith("bar_vossk_bot_")) continue;
+                    a.loop = false;
+                    a.play = false;
+                    if (n.StartsWith("bar_vossk_bot_a")) vosskBotA = a;
+                    else if (n.StartsWith("bar_vossk_bot_b")) vosskBotB = a;
+                    else if (n.StartsWith("bar_vossk_bot_c")) vosskBotC = a;
+                }
+                if (vosskBotA != null && vosskBotB != null && vosskBotC != null)
+                {
+                    vosskBots = new VosskBarBots(() => Random.value);
+                    vosskBotC.gameObject.SetActive(false);   // the end arm's other animation: one arm shows at a time
+                }
+            }
 
             // One visitor per agent (Generator::createAgents, kept with the stock): slot nextInt(7) re-rolled until free,
             // the mesh by the agent's race (Level::createScene 0xc2b3e: a Midorian with a Nivelian face uses the Nivelian
@@ -903,6 +927,30 @@ namespace GoF2Remake.World
             return m;
         }
 
+        /// <summary>Remake: the Vossk bar's bartender arms (VosskBarBots). The first time the bar shows, they take their rest
+        /// pose (the models sit at the room's origin until their animation is applied, and that is parsed only once the bar
+        /// is active); then each replays when its slot comes round, the end arm as bot_a or bot_c.</summary>
+        void UpdateVosskBots(float dtMs)
+        {
+            if (!vosskBotsPosed)
+            {
+                vosskBotsPosed = true;
+                vosskBotA.Hold();
+                vosskBotB.Hold();
+            }
+            var start = vosskBots.Tick(dtMs, () => Random.value);
+            if ((start & VosskBarBots.Start.EndArm) != 0)
+            {
+                var play = vosskBots.EndArmPlaysC ? vosskBotC : vosskBotA;
+                var rest = vosskBots.EndArmPlaysC ? vosskBotA : vosskBotC;
+                rest.gameObject.SetActive(false);
+                play.gameObject.SetActive(true);
+                play.loop = false;
+                play.Restart();
+            }
+            if ((start & VosskBarBots.Start.SecondArm) != 0) vosskBotB.Restart();
+        }
+
         // ---- view switching ----------------------------------------------------------------------------------
 
         /// <summary>Instant switch, like ModStation (no fades). The lounge plays its camera intro on the first visit only.</summary>
@@ -1178,6 +1226,7 @@ namespace GoF2Remake.World
                 midorianTimer = 0f;
                 if (Random.value < 0.3f) midorianProp.Restart();
             }
+            if (View == StationView.Lounge && vosskBots != null) UpdateVosskBots(dtMs);
 
             if (View == StationView.Hangar) RefreshTurret(false);
             if (musicSource != null) musicSource.volume = Settings.MusicVolume * GoF2Remake.World.SpaceHooks.SceneMusic;
