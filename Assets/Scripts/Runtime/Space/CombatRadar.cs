@@ -150,7 +150,8 @@ namespace GoF2Remake.Flight
             bool turretView = weapons != null && weapons.TurretView;
             if (turretView && Salvaging != null) { Salvaging.pulled = false; Salvaging = null; }
             UpdateSalvage(dtMs);
-            if (!HasScanner || health == null || health.Dead || nav == null || nav.Paused || nav.MenuOpen || turretView) { Candidate = null; CrateCandidate = null; StealCandidate = null; LockFrame = -1; UpdateCloudLock(-1, 0f); Publish(); return; }
+            // MGame::OnRender2D: no Radar::draw in a cutscene or the fly-in, so no ship / crate / cloud lock (nor its sound).
+            if (!HasScanner || health == null || health.Dead || nav == null || nav.Paused || nav.MenuOpen || turretView || nav.RadarOff) { Candidate = null; CrateCandidate = null; StealCandidate = null; LockFrame = -1; UpdateCloudLock(-1, 0f); Publish(); return; }
             // Radar+0x1ab (AB-4): any crate, wherever it is, even on the autopilot.
             if (tractorMode == 2 && Salvaging == null && !nav.Jumping) AutoSalvage(Camera.main, false);
 

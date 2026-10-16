@@ -81,6 +81,7 @@ namespace GoF2Remake.Data
         {
             if (Active) Discard();
             var m = agent.mission.Clone();
+            m.promisedBonus = m.CurrentBonus;   // the amount the chat promised is what the mission pays
             Session.Credits -= UpFrontCost(m);
             m.textIds = new List<int>(agent.textIds);
             if (m.type == MissionType.Courier)

@@ -589,7 +589,7 @@ namespace GoF2Remake.Data
         /// remake waits a second after the landing), and a quick tap on Hangar sold the loaner's guns or the loaner itself.</summary>
         public static bool HangarUnlocked => Session.FreePlay || (Index >= 5 && Index != 48 && Index != 49 && Index != 56 && Session.ParkedShip == null);
         public static bool MapUnlocked => Session.FreePlay || (Index >= 9 && Index != 15 && Index != 48 && Index != 49);
-        public static bool LoungeUnlocked(int station) => station != 100 && station != 101 && (Session.FreePlay || (Index >= 12 && Index != 15 && Index != 49));
+        public static bool LoungeUnlocked(int station) => station != 100 && station != 101 && (Session.FreePlay || (Index >= 13 && Index != 15 && Index != 49));
         /// <summary>ModStation::OnKeyPress, the Map at index 77: only in the Cronus Khador left in the hangar (326), else null.</summary>
         public static string MapRefusal => !Session.FreePlay && Index == 77 && Session.ShipIndex != 37 ? Localization.Get(326) : null;
         /// <summary>ModStation::OnInitialize: no autosave while imprisoned on Valkyrie (index 77 at station 101).</summary>

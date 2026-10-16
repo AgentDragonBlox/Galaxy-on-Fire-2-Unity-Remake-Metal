@@ -353,10 +353,10 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
-        public void LoungeFromStep12NeverAtKotharOrValkyrie()
+        public void LoungeFromStep13NeverAtKotharOrValkyrie()
         {
-            AtStep(11); Assert.IsFalse(Story.LoungeUnlocked(79));
-            AtStep(12); Assert.IsTrue(Story.LoungeUnlocked(79));
+            AtStep(12); Assert.IsFalse(Story.LoungeUnlocked(79), "ModStation::OnKeyPress refuses it before 13");
+            AtStep(13); Assert.IsTrue(Story.LoungeUnlocked(79));
             AtStep(15); Assert.IsFalse(Story.LoungeUnlocked(98));
             AtStep(49); Assert.IsFalse(Story.LoungeUnlocked(74));
             AtStep(60);

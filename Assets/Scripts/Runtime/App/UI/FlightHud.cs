@@ -32,6 +32,7 @@ using UnityEngine.UIElements;
 namespace GoF2Remake.UI
 {
     [RequireComponent(typeof(PanelRenderer))]
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]   // RadarScale: set again by every layout pass
     public class FlightHud : MonoBehaviour
     {
         public string menuScene = "MainMenu";
@@ -108,6 +109,12 @@ namespace GoF2Remake.UI
         ChaseCamera chase;
         Vector2Int lastScreen;
         Rect lastSafeArea;
+
+        /// <summary>Remake: the radar ellipse's size against the original's 657 x 491 (a 1080-high canvas): the phone layout's
+        /// panel is 900 high, so there it shrinks by 900 / 1080 to keep the original's share of the screen height (at full size
+        /// it reached past the top and bottom edges, and the off-screen dots there weren't seen). CombatView, NavigationView and
+        /// MissileWarningView place their markers and hit arcs on it with this.</summary>
+        public static float RadarScale { get; private set; } = 1f;
 
         void OnEnable()
         {
@@ -915,14 +922,12 @@ namespace GoF2Remake.UI
                     freelance.RewardMessage += OnMiningMessage;
                 }
                 if (weapons != null) weapons.Hit += () => hitFlashMs = 200f;
-                // #48: the turret aimed in the turret view too (the crosshair sits on its gun then); not the auto turrets'
-                // own shots while the player flies.
+                // #48 and a player's report: the turrets' hits too, aimed in the turret view or firing by themselves: Level::createGun makes
+                // every player gun a player gun (setPlayerGun, the turret items' case 0x23 too), and Gun::calcCharacterCollision
+                // sets Level+0x30 for any player gun's hit on a ship.
                 if (level.Turrets != null)
                     foreach (var tr in level.Turrets)
-                    {
-                        var turretRef = tr;
-                        if (turretRef != null) turretRef.Hit += () => { if (turretRef.InTurretView) hitFlashMs = 200f; };
-                    }
+                        if (tr != null) tr.Hit += () => hitFlashMs = 200f;
                 if (level.Turret != null) level.Turret.Message += OnMiningMessage;   // HUD event 0x20 / 0x21 (auto fire on / off)
                 if (health != null) health.Message += OnMiningMessage;             // injector / gamma messages
                 if (level.Cloak != null) level.Cloak.Message += OnMiningMessage;   // cells paid, "Cloak ready", 583
@@ -1552,6 +1557,9 @@ namespace GoF2Remake.UI
             }
             root.EnableInClassList("layout-phone", phone);
             root.EnableInClassList("ui-large", UiScale.Large(h, phone ? 900f : 1080f));   // a small high-density screen: bigger lists
+            RadarScale = phone ? 900f / 1080f : 1f;
+            var radar = root.Q("radarEllipse");   // a 0 x 0 box at the centre: scaled around it
+            if (radar != null) radar.style.scale = new Scale(new Vector3(RadarScale, RadarScale, 1f));
             ApplySafeArea(w, h, offscreen);
         }
 

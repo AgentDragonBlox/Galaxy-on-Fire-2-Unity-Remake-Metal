@@ -307,7 +307,8 @@ namespace GoF2Remake.UI
             BuildHints(InputMode.Current);
         }
 
-        /// <summary>ModStation::OnInitialize: Hangar from index 5, Map from 9, Space Lounge from 12 (half transparent before).</summary>
+        /// <summary>ModStation::OnInitialize: Hangar from index 5, Map from 9, Space Lounge from 13 (half transparent before; the
+        /// original draws it opaque from 12, but OnKeyPress refuses it before 13: after reporting to Norris; a player's report).</summary>
         void ApplyStoryLocks()
         {
             int station = level != null && level.Station != null ? level.Station.index : -1;

@@ -338,6 +338,21 @@ namespace GoF2Remake.Data
         /// hostile local fighters wait there.</summary>
         public static HashSet<int> AttackedStations = new HashSet<int>();
 
+        /// <summary>Status+0x19c as a stack of orbits (Status::departStation / addStationToStack): the last 3 stations flown
+        /// to, oldest first; one already on it keeps its place. A station pushed off is loaded afresh on the next visit, its
+        /// attacked-friends flag (Station::setAttackedFriends) gone. Not saved: after a load it fills up again.</summary>
+        public static List<int> RecentOrbits = new List<int>();
+
+        /// <summary>Status::departStation on arrival in an orbit (SpaceLevel): pushes the station; the attacks on stations no
+        /// longer on the stack are forgotten (only once it is full, so a load's empty stack forgets nothing early).</summary>
+        public static void ArriveInOrbit(int station)
+        {
+            if (station < 0 || RecentOrbits.Contains(station)) return;
+            RecentOrbits.Add(station);
+            while (RecentOrbits.Count > Shop.RecentStationCount) RecentOrbits.RemoveAt(0);
+            if (RecentOrbits.Count >= Shop.RecentStationCount) AttackedStations.RemoveWhere(s => !RecentOrbits.Contains(s));
+        }
+
         /// <summary>Status+0x1c0 kills (also XP), +0x1d8 pirate kills.</summary>
         public static int Kills, PirateKills;
 
@@ -489,6 +504,7 @@ namespace GoF2Remake.Data
             JumpgatesUsed = 0;
             Standing = new[] { 30, 0 };
             AttackedStations = new HashSet<int>();
+            RecentOrbits = new List<int>();
             Kills = PirateKills = 0;
             PlayerHull = PlayerArmor = -1;
             PlayerShield = -1f;

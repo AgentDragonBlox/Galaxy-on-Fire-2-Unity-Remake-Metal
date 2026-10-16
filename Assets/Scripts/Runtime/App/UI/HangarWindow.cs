@@ -878,7 +878,11 @@ namespace GoF2Remake.UI
         void Select(Row row, bool sound)
         {
             if (row == null || !row.Selectable || row == selected) return;
-            if (HasPending) { Commit(() => Select(row, sound)); return; }   // leaving an ingredient commits it
+            // Leaving an ingredient commits it, which rebuilds the list (or finishes the run and leaves the ingredients
+            // view): the same row of the new list, if it is still there. Remake (a player's report): the old row object was selected, so
+            // after the last ingredient a stale Autocomplete row stayed selected on the Shop tab and A asked to autocomplete
+            // blueprint -1 for 0 $, which put item -1 into the hold.
+            if (HasPending) { Commit(() => { var again = rows.FirstOrDefault(r => r.Same(row)); if (again != null) Select(again, sound); }); return; }
             if (sound) menu.PlayPush();
             ReleaseArrow();
             selected = row;
@@ -1253,7 +1257,7 @@ namespace GoF2Remake.UI
         void AskAutocomplete()
         {
             var db = level.Database;
-            if (!Blueprints.CanAutocomplete(editing)) return;
+            if (editing < 0 || db.Item(editing) == null || !Blueprints.CanAutocomplete(editing)) return;   // only in the ingredients view
             string refusal = Modding.ModBlueprints.RequiresShipRefusal(editing);
             if (refusal != null) { menu.ShowToast(refusal); return; }
             int price = Blueprints.AutoCompletePrice(db, editing);

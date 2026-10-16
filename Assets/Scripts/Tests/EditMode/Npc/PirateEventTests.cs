@@ -207,6 +207,20 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
+        public void NoEventInAnInformerOrbit()
+        {
+            // A pirate killed in the Informer's orbit spoiled the mission; the orbit is the spy and the police alone.
+            Settings.PirateEvents = true;
+            InFreePlay(0);
+            Session.PirateSightings.Add(Sighting(20, true, 4));
+            Session.FreelanceMission = new FreelanceMission { type = MissionType.Informer, target = 20 };
+            Random.InitState(5);
+            for (int i = 0; i < 20; i++) Assert.IsFalse(Build(20).Any(x => x.pirateEvent != 0));
+            Session.FreelanceMission = new FreelanceMission();
+            Assert.IsTrue(Build(20).Any(x => x.pirateEvent == SpawnSpec.EventBoss), "the report waits for a later visit");
+        }
+
+        [Test]
         public void AReportedOutpostSpawnsItsTier()
         {
             Settings.PirateEvents = true;

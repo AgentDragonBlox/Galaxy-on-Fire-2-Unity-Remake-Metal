@@ -551,7 +551,8 @@ namespace GoF2Remake.Flight
         }
 
         /// <summary>Radar::draw's auto-aim flag (KIPlayer+0x6f) for the beams: the nearest target (to the player) on screen,
-        /// inside the +-w/16 box around the crosshair, within 60000 units (ships) or a +-24000 cube (other objects).
+        /// inside the +-w/16 box around the crosshair, within 60000 units (ships) or a +-24000 cube (other objects). Never an
+        /// asteroid (a player's report): Radar::draw sets the flag only in its loop over Level::getEnemies, its asteroid loop never does.
         /// Remake (#100), with the Smart target lock (Settings.OriginalTargetLock off, the default): a friendly or neutral ship
         /// only when it is the radar's lock (LockTarget); the beam snapped onto the nearest ship whatever its side, and a
         /// friendly flying between the player and the enemy took the shots and turned its race.</summary>
@@ -566,6 +567,7 @@ namespace GoF2Remake.Flight
             foreach (var t in Target.All)
             {
                 if (t == null || t == owner || !t.Alive || t.untargetable || !t.isActiveAndEnabled || t.playerProof) continue;   // multiplayer: squadmates
+                if (t.isAsteroid) continue;   // the remake's beams took a rock near the crosshair while fighting
                 if (smart && t.isShip && !t.hostileToPlayer && t != LockTarget) continue;
                 var d = t.transform.position - transform.position;
                 if (t.isShip ? d.magnitude >= BeamRangeUnits * M

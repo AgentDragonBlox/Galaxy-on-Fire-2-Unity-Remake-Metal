@@ -126,7 +126,7 @@ namespace GoF2Remake.UI
 
         class Item
         {
-            public VisualElement root, ring, pulse, raceIcon, visited, gate, story, freelance;
+            public VisualElement root, ring, pulse, raceIcon, visited, gate, story, freelance, products;
             public Label name, line1, line2;
         }
 
@@ -802,6 +802,12 @@ namespace GoF2Remake.UI
                 it.gate.style.left = 71.5f - 7f;
                 it.gate.style.top = -71.5f + 10f;
             }
+            // Icon slot 4, 0x452 "Products finished" (StarMap::drawOnScreenInfo): a pending blueprint product waits there;
+            // in the right column, below the gate icon when there is one (BuildPlanetItems).
+            it.products = Img(it.root, "map-icon", Tex("map_products"));
+            it.products.style.left = 71.5f - 7f;
+            it.products.style.top = -71.5f + 10f;
+            it.products.style.display = DisplayStyle.None;
             labels.Add(it.root);
             return it;
         }
@@ -860,6 +866,7 @@ namespace GoF2Remake.UI
                 it.pulse.style.display = s.index == currentSystem ? DisplayStyle.Flex : DisplayStyle.None;
                 it.story.style.display = s.stations.Exists(StoryMarked) ? DisplayStyle.Flex : DisplayStyle.None;
                 it.freelance.style.display = FreelanceTarget >= 0 && SystemOf(FreelanceTarget) == s.index ? DisplayStyle.Flex : DisplayStyle.None;
+                it.products.style.display = Session.PendingProducts.Exists(pp => s.stations.Contains(pp.station)) ? DisplayStyle.Flex : DisplayStyle.None;
                 if (builder?.movable != null && builder.movable(s.index)) it.name.style.color = new Color(1f, 0.78f, 0.35f);   // the builder's own
                 systemItems[s.index] = it;
             }
@@ -878,6 +885,8 @@ namespace GoF2Remake.UI
                 it.pulse.style.display = p.station == currentStation ? DisplayStyle.Flex : DisplayStyle.None;
                 it.story.style.display = StoryMarked(p.station) ? DisplayStyle.Flex : DisplayStyle.None;
                 it.freelance.style.display = p.station == FreelanceTarget ? DisplayStyle.Flex : DisplayStyle.None;
+                it.products.style.display = Session.PendingProducts.Exists(pp => pp.station == p.station) ? DisplayStyle.Flex : DisplayStyle.None;
+                if (p.gate) it.products.style.top = -71.5f + 10f + 26f;   // the slots stack downward in 26 px steps
                 planetItems.Add(it);
             }
         }

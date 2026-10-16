@@ -359,8 +359,11 @@ namespace GoF2Remake.World
             state = State.KhadorScene;
             if (advanceOnJump) { advanceOnJump = false; if (Story.Index == 78) Story.Advance(db); }
             var fxPos = ship.transform.position + ship.transform.forward * 3000f * M;
-            fx = SpawnKhadorFx(assets, fxPos, ship.transform.rotation, out animLength);
-            JumpFxStarted?.Invoke(false, fxPos, ship.transform.rotation);
+            // MGame::startJumpScene: the fx's setDirection(ship direction, (0, 1, 0)): upright in the world whatever the ship's
+            // roll (the ship's own rotation played it upside down from a ship flying inverted).
+            var fxRot = Quaternion.LookRotation(ship.transform.forward, Vector3.up);
+            fx = SpawnKhadorFx(assets, fxPos, fxRot, out animLength);
+            JumpFxStarted?.Invoke(false, fxPos, fxRot);
             activated = true;
             animMs = 0f;
             var cam = Camera.main;

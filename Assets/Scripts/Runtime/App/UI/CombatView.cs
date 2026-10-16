@@ -25,7 +25,9 @@ namespace GoF2Remake.UI
     public class CombatView
     {
         const float M = 0.05f, NearUnits = 24000f;
-        const float EllipseX = 657f, EllipseY = 491f;
+        // Radar::elipsoidIntersect's ellipse, image 0x4c7's size (remake: x FlightHud.RadarScale, smaller in the phone layout).
+        static float EllipseX => 657f * FlightHud.RadarScale;
+        static float EllipseY => 491f * FlightHud.RadarScale;
 
         class Marker
         {
@@ -315,6 +317,9 @@ namespace GoF2Remake.UI
                 Place(m.fill, p.x - 58f, p.y + 65f);
                 m.fill.style.width = Mathf.Clamp01(hull) * 110f;
                 if (locked) { Image(m.bracket, t.bracket); Place(m.bracket, p.x - 40.5f, p.y - 40.5f); }
+                // Remake: the locked ship's bar on top of the others. 158's sentry guns appear at Harval's position (full hull);
+                // with Harval EMP'd and still, a later marker's bar covered his, which looked frozen.
+                if (locked && layer.IndexOf(m.bracket) != layer.childCount - 1) { m.bar.BringToFront(); m.fill.BringToFront(); m.bracket.BringToFront(); }
             }
             else
             {

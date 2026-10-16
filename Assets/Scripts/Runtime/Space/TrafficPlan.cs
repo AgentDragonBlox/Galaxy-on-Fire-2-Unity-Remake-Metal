@@ -82,7 +82,7 @@ namespace GoF2Remake.Flight
         public int pirateEvent;            // remake: EventOutpost / EventBoss / EventTurret (TrafficPlan.AddPirateEvent), 0 = none
         public int eventTier = 3;          // ... its threat tier 1-5 (PirateReports.TierName): its strength and bounty
         public int sightingId = -1;        // ... a Pirate activity report's (PirateReports): its bounty, its name
-        public const int EventOutpost = 1, EventBoss = 2, EventTurret = 3;
+        public const int EventOutpost = 1, EventBoss = 2, EventTurret = 3, EventGuard = 4;   // EventGuard: an outpost's guard, a boss's escort
         // Remake (Settings.CapitalShips, World.CapitalShips): the capital ship enhancements.
         public int capital;                // the host: CapitalBattleship / CapitalCarrier / CapitalVossk, 0 = none
         public bool capitalPart;           // one of its turrets or escorts (its turrets go with it: Traffic.DestroyCapitalTurrets)
@@ -384,6 +384,9 @@ namespace GoF2Remake.Flight
         {
             // A reported sighting here (the Missions window's Pirate activity): its outpost or named boss, whatever this pilot's
             // rank (the rank only decides which reports are made: a session's board is the server's, its pilots start at 0).
+            // Not in an Informer orbit (a player's report): the original's is the spy and the police alone, and any other death there spoils
+            // the mission (Traffic.OnShipDied); a report waits for a later visit.
+            if (InformerOrbit(station)) return;
             var sighting = PirateReports.At(station);
             if (sighting != null && PirateEventAllowed(db, station, system, true)) { AddPirateEventShips(list, !sighting.boss, sighting.tier, sighting); return; }
             if (!PirateEventAllowed(db, station, system)) return;
@@ -451,7 +454,7 @@ namespace GoF2Remake.Flight
                     float S() => Random.value < 0.5f ? -1f : 1f;
                     list.Add(new SpawnSpec
                     {
-                        group = NpcGroup.Guard, race = Standing.Pirate, ship = Fighter(), asleep = true, guard = true,
+                        group = NpcGroup.Guard, race = Standing.Pirate, ship = Fighter(), asleep = true, guard = true, pirateEvent = SpawnSpec.EventGuard,
                         position = at + new Vector3(S() * Random.Range(0, 20000) + 10000, S() * Random.Range(0, 20000) + 10000, S() * Random.Range(0, 20000) + 10000),
                     });
                 }
@@ -481,7 +484,7 @@ namespace GoF2Remake.Flight
             });
             int escorts = Random.Range(BossEscortsMin[t], BossEscortsMax[t] + 1);
             for (int i = 0; i < escorts; i++)
-                list.Add(new SpawnSpec { group = NpcGroup.Special, race = Standing.Pirate, ship = Fighter(), position = spawn + Jitter(), alwaysEnemy = true });
+                list.Add(new SpawnSpec { group = NpcGroup.Special, race = Standing.Pirate, ship = Fighter(), position = spawn + Jitter(), alwaysEnemy = true, pirateEvent = SpawnSpec.EventGuard });
         }
 
         // The tiers' numbers (index = tier - 1: Minor, Low, Moderate, High, Extremely dangerous).

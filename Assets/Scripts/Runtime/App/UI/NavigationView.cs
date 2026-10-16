@@ -22,7 +22,9 @@ namespace GoF2Remake.UI
     public class NavigationView
     {
         const float M = 0.05f;
-        const float EllipseX = 657f, EllipseY = 491f;   // image 0x4c7, Radar::elipsoidIntersect
+        // Radar::elipsoidIntersect's ellipse, image 0x4c7's size (remake: x FlightHud.RadarScale, smaller in the phone layout).
+        static float EllipseX => 657f * FlightHud.RadarScale;
+        static float EllipseY => 491f * FlightHud.RadarScale;
 
         class Marker
         {

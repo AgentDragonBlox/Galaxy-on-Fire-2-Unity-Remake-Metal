@@ -1801,6 +1801,9 @@ namespace GoF2Remake.World
         void ShowWreckAtEnd()
         {
             Target.invulnerable = true;
+            // setHitpoints(1) keeps the maximum: the lock plate reads 0 % like the original's (it read 100 %).
+            Hp.vulnerable = false;
+            SetHull(1, false);
             var prefab = WreckPrefab(assets, Spec.ship, Race);
             if (prefab == null) return;   // keeps the intact hull
             var w = Instantiate(prefab, transform, false);

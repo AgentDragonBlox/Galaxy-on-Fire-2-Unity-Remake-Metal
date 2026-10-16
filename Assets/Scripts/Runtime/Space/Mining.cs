@@ -255,7 +255,7 @@ namespace GoF2Remake.Flight
                 {
                     Locked = Candidate;
                     LockFrame = 23;
-                    if (!wasLocked) Play(sounds?.targetLock);
+                    if (!wasLocked && (navigation == null || !navigation.RadarOff)) Play(sounds?.targetLock);   // no beep in a cutscene
                 }
             }
             else Locked = null;

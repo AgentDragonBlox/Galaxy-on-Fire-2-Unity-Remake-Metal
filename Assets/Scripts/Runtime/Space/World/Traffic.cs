@@ -256,7 +256,9 @@ namespace GoF2Remake.World
                 s.enemies.Clear();
                 if (Player != null && s.Race != playerExemptRace) s.enemies.Add(Player);
                 if (freeFlight && s.Race == Standing.Specter) continue;
-                foreach (var o in Ships) if (o != s && o.Race != s.Race) s.enemies.Add(o.Target);
+                // Remake (a player's report): a wreck held at its end (deadButSelectable: the Supernova's hidden-blueprint freighters, mods'
+                // derelicts) is nobody's target; the Terran one at Wah'norr drew the orbit's Vossk onto it (invulnerable decor).
+                foreach (var o in Ships) if (o != s && o.Race != s.Race && !o.Spec.deadButSelectable) s.enemies.Add(o.Target);
             }
         }
 
@@ -670,7 +672,9 @@ namespace GoF2Remake.World
                 // spy's fails it too; the remake's default stops counting once the spy is dead (Settings.InformerOriginalRule).
                 bool killed = Session.InformerKilled, failed = Session.InformerFailed;
                 if (ship.Spec.nameText == 1663) { if (!Session.InformerFailed) Session.InformerKilled = true; }
-                else if (!Session.InformerFailed && (!Session.InformerKilled || Settings.InformerOriginalRule))
+                // Remake (a player's report): the pirate events' ships never count (the original's Informer orbit has none; TrafficPlan
+                // skips them there, but a multiplayer orbit another player built may hold them).
+                else if (ship.Spec.pirateEvent == 0 && !Session.InformerFailed && (!Session.InformerKilled || Settings.InformerOriginalRule))
                 {
                     Session.InformerFailed = true;
                     Session.InformerKilled = false;
@@ -873,6 +877,14 @@ namespace GoF2Remake.World
         {
             var w = WantedOf(ship);
             if (w == null) return;
+            // Player::damage calls Level::almostKillWanted before its death branch: a storyline criminal killed from above a
+            // third of its hull in one blow (or one frame) still wins step 128 / 130. UpdateWanted only sees living ships, so
+            // such a kill left the step waiting for a dead criminal (a player's report).
+            if (WantedBoard.IsStoryline(w.index) && !wantedSurrendered)
+            {
+                wantedSurrendered = true;
+                WantedBoard.OnSurrender(db, w.index, StationIndex);
+            }
             int reward = WantedBoard.OnKilled(db, w.index);
             if (reward > 0) BountyCollected?.Invoke(reward);
             WantedLine(3151 + UnityEngine.Random.Range(0, 5), -1, w);   // Level::killWanted: "a job well done"

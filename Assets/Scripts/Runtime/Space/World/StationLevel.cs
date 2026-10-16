@@ -211,6 +211,9 @@ namespace GoF2Remake.World
             Session.HighestCredits = Mathf.Max(Session.HighestCredits, Session.Credits);
             Session.PlayerHull = Session.PlayerArmor = -1;
             Session.PlayerShield = -1f;
+            // The gamma pool too: launching sets Status +0x68 to -1 (ModStation::OnTouchEnd, StarMap::depart), so a docked
+            // supernova station (Var Lupra 112 ...) sends you out with a full pool; kept, a nearly empty one killed you again.
+            Session.PlayerGamma = -1f;
             if (Story.AutosaveAllowed(station)) Session.Autosave();
             BarRace = StationTables.BarRace(interior >= 0 ? interior : Layout.raceId);
             if (mainCamera == null) mainCamera = Camera.main;

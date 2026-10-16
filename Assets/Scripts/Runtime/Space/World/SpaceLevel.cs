@@ -222,6 +222,8 @@ namespace GoF2Remake.World
             ComingFromVoid = Session.ComingFromVoid;
             // Status::departStation: the Void-invasion re-roll counter (index 32-44).
             Story.OnDepart(db, station);
+            // Status::departStation's station stack: an attacked station's locals calm down 3 new orbits later (a player's report).
+            if (arena == null) Session.ArriveInOrbit(station);
             // Status::moveWanted: a real orbit change (not a launch from the docked station, not to / from the Void) moves the
             // Most Wanted criminals one system along their routes.
             if ((Session.ArrivedByTravel || Session.ArrivedBySystemJump) && station != Session.VoidOrbit && Session.PreviousStationIndex != Session.VoidOrbit)
@@ -319,6 +321,7 @@ namespace GoF2Remake.World
             Traffic.Setup(db, Layout, Health.Target, Station, ownPassive || (GoF2Remake.Data.NetSession.Active && !NetAuthority), Wormhole);
             Traffic.LaunchCameraRunning = () => !LaunchCameraOver;
             Traffic.RadarHidden = () => Cutscene;
+            Navigation.RadarHidden = () => Cutscene || !LaunchCameraOver;   // no locks or lock sounds
             PlayerHull.AttachTurrets(this);   // remake debug: a capital ship's turrets on the player's hull (PlayerHull)
             // Docking at the story's objects (PlayerEgo::dockToDockingPoint): locked through Navigation.
             Docking = Player.gameObject.AddComponent<ObjectDocking>();

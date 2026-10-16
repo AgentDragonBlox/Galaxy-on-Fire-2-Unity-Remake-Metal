@@ -84,7 +84,7 @@ namespace GoF2Remake.Flight
         bool removed;
         /// <summary>A toggle message for the HUD (text 37 / remake strings).</summary>
         public event Action<string> Message;
-        /// <summary>One of this turret's shots hit (the HUD's orange crosshair, Level+0x30, while it is aimed by hand).</summary>
+        /// <summary>One of this turret's shots hit (the HUD's orange crosshair, Level+0x30, aimed by hand or auto fire).</summary>
         public event Action Hit;
 
         ShipController ship;
