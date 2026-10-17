@@ -693,6 +693,7 @@ colours. "Ship's own" keeps the model's exhaust.
 | `nozzle` | The nozzle radius the effect is made for: game units for `engineFx` (default its own `nozzle`, else its `coneWidth`), the model's units for `model` (default 1). Each exhaust of the ship is scaled by its own nozzle's size against it (a mod mount's `glowSize`, a mod ship's `engineGlowRadius`, the game's ships' exhaust sizes; on a ship with an `engineFx` of its own, its nozzles are taken as large as that effect's `nozzle` x `fxScale`, so a ship wearing a style made like its own engine shows it at its own engine's size). |
 | `palette` | The colours offered, `[ { "id", "name", "color": "#RRGGBB" } ]` (default the game's bright colour list). Each row also offers "Original", the style's own colour. |
 | `mainName`, `secondName` | The two colour rows' names (default "Exhaust colour" / "Second colour"). |
+| `group`, `groupName`, `scale` | Flame models of one mod with the same `group` are offered as one choice (named `groupName`, else the first one's name): each nozzle of the ship wears the one made for the nearest nozzle size, its `nozzle` x `scale` (the model's size as the mod's own ships show it: Unity metres per model unit, default 1). The EVERSPACE 2 importer offers its three thrusters this way. |
 
 The style sits where the ship's exhausts are (`slotType` 3 mounts: a kit ship's build's, a mod ship's, the game's own) and takes
 each nozzle's shape: its outline (the hull of the nozzle seen from behind) and centre. A flame model's cross-section is bent to

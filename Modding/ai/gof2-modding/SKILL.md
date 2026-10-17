@@ -323,7 +323,9 @@ own): the game's colour list, or the kit's palette `"weapons"`; a build may carr
 
 `[ { "id", "name", "engineFx": { ...as ships.json engineFx } | "model": "exhausts/x.glb" + "materials": [ { "material": "...",
 "flame": true, ... } ] + "yaw", "nozzle" (radius the effect is made for: game units for engineFx, default its engineFx nozzle, else coneWidth; model
-units for a model, default 1), "palette": [ { "id", "name", "color": "#RRGGBB" } ], "mainName", "secondName" } ]`. A flame model:
+units for a model, default 1), "palette": [ { "id", "name", "color": "#RRGGBB" } ], "mainName", "secondName", "group" +
+"groupName" + "scale" (flame models with one group are one choice; each nozzle wears the one whose nozzle x scale, Unity
+metres per model unit, is nearest its size) } ]`. A flame model:
 origin at the nozzle exit, flame along -Z. Any ship (the game's too) then has a Customize screen with Exhaust ("Ship's own" or a
 style) and its two colours (engineFx: flare+cone / trails+helix; model: flame / boost cards); each exhaust scaled by its nozzle
 against "nozzle" by its nozzle's mean radius, its cross-section bent to the nozzle's outline (a mount's `"outline": [x0, y0, ...]`

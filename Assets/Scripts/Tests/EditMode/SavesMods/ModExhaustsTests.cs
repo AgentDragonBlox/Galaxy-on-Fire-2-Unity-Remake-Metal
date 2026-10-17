@@ -1,6 +1,7 @@
 // ModExhaustsTests.cs
 // Feature: CLAUDE.md "Mods" > Exhaust styles: a flame style (a model cut from its mod's own exhaust parts) isn't offered on
-// that mod's own ships (ModExhausts.For / Offered / Find(key, ship)), every other style and ship keeps them; a mount's
+// that mod's own ships (ModExhausts.For / Offered / Find(key, ship)), every other style and ship keeps them; flame styles
+// with one "group" are one choice whose nozzles each wear the member made for the nearest nozzle size (ForNozzle); a mount's
 // "outline" stands for its nozzle only when it is plausible against the mount's glowSize (ShapesOf: the GoF3 builder's
 // Vossk slivers fall back to the glowSize oval); an "engineFx" reads its "coneProfile" / "coneFade" (CustomEngineFx).
 // Expected values: the format in Modding/README.md "Exhaust styles".
@@ -50,6 +51,39 @@ namespace GoF2Remake.Tests
             var onGame = ModExhausts.For(10).ConvertAll(s => s.Key);
             CollectionAssert.AreEqual(new[] { "t_ex:flame", "t_ex:drive" }, onGame, "any other ship: every style");
             Assert.IsNotNull(ModExhausts.Find("t_ex:flame", 10));
+        }
+
+        [Test]
+        public void AGroupOfFlameStylesIsOneChoiceThatFitsEachNozzle()
+        {
+            string dir = WriteMod("gr", "t_gr", "1.0", "", ("exhausts.json", @"[
+                { 'id': 'small', 'name': 'Small', 'model': 'exhausts/a.glb', 'nozzle': 0.38, 'group': 'thruster', 'groupName': 'Thruster',
+                  'materials': [ { 'material': 'EngineExhaust', 'flame': true } ] },
+                { 'id': 'big', 'name': 'Big', 'model': 'exhausts/b.glb', 'nozzle': 0.61, 'group': 'thruster',
+                  'materials': [ { 'material': 'EngineExhaust', 'flame': true } ] },
+                { 'id': 'ring', 'name': 'Ring', 'model': 'exhausts/c.glb', 'nozzle': 0.42, 'group': 'thruster',
+                  'materials': [ { 'material': 'EngineExhaust', 'flame': true } ] },
+                { 'id': 'alone', 'name': 'Alone', 'model': 'exhausts/a.glb', 'nozzle': 0.5, 'scale': 3,
+                  'materials': [ { 'material': 'EngineExhaust', 'flame': true } ] } ]"));
+            foreach (var f in new[] { "exhausts/a.glb", "exhausts/b.glb", "exhausts/c.glb" }) WriteFile(dir, f, Dummy);
+            ScanAndEnable("t_gr");
+            Assert.IsFalse(Installed("t_gr").Broken, AllMessages(Installed("t_gr")));
+
+            var offered = ModExhausts.For(10);
+            CollectionAssert.AreEqual(new[] { "t_gr:small", "t_gr:alone" }, offered.ConvertAll(x => x.Key), "the group is one choice, led by its first");
+            var group = offered[0];
+            Assert.AreEqual("Thruster", group.Name, "named by its groupName");
+            Assert.AreEqual(3, group.members.Count);
+            Assert.AreSame(group, ModExhausts.Find("t_gr:big", 10), "a member's key (an older build) is its group");
+
+            Assert.AreEqual("t_gr:small", group.ForNozzle(0.30f).Key);
+            Assert.AreEqual("t_gr:small", group.ForNozzle(0.39f).Key);
+            Assert.AreEqual("t_gr:ring", group.ForNozzle(0.45f).Key);
+            Assert.AreEqual("t_gr:big", group.ForNozzle(0.56f).Key, "nearest on a log scale: 0.56 is nearer 0.61 than 0.42");
+            Assert.AreEqual("t_gr:big", group.ForNozzle(2f).Key);
+            Assert.AreSame(offered[1], offered[1].ForNozzle(2f), "a style without a group is itself");
+            Assert.AreEqual(3f, offered[1].scale, 1e-5f);
+            Assert.AreEqual(1f, group.scale, 1e-5f, "scale defaults to 1");
         }
 
         [Test]

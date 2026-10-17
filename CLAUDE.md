@@ -2216,7 +2216,13 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   style but a flame style on its own mod's ships (ES2's thrusters are cut from the ES2 ships' own rear parts, which choose
   their exhaust there). Checked in Play mode (2026-10-17): the Phantom (Nivelian drive, ES2 thruster), the Cronus (Terran),
   the Argus (Vossk), the K'ssshar Ka (ES2 heavy thruster), the Shaan'ra-Grth (Nivelian), the ES2 Sentinel (Terran; its own
-  thruster refused), the Customize screen's Exhaust row on the Sentinel, a Vossk hull and the Phantom. The build carries it (`exhaust=mod_id:id;exhaustcolor=;exhaustcolor2=;exhaustsize=`,
+  thruster refused), the Customize screen's Exhaust row on the Sentinel, a Vossk hull and the Phantom. Groups (exhausts.json
+  `group` / `groupName` / `scale`, `Style.lead` / `members` / `ForNozzle`): flame styles of one mod with the same group are
+  one choice, its first (`For` lists only leads, `Find(key, ship)` turns a member's key, an older build, into its group);
+  each nozzle wears the member whose `nozzle` x `scale` is nearest its size on a log scale (the player's Exhaust size
+  counted; the instance is named `exhaust_nozzle_<i>_<member>`). The ES2 importer groups its three thrusters as "EVERSPACE
+  2 thruster" (`scale` 3.6, the kit scale: nozzles of 1.38 / 1.53 / 2.21 m): the game's ships take the light thruster
+  (the Phantom, the Inflict), larger nozzles the heavy one (ship 7, the GoF3 hulls; the Cronus both). The build carries it (`exhaust=mod_id:id;exhaustcolor=;exhaustcolor2=;exhaustsize=`,
   `ModShipKits.Build`, kept out of `VariantAssembly`'s name like the weapon colour) and `ModExhausts.Apply` puts it on each model
   instance (the player's in `SpaceLevel` spawn / swap, the turntable and hangar guests in `StationLevel.SpawnShip`, other players'
   ships in `NetPlayer.BuildModel`): a holder `exhaust_style` under the engine glow part aligned with the ship's root (it goes with
