@@ -251,6 +251,10 @@ namespace GoF2Remake.UI
                 () => Settings.FieldOfView, v => Settings.FieldOfView = Mathf.Round(v), v => $"{Mathf.RoundToInt(v)}°"));
             list.Add(Slider("cameraShake", OptionPage.Graphics, () => X("cameraShake", "Camera shake"), 0f, 1f,
                 () => Settings.CameraShake, v => Settings.CameraShake = v, Percent));
+            list.Add(Choice("chaseCamera", OptionPage.Graphics, () => X("chaseCamera", "Chase camera"), true,
+                () => new[] { X("chaseCameraRemake", "Remake"), X("chaseCameraOriginal", "Original") },
+                () => Settings.OriginalChaseCamera ? 1 : 0, i => Settings.OriginalChaseCamera = i == 1,
+                () => X("chaseCameraHelp", "Remake: the camera stays close behind the ship, which stays near the middle of the screen. Original: the camera follows more slowly, as in the original game: in a turn the ship swings out to the side and the crosshair moves off centre.")));
             list.Add(Toggle("showFps", OptionPage.Graphics, () => X("showFps", "Show FPS"), () => Settings.ShowFps, v => Settings.ShowFps = v));
 
             // ---- controls
@@ -392,12 +396,12 @@ namespace GoF2Remake.UI
                 () => Settings.SmarterNpcTargeting, v => Settings.SmarterNpcTargeting = v);
             smartTargeting.description = () => X("smarterNpcTargetingHelp", "Enemy fighters attack the nearest hostile ship, you a little likelier, and spread out over their targets instead of all going for you. Off: as in the original, every enemy fighter in range goes for you first.");
             list.Add(SessionRule(smartTargeting));
-            // Remake (players' report: fighters hard to hit since the mesh collision): the flyable ships' real shape or the
-            // original's hit cube (Settings.PreciseShipCollision, Flight.HullCollision.PreciseShips).
+            // Remake (players' report: fighters hard to hit since the mesh collision): every hull's real shape, the flyable ships
+            // on the original's hit cube, or the original's volumes everywhere (Settings.ShipCollision, Flight.HullCollision.Mode).
             list.Add(SessionRule(Choice("shipCollision", OptionPage.Gameplay, () => X("shipCollision", "Ship collision"), true,
-                () => new[] { X("shipCollisionPrecise", "Precise"), X("shipCollisionOriginal", "Original") },
-                () => Settings.PreciseShipCollision ? 0 : 1, i => Settings.PreciseShipCollision = i == 0,
-                () => X("shipCollisionHelp", "Precise: shots hit fighters, your ship and other players' ships on their real shape, so a near miss misses, and you bump into other players' hulls. Original: as in the original game, a box around each of those ships takes the hits, which makes them easier to hit, and other players' ships are spheres. Freighters, battleships, carriers, stations and other objects keep their real shape either way."))));
+                () => new[] { X("shipCollisionExact", "Exact shape"), X("shipCollisionMixed", "Mixed"), X("shipCollisionOriginal", "Original") },
+                () => Settings.ShipCollision, i => Settings.ShipCollision = i,
+                () => X("shipCollisionHelp", "Exact shape: shots hit every ship and object on its real shape, so a near miss misses, and you bump into other players' hulls. Mixed: fighters, your ship and other players' ships take the hits on a box around them, as in the original game, which makes them easier to hit, and other players' ships are spheres; freighters, battleships, carriers, stations and other objects keep their real shape. Original: as in the original game, every ship, station and object uses the original's boxes and spheres."))));
             var pirateEvents = Toggle("pirateEvents", OptionPage.Gameplay, () => X("pirateEvents", "Pirate outposts and bosses"),
                 () => Settings.PirateEvents, v => Settings.PirateEvents = v);
             pirateEvents.description = () => X("pirateEventsHelp", "Now and then an orbit holds a pirate outpost with its guards or a pirate boss with escorts; destroying them pays a bounty. Not in the original.");

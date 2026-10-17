@@ -11,7 +11,7 @@
 //   -allowmods       the session runs every mod in this game's Mods folders (NetMods); off by default
 //   -port N          the local port (default 7777); -fps N the server's frame rate (default 60)
 //   -freepvp         players may fight anywhere (else only in arena matches, NetArena)
-//   -cloakhides -capitalships -informeroriginal -nopirateevents -nokaamostacking -nokaamoequipment -nocloakbay -noempcloak -originaltargeting -originalcollision
+//   -cloakhides -capitalships -informeroriginal -nopirateevents -nokaamostacking -nokaamoequipment -nocloakbay -noempcloak -originaltargeting -shipcollision exact|mixed|original
 //                    the session's gameplay options (NetRules), each the other way from the game's default
 //   -kaamomaxlevel N how many times one Kaamo Club upgrade can be fitted to a ship (2..20, default 5; NetRules)
 //   -flightmodel M   the flight model: gof2 (the game's) or es2 (EVERSPACE 2 style) for everyone, or player / any (each
@@ -114,6 +114,9 @@ namespace GoF2Remake.Multiplayer
             NetGame.FreePvp = HasFlag("-freepvp");
             NetRules.Host = NetRules.Defaults;   // the session's gameplay options: the defaults, a flag turns one the other way
             foreach (var r in NetRules.All) if (HasFlag(r.flag)) NetRules.Host ^= r.bit;
+            int collision = SessionRules.ParseCollision(Value(NetRules.CollisionFlag));   // the old -precisecollision = exact
+            if (collision < 0 && HasFlag(NetRules.LegacyCollisionFlag)) collision = SessionRules.CollisionExact;
+            NetRules.Host = SessionRules.WithCollision(NetRules.Host, collision >= 0 ? collision : SessionRules.DefaultCollision);
             NetRules.HostKaamoLevel = SessionRules.ClampKaamoLevel(int.TryParse(Value(NetRules.KaamoLevelFlag), out int kaamo) ? kaamo : SessionRules.DefaultKaamoLevel);
             int flight = SessionRules.ParseFlight(Value(NetRules.FlightFlag));
             NetRules.HostFlight = flight >= -1 ? flight : SessionRules.DefaultFlight;

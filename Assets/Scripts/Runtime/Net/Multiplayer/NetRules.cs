@@ -20,7 +20,8 @@ namespace GoF2Remake.Multiplayer
                          CapitalShips = SessionRules.CapitalShips, InformerOriginalRule = SessionRules.InformerOriginalRule,
                          KaamoStacking = SessionRules.KaamoStacking, KaamoKeepsEquipment = SessionRules.KaamoKeepsEquipment,
                          CloakBay = SessionRules.CloakBay, EmpBreaksCloak = SessionRules.EmpBreaksCloak,
-                         SmarterNpcTargeting = SessionRules.SmarterNpcTargeting, PreciseShipCollision = SessionRules.PreciseShipCollision;
+                         SmarterNpcTargeting = SessionRules.SmarterNpcTargeting, PreciseShipCollision = SessionRules.PreciseShipCollision,
+                         OriginalCollision = SessionRules.OriginalCollision;
 
         /// <summary>One rule: its bit, the server setting's key, the command-line flag that sets it the other way from
         /// its default, the server window's label, and the option's default.</summary>
@@ -42,7 +43,6 @@ namespace GoF2Remake.Multiplayer
             new Rule { bit = CloakBay, key = "cloakbay", flag = "-nocloakbay", label = "Cloak bay on cloaking ships", fallback = true },
             new Rule { bit = EmpBreaksCloak, key = "empcloak", flag = "-noempcloak", label = "EMP breaks cloaks", fallback = true },
             new Rule { bit = SmarterNpcTargeting, key = "smarttargeting", flag = "-originaltargeting", label = "Smarter NPC targeting", fallback = true },
-            new Rule { bit = PreciseShipCollision, key = "precisecollision", flag = "-originalcollision", label = "Precise ship collision", fallback = true },
         };
 
         /// <summary>Every rule at its option's default (a dedicated server's start).</summary>
@@ -149,6 +149,22 @@ namespace GoF2Remake.Multiplayer
         {
             HostFlight = style == FlightStyles.Free || style == SessionRules.PlayerFlight ? style : FlightStyles.Original;
             NetState.Instance?.SetFlightModel(HostFlight);
+        }
+
+        // ---- the ship collision mode: two bits, set as one setting ----
+
+        public const string CollisionKey = "shipcollision", CollisionFlag = "-shipcollision", LegacyCollisionFlag = "-precisecollision",
+                            CollisionLabel = "Ship collision: exact (every hull's real shape), mixed (fighters and players' ships on the original's boxes, the rest exact) or original (the original's boxes everywhere)";
+
+        /// <summary>The server's ship collision mode (SessionRules.CollisionExact / Mixed / Original), in Host's bits
+        /// PreciseShipCollision / OriginalCollision.</summary>
+        public static int HostCollision => SessionRules.CollisionOf(Host);
+
+        /// <summary>Server: the ship collision mode (NetServerSettings, DedicatedServer.Boot).</summary>
+        public static void SetCollision(int mode)
+        {
+            Host = SessionRules.WithCollision(Host, mode);
+            NetState.Instance?.SetRules(Host);
         }
 
         /// <summary>The options' rows: hidden for a player in someone else's session (the host decides).</summary>

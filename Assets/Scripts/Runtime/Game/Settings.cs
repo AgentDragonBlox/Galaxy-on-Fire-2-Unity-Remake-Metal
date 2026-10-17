@@ -136,6 +136,10 @@ namespace GoF2Remake.Data
         /// <summary>Camera shake and rumble strength, 0..1 (hits, collisions, explosions, cutscenes).</summary>
         public static float CameraShake { get => Get("cameraShake", 1f); set => Set("cameraShake", Mathf.Clamp01(value)); }
 
+        /// <summary>The chase camera follows at the original's damping and looks at its eased point (#114, ChaseCamera); off
+        /// (default) = the remake's tighter follow (2026.10.09's: twice the rate, a slerped rotation).</summary>
+        public static bool OriginalChaseCamera { get => GetBool("originalChaseCamera", false); set => SetBool("originalChaseCamera", value); }
+
         // ---- controls ----------------------------------------------------------------------------------------
 
         /// <summary>Steering sensitivity (FlightModel.Sensitivity, 0..2.2).</summary>
@@ -270,12 +274,39 @@ namespace GoF2Remake.Data
         /// A session rule.</summary>
         public static bool CapitalShips { get => Rule(R.CapitalShips, "capitalShips", false); set => SetRule(R.CapitalShips, "capitalShips", value); }
         /// <summary>Remake (players' report, 2026-10-17: since the mesh collision the fighters were hard to hit): Options >
-        /// Gameplay "Ship collision". Precise (on, default): shots hit the ships a player can fly on their real shape and the
-        /// player meets other players' ships on theirs (Flight.HullCollision). Original (off): those take the original's hit
-        /// cube and collision sphere again (HullBody.flyableShip); freighters, the battleship, capital ships, stations,
-        /// gates, turrets and objects keep their real shape either way. A session rule (the host's or the server's,
-        /// -originalcollision).</summary>
-        public static bool PreciseShipCollision { get => Rule(R.PreciseShipCollision, "preciseShipCollision", true); set => SetRule(R.PreciseShipCollision, "preciseShipCollision", value); }
+        /// Gameplay "Ship collision", SessionRules.CollisionExact / Mixed / Original. Exact: every hull on its real shape
+        /// (Flight.HullCollision). Mixed (default): the ships a player can fly on the original's hit cube and collision
+        /// sphere (HullBody.flyableShip), freighters, capital ships, stations, gates, turrets and objects on their real
+        /// shape. Original: no mesh collision at all, the original's boxes, spheres and cubes everywhere. A session rule (the
+        /// host's or the server's, -shipcollision; two rule bits, SessionRules.CollisionOf). The old toggle's key
+        /// (preciseShipCollision, on = Exact) is read until the mode is set.</summary>
+        public static int ShipCollision
+        {
+            get
+            {
+                if (GameHooks.SessionRule != null && GameHooks.SessionRule(R.PreciseShipCollision, out bool precise)
+                    && GameHooks.SessionRule(R.OriginalCollision, out bool original))
+                    return original ? R.CollisionOriginal : precise ? R.CollisionExact : R.CollisionMixed;
+                return LocalCollision;
+            }
+            set
+            {
+                int mode = Mathf.Clamp(value, R.CollisionExact, R.CollisionOriginal);
+                Set("shipCollision", mode);
+                GameHooks.RuleChangedByHost?.Invoke(R.PreciseShipCollision, mode == R.CollisionExact);
+                GameHooks.RuleChangedByHost?.Invoke(R.OriginalCollision, mode == R.CollisionOriginal);
+            }
+        }
+
+        static int LocalCollision
+        {
+            get
+            {
+                float v = Get("shipCollision", -1f);
+                if (v < -0.5f) return GetBool("preciseShipCollision", false) ? R.CollisionExact : R.DefaultCollision;
+                return Mathf.Clamp(Mathf.RoundToInt(v), R.CollisionExact, R.CollisionOriginal);
+            }
+        }
 
         /// <summary>The Gameplay options that change how the game plays are the session's in multiplayer (NetRules), else the
         /// player's own.</summary>
@@ -295,8 +326,7 @@ namespace GoF2Remake.Data
             if (GetBool("cloakBay", true)) m |= R.CloakBay;
             if (GetBool("empBreaksCloak", true)) m |= R.EmpBreaksCloak;
             if (GetBool("smarterNpcTargeting", true)) m |= R.SmarterNpcTargeting;
-            if (GetBool("preciseShipCollision", true)) m |= R.PreciseShipCollision;
-            return m;
+            return R.WithCollision(m, LocalCollision);
         }
 
         /// <summary>DialogueWindow::update: with voice, turn the page once the line has ended.</summary>
@@ -364,7 +394,7 @@ namespace GoF2Remake.Data
         {
             "displayMode", "resolutionWidth", "resolutionHeight", "frameRate", "quality", "renderScale", "upscaler", "upscalerQuality",
             "msaa", "brightness", "bloom", "bloomStyle", "hangarShadows", "hangarDof", "lensFlare", "npcPlayerEngines", "fov",
-            "cameraShake", "showFps",
+            "cameraShake", "originalChaseCamera", "showFps",
         };
         public static readonly string[] ControlsKeys =
         {
@@ -375,7 +405,7 @@ namespace GoF2Remake.Data
         public static readonly string[] GameplayKeys =
         {
             "launchCamera", "hangarFlights", "tutorialHints", "showStoryStep", "pirateEvents", "capitalShips", "kaamoStacking", "kaamoMaxLevel", "kaamoKeepsEquipment", "cloakBay", "informerOriginalRule",
-            "originalTargetLock", "keepEnemyLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "smarterNpcTargeting", "preciseShipCollision", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "hudMode", "discordPresence",
+            "originalTargetLock", "keepEnemyLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "smarterNpcTargeting", "shipCollision", "preciseShipCollision", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "hudMode", "discordPresence",
             "farShipMarkers", "markerDistance",
         };
         public static readonly string[] LanguageKeys = { "voiceLanguage" };
