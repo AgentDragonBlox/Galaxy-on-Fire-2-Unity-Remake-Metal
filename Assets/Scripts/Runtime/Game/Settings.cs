@@ -269,6 +269,13 @@ namespace GoF2Remake.Data
         /// a killable carrier and Vossk battleship with loot, the carrier's Inflicts and its resupply dock. Off = the original.
         /// A session rule.</summary>
         public static bool CapitalShips { get => Rule(R.CapitalShips, "capitalShips", false); set => SetRule(R.CapitalShips, "capitalShips", value); }
+        /// <summary>Remake (players' report, 2026-10-17: since the mesh collision the fighters were hard to hit): Options >
+        /// Gameplay "Ship collision". Precise (on, default): shots hit the ships a player can fly on their real shape and the
+        /// player meets other players' ships on theirs (Flight.HullCollision). Original (off): those take the original's hit
+        /// cube and collision sphere again (HullBody.flyableShip); freighters, the battleship, capital ships, stations,
+        /// gates, turrets and objects keep their real shape either way. A session rule (the host's or the server's,
+        /// -originalcollision).</summary>
+        public static bool PreciseShipCollision { get => Rule(R.PreciseShipCollision, "preciseShipCollision", true); set => SetRule(R.PreciseShipCollision, "preciseShipCollision", value); }
 
         /// <summary>The Gameplay options that change how the game plays are the session's in multiplayer (NetRules), else the
         /// player's own.</summary>
@@ -288,6 +295,7 @@ namespace GoF2Remake.Data
             if (GetBool("cloakBay", true)) m |= R.CloakBay;
             if (GetBool("empBreaksCloak", true)) m |= R.EmpBreaksCloak;
             if (GetBool("smarterNpcTargeting", true)) m |= R.SmarterNpcTargeting;
+            if (GetBool("preciseShipCollision", true)) m |= R.PreciseShipCollision;
             return m;
         }
 
@@ -367,7 +375,7 @@ namespace GoF2Remake.Data
         public static readonly string[] GameplayKeys =
         {
             "launchCamera", "hangarFlights", "tutorialHints", "showStoryStep", "pirateEvents", "capitalShips", "kaamoStacking", "kaamoMaxLevel", "kaamoKeepsEquipment", "cloakBay", "informerOriginalRule",
-            "originalTargetLock", "keepEnemyLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "smarterNpcTargeting", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "hudMode", "discordPresence",
+            "originalTargetLock", "keepEnemyLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "smarterNpcTargeting", "preciseShipCollision", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "hudMode", "discordPresence",
             "farShipMarkers", "markerDistance",
         };
         public static readonly string[] LanguageKeys = { "voiceLanguage" };

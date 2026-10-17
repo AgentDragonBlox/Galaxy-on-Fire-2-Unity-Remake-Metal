@@ -130,7 +130,7 @@ namespace GoF2Remake.Flight
         bool Solid(HullBody body)
         {
             var o = body != null ? body.obstacle : null;
-            if (o == null || !o.Active) return false;
+            if (o == null || !o.Active || !body.Collides) return false;   // Original ship collision: another player's sphere
             if (ignoreGate && o.cubeIsContact) return false;
             if (docking != null && docking.State == ObjectDocking.Phase.Approach && docking.Target != null
                 && (o.gameObject == docking.Target.gameObject

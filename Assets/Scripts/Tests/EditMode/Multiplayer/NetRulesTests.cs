@@ -5,8 +5,9 @@
 // on / off toggles, saved to server_settings.json beside the profiles, an option given on the command line wins).
 // Expected values: CLAUDE.md's rule list and defaults (cloak shakes off pursuers off, pirate outposts and bosses on,
 // capital ship enhancements off, the informer missions' original rule off, stackable Kaamo upgrades on, stored ships keep
-// their equipment on, the cloak bay on, EMP breaks cloaks on, smarter NPC targeting on) and flags (-cloakhides, -nopirateevents,
-// -capitalships, -informeroriginal, -nokaamostacking, -nokaamoequipment, -nocloakbay, -noempcloak, -originaltargeting); the setting ranges (2..100 players,
+// their equipment on, the cloak bay on, EMP breaks cloaks on, smarter NPC targeting on, precise ship collision on) and flags (-cloakhides,
+// -nopirateevents, -capitalships, -informeroriginal, -nokaamostacking, -nokaamoequipment, -nocloakbay, -noempcloak,
+// -originaltargeting, -originalcollision); the setting ranges (2..100 players,
 // 0..100 claims per faction, 1..3650 lapse days).
 
 using System.IO;
@@ -32,10 +33,11 @@ namespace GoF2Remake.Tests
             ("cloakbay", "-nocloakbay", true),
             ("empcloak", "-noempcloak", true),
             ("smarttargeting", "-originaltargeting", true),
+            ("precisecollision", "-originalcollision", true),
         };
 
         [Test]
-        public void NineRulesWithTheirFlagsAndDefaults()
+        public void TenRulesWithTheirFlagsAndDefaults()
         {
             Assert.AreEqual(Documented.Length, NetRules.All.Count);
             foreach (var (key, flag, on) in Documented)
@@ -74,6 +76,7 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(SessionRules.CloakBay, NetRules.CloakBay);
             Assert.AreEqual(SessionRules.EmpBreaksCloak, NetRules.EmpBreaksCloak);
             Assert.AreEqual(SessionRules.SmarterNpcTargeting, NetRules.SmarterNpcTargeting);
+            Assert.AreEqual(SessionRules.PreciseShipCollision, NetRules.PreciseShipCollision);
         }
 
         [Test]

@@ -85,9 +85,25 @@ namespace GoF2Remake.Tests
             Assert.IsTrue(Settings.CloakBay, "on by default");
             Assert.IsTrue(Settings.EmpBreaksCloak, "on by default");
             Assert.IsTrue(Settings.SmarterNpcTargeting, "on by default");
+            Assert.IsTrue(Settings.PreciseShipCollision, "Precise by default");
             int expected = SessionRules.PirateEvents | SessionRules.KaamoStacking | SessionRules.KaamoKeepsEquipment
-                         | SessionRules.CloakBay | SessionRules.EmpBreaksCloak | SessionRules.SmarterNpcTargeting;
+                         | SessionRules.CloakBay | SessionRules.EmpBreaksCloak | SessionRules.SmarterNpcTargeting
+                         | SessionRules.PreciseShipCollision;
             Assert.AreEqual(expected, Settings.LocalRules());
+        }
+
+        [Test]
+        public void ShipCollisionLeavesTheFlyableShipsHullsOutOnOriginal()
+        {
+            // Options > Gameplay "Ship collision" (Flight.HullCollision.PreciseShips, HullBody.flyableShip / Collides).
+            AllDefaults();
+            Assert.IsTrue(Flight.HullCollision.PreciseShips, "Precise by default: the real shapes");
+            Settings.PreciseShipCollision = false;
+            Assert.IsFalse(Flight.HullCollision.PreciseShips, "Original: the flyable ships' cube and sphere");
+            Settings.PreciseShipCollision = true;
+            Assert.IsTrue(Flight.HullCollision.PreciseShips);
+            foreach (int ship in new[] { 0, 10, 28, 44, 64 }) Assert.IsTrue(Flight.HullCollision.FlyableShip(ship), ship + " flyable");
+            foreach (int ship in new[] { -1, 13, 14, 15 }) Assert.IsFalse(Flight.HullCollision.FlyableShip(ship), ship + ": freighter, battleship, none");
         }
 
         [Test]
@@ -98,7 +114,9 @@ namespace GoF2Remake.Tests
             Settings.PirateEvents = false;
             Settings.CloakLosesPursuers = true;
             Settings.InformerOriginalRule = true;
+            Settings.PreciseShipCollision = false;
             int m = Settings.LocalRules();
+            Assert.AreEqual(0, m & SessionRules.PreciseShipCollision, "Original ship collision");
             Assert.AreNotEqual(0, m & SessionRules.CapitalShips);
             Assert.AreEqual(0, m & SessionRules.PirateEvents);
             Assert.AreNotEqual(0, m & SessionRules.CloakLosesPursuers);
@@ -106,7 +124,7 @@ namespace GoF2Remake.Tests
             // the bits are distinct powers of two
             int[] bits = { SessionRules.CloakLosesPursuers, SessionRules.PirateEvents, SessionRules.CapitalShips, SessionRules.InformerOriginalRule,
                            SessionRules.KaamoStacking, SessionRules.KaamoKeepsEquipment, SessionRules.CloakBay, SessionRules.EmpBreaksCloak,
-                           SessionRules.SmarterNpcTargeting };
+                           SessionRules.SmarterNpcTargeting, SessionRules.PreciseShipCollision };
             Assert.AreEqual(bits.Length, bits.Distinct().Count());
             foreach (int b in bits) Assert.AreEqual(0, b & (b - 1), "a single bit");
         }
