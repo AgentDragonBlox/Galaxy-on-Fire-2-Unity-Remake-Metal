@@ -1368,6 +1368,8 @@
  "resupplyWrongRace": "Brak na stanie: ten statek przewozi tylko broń własnej rasy.",
  "empBreaksCloak": "EMP przerywa kamuflaż",
  "empBreaksCloakHelp": "Trafienie EMP w zakamuflowany statek od razu zdejmuje kamuflaż, a ładujący się jeszcze kamuflaż zawodzi: twój, Specterów i innych graczy. Wyłączone: jak w oryginale nic nie przerywa kamuflażu przed czasem.",
+ "smarterNpcTargeting": "Mądrzejszy wybór celów NPC",
+ "smarterNpcTargetingHelp": "Wrogie myśliwce atakują najbliższy wrogi statek, ciebie nieco chętniej, i rozdzielają się między cele, zamiast wszystkie lecieć na ciebie. Wyłączone: jak w oryginale, każdy wrogi myśliwiec w zasięgu najpierw atakuje ciebie.",
  "cloakDisrupted": "Kamuflaż zakłócony!",
  "kaamoModMaxed": "Dalej już nie da rady: twój #SHIP_NAME ma to ulepszenie na poziomie {0}.",
  "saveTransferFolder": "Wyeksportowane zapisy trafiają do tego folderu i są z niego importowane:",

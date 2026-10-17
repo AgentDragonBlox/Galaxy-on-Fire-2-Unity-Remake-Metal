@@ -383,6 +383,10 @@ namespace GoF2Remake.UI
                 () => Settings.EmpBreaksCloak, v => Settings.EmpBreaksCloak = v);
             empCloak.description = () => X("empBreaksCloakHelp", "An EMP hit on a cloaked ship drops its cloak at once, and a cloak still charging fails: yours, the Specters' and other players'. Off: as in the original, nothing ends a cloak early.");
             list.Add(SessionRule(empCloak));
+            var smartTargeting = Toggle("smarterNpcTargeting", OptionPage.Gameplay, () => X("smarterNpcTargeting", "Smarter NPC targeting"),
+                () => Settings.SmarterNpcTargeting, v => Settings.SmarterNpcTargeting = v);
+            smartTargeting.description = () => X("smarterNpcTargetingHelp", "Enemy fighters attack the nearest hostile ship, you a little likelier, and spread out over their targets instead of all going for you. Off: as in the original, every enemy fighter in range goes for you first.");
+            list.Add(SessionRule(smartTargeting));
             var pirateEvents = Toggle("pirateEvents", OptionPage.Gameplay, () => X("pirateEvents", "Pirate outposts and bosses"),
                 () => Settings.PirateEvents, v => Settings.PirateEvents = v);
             pirateEvents.description = () => X("pirateEventsHelp", "Now and then an orbit holds a pirate outpost with its guards or a pirate boss with escorts; destroying them pays a bounty. Not in the original.");

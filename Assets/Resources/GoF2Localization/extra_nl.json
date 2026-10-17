@@ -1368,6 +1368,8 @@
  "resupplyWrongRace": "Hier niet op voorraad: dit schip voert alleen de wapens van zijn eigen ras.",
  "empBreaksCloak": "EMP breekt camouflage",
  "empBreaksCloakHelp": "Een EMP-treffer op een gecamoufleerd schip heft de camouflage meteen op, en een camouflage die nog laadt mislukt: die van jou, van de Specters en van andere spelers. Uit: zoals in het origineel beëindigt niets een camouflage voortijdig.",
+ "smarterNpcTargeting": "Slimmere doelkeuze van NPC's",
+ "smarterNpcTargetingHelp": "Vijandige jagers vallen het dichtstbijzijnde vijandige schip aan, jou iets eerder, en verdelen zich over hun doelen in plaats van allemaal op jou af te gaan. Uit: zoals in het origineel gaat elke vijandige jager binnen bereik eerst op jou af.",
  "cloakDisrupted": "Camouflage verstoord!",
  "kaamoModMaxed": "Verder kan ik niet gaan: je #SHIP_NAME heeft deze upgrade al op niveau {0}.",
  "saveTransferFolder": "Geëxporteerde saves komen in deze map en worden hieruit geïmporteerd:",

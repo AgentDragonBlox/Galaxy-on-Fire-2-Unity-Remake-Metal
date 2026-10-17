@@ -1369,6 +1369,8 @@
  "resupplyWrongRace": "Sin existencias aquí: esta nave solo lleva armas de su propia raza.",
  "empBreaksCloak": "El PEM rompe el camuflaje",
  "empBreaksCloakHelp": "Un impacto PEM en una nave camuflada anula su camuflaje al instante, y un camuflaje que aún se carga falla: el tuyo, el de los Spectres y el de otros jugadores. Desactivado: como en el original, nada termina un camuflaje antes de tiempo.",
+ "smarterNpcTargeting": "Selección de objetivos más inteligente",
+ "smarterNpcTargetingHelp": "Los cazas enemigos atacan a la nave hostil más cercana, a ti con algo más de probabilidad, y se reparten entre sus objetivos en vez de ir todos a por ti. Desactivado: como en el original, todos los cazas enemigos a su alcance van primero a por ti.",
  "cloakDisrupted": "¡Camuflaje interrumpido!",
  "kaamoModMaxed": "No puedo ir más allá: tu #SHIP_NAME ya tiene esta mejora en el nivel {0}.",
  "padGlyphs": "Iconos de botones del mando",

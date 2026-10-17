@@ -1368,6 +1368,8 @@
  "resupplyWrongRace": "Sem estoque aqui: esta nave só carrega armas da sua própria raça.",
  "empBreaksCloak": "PEM quebra a camuflagem",
  "empBreaksCloakHelp": "Um acerto de PEM numa nave camuflada desfaz a camuflagem na hora, e uma camuflagem ainda carregando falha: a sua, a dos Specters e a de outros jogadores. Desligado: como no original, nada encerra uma camuflagem antes da hora.",
+ "smarterNpcTargeting": "Escolha de alvos mais inteligente",
+ "smarterNpcTargetingHelp": "Os caças inimigos atacam a nave hostil mais próxima, você com um pouco mais de chance, e se dividem entre os alvos em vez de todos irem atrás de você. Desligado: como no original, todo caça inimigo ao alcance vai primeiro atrás de você.",
  "cloakDisrupted": "Camuflagem interrompida!",
  "kaamoModMaxed": "Não dá para ir além disso: sua #SHIP_NAME já tem esta melhoria no nível {0}.",
  "saveTransferFolder": "Os jogos salvos exportados vão para esta pasta e são importados dela:",

@@ -260,6 +260,11 @@ namespace GoF2Remake.Data
         /// NpcCloak.Break): the player's, a Specter's, another player's. Off = the original: nothing ends a cloak early. A
         /// session rule.</summary>
         public static bool EmpBreaksCloak { get => Rule(R.EmpBreaksCloak, "empBreaksCloak", true); set => SetRule(R.EmpBreaksCloak, "empBreaksCloak", value); }
+        /// <summary>Remake (players' report, 2026-10-17: a raider group ignored the patrols beside it and shredded the
+        /// player): an NPC fighter takes the nearest hostile target in its box, the player a little likelier, and spreads out
+        /// over the targets (NpcShip.UpdateSmartTargeting, NpcTargetRules). Off = the original: the player first. A session
+        /// rule.</summary>
+        public static bool SmarterNpcTargeting { get => Rule(R.SmarterNpcTargeting, "smarterNpcTargeting", true); set => SetRule(R.SmarterNpcTargeting, "smarterNpcTargeting", value); }
         /// <summary>Remake (players' suggestion): the capital ships fight back (World.CapitalShips): escorts, stronger turrets,
         /// a killable carrier and Vossk battleship with loot, the carrier's Inflicts and its resupply dock. Off = the original.
         /// A session rule.</summary>
@@ -282,6 +287,7 @@ namespace GoF2Remake.Data
             if (GetBool("kaamoKeepsEquipment", true)) m |= R.KaamoKeepsEquipment;
             if (GetBool("cloakBay", true)) m |= R.CloakBay;
             if (GetBool("empBreaksCloak", true)) m |= R.EmpBreaksCloak;
+            if (GetBool("smarterNpcTargeting", true)) m |= R.SmarterNpcTargeting;
             return m;
         }
 
@@ -353,7 +359,7 @@ namespace GoF2Remake.Data
         public static readonly string[] GameplayKeys =
         {
             "launchCamera", "hangarFlights", "tutorialHints", "showStoryStep", "pirateEvents", "capitalShips", "kaamoStacking", "kaamoMaxLevel", "kaamoKeepsEquipment", "cloakBay", "informerOriginalRule",
-            "originalTargetLock", "keepEnemyLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "hudMode", "discordPresence",
+            "originalTargetLock", "keepEnemyLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "smarterNpcTargeting", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "hudMode", "discordPresence",
         };
         public static readonly string[] LanguageKeys = { "voiceLanguage" };
 

@@ -1369,6 +1369,8 @@
  "resupplyWrongRace": "Pas en stock ici : ce vaisseau ne transporte que les armes de son propre peuple.",
  "empBreaksCloak": "L'IEM brise le camouflage",
  "empBreaksCloakHelp": "Un tir IEM sur un vaisseau camouflé le rend visible aussitôt, et un camouflage encore en charge échoue : le tien, celui des Spectres et celui des autres joueurs. Désactivé : comme dans l'original, rien n'interrompt un camouflage.",
+ "smarterNpcTargeting": "Ciblage des PNJ plus malin",
+ "smarterNpcTargetingHelp": "Les chasseurs ennemis attaquent le vaisseau hostile le plus proche, toi un peu plus volontiers, et se répartissent entre leurs cibles au lieu de tous foncer sur toi. Désactivé : comme dans l'original, chaque chasseur ennemi à portée s'en prend d'abord à toi.",
  "cloakDisrupted": "Camouflage perturbé !",
  "kaamoModMaxed": "Je ne peux pas aller plus loin : ton #SHIP_NAME a déjà cette amélioration au niveau {0}.",
  "padGlyphs": "Icônes des boutons de la manette",

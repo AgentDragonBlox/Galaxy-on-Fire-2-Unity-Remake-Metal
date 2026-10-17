@@ -1369,6 +1369,8 @@
  "resupplyWrongRace": "Hier nicht vorrätig: Dieses Schiff führt nur die Waffen seines eigenen Volkes.",
  "empBreaksCloak": "EMP bricht Tarnung",
  "empBreaksCloakHelp": "Ein EMP-Treffer auf ein getarntes Schiff hebt seine Tarnung sofort auf, und eine Tarnung, die noch lädt, schlägt fehl: deine, die der Specter und die anderer Spieler. Aus: wie im Original beendet nichts eine Tarnung vorzeitig.",
+ "smarterNpcTargeting": "Klügere NPC-Zielwahl",
+ "smarterNpcTargetingHelp": "Feindliche Jäger greifen das nächste feindliche Schiff an, dich etwas bevorzugt, und verteilen sich auf ihre Ziele, statt alle auf dich loszugehen. Aus: wie im Original geht jeder feindliche Jäger in Reichweite zuerst auf dich los.",
  "cloakDisrupted": "Tarnung gestört!",
  "kaamoModMaxed": "Weiter geht es nicht: Deine #SHIP_NAME hat dieses Upgrade schon auf Stufe {0}.",
  "padGlyphs": "Controller-Tastensymbole",
