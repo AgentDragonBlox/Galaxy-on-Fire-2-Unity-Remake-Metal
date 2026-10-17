@@ -2025,7 +2025,7 @@ namespace GoF2Remake.UI
             inspectTitle.text = "";
             inspectHints.style.display = DisplayStyle.None;   // the panel has its own keys
             inspectFooter.style.display = DisplayStyle.None;  // and its own Cancel: the footer's Back lay under its Apply
-            customize.Show(GameNames.Ship(ship), kit, ModShipKits.TypeOf(ship), build);
+            customize.Show(GameNames.Ship(ship), kit, ModShipKits.TypeOf(ship), build, ship);
             level.PreviewEngines(true);   // the exhaust running, so its style and colours can be seen
         }
 
