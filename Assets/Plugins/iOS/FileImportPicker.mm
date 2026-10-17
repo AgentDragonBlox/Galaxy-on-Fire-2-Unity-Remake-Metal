@@ -39,7 +39,7 @@ static char* gof2PickCopy(NSString* s)
     return copy;   // freed by the IL2CPP marshaller (a string return)
 }
 
-@interface GoF2FilePickDelegate : NSObject <UIDocumentPickerDelegate>
+@interface GoF2FilePickDelegate : NSObject <UIDocumentPickerDelegate, UIAdaptivePresentationControllerDelegate>
 @end
 
 @implementation GoF2FilePickDelegate
@@ -74,6 +74,12 @@ static char* gof2PickCopy(NSString* s)
 {
     gof2PickState = 2;
 }
+
+// The sheet swiped down: documentPickerWasCancelled isn't always called then, and the game would wait for good.
+- (void)presentationControllerDidDismiss:(UIPresentationController*)presentationController
+{
+    if (gof2PickState == 0) gof2PickState = 2;
+}
 @end
 
 static GoF2FilePickDelegate* gof2PickDelegate = nil;
@@ -104,6 +110,7 @@ extern "C"
             if (gof2PickDelegate == nil) gof2PickDelegate = [[GoF2FilePickDelegate alloc] init];
             picker.delegate = gof2PickDelegate;
             picker.allowsMultipleSelection = NO;
+            picker.presentationController.delegate = gof2PickDelegate;   // a swipe-down counts as a cancel
             UIViewController* host = gof2PickHost();
             if (host == nil) { gof2PickError = @"no view to show the picker on"; gof2PickState = 3; return; }
             [host presentViewController:picker animated:YES completion:nil];

@@ -22,8 +22,12 @@ static BOOL gof2EnsureEngine()
         if (gof2Engine == nil) { gof2Supported = 0; return NO; }
         gof2Engine.playsHapticsOnly = YES;      // no audio: the game's own sounds go through Unity
         gof2Engine.autoShutdownEnabled = YES;   // idle = off, saves power
-        gof2Engine.resetHandler = ^{ gof2Running = NO; gof2Player = nil; };
-        gof2Engine.stoppedHandler = ^(CHHapticEngineStoppedReason reason) { gof2Running = NO; gof2Player = nil; };
+        // Core Haptics calls these on its own queue; the pulses read and replace gof2Player on the main thread (Unity's),
+        // and a strong static assigned from two threads can over-release the player: both handled on the main thread.
+        gof2Engine.resetHandler = ^{ dispatch_async(dispatch_get_main_queue(), ^{ gof2Running = NO; gof2Player = nil; }); };
+        gof2Engine.stoppedHandler = ^(CHHapticEngineStoppedReason reason) {
+            dispatch_async(dispatch_get_main_queue(), ^{ gof2Running = NO; gof2Player = nil; });
+        };
     }
     if (!gof2Running)
     {
