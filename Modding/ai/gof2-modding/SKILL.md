@@ -118,7 +118,7 @@ copied.
 | Field | |
 |---|---|
 | `name`, `description` | String or per language. |
-| `techLevel` | 1-10: shops sell items up to their station's tech level. |
+| `techLevel` | 1-10: shops sell items up to their station's tech level. 11-20: gear above the game's (the originals stop at 10): stocked only by the tech level 10 stations, at its `occurrence` (keep it low); a tier 5 pirate outpost's equipment is such an item one time in three; ordinary NPCs never drop gear from tech level 8. Combine with `available` (`won(main)`), a high price, a blueprint with `autocomplete: false`. |
 | `occurrence` | How often shops stock it and NPCs carry it as loot, 0-90 (0 = never: only `alwaysSoldAt`, blueprints, rewards). |
 | `price` / `minPrice`, `maxPrice` | `1500` or `[1200, 1500]`; a station's price lies in the range. |
 | `lowestPriceSystem`, `highestPriceSystem` | System numbers where it's cheapest / dearest. |
@@ -513,7 +513,8 @@ user to build, using the exact node, option and port names (and option choices) 
 Guidance: stay inside a band's ranges for "as good as" that band; beat its best values only for ships meant to be special
 (and price them above 12 M or gate them behind blueprints / late conditions). Weapons: compare damage x (1000 / reloadMs) to
 the originals of the same category and tech level in reference.md. Prices roughly follow power; tech level gates where
-it's sold.
+it's sold. Tech level 11+ (a "Tech Level 11" add-on): beat the best original of the category (reference.md) and price it
+above it; such gear sells only at the 16 tech level 10 stations, so give it a low occurrence (5-15).
 
 ## Example: a small canon-ships mod
 

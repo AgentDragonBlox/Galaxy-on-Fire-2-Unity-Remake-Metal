@@ -2032,6 +2032,21 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   attribute), raw `attributes`, `defaultEconomy` (the same, for the Default Economy). Texts inline or `text/<lang>.json`
   (`items.<id>.name`). `Database.Load` merges after the economy overlay (`ModContent.Apply`, only for the GoF2Data folder).
   A mod item's 0 occurrence means never (the add-on items' random roll in `Shop.GenerateItems` skips them).
+- **Tech levels above 10** (a modder's report 2026-10-17, the community's "Tech Level 11 Add-On"): the original's items and
+  stations both end at 10 (`Shop.TopTech`), and getItemBuyList stocks an item only where techI <= techS, so a tech level 11
+  item was never sold. A mod item may now have 0..`Shop.MaxItemTech` (20; past it clamped with a warning, `ModContent`);
+  `Shop.StationStocks` = techI <= techS or a station of tech level 10, which stocks every item above it by its occurrence
+  alone (the 16 TL10 stations; Var Destro / Sao Perula / Quineros keep their kind filters); the original items never reach
+  the new branch. A ships.json `dealer.minTechLevel` above 10 likewise = the TL10 stations (`ModUnlocks.AddDealerShips`).
+  Loot: a tier-5 pirate outpost's two pieces of equipment are each 1 in `TrafficPlan.TopTechOdds` (3) one of
+  `Shop.AboveTopTech` (mod weapons / equipment above 10, priced, occurrence > 0, no blueprint product, `available`, a mod
+  campaign's filter; picked by occurrence, `Shop.PickByOccurrence`) while it isn't empty (`TrafficPlan.OutpostGear`; no extra
+  random draws without such items); the enhanced capital ships' TL5+ gear pool takes them as before; `NpcTables.RollLoot`
+  keeps the original's no gear from tech level 8. On the way, `available` is now honoured by the capital ships' gear and
+  shop (`CapitalShips.RollLoot` / `ArmoryItem`), the lounge item sellers and the Purchase missions (`AgentGenerator`); a mod repair bot / gamma shield takes its base's repair rates / loop sound by its
+  look (`PlayerHealth`, was by index: a repair bot based on 75 repaired at Mk II's rate). The
+  Mod Builder's Items page takes 1-20 (`mbItemTechLevel`). Freelance difficulty stays capped at 10. Tests
+  `ModTechLevelTests`. Verified in Play mode with a local test mod (`Mods/tech11_test`: a TL11 armour and a TL11 tractor).
 - **Ships** (ships.json; the format of PR #34's custom_ships.json, `CustomShipData` in Database.cs): `{ "id", "model": glb,
   stats, slots, race, hangarHeight, mounts (slotType 0-4 (4: manoeuvring jets with a `direction`, `LateralThrusters`), `upsideDown` turrets, `builtIn` turrets: `PlayerTurret` puts an empty pivot / gun stand-in at the point instead of the item's `turretMounted` model (the item's gun, stats, aim, auto fire, turret view; shots from the point + 120 units, the view 60 units above it), `BuildStatic` (hangar, other players) shows nothing there; a plasma collector keeps only its stream, `sn_plasma_stream_anim_add` moved from a copy of the item's model onto the stand-in gun, so it pours from the point and turns with the aim; the ES2 kit's turret sockets), icon, modelLength / modelYaw,
   engineGlowRadius, materials, throttleGlow / extraGlows, lounge }` adds a ship (numbered after the original 64,
