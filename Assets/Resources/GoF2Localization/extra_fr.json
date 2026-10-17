@@ -1475,5 +1475,7 @@
  "saveFolderStartEmpty": "Commencer vide",
  "saveFolderMergeQuestion": "{0} contient déjà {1} sauvegardes et cet appareil en a {2}. Garder la plus récente de chaque emplacement (l'autre va dans Saves/Deleted) ou seulement celles du dossier (celles de cet appareil vont dans Saves/BeforeFolder) ?",
  "saveFolderMerge": "Garder la plus récente",
- "saveFolderUseFolder": "Seulement le dossier"
+ "saveFolderUseFolder": "Seulement le dossier",
+ "filesOnMyIpad": "Fichiers › Sur mon iPad",
+ "filesOnMyIphone": "Fichiers › Sur mon iPhone"
 }

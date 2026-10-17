@@ -1475,5 +1475,7 @@
  "chaseCamera": "추적 카메라",
  "chaseCameraRemake": "리메이크",
  "chaseCameraOriginal": "오리지널",
- "chaseCameraHelp": "리메이크: 카메라가 함선 바로 뒤에 머물러 함선이 화면 중앙 가까이에 있습니다. 오리지널: 원작처럼 카메라가 더 느리게 따라옵니다. 선회할 때 함선이 옆으로 밀려나고 조준선이 중앙에서 벗어납니다."
+ "chaseCameraHelp": "리메이크: 카메라가 함선 바로 뒤에 머물러 함선이 화면 중앙 가까이에 있습니다. 오리지널: 원작처럼 카메라가 더 느리게 따라옵니다. 선회할 때 함선이 옆으로 밀려나고 조준선이 중앙에서 벗어납니다.",
+ "filesOnMyIpad": "파일 › 나의 iPad",
+ "filesOnMyIphone": "파일 › 나의 iPhone"
 }

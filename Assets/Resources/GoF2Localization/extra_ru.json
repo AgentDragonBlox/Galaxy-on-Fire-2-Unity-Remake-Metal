@@ -1475,5 +1475,7 @@
  "saveFolderStartEmpty": "Начать с нуля",
  "saveFolderMergeQuestion": "В {0} уже есть {1} сохранений, а на этом устройстве {2}. Оставить более новое сохранение каждого слота (другое попадёт в Saves/Deleted) или только сохранения папки (сохранения устройства попадут в Saves/BeforeFolder)?",
  "saveFolderMerge": "Оставить новые",
- "saveFolderUseFolder": "Только из папки"
+ "saveFolderUseFolder": "Только из папки",
+ "filesOnMyIpad": "Файлы › На iPad",
+ "filesOnMyIphone": "Файлы › На iPhone"
 }

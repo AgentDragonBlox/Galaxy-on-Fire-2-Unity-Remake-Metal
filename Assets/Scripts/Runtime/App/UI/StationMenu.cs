@@ -1936,6 +1936,7 @@ namespace GoF2Remake.UI
             inspectOverlay.Add(inspectTitle);
             var footer = inspectFooter = new VisualElement { pickingMode = PickingMode.Ignore };
             footer.AddToClassList("orbit-view-footer");
+            footer.AddToClassList(SafeArea.EdgeClass);
             inspectBack = OrbitViewUi.Back(EndInspect, () => Play(buttonPush));
             footer.Add(inspectBack);
             inspectMessage = OrbitViewUi.Message();
@@ -1951,6 +1952,7 @@ namespace GoF2Remake.UI
             inspectTools = new PhotoTools(inspectOverlay, push => Play(push ? buttonPush : buttonRelease));
             inspectTools.Changed += () => BuildInspectHints(InputMode.Current);
             inspectTools.Tapped += () => { if (inspectUiHidden) SetInspectUiHidden(false); };
+            SafeArea.KeepClear(inspectOverlay);   // its title, hints, footer, Customize and settings panels clear of cutouts
             root.Add(inspectOverlay);   // the last child: over the blocker that keeps the menu's own input out meanwhile
         }
 
@@ -2639,24 +2641,8 @@ namespace GoF2Remake.UI
             ApplySafeArea(w, h, offscreen);
         }
 
-        /// <summary>Device safe-area insets; retries until the panel has a real (non-NaN) size, see FlightHud.</summary>
-        void ApplySafeArea(float w, float h, bool offscreen)
-        {
-            root.schedule.Execute(() =>
-            {
-                if (safeArea == null) return;
-                if (!(root.layout.width > 0f)) { ApplySafeArea(w, h, offscreen); return; }
-                float k = root.layout.width / w;
-                var raw = offscreen ? new Rect(0f, 0f, w, h) : Screen.safeArea;
-                var sa = Rect.MinMaxRect(Mathf.Clamp(raw.xMin, 0f, w), Mathf.Clamp(raw.yMin, 0f, h),
-                                         Mathf.Clamp(raw.xMax, 0f, w), Mathf.Clamp(raw.yMax, 0f, h));
-                if (sa.width < w * 0.5f || sa.height < h * 0.5f) sa = new Rect(0f, 0f, w, h);
-                safeArea.style.left = sa.xMin * k;
-                safeArea.style.right = (w - sa.xMax) * k;
-                safeArea.style.top = (h - sa.yMax) * k;
-                safeArea.style.bottom = sa.yMin * k;
-            }).ExecuteLater(1);
-        }
+        /// <summary>Device safe-area insets (the notch / Dynamic Island, the home indicator, cutouts), see SafeArea.</summary>
+        void ApplySafeArea(float w, float h, bool offscreen) => SafeArea.Apply(root, safeArea, w, h, offscreen, SafeArea.Mode.Position);
 
         /// <summary>Remake: the system's race emblem at the left of the station info box (system, tech level, race): the four
         /// races' large emblems (GoF2Races/<race>_icon), the radar's for the pirates and the Void, none otherwise.</summary>

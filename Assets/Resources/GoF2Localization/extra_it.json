@@ -1475,5 +1475,7 @@
  "saveFolderStartEmpty": "Inizia vuota",
  "saveFolderMergeQuestion": "{0} contiene già {1} salvataggi e questo dispositivo ne ha {2}. Tenere il più recente di ogni slot (l'altro va in Saves/Deleted) o solo quelli della cartella (quelli di questo dispositivo vanno in Saves/BeforeFolder)?",
  "saveFolderMerge": "Tieni il più recente",
- "saveFolderUseFolder": "Solo la cartella"
+ "saveFolderUseFolder": "Solo la cartella",
+ "filesOnMyIpad": "File › Su iPad",
+ "filesOnMyIphone": "File › Su iPhone"
 }

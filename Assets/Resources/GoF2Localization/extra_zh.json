@@ -1475,5 +1475,7 @@
  "chaseCamera": "追踪镜头",
  "chaseCameraRemake": "重制版",
  "chaseCameraOriginal": "原版",
- "chaseCameraHelp": "重制版：镜头紧跟在飞船后方，飞船保持在屏幕中央附近。原版：镜头跟随得更慢，与原版游戏相同：转弯时飞船会偏向一侧，准星也会偏离中心。"
+ "chaseCameraHelp": "重制版：镜头紧跟在飞船后方，飞船保持在屏幕中央附近。原版：镜头跟随得更慢，与原版游戏相同：转弯时飞船会偏向一侧，准星也会偏离中心。",
+ "filesOnMyIpad": "文件 › 我的 iPad",
+ "filesOnMyIphone": "文件 › 我的 iPhone"
 }
