@@ -522,7 +522,7 @@ namespace GoF2Remake.Flight
             bool miningBusy = mining != null && (mining.State != Mining.Phase.Idle || mining.Locked != null);
             if (cam != null && !miningBusy)
             {
-                var c = cam.WorldToScreenPoint(ship.transform.position + ship.transform.forward * CrosshairDistanceMeters);
+                var c = cam.WorldToScreenPoint(ChaseCamera.AimOrigin(ship.transform) + ship.transform.forward * CrosshairDistanceMeters);
                 float w = Screen.width, h = Screen.height;
                 float box = w / 16f, centre = w / 6f, planetBox = w / 32f;
                 if (c.z > 0f)
