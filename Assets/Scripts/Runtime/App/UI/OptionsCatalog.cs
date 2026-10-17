@@ -26,6 +26,7 @@ namespace GoF2Remake.UI
         public Func<string> description;   // optional line under the row
         public Func<UnityEngine.UIElements.VisualElement> extra;   // optional element under the row (not focusable)
         public bool inGameOnly;            // only in a running game's menus (pause / station), not the main menu
+        public bool menuOnly;              // only in the main menu (no game loaded), not the pause / station menus
         public Func<bool> visible;         // optional: the row shows only while true (OptionControl.Refresh)
 
         // Slider
@@ -51,9 +52,13 @@ namespace GoF2Remake.UI
         public Flight.ControlRow control;
     }
 
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class OptionsCatalog
     {
         static string X(string key, string english) => Localization.Extra(key, english);
+
+        /// <summary>The save folder row's press: the main menu asks and runs the folder picker (MainMenu.ChooseSaveFolder).</summary>
+        public static Action SaveFolderPressed;
         static string Percent(float v) => $"{Mathf.RoundToInt(v * 100f)} %";
 
         /// <summary>Remake (Modding.ModFlight): who sets the flight style now instead of the Free flight toggle.</summary>
@@ -480,6 +485,19 @@ namespace GoF2Remake.UI
             debug.description = () => X("debugToolsHelp", "A Debug button in the main menu (the mission select) and a Debug page in the pause and station menus (cheats, items, spawns).");
             debug.visible = () => Cheats.Allowed;   // not in a multiplayer session that doesn't allow the Debug menu
             list.Add(debug);
+            // Remake (a player's request): the saves also kept in a folder the player picks, for file managers and sync tools
+            // (Data.SaveFolder); main menu only: no game is loaded there. The main menu runs the choice (SaveFolderPressed).
+            if (SaveFolder.Supported)
+                list.Add(new OptionDef
+                {
+                    id = "saveFolder", page = OptionPage.Gameplay, kind = OptionKind.Button, menuOnly = true,
+                    label = () => string.Format(X("saveFolder", "Save folder: {0}"),
+                        SaveFolder.Chosen ? SaveFolder.DisplayName : X("saveFolderDefault", "this device only")),
+                    description = () => SaveFolder.LastProblem != null
+                        ? string.Format(X("saveFolderUnreachable", "The folder can't be reached ({0}). Your saves stay on this device and go to the folder once it is back."), SaveFolder.LastProblem)
+                        : X("saveFolderHelp", "Keeps your saves and ship presets in a folder you choose as well, where file managers and sync tools (Syncthing) reach them, so the game moves between devices. The game always keeps its own copies too."),
+                    action = () => SaveFolderPressed?.Invoke(),
+                });
             return list;
         }
 
