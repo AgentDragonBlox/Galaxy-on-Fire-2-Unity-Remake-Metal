@@ -143,7 +143,7 @@ namespace GoF2Remake.Flight
             if (ear != null) volume *= EngineVoices.Rolloff(Vector3.Distance(ear.position, transform.position) * ship.engineEarScale);
             // ... and deeper the heavier it is (ShipController.mass).
             float deep = Mathf.Lerp(1f, 0.6f, ship.mass);
-            bool boosting = ship.Model != null && ship.Model.IsBoosting;
+            bool boosting = ship.Model != null && ship.Model.LooksBoosting;   // the multiplayer cruise mode sounds like a boost too
             if (modSounds != null) { UpdateOwn(on, boosting, ear, deep); return; }
             // 1104: one layer with the pitch; 1106 / 1107: EngineDLC_07 plain + the pitched second layer.
             Drive(main, on, volume, (engine >= 5 ? 1f : pitch) * deep);

@@ -16,7 +16,8 @@
 //                                 the level reloads in the target station's orbit (arrival: SpaceLevel)
 //   MGame+0x160 fast-forward      held button: the whole game runs 5x (Time.timeScale) while the autopilot or an asteroid
 //                                 approach runs and the target is >= 20000 units away; releasing, arriving or the
-//                                 autopilot ending stops it, and hostile ships around block it (Radar+0x54)
+//                                 autopilot ending stops it, and hostile ships around block it (Radar+0x54); remake,
+//                                 multiplayer: a cruise mode instead, only the player's ship 5x as fast (Cruise)
 //   Hud::initHudMenu(3) 0x18e080  the autopilot menu (autopilot button while the autopilot is off; the game pauses):
 //                                 549 "Asteroid field" (not in the alien orbit; flies to the field centre and, like the
 //                                 original, keeps going until switched off), "<name> Station" (not in empty orbits),
@@ -209,6 +210,13 @@ namespace GoF2Remake.Flight
         }
         public bool Jumping { get; private set; }
         public bool FastForward { get; private set; }
+        /// <summary>Remake, multiplayer: the shared world can't run 5x for one player, so the held fast-forward is a cruise
+        /// mode there instead, under the same rules (CanFastForward): only the player's own ship flies 5x as fast (the
+        /// autopilot, the asteroid approach, an object's approach); its turns, timers and the camera keep their pace.</summary>
+        public bool Cruise { get; private set; }
+        /// <summary>The player ship's forward speed factor (ShipController, Mining's approach): FastForwardScale while
+        /// cruising, else 1.</summary>
+        public static float CruiseFactor { get; private set; } = 1f;
         /// <summary>Lock ring frame 0..23 (no 500 ms delay for landmarks and planets), -1 = none.</summary>
         public int LockFrame => Candidate == null ? -1 : Locked != null ? 23 : Mathf.Min(23, (int)(23f * LockTimer / Mathf.Max(1, LockTimeMs)));
         /// <summary>Radar::draw 0x1574c0 skips the asteroid loop on a landmark (+0x24) or planet (+0x14) lock, a ship / crate
@@ -659,7 +667,9 @@ namespace GoF2Remake.Flight
 
         void SetFastForward(bool on)
         {
-            FastForward = on;
+            bool session = GoF2Remake.Data.NetSession.Active;
+            FastForward = on && !session;
+            Cruise = on && session;
             ApplyTimeScale();
         }
 
@@ -678,7 +688,7 @@ namespace GoF2Remake.Flight
         public static bool PressesBlocked => InputHalted || Time.frameCount - lastHaltedFrame <= 1;
         static int lastHaltedFrame = -10;
 
-        void OnDestroy() { halted = false; MusicPaused = false; if (!GoF2Remake.Data.NetSession.Active) AudioListener.pause = false; }
+        void OnDestroy() { halted = false; CruiseFactor = 1f;MusicPaused = false; if (!GoF2Remake.Data.NetSession.Active) AudioListener.pause = false; }
 
         /// <summary>MGame::pauseSounds 0x1a8304: a conversation, hint or map pauses only the sound effects and the engines
         /// (FModSound::pauseAllPlayingSoundFXEvents: the events of the effects category); only the pause menu stops
@@ -700,6 +710,7 @@ namespace GoF2Remake.Flight
         void ApplyTimeScale()
         {
             halted = MenuOpen || paused || pauseMenuOpen;
+            CruiseFactor = Cruise && !halted ? FastForwardScale : 1f;
             float scale = MenuOpen || paused || pauseMenuOpen ? 0f : FastForward ? FastForwardScale : TimeExtender.Active ? TimeExtender.WorldScale : 1f;
             if (GoF2Remake.Data.NetSession.Active) scale = 1f;   // multiplayer: one player's pause doesn't stop the shared world
             if (Time.timeScale != scale) Time.timeScale = scale;
