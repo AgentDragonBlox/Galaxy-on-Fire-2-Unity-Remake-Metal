@@ -2,7 +2,8 @@
 // Remake mods: the hangar's Customize screen for a customizable ship (Modding.ModShipKits, EVERSPACE 2's ship modules): a
 // panel over Inspect ship's orbit view (StationMenu) with one row per slot of the ship's kit and its tier, each cycling
 // through what the ship's type may fit, then its skin (the kit's paint jobs for the type, "Standard" = the model's own), its
-// weapon colour (the energy weapons' and energy turrets' shots, Flight.WeaponTint; "Original" = their own), its exhaust (the
+// weapon colour (the energy weapons' and energy turrets' shots, Flight.WeaponTint; "Original" = their own), its weapon models
+// shown or hidden (a kit whose hardpoints have "toggle", ModHardpoints.Toggles: the guns, pylons and turret), its exhaust (the
 // mods' exhaust styles, Modding.ModExhausts, on any ship; "Ship's own" = the model's) with the style's two colours, then the kit's
 // colours: a preset (sets every colour) and a row per colour slot with a swatch. Up / down (W / S, the D-pad, the left stick) pick a row, left / right (A / D) cycle
 // it, a click on a row's arrows too; Enter / the controller's A applies, Esc / the controller's B cancels. Every change is
@@ -39,7 +40,7 @@ namespace GoF2Remake.UI
         ModShipKits.Build build;
         int row;
         float holdMs;
-        enum Kind { Part, Tier, Skin, WeaponColor, Exhaust, ExhaustSize, ExhaustColor, Preset, Color, Strength }
+        enum Kind { Part, Tier, Skin, WeaponColor, WeaponModels, Exhaust, ExhaustSize, ExhaustColor, Preset, Color, Strength }
         readonly List<(Kind kind, string key, Label value, VisualElement line, VisualElement swatch)> rows = new List<(Kind, string, Label, VisualElement, VisualElement)>();
         int presetIndex = -1;
         readonly ScrollView list;
@@ -145,6 +146,7 @@ namespace GoF2Remake.UI
             if (kit.MaxTier > 0) AddRow(Kind.Tier, null, X("kitTier", "Tier"));
             if (kit.SkinsFor(type).Count > 0) AddRow(Kind.Skin, null, X("kitSkin", "Skin"));
             if (kit.weaponColorRow) AddRow(Kind.WeaponColor, null, X("kitWeaponColor", "Weapon colour"));
+            if (ModHardpoints.Toggles(ship)) AddRow(Kind.WeaponModels, null, X("kitWeaponModels", "Weapon models"));
             if (ModExhausts.For(ship).Count > 0)
             {
                 AddRow(Kind.Exhaust, null, X("kitExhaust", "Exhaust"));
@@ -269,6 +271,9 @@ namespace GoF2Remake.UI
                     build.weaponColor = at == 0 ? ModShipKits.Build.NoSkin : colors[at - 1].id;
                     break;
                 }
+                case Kind.WeaponModels:
+                    build.weapons = build.WeaponsHidden ? ModShipKits.Build.WeaponsOn : ModShipKits.Build.WeaponsOff;
+                    break;
                 case Kind.Exhaust:
                 {
                     // The ship's own exhaust (index 0), then the mods' styles; the colour rows come and go with it.
@@ -395,6 +400,10 @@ namespace GoF2Remake.UI
                         }
                         break;
                     }
+                    case Kind.WeaponModels:
+                        value.text = (build.WeaponsHidden ? X("kitWeaponModelsHidden", "Hidden") : X("kitWeaponModelsShown", "Shown"))
+                                   + $"  ({(build.WeaponsHidden ? 2 : 1)}/2)";
+                        break;
                     case Kind.Exhaust:
                     {
                         var styles = ModExhausts.For(ship);

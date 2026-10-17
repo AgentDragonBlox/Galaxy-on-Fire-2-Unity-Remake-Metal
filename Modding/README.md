@@ -908,6 +908,7 @@ own, at the kit's scale and yaw, with the kit's materials:
 ```json
 "hardpoints": {
   "turret": "equipment/turret.glb",
+  "toggle": true,
   "weapons": [
     { "slot": "primary", "model": "equipment/beam_laser.glb", "items": [9, 10, 11] },
     { "slot": "primary", "model": "equipment/blaster.glb", "categories": [1] },
@@ -937,6 +938,11 @@ own, at the kit's scale and yaw, with the kit's materials:
   shot (a list of files: one at random; a `pitch` range: a random pitch), `loop` loops while the trigger is held (a beam),
   with `shot` then played once as it starts, and fades out over `release` ms (default 100) when let go. Each is a sound as in
   [Ship sounds](#ship-sounds) (`volume` a number; the game's shots play at 0.7). Other players hear it on your shots too.
+- `toggle` (optional, default false): the hangar's Customize screen gets a **Weapon models** row, Shown / Hidden. Hidden,
+  the ship shows none of these models, no turret model and none of its mounts' `nodes` (the pylons): a bare hull, for kits
+  whose weapons are an addition to models that had none. The weapons still fire, from the mounts themselves, and the turret
+  works as on a `builtIn` mount without a model. The choice is part of the build (text `weapons=off`); a ship's default
+  `"build"` may start hidden with `"weapons": false`. Other players see the choice.
 
 In the hangars a customizable ship floats at the height its build needs: its lowest point, weapon models hanging under it
 included, 1.5 m above the pad (its `hangarHeight` isn't used), so no build cuts into the floor.

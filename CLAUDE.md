@@ -2494,7 +2494,15 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   (`ModHardpoints.Colour` -> `ModShips.ApplyColors` with a cache of copies per build's colours: ES2's missile pod lights its
   bay frame in Emissive 2 and is painted in the hull colours; they kept the template's white before); a primary / secondary mount's `nodes` (`WeaponMount.nodes`, ship model node
   names: the GoF3 hulls' pylons) show only while that mount carries a weapon (`ModHardpoints.ShowMountNodes`, from every
-  `AttachWeapons`: flight, the hangar turntable, other players' ships and hangar guests). **Skins** (a kit's `skins`, `ModShipKits.Skin`; `Build.skin`, text
+  `AttachWeapons`: flight, the hangar turntable, other players' ships and hangar guests). **Weapon models toggle** (the
+  user's request for the GoF3 hulls, 2026-10-17; the kit's hardpoints `"toggle": true`, `ModHardpoints.Toggles`, which the
+  GoF3 builder writes): the Customize panel's Weapon models row (Shown / Hidden, `Kind.WeaponModels`), `Build.weapons`
+  ("weapons=off" / "on" over a default build's off; ships.json `"build"` `"weapons": false`; `Normalize` drops it for a kit
+  without the toggle; kept out of `VariantAssembly`'s name: the model doesn't change); `ModHardpoints.Hidden(ship, shown)`
+  (shown ?? the player's build): `AttachWeapons` attaches no models and hides every pylon node, `TurretModel` returns null
+  (`PlayerTurret`'s invisible stand-in, nothing in the hangar), `MuzzleOffset` zero (the shots from the mount), `HangarHeight`
+  without the weapons; other players through `NetPlayer.ShownBuild`. Tests `ModHardpointsToggleTests`; verified in Play mode
+  (the GoF3 Cronus: guns and both kit turrets gone, the stand-ins kept; the hangar row and turntable). **Skins** (a kit's `skins`, `ModShipKits.Skin`; `Build.skin`, text
   "skin=id", "none" = the model's own look over a default build's skin, `Build.Reserved` keeps "skin" / "tier" / "color." out
   of the slot names): texture sets per material name (diffuse, emission, metallicSmoothness in URP's layout, normal, colours)
   put on copies of the build's materials (`ModShips.ApplySkin`, before the colours) and an optional `engineColor` for every
