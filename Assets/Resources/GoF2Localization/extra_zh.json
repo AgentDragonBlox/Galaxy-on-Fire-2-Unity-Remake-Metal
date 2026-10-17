@@ -1225,7 +1225,6 @@
   "tabSound": "声音",
   "tapToStart": "点击开始",
   "targetLock": "目标锁定",
-  "targetLockHelp": "智能：优先锁定敌对飞船，然后是离准星最近的飞船，中立或友方飞船经过时也无法抢走对敌对目标的锁定（你的导弹会一直追踪你的目标）。原版：锁定框中的第一艘飞船，无论是谁。",
   "targetLockOriginal": "原版",
   "targetLockSmart": "智能",
   "touchHeightHelp": "触屏控制在屏幕上的高度：0% 为最高，100% 为最低。",
@@ -1428,5 +1427,12 @@
  "hudMinimal": "精简",
  "hudOff": "关闭",
  "hudModeHelp": "精简：只显示准星、操作提示、警告和消息。关闭：只显示消息，带来最大的沉浸感。菜单、对话和无线电始终显示。“切换HUD”键（默认F1）可在飞行中切换。",
- "ctlHudToggle": "切换HUD"
+ "ctlHudToggle": "切换HUD",
+ "ctlUnlockTarget": "解除锁定",
+ "hudUnlock": "解除锁定",
+ "targetUnlocked": "已解除锁定",
+ "keepEnemyLock": "保持敌方锁定",
+ "keepEnemyLockHelp": "锁定敌对飞船时，穿过准星的中立或友方飞船无法抢走锁定（你的导弹会一直追踪你的目标）。关闭：战斗中可以锁定并扫描任何飞船。仅适用于智能目标锁定。",
+ "targetLockPriorityHelp": "智能：优先锁定敌对飞船，然后是离准星最近的飞船。原版：锁定框中的第一艘飞船，无论是谁，每次新的锁定都会取代旧的。",
+ "targetLockUnlock": "“解除锁定”键（按键绑定，默认 U）可解除锁定；触屏上点击锁定铭牌。"
 }

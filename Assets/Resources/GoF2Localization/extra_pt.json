@@ -1225,7 +1225,6 @@
  "tabSound": "Som",
  "tapToStart": "TOQUE PARA COMEÇAR",
  "targetLock": "Trava de mira",
- "targetLockHelp": "Inteligente: naves hostis são travadas primeiro, depois a mais próxima da mira, e uma nave neutra ou amiga que passe na frente não toma o lugar de uma trava em nave hostil (seus mísseis continuam no seu alvo). Original: trava a primeira nave dentro da caixa, seja ela qual for.",
  "targetLockOriginal": "Original",
  "targetLockSmart": "Inteligente",
   "touchHeightHelp": "A altura dos controles de toque na tela: 0% o mais alto, 100% o mais baixo.",
@@ -1428,5 +1427,12 @@
  "hudMinimal": "Mínimo",
  "hudOff": "Desligado",
  "hudModeHelp": "Mínimo: apenas a mira, o aviso de ação, os alertas e as mensagens. Desligado: apenas as mensagens, para imersão máxima. Menus, conversas e o rádio sempre aparecem. A tecla Alternar HUD (F1 por padrão) muda isso em voo.",
- "ctlHudToggle": "Alternar HUD"
+ "ctlHudToggle": "Alternar HUD",
+ "ctlUnlockTarget": "Soltar alvo",
+ "hudUnlock": "SOLTAR",
+ "targetUnlocked": "Alvo solto",
+ "keepEnemyLock": "Manter trava inimiga",
+ "keepEnemyLockHelp": "Enquanto uma nave hostil estiver travada, uma nave neutra ou amiga que passe pela mira não toma a trava (seus mísseis continuam no seu alvo). Desligado: você pode travar e escanear qualquer nave durante uma batalha. Só com a trava de mira inteligente.",
+ "targetLockPriorityHelp": "Inteligente: naves hostis são travadas primeiro, depois a mais próxima da mira. Original: trava a primeira nave dentro da caixa, seja ela qual for, e cada nova trava substitui a anterior.",
+ "targetLockUnlock": "A tecla Soltar alvo (Teclas, U por padrão) desfaz a trava; no toque, toque na placa do alvo."
 }

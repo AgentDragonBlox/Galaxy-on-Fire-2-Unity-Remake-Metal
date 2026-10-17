@@ -1225,7 +1225,6 @@
  "tabSound": "Geluid",
  "tapToStart": "TIK OM TE BEGINNEN",
  "targetLock": "Doelvergrendeling",
- "targetLockHelp": "Slim: vijandige schepen worden eerst vergrendeld, daarna het schip dat het dichtst bij het vizier is, en een neutraal of bevriend schip dat erdoor vliegt kan een vijandige vergrendeling niet overnemen (je raketten blijven op je doel). Origineel: het eerste schip in het kader wordt vergrendeld, wie het ook is.",
  "targetLockOriginal": "Origineel",
  "targetLockSmart": "Slim",
   "touchHeightHelp": "Hoe hoog de touchbediening op het scherm zit: 0 % het hoogst, 100 % het laagst.",
@@ -1428,5 +1427,12 @@
  "hudMinimal": "Minimaal",
  "hudOff": "Uit",
  "hudModeHelp": "Minimaal: alleen het vizier, de actie-aanwijzing, waarschuwingen en berichten. Uit: alleen berichten, voor maximale onderdompeling. Menu's, gesprekken en de radio blijven altijd zichtbaar. De toets HUD wisselen (standaard F1) schakelt het tijdens de vlucht.",
- "ctlHudToggle": "HUD wisselen"
+ "ctlHudToggle": "HUD wisselen",
+ "ctlUnlockTarget": "Doel loslaten",
+ "hudUnlock": "LOSLATEN",
+ "targetUnlocked": "Doel losgelaten",
+ "keepEnemyLock": "Vijandige vergrendeling vasthouden",
+ "keepEnemyLockHelp": "Zolang een vijandig schip vergrendeld is, kan een neutraal of bevriend schip dat door het vizier vliegt de vergrendeling niet overnemen (je raketten blijven op je doel). Uit: je kunt tijdens een gevecht elk schip vergrendelen en scannen. Alleen met de slimme doelvergrendeling.",
+ "targetLockPriorityHelp": "Slim: vijandige schepen worden eerst vergrendeld, daarna het schip dat het dichtst bij het vizier is. Origineel: het eerste schip in het kader wordt vergrendeld, wie het ook is, en elke nieuwe vergrendeling vervangt de oude.",
+ "targetLockUnlock": "De toets Doel loslaten (Toetsen, standaard U) heft de vergrendeling op; tik op een touchscreen op het doelplaatje."
 }

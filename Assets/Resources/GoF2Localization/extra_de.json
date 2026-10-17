@@ -1226,7 +1226,6 @@
  "tabSound": "Ton",
  "tapToStart": "ZUM STARTEN TIPPEN",
  "targetLock": "Zielerfassung",
- "targetLockHelp": "Schlau: feindliche Schiffe werden zuerst erfasst, dann das dem Fadenkreuz nächste, und ein neutrales oder freundliches Schiff, das durchfliegt, kann eine feindliche Erfassung nicht übernehmen (deine Raketen bleiben an deinem Ziel). Original: das erste Schiff im Kasten wird erfasst, egal wer es ist.",
  "targetLockOriginal": "Original",
  "targetLockSmart": "Schlau",
   "touchHeightHelp": "Wie hoch die Touch-Steuerung auf dem Bildschirm sitzt: 0 % ganz oben, 100 % ganz unten.",
@@ -1428,5 +1427,12 @@
  "hudMinimal": "Minimal",
  "hudOff": "Aus",
  "hudModeHelp": "Minimal: nur das Fadenkreuz, die Aktionsanzeige, Warnungen und Meldungen. Aus: nur Meldungen, für maximale Immersion. Menüs, Gespräche und Funk werden immer angezeigt. Die Taste HUD umschalten (standardmäßig F1) wechselt es im Flug.",
- "ctlHudToggle": "HUD umschalten"
+ "ctlHudToggle": "HUD umschalten",
+ "ctlUnlockTarget": "Ziel freigeben",
+ "hudUnlock": "FREIGEBEN",
+ "targetUnlocked": "Ziel freigegeben",
+ "keepEnemyLock": "Feindliche Erfassung halten",
+ "keepEnemyLockHelp": "Solange ein feindliches Schiff erfasst ist, kann ein neutrales oder freundliches Schiff, das durch das Fadenkreuz fliegt, die Erfassung nicht übernehmen (deine Raketen bleiben an deinem Ziel). Aus: du kannst im Kampf jedes Schiff erfassen und scannen. Nur mit der schlauen Zielerfassung.",
+ "targetLockPriorityHelp": "Schlau: feindliche Schiffe werden zuerst erfasst, dann das dem Fadenkreuz nächste. Original: das erste Schiff im Kasten wird erfasst, egal wer es ist, und jede neue Erfassung ersetzt die alte.",
+ "targetLockUnlock": "Die Taste Ziel freigeben (Tastenbelegung, standardmäßig U) löst die Erfassung; auf dem Touchscreen tippe auf die Zielanzeige."
 }

@@ -1225,7 +1225,6 @@
  "tabSound": "Dźwięk",
  "tapToStart": "DOTKNIJ, ABY ZACZĄĆ",
  "targetLock": "Namierzanie celu",
- "targetLockHelp": "Inteligentne: najpierw namierzane są wrogie statki, potem ten najbliżej celownika, a przelatujący statek neutralny lub sojuszniczy nie może przejąć namierzenia wroga (twoje pociski zostają na celu). Oryginał: namierzany jest pierwszy statek w ramce, kimkolwiek jest.",
  "targetLockOriginal": "Oryginał",
  "targetLockSmart": "Inteligentne",
   "touchHeightHelp": "Jak wysoko na ekranie jest sterowanie dotykowe: 0% najwyżej, 100% najniżej.",
@@ -1428,5 +1427,12 @@
  "hudMinimal": "Minimalny",
  "hudOff": "Wyłączony",
  "hudModeHelp": "Minimalny: tylko celownik, podpowiedź akcji, ostrzeżenia i komunikaty. Wyłączony: tylko komunikaty, dla maksymalnej immersji. Menu, rozmowy i radio są zawsze widoczne. Klawisz Przełącz HUD (domyślnie F1) zmienia go w locie.",
- "ctlHudToggle": "Przełącz HUD"
+ "ctlHudToggle": "Przełącz HUD",
+ "ctlUnlockTarget": "Zwolnij cel",
+ "hudUnlock": "ZWOLNIJ",
+ "targetUnlocked": "Cel zwolniony",
+ "keepEnemyLock": "Trzymaj namierzenie wroga",
+ "keepEnemyLockHelp": "Dopóki wrogi statek jest namierzony, statek neutralny lub sojuszniczy przelatujący przez celownik nie może przejąć namierzenia (twoje pociski zostają na celu). Wył.: w czasie walki możesz namierzyć i zeskanować dowolny statek. Tylko z inteligentnym namierzaniem.",
+ "targetLockPriorityHelp": "Inteligentne: najpierw namierzane są wrogie statki, potem ten najbliżej celownika. Oryginał: namierzany jest pierwszy statek w ramce, kimkolwiek jest, a każde nowe namierzenie zastępuje poprzednie.",
+ "targetLockUnlock": "Klawisz Zwolnij cel (Klawisze, domyślnie U) zwalnia namierzenie; na ekranie dotykowym dotknij tabliczki celu."
 }

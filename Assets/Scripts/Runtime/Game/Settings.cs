@@ -213,6 +213,10 @@ namespace GoF2Remake.Data
         /// <summary>The ship lock as the original picks it (Radar::draw: the first ship of the list in the box, any faction,
         /// and any completed lock replaces the old one); off (default) = the remake's smarter lock (CombatRadar).</summary>
         public static bool OriginalTargetLock { get => GetBool("originalTargetLock", false); set => SetBool("originalTargetLock", value); }
+        /// <summary>Remake, with the smarter lock: while a hostile ship is locked and alive no neutral or friendly ship becomes
+        /// a lock candidate (CombatRadar); on by default, the smarter lock's behaviour before it was its own option. Off: the
+        /// priority alone (hostile first, then the nearest), so a neutral ship can be scanned while an enemy is locked.</summary>
+        public static bool KeepEnemyLock { get => GetBool("keepEnemyLock", true); set => SetBool("keepEnemyLock", value); }
         /// <summary>Remake mods: how often an NPC fighter flies one of the mods' ships of its race (Modding.ModTraffic): 0 off,
         /// 1 10 %, 2 25 % (default), 3 50 %.</summary>
         public static int ModShipTraffic { get => Mathf.Clamp(Mathf.RoundToInt(Get("modShipTraffic", 2)), 0, 3); set => Set("modShipTraffic", Mathf.Clamp(value, 0, 3)); }
@@ -349,7 +353,7 @@ namespace GoF2Remake.Data
         public static readonly string[] GameplayKeys =
         {
             "launchCamera", "hangarFlights", "tutorialHints", "showStoryStep", "pirateEvents", "capitalShips", "kaamoStacking", "kaamoMaxLevel", "kaamoKeepsEquipment", "cloakBay", "informerOriginalRule",
-            "originalTargetLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "hudMode", "discordPresence",
+            "originalTargetLock", "keepEnemyLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "hudMode", "discordPresence",
         };
         public static readonly string[] LanguageKeys = { "voiceLanguage" };
 

@@ -1226,7 +1226,6 @@
  "tabSound": "Son",
  "tapToStart": "TOUCHE POUR COMMENCER",
  "targetLock": "Verrouillage de cible",
- "targetLockHelp": "Intelligent : les vaisseaux hostiles sont verrouillés d'abord, puis celui le plus proche du viseur, et un vaisseau neutre ou ami qui passe ne peut pas prendre la place d'un verrouillage hostile (tes missiles restent sur ta cible). Original : le premier vaisseau dans le cadre est verrouillé, quel qu'il soit.",
  "targetLockOriginal": "Original",
  "targetLockSmart": "Intelligent",
   "touchHeightHelp": "La hauteur des commandes tactiles à l'écran : 0 % tout en haut, 100 % tout en bas.",
@@ -1428,5 +1427,12 @@
  "hudMinimal": "Minimal",
  "hudOff": "Désactivé",
  "hudModeHelp": "Minimal : seulement le réticule, l'invite d'action, les alertes et les messages. Désactivé : seulement les messages, pour une immersion maximale. Les menus, les conversations et la radio restent toujours affichés. La touche Basculer le HUD (F1 par défaut) le change en vol.",
- "ctlHudToggle": "Basculer le HUD"
+ "ctlHudToggle": "Basculer le HUD",
+ "ctlUnlockTarget": "Libérer la cible",
+ "hudUnlock": "LIBÉRER",
+ "targetUnlocked": "Cible libérée",
+ "keepEnemyLock": "Garder le verrouillage ennemi",
+ "keepEnemyLockHelp": "Tant qu'un vaisseau hostile est verrouillé, un vaisseau neutre ou ami qui passe dans le viseur ne peut pas prendre le verrouillage (tes missiles restent sur ta cible). Désactivé : tu peux verrouiller et scanner n'importe quel vaisseau pendant un combat. Seulement avec le verrouillage intelligent.",
+ "targetLockPriorityHelp": "Intelligent : les vaisseaux hostiles sont verrouillés d'abord, puis celui le plus proche du viseur. Original : le premier vaisseau dans le cadre est verrouillé, quel qu'il soit, et chaque nouveau verrouillage remplace l'ancien.",
+ "targetLockUnlock": "La touche Libérer la cible (Touches, U par défaut) annule le verrouillage ; sur écran tactile, touche la plaque de la cible."
 }
