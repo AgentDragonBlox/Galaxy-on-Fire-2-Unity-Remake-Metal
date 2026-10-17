@@ -138,6 +138,9 @@ namespace GoF2Remake.UI
             safeArea = root.Q("safeArea");
             dragZone = root.Q("dragZone");
             hints = root.Q("hints");
+            fundsCargo = root.Q<Label>("fundsCargo");
+            fundsCredits = root.Q<Label>("fundsCredits");
+            shownCredits = shownLoad = shownMaxLoad = int.MinValue;   // a UI reload: write them again
             SetupUiAnimation();
             if (GoF2Remake.Multiplayer.NetGame.Active)
             {
@@ -2273,10 +2276,11 @@ namespace GoF2Remake.UI
         // is simply on its pad (a load, a new game, the flights off) shows it at once.
         const float UiAnimMs = 450f;
         const float UiTopOffset = 90f, UiLaunchOffset = 220f, UiTickerOffset = 60f;   // panel px
+        const float UiFundsOffset = 160f;   // the credits and cargo under the bar: off the top edge too
         const float UiItemOffset = 40f, UiItemMs = 180f, UiItemStepMs = 50f;            // the main menu's buttons
         float uiShown = 1f;   // 0 away .. 1 in place
         bool uiStateTaken;
-        VisualElement uiTop, uiTicker, uiBlocker, uiInfo, uiButtons;
+        VisualElement uiTop, uiFunds, uiTicker, uiBlocker, uiInfo, uiButtons;
         readonly System.Collections.Generic.List<VisualElement> uiItems = new System.Collections.Generic.List<VisualElement>();
 
         /// <summary>The menu is away or on its way in / out: no input.</summary>
@@ -2286,6 +2290,7 @@ namespace GoF2Remake.UI
         {
             if (safeArea == null) return;
             uiTop = safeArea.Q(className: "top-bar");
+            uiFunds = safeArea.Q("fundsBar");   // the credits and cargo: up and away with the bar
             uiTicker = safeArea.Q("ticker");
             uiInfo = safeArea.Q(className: "station-info");
             uiButtons = safeArea.Q(className: "station-buttons");
@@ -2346,7 +2351,7 @@ namespace GoF2Remake.UI
             if (still)
             {
                 safeArea.style.opacity = StyleKeyword.Null;
-                foreach (var el in new[] { uiTop, launchButton, uiTicker, uiInfo }) if (el != null) el.style.translate = StyleKeyword.Null;
+                foreach (var el in new[] { uiTop, uiFunds, launchButton, uiTicker, uiInfo }) if (el != null) el.style.translate = StyleKeyword.Null;
                 if (uiInfo != null) uiInfo.style.opacity = StyleKeyword.Null;
                 if (uiButtons != null)
                     foreach (var b in uiButtons.Children()) { b.style.translate = StyleKeyword.Null; b.style.opacity = StyleKeyword.Null; }
@@ -2358,6 +2363,7 @@ namespace GoF2Remake.UI
             // The safe area fades over the first 40 %: the side entries do their own fade after that, the rest is in by then.
             safeArea.style.opacity = Mathf.SmoothStep(0f, 1f, t / 0.4f);
             if (uiTop != null) uiTop.style.translate = new Translate(0f, -UiTopOffset * k);
+            if (uiFunds != null) uiFunds.style.translate = new Translate(0f, -UiFundsOffset * k);
             if (launchButton != null) launchButton.style.translate = new Translate(UiLaunchOffset * k, 0f);
             if (uiTicker != null) uiTicker.style.translate = new Translate(0f, UiTickerOffset * k);
             float ms = t * UiAnimMs;
@@ -2370,12 +2376,40 @@ namespace GoF2Remake.UI
             }
         }
 
+        // ---- credits and cargo (remake, players' request) -----------------------------------------------------------
+        // The main view and the Space Lounge show the credits and the hold at the top right under the bar, the hangar
+        // window footer's look ("CARGO 65 / 195 t", the credits in amber; red when overloaded), so a lounge deal, a
+        // mission payout, a medal reward, a fine, a multiplayer trade or a faction toll shows without opening the hangar.
+        // Read every frame and written only when a value changed. Hidden under the hangar, Missions and Status windows
+        // (StationMenu.uss) and with the rest of the menu under the star map and while it is flown away.
+        Label fundsCargo, fundsCredits;
+        int shownCredits = int.MinValue, shownLoad = int.MinValue, shownMaxLoad = int.MinValue;
+
+        void UpdateFunds()
+        {
+            if (fundsCargo == null || fundsCredits == null || level == null || level.Database == null) return;
+            int credits = Session.Credits, load = Shop.CargoLoad(), max = Shop.MaxLoad(level.Database);
+            if (credits != shownCredits)
+            {
+                shownCredits = credits;
+                fundsCredits.text = ItemInfo.Credits(credits);
+            }
+            if (load != shownLoad || max != shownMaxLoad)
+            {
+                shownLoad = load;
+                shownMaxLoad = max;
+                fundsCargo.text = $"{Localization.Get(184).ToUpperInvariant()}  {load} / {max} t";   // 184 Cargo, as the hangar's footer
+                fundsCargo.EnableInClassList("station-funds-cargo--over", load > max);
+            }
+        }
+
         void Update()
         {
             if (root == null || level == null) return;
             if (builderView != null) { builderView.Update(); return; }   // the Mod Builder's hangar
             if (lastScreen != ScreenSize() || lastSafeArea != Screen.safeArea) UpdateLayout();
             UpdateTicker();   // scrolls on under dialogs and windows (it used to wait, then fly in again)
+            UpdateFunds();
             // Remake hangar flights: the menu hides while the ship flies in or out; the conversations, windows and hints
             // wait until it has landed. Any key / tap / button skips the flight.
             bool flying = level.PlayerFlying;
