@@ -432,6 +432,11 @@ namespace GoF2Remake.UI
                 () => Settings.AnimatedDialogue, v => Settings.AnimatedDialogue = v));
             list.Add(Toggle("inputHints", OptionPage.Gameplay, () => X("inputHintsFlight", "Button hints in flight"),
                 () => Settings.InputHints, v => Settings.InputHints = v));
+            // Remake (immersion): the flight HUD's markings Full / Minimal / Off (FlightHud); also the "Toggle HUD" key (F1).
+            list.Add(Choice("hudMode", OptionPage.Gameplay, () => X("hudMode", "Flight HUD"), true,
+                () => new[] { X("hudFull", "Full"), X("hudMinimal", "Minimal"), X("hudOff", "Off") },
+                () => Settings.HudMode, i => Settings.HudMode = i,
+                () => X("hudModeHelp", "Minimal: only the crosshair, the action prompt, warnings and messages. Off: only messages, for maximum immersion. Menus, conversations and the radio always show. The Toggle HUD key (F1 by default) switches it in flight.")));
             // Remake: Discord Rich Presence (DiscordPresence), desktop only.
             if (!Application.isMobilePlatform)
                 list.Add(Toggle("discordPresence", OptionPage.Gameplay, () => X("discordPresence", "Show what I'm doing in Discord"),

@@ -1422,5 +1422,11 @@
  "photoLook": "OLHAR",
  "photoUpDown": "SUBIR / DESCER",
  "photoTouchFree": "ARRASTE PARA OLHAR · PINCE PARA MOVER",
- "photoShowInFolder": "MOSTRAR NA PASTA"
+ "photoShowInFolder": "MOSTRAR NA PASTA",
+ "hudMode": "HUD de voo",
+ "hudFull": "Completo",
+ "hudMinimal": "Mínimo",
+ "hudOff": "Desligado",
+ "hudModeHelp": "Mínimo: apenas a mira, o aviso de ação, os alertas e as mensagens. Desligado: apenas as mensagens, para imersão máxima. Menus, conversas e o rádio sempre aparecem. A tecla Alternar HUD (F1 por padrão) muda isso em voo.",
+ "ctlHudToggle": "Alternar HUD"
 }

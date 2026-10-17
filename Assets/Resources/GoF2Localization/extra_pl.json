@@ -1422,5 +1422,11 @@
  "photoLook": "ROZGLĄDANIE",
  "photoUpDown": "GÓRA / DÓŁ",
  "photoTouchFree": "PRZECIĄGNIJ, BY SIĘ ROZEJRZEĆ · ZSZCZYPNIJ, BY SIĘ RUSZYĆ",
- "photoShowInFolder": "POKAŻ W FOLDERZE"
+ "photoShowInFolder": "POKAŻ W FOLDERZE",
+ "hudMode": "HUD lotu",
+ "hudFull": "Pełny",
+ "hudMinimal": "Minimalny",
+ "hudOff": "Wyłączony",
+ "hudModeHelp": "Minimalny: tylko celownik, podpowiedź akcji, ostrzeżenia i komunikaty. Wyłączony: tylko komunikaty, dla maksymalnej immersji. Menu, rozmowy i radio są zawsze widoczne. Klawisz Przełącz HUD (domyślnie F1) zmienia go w locie.",
+ "ctlHudToggle": "Przełącz HUD"
 }

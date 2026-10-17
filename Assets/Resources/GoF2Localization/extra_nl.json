@@ -1422,5 +1422,11 @@
  "photoLook": "KIJKEN",
  "photoUpDown": "OMHOOG / OMLAAG",
  "photoTouchFree": "SLEEP OM TE KIJKEN · KNIJP OM TE BEWEGEN",
- "photoShowInFolder": "TONEN IN MAP"
+ "photoShowInFolder": "TONEN IN MAP",
+ "hudMode": "Vlucht-HUD",
+ "hudFull": "Volledig",
+ "hudMinimal": "Minimaal",
+ "hudOff": "Uit",
+ "hudModeHelp": "Minimaal: alleen het vizier, de actie-aanwijzing, waarschuwingen en berichten. Uit: alleen berichten, voor maximale onderdompeling. Menu's, gesprekken en de radio blijven altijd zichtbaar. De toets HUD wisselen (standaard F1) schakelt het tijdens de vlucht.",
+ "ctlHudToggle": "HUD wisselen"
 }

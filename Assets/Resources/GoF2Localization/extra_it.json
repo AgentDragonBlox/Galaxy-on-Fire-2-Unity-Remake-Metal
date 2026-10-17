@@ -1422,5 +1422,11 @@
  "photoLook": "GUARDA",
  "photoUpDown": "SU / GIÙ",
  "photoTouchFree": "TRASCINA PER GUARDARE · PIZZICA PER MUOVERTI",
- "photoShowInFolder": "MOSTRA NELLA CARTELLA"
+ "photoShowInFolder": "MOSTRA NELLA CARTELLA",
+ "hudMode": "HUD di volo",
+ "hudFull": "Completo",
+ "hudMinimal": "Minimo",
+ "hudOff": "Disattivato",
+ "hudModeHelp": "Minimo: solo il mirino, l'indicazione d'azione, gli avvisi e i messaggi. Disattivato: solo i messaggi, per la massima immersione. Menu, conversazioni e radio sono sempre visibili. Il tasto Attiva/disattiva HUD (F1 di default) lo cambia in volo.",
+ "ctlHudToggle": "Attiva/disattiva HUD"
 }

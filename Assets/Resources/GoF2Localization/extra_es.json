@@ -1422,5 +1422,11 @@
  "photoLook": "MIRAR",
  "photoUpDown": "SUBIR / BAJAR",
  "photoTouchFree": "ARRASTRA PARA MIRAR · PELLIZCA PARA MOVER",
- "photoShowInFolder": "MOSTRAR EN LA CARPETA"
+ "photoShowInFolder": "MOSTRAR EN LA CARPETA",
+ "hudMode": "HUD de vuelo",
+ "hudFull": "Completo",
+ "hudMinimal": "Mínimo",
+ "hudOff": "Desactivado",
+ "hudModeHelp": "Mínimo: solo la mira, el aviso de acción, las alertas y los mensajes. Desactivado: solo los mensajes, para la máxima inmersión. Los menús, las conversaciones y la radio se muestran siempre. La tecla Alternar HUD (F1 por defecto) lo cambia en vuelo.",
+ "ctlHudToggle": "Alternar HUD"
 }

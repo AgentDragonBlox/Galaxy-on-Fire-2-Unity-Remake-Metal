@@ -1422,5 +1422,11 @@
  "photoLook": "見回す",
  "photoUpDown": "上昇 / 下降",
  "photoTouchFree": "ドラッグで見回す · ピンチで移動",
- "photoShowInFolder": "フォルダーで表示"
+ "photoShowInFolder": "フォルダーで表示",
+ "hudMode": "飛行HUD",
+ "hudFull": "フル",
+ "hudMinimal": "最小",
+ "hudOff": "オフ",
+ "hudModeHelp": "最小：照準、アクション表示、警告、メッセージのみ。オフ：メッセージのみで最大の没入感。メニュー、会話、無線は常に表示されます。「HUD切り替え」キー（初期設定F1）で飛行中に切り替えられます。",
+ "ctlHudToggle": "HUD切り替え"
 }

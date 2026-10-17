@@ -290,6 +290,11 @@ namespace GoF2Remake.Data
 
         /// <summary>The keyboard / controller hint rows of the HUDs (the touch controls always show).</summary>
         public static bool InputHints { get => GetBool("inputHints", true); set => SetBool("inputHints", value); }
+        /// <summary>Remake (immersion): how much of the flight HUD shows (FlightHud: `.hud-minimal` / `.hud-off`). 0 Full;
+        /// 1 Minimal = the crosshair, lock ring, action prompt, missile warning, charge bar and HUD messages; 2 Off = only
+        /// the HUD messages. Menus, conversations, the radio, the minigames and the touch controls always show.</summary>
+        public const int HudFull = 0, HudMinimal = 1, HudOff = 2;
+        public static int HudMode { get => Mathf.Clamp(Mathf.RoundToInt(Get("hudMode", HudFull)), HudFull, HudOff); set => Set("hudMode", Mathf.Clamp(value, HudFull, HudOff)); }
         /// <summary>Remake: every primary weapon item sounds its own shots (the original: only the first primary gun).</summary>
         public static bool EachWeaponSound { get => GetBool("eachWeaponSound", false); set => SetBool("eachWeaponSound", value); }
         /// <summary>Remake: the touch fire button's double-press autofire latch on the keyboard / mouse / controller fire
@@ -344,7 +349,7 @@ namespace GoF2Remake.Data
         public static readonly string[] GameplayKeys =
         {
             "launchCamera", "hangarFlights", "tutorialHints", "showStoryStep", "pirateEvents", "capitalShips", "kaamoStacking", "kaamoMaxLevel", "kaamoKeepsEquipment", "cloakBay", "informerOriginalRule",
-            "originalTargetLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "discordPresence",
+            "originalTargetLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "hudMode", "discordPresence",
         };
         public static readonly string[] LanguageKeys = { "voiceLanguage" };
 

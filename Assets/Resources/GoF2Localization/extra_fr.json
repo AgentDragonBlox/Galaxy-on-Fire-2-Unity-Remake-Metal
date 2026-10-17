@@ -1422,5 +1422,11 @@
  "photoLook": "REGARDER",
  "photoUpDown": "MONTER / DESCENDRE",
  "photoTouchFree": "GLISSER POUR REGARDER · PINCER POUR AVANCER",
- "photoShowInFolder": "AFFICHER DANS LE DOSSIER"
+ "photoShowInFolder": "AFFICHER DANS LE DOSSIER",
+ "hudMode": "HUD de vol",
+ "hudFull": "Complet",
+ "hudMinimal": "Minimal",
+ "hudOff": "Désactivé",
+ "hudModeHelp": "Minimal : seulement le réticule, l'invite d'action, les alertes et les messages. Désactivé : seulement les messages, pour une immersion maximale. Les menus, les conversations et la radio restent toujours affichés. La touche Basculer le HUD (F1 par défaut) le change en vol.",
+ "ctlHudToggle": "Basculer le HUD"
 }

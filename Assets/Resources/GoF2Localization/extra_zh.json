@@ -1422,5 +1422,11 @@
  "photoLook": "环顾",
  "photoUpDown": "上 / 下",
  "photoTouchFree": "拖动环顾 · 双指捏合移动",
- "photoShowInFolder": "在文件夹中显示"
+ "photoShowInFolder": "在文件夹中显示",
+ "hudMode": "飞行HUD",
+ "hudFull": "完整",
+ "hudMinimal": "精简",
+ "hudOff": "关闭",
+ "hudModeHelp": "精简：只显示准星、操作提示、警告和消息。关闭：只显示消息，带来最大的沉浸感。菜单、对话和无线电始终显示。“切换HUD”键（默认F1）可在飞行中切换。",
+ "ctlHudToggle": "切换HUD"
 }

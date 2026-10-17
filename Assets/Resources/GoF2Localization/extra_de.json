@@ -1422,5 +1422,11 @@
  "photoLook": "UMSEHEN",
  "photoUpDown": "HOCH / RUNTER",
  "photoTouchFree": "ZIEHEN ZUM UMSEHEN · ZWEI FINGER ZUM BEWEGEN",
- "photoShowInFolder": "IM ORDNER ZEIGEN"
+ "photoShowInFolder": "IM ORDNER ZEIGEN",
+ "hudMode": "Flug-HUD",
+ "hudFull": "Voll",
+ "hudMinimal": "Minimal",
+ "hudOff": "Aus",
+ "hudModeHelp": "Minimal: nur das Fadenkreuz, die Aktionsanzeige, Warnungen und Meldungen. Aus: nur Meldungen, für maximale Immersion. Menüs, Gespräche und Funk werden immer angezeigt. Die Taste HUD umschalten (standardmäßig F1) wechselt es im Flug.",
+ "ctlHudToggle": "HUD umschalten"
 }

@@ -1422,5 +1422,11 @@
  "photoLook": "둘러보기",
  "photoUpDown": "위 / 아래",
  "photoTouchFree": "드래그하여 둘러보기 · 핀치하여 이동",
- "photoShowInFolder": "폴더에서 보기"
+ "photoShowInFolder": "폴더에서 보기",
+ "hudMode": "비행 HUD",
+ "hudFull": "전체",
+ "hudMinimal": "최소",
+ "hudOff": "끄기",
+ "hudModeHelp": "최소: 조준선, 행동 안내, 경고, 메시지만 표시합니다. 끄기: 메시지만 표시하여 몰입감을 극대화합니다. 메뉴, 대화, 무전은 항상 표시됩니다. HUD 전환 키(기본 F1)로 비행 중에 바꿀 수 있습니다.",
+ "ctlHudToggle": "HUD 전환"
 }

@@ -790,6 +790,9 @@ namespace GoF2Remake.UI
             bool mapOpen = StarMap.IsOpen;
             root.EnableInClassList("hud-map", mapOpen);
             root.EnableInClassList("hud-shop", carrierShop != null && carrierShop.IsOpen);   // the carrier's resupply window
+            int hudMode = Settings.HudMode;   // Options > Gameplay "Flight HUD" (immersion): FlightHud.uss hides the markings
+            root.EnableInClassList("hud-minimal", hudMode == Settings.HudMinimal);
+            root.EnableInClassList("hud-off", hudMode == Settings.HudOff);
             if (mapOpen) return;   // the map has its own input
 
             // MGame::OnUpdate: DialogueWindow::update runs only while the player lives; a conversation open at the death waits.
@@ -876,6 +879,17 @@ namespace GoF2Remake.UI
                 Settings.MouseSteering = !Settings.MouseSteering;
                 miningView?.ShowMessage(Localization.Extra("mouseSteering", "Mouse steering") + ": "
                                         + (Settings.MouseSteering ? Localization.Extra("on", "On") : Localization.Extra("off", "Off")));
+            }
+            // Remake: the Toggle HUD key (F1) steps the "Flight HUD" option Full -> Minimal -> Off; the messages stay in every mode.
+            if (GameControls.HudToggle.WasPressedThisFrame())
+            {
+                Settings.HudMode = (Settings.HudMode + 1) % 3;
+                miningView?.ShowMessage(Localization.Extra("hudMode", "Flight HUD") + ": " + Settings.HudMode switch
+                {
+                    Settings.HudMinimal => Localization.Extra("hudMinimal", "Minimal"),
+                    Settings.HudOff => Localization.Extra("hudOff", "Off"),
+                    _ => Localization.Extra("hudFull", "Full"),
+                });
             }
 
             if (ship == null)
