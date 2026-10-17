@@ -246,7 +246,7 @@ namespace GoF2Remake.Flight
             // PlayerEgo::left / right / up / down on Extreme (+0x235): the live cargo load against Ship::getMaxLoad.
             if (stats != null && stats.cargoAffectsHandling) stats.cargoLoad = Data.Shop.CargoLoad();
             float dtMs = Time.deltaTime * 1000f * TimeExtender.PlayerFactor;   // MGame+0x44: the player's dt
-            Model.UpdateCruise(Navigation.CruiseFactor > 1f, dtMs);   // remake, multiplayer: cruise looks like a boost
+            Model.UpdateCruise(Navigation.Cruising, dtMs);   // remake, multiplayer: cruise looks like a boost
             if (externalControl)
             {
                 // The turret view while docked at an object (PlayerTurret aims by SteerInput): the stick still reads.

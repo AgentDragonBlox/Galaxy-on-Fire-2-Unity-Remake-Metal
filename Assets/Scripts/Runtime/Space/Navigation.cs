@@ -214,9 +214,13 @@ namespace GoF2Remake.Flight
         /// mode there instead, under the same rules (CanFastForward): only the player's own ship flies 5x as fast (the
         /// autopilot, the asteroid approach, an object's approach); its turns, timers and the camera keep their pace.</summary>
         public bool Cruise { get; private set; }
-        /// <summary>The player ship's forward speed factor (ShipController, Mining's approach): FastForwardScale while
-        /// cruising, else 1.</summary>
+        /// <summary>The player ship's forward speed factor (ShipController, Mining's approach): from 1 up to FastForwardScale
+        /// while cruising, eased in over CruiseRampUpMs (smoothstep) and back over CruiseRampDownMs.</summary>
         public static float CruiseFactor { get; private set; } = 1f;
+        /// <summary>The cruise is held and allowed now (its boost look, FlightModel.CruiseVisual, follows this).</summary>
+        public static bool Cruising { get; private set; }
+        const float CruiseRampUpMs = 3000f, CruiseRampDownMs = 1200f;
+        float cruiseLevel;
         /// <summary>Lock ring frame 0..23 (no 500 ms delay for landmarks and planets), -1 = none.</summary>
         public int LockFrame => Candidate == null ? -1 : Locked != null ? 23 : Mathf.Min(23, (int)(23f * LockTimer / Mathf.Max(1, LockTimeMs)));
         /// <summary>Radar::draw 0x1574c0 skips the asteroid loop on a landmark (+0x24) or planet (+0x14) lock, a ship / crate
@@ -306,6 +310,7 @@ namespace GoF2Remake.Flight
             MenuOpen = false;
             paused = false;
             SetFastForward(false);
+            cruiseLevel = 0f; CruiseFactor = 1f; Cruising = false;
             ApplyTimeScale();
         }
 
@@ -459,6 +464,7 @@ namespace GoF2Remake.Flight
         {
             if (ship == null) return;
             float dtMs = Time.deltaTime * 1000f;
+            UpdateCruise(dtMs);
             // PlayerEgo::update: whatever set the player route (a campaign level, a freelance mission's waypoints, a
             // Challenge's course, step 59's convoy point), Route::update advances it from the ship's position every frame;
             // UpdateRoute says 543 / 544 (HUD events 0x17 / 0x18).
@@ -665,6 +671,13 @@ namespace GoF2Remake.Flight
 
         // ---- fast-forward ------------------------------------------------------------------------------------
 
+        void UpdateCruise(float dtMs)
+        {
+            Cruising = Cruise && !halted && !Jumping;
+            cruiseLevel = Mathf.MoveTowards(cruiseLevel, Cruising ? 1f : 0f, Mathf.Max(0f, dtMs) / (Cruising ? CruiseRampUpMs : CruiseRampDownMs));
+            CruiseFactor = 1f + (FastForwardScale - 1f) * cruiseLevel * cruiseLevel * (3f - 2f * cruiseLevel);
+        }
+
         void SetFastForward(bool on)
         {
             bool session = GoF2Remake.Data.NetSession.Active;
@@ -688,7 +701,7 @@ namespace GoF2Remake.Flight
         public static bool PressesBlocked => InputHalted || Time.frameCount - lastHaltedFrame <= 1;
         static int lastHaltedFrame = -10;
 
-        void OnDestroy() { halted = false; CruiseFactor = 1f;MusicPaused = false; if (!GoF2Remake.Data.NetSession.Active) AudioListener.pause = false; }
+        void OnDestroy() { halted = false; CruiseFactor = 1f; Cruising = false; MusicPaused = false; if (!GoF2Remake.Data.NetSession.Active) AudioListener.pause = false; }
 
         /// <summary>MGame::pauseSounds 0x1a8304: a conversation, hint or map pauses only the sound effects and the engines
         /// (FModSound::pauseAllPlayingSoundFXEvents: the events of the effects category); only the pause menu stops
@@ -710,7 +723,6 @@ namespace GoF2Remake.Flight
         void ApplyTimeScale()
         {
             halted = MenuOpen || paused || pauseMenuOpen;
-            CruiseFactor = Cruise && !halted ? FastForwardScale : 1f;
             float scale = MenuOpen || paused || pauseMenuOpen ? 0f : FastForward ? FastForwardScale : TimeExtender.Active ? TimeExtender.WorldScale : 1f;
             if (GoF2Remake.Data.NetSession.Active) scale = 1f;   // multiplayer: one player's pause doesn't stop the shared world
             if (Time.timeScale != scale) Time.timeScale = scale;
