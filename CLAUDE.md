@@ -2362,7 +2362,20 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   `_MetallicGlossMap` / `_EmissionMap`; the game's material assets are never touched; when the mods change in a scene, the
   Mod Builder's skins, the objects there get the game's materials back before the copies go and the new textures once
   loaded, `ModTextures.Revert` / `ReapplyAll`: a cleared skin drew the hangar's other ships of that model magenta); `_normal` / `_metallic` names load
-  linear; loaded with the rest (`ModMaterials.PreloadTexture`, `ModLoading`). Verified in Play mode: a BountyBot
+  linear; loaded with the rest (`ModMaterials.PreloadTexture`, `ModLoading`). **Per ship** (a mod's new ship on a game model,
+  `"model": "gof2:<model>"`): `textures/ships/<ship id>/<name>` replaces the texture on that ship alone, the game's ship of
+  that model and the others on it keep theirs (2026-10-17). `ModContent.ApplyShips` marks such ships
+  (`Database.ShipOwnTextures`, `ModContent.HasShipTextures`), `Database.ShipAssembly` then hands out a copy of the model of
+  their own, "<model>#ship=N" (`KitRules.ShipToken`; `ModShipKits.ParseShipCopy`, ParseSkinned = one with a skin;
+  `ModShips.SkinnedTemplate` makes a plain copy under the holder; `VariantAssembly`'s skins of such a ship go on the model's
+  name), whose instances' `ModScope` leads `ModTextures` to the ship's key (`ShipScope`: "<mod id>:<ship id>", keys
+  "<key>/<name>"), then the scope's own, its model's (`ModelScope`, so `textures/<model>/` still reaches the copies), then
+  every object's; `HangarShipShadow.Attach` takes the model's map for "#" names. Builder: the Skins kind lists the project's
+  new ships on a game model (`ModProject.OwnsSkinOf` / `OwnSkinShip` / `ShipSkinScope` "ships/<id>"; builder.json "skins"
+  keeps them by id, their number being this run's), each texture has one Replace into the ship's folder and its ✕ leaves
+  the project's every-ship file alone; the Ship tab's **Its own textures…** opens it. Tests: `GameModelsTests`
+  (`ANewShipOnAGameModelWithTexturesOfItsOwn`, `TheBuilderGivesAShipOnAGameModelTexturesOfItsOwn`). Not run in
+  Unity yet. The rest verified in Play mode: a BountyBot
   (/make_skin_texture) Veteran skin on the hangar turntable (`Mods/veteran_skin`, git-ignored). The backdrop's planets, suns
   and rings too (#66, `Backdrop.Load` -> `ModTextures.Replace(material)`: their Resources/GoF2Backdrop materials aren't on
   assembled objects; the copy's texture clamped). A mod's `backdrop.json` (`ModBackdrop.StarPlanets`, the last mod in the load
