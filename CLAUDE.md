@@ -2142,7 +2142,9 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   points made a zigzag), the streak's middle row across them (whole copies per segment read as beads) and a random brightness
   per point. EngineDrive levels (thrust 0.3..1 length, boost longer; a third of the glow at idle, unlike the ES2 flames); in the station capped; materials copies of
   `ModAssets.fxAdditive` (`ModMaterials.CopyOf`) at `_Glow` 0.75 / 0.5 / 1 / 0.45 (flare, cone, trail, helix). A mount's `fxScale` sizes it (GoF3's helper scale:
-  the Retro 0.5 / 1.62) and its `rotation` turns it (`ModHardpoints.MountTurn`; five Vossk hulls' engines 8.5-10 deg inward).
+  the Retro 0.5 / 1.62) and its `rotation` turns it (`ModHardpoints.MountTurn`; five Vossk hulls' engines 8.5-10 deg inward;
+  an engine on the centreline keeps no sideways turn, the builder's `centreline_turn`: the K'ssshar Ka's centre helper
+  carried its right engine's 8.5 deg, so its plume crossed toward that engine).
   The helix (`spiral*`, only the Nivelian engine has one: `_spiral.ae4meshgroup`, two ribbon strands, radius 0.5 -> 0.1 over
   10.5 units, spun by its animation): camera-facing strands rebuilt each frame round the exhaust's axis, the texture (GoF3's
   `vfx_generic_electricity_000`, a guess: the spiral's material names its flow textures by GUID only) along them, scrolled, faded
@@ -2161,13 +2163,25 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   Gr'Gath's gold nozzles, checked against a GoF3 video: (1, 0.75, 0.35) measured, (1, 0.80, 0.35) the blend; also the
   Acheron and Cronus). Matched by eye against two clips of the Moornta (GoF3's ship viewer, and in flight from the side and
   behind; Play mode: behind, below, above, the side, a hard turn; the Terran, Vossk and Retro hulls; the hangar hides it).
+  The cone's own shape and edge-on fade (2026-10-17): `coneProfile` ([share of the length, brightness, u] per ring, the engine's
+  own exhaust mesh: the Terran's peak at 0.93 and run the whole texture, the Vossk's a short spike, nothing past 0.84; default
+  the Nivelian rings above) and `coneFade` ([from, to], the exhaust material's AngleBlend: each card's vertex colours x
+  smoothstep(from, to, |N.V|) every frame, `EngineFx.FadeCards`, a cone mesh per nozzle), so from straight behind only the
+  flares show, as in GoF3's ship viewer; the builder had written both since 2026-10-12 but nothing read them. Checked against
+  GoF3 ship-viewer clips of the Atauno Rheep, Nestaar, K'ssshar Ka, Na'takath and Shaan'ra-Grth (one horizontal, one vertical
+  turn each; the flares on the nozzles, the directions): the Vossk engine's streak is the Terran's, as long (1121 units: the
+  builder's `trailSpan`, 2 x the Terran cards; 2 x its own longer cards ran past those hulls) and straight (wander 0); its
+  flares take the hull's nozzle colour (`NOZZLE_FLARE`: the clips' flares sample at hue 80-90, lime, the plume around them
+  teal at 130-160; the style's flare the Vossk hulls' mean 0.65 / 1 / 0.11); the Nivelian streams 1.5 x the cards (970 units,
+  wander 3: GoF3's viewer shows short wisps a fifth of the hull, 4.33 x ran 1.5 hulls behind). The Inouac engine (no exhaust
+  material of its own) takes the Nivelian exhaust's rings and fade, whose textures it borrows.
 - **Exhaust styles** (`ModExhausts`, a mod's `exhausts.json`; the guide's "Exhaust styles"): engine effects any ship can wear,
   picked in the hangar's Customize screen (`ShipCustomizePanel`'s Exhaust row and the style's two colour rows; with styles in
   the mods that are on every ship has the screen: `ModShipKits.CustomizationOf` gives a ship without other customizations a
   kit of its own with nothing else, `Kit.weaponColorRow` false). A style is a GoF3 `engineFx` (`EngineFx.Create`; its colours:
   flare + cone, trails + helix) or a flame `model` with flame `materials` (an ES2 thruster: loaded with the mod ships as the one
   part of the style's own kit, `ModShips.LoadAll` / `EnsureExhaust`; per exhaust an instance named `exhaust_nozzle_N` at the
-  mount, `MountTurn` x the style's `yaw`, scaled by `NozzleRadius` against the style's `nozzle`, driven by an `EngineFlame` on
+  mount, `MountTurn` x the style's `yaw`, scaled by its nozzle's size (below) against the style's `nozzle`, driven by an `EngineFlame` on
   the holder that blows each along its nozzle's -Z; colours: copies of the flame materials with `_EmissionColor` / `_BoostColor`
   at their own intensity; a flame style's boost cards are its own mod's ships' boost jets (`OwnShip`: the ship's key in the
   style's mod): on any other ship the holder's `EngineFlame.boostOverride` sets GoF2/ModEngineFlame's `_BoostOverride`, the boost
@@ -2184,7 +2198,32 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   nozzle), its helix runs along it and its trails spread along the long side (`EngineFx.profiles`, `Trail.start`), centred on
   the nozzle. Checked in Play mode: ship 7's wide nozzle blocks (both styles fill them), an ES2 Sentinel's hexagon (measured
   from its nozzle meshes) with a GoF3 drive, the Moornta's GoF3 outlines with an ES2 thruster. `NozzleRadius`: a mount's `glowSize`, a mod ship's `engineGlowRadius`, else 55 game units x the game
-  ship's exhaust anchor scale (`turretAngles`). The build carries it (`exhaust=mod_id:id;exhaustcolor=;exhaustcolor2=;exhaustsize=`,
+  ship's exhaust anchor scale (`turretAngles`). An `outline` is used only when plausible against the mount's `glowSize` (mean
+  at least half of it, centre within 1.5 x it; `ModExhausts.Plausible`; the builder writes no others, `outline_plausible`):
+  the Vossk hulls' outlines were slivers of a few lit texels of their nozzle rings (the Shaan'ra-Grth's 1 unit wide, 18 off
+  its mount), which shrank any style on them to nothing. Sizes (2026-10-17): every source but one measures the whole nozzle
+  (the game ships, ES2's nozzle meshes); the GoF3 builder's `glowSize` / `outline` are the hottest core of the nozzle's glow,
+  1 to 5 x smaller (the Atauno Rheep's 16 units in its ~90-unit hexagon). An `engineFx` now says which nozzle it is drawn
+  for (`nozzle`, game units, default `coneWidth`; `CustomEngineFx.NozzleRadius`), measured by the builder on the hulls from
+  behind (`ENGINE_NOZZLE`: Nivelian 87, the cone fills its nozzles; Terran 100, the Argus' 75-110 under a 138 cone; Vossk
+  45, the K'ssshar Ka's ~46 and the Shaan'ra-Grth's ~34 under a 138 cone); on a ship with an `engineFx` of its own that gives a `nozzle` the shapes
+  are scaled to it (`FitToOwnEffect`: the median of mean / fxScale becomes `nozzle`; without one, a mod written before
+  the field, the shapes are kept, each keeping its shape and its
+  size against the others), and an `engineFx` style's default `nozzle` is its `NozzleRadius`: a GoF3 hull wearing its own
+  race's style shows it exactly as its own effect, and the styles fit game, GoF3 and ES2 hulls alike (on GoF3 hulls they
+  were a fifth of the size, on the Vossk ones next to nothing; with the cone as every engine's nozzle the Vossk hulls' were
+  three times too big). Offered (`ModExhausts.For`,
+  `Offered`, `Find(key, ship)`; the Customize panel takes the ship, `Apply` ignores a style the ship isn't offered): every
+  style but a flame style on its own mod's ships (ES2's thrusters are cut from the ES2 ships' own rear parts, which choose
+  their exhaust there). Checked in Play mode (2026-10-17): the Phantom (Nivelian drive, ES2 thruster), the Cronus (Terran),
+  the Argus (Vossk), the K'ssshar Ka (ES2 heavy thruster), the Shaan'ra-Grth (Nivelian), the ES2 Sentinel (Terran; its own
+  thruster refused), the Customize screen's Exhaust row on the Sentinel, a Vossk hull and the Phantom. Groups (exhausts.json
+  `group` / `groupName` / `scale`, `Style.lead` / `members` / `ForNozzle`): flame styles of one mod with the same group are
+  one choice, its first (`For` lists only leads, `Find(key, ship)` turns a member's key, an older build, into its group);
+  each nozzle wears the member whose `nozzle` x `scale` is nearest its size on a log scale (the player's Exhaust size
+  counted; the instance is named `exhaust_nozzle_<i>_<member>`). The ES2 importer groups its three thrusters as "EVERSPACE
+  2 thruster" (`scale` 3.6, the kit scale: nozzles of 1.38 / 1.53 / 2.21 m): the game's ships take the light thruster
+  (the Phantom, the Inflict), larger nozzles the heavy one (ship 7, the GoF3 hulls; the Cronus both). The build carries it (`exhaust=mod_id:id;exhaustcolor=;exhaustcolor2=;exhaustsize=`,
   `ModShipKits.Build`, kept out of `VariantAssembly`'s name like the weapon colour) and `ModExhausts.Apply` puts it on each model
   instance (the player's in `SpaceLevel` spawn / swap, the turntable and hangar guests in `StationLevel.SpawnShip`, other players'
   ships in `NetPlayer.BuildModel`): a holder `exhaust_style` under the engine glow part aligned with the ship's root (it goes with
@@ -2456,7 +2495,15 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   (`ModHardpoints.Colour` -> `ModShips.ApplyColors` with a cache of copies per build's colours: ES2's missile pod lights its
   bay frame in Emissive 2 and is painted in the hull colours; they kept the template's white before); a primary / secondary mount's `nodes` (`WeaponMount.nodes`, ship model node
   names: the GoF3 hulls' pylons) show only while that mount carries a weapon (`ModHardpoints.ShowMountNodes`, from every
-  `AttachWeapons`: flight, the hangar turntable, other players' ships and hangar guests). **Skins** (a kit's `skins`, `ModShipKits.Skin`; `Build.skin`, text
+  `AttachWeapons`: flight, the hangar turntable, other players' ships and hangar guests). **Weapon models toggle** (the
+  user's request for the GoF3 hulls, 2026-10-17; the kit's hardpoints `"toggle": true`, `ModHardpoints.Toggles`, which the
+  GoF3 builder writes): the Customize panel's Weapon models row (Shown / Hidden, `Kind.WeaponModels`), `Build.weapons`
+  ("weapons=off" / "on" over a default build's off; ships.json `"build"` `"weapons": false`; `Normalize` drops it for a kit
+  without the toggle; kept out of `VariantAssembly`'s name: the model doesn't change); `ModHardpoints.Hidden(ship, shown)`
+  (shown ?? the player's build): `AttachWeapons` attaches no models and hides every pylon node, `TurretModel` returns null
+  (`PlayerTurret`'s invisible stand-in, nothing in the hangar), `MuzzleOffset` zero (the shots from the mount), `HangarHeight`
+  without the weapons; other players through `NetPlayer.ShownBuild`. Tests `ModHardpointsToggleTests`; verified in Play mode
+  (the GoF3 Cronus: guns and both kit turrets gone, the stand-ins kept; the hangar row and turntable). **Skins** (a kit's `skins`, `ModShipKits.Skin`; `Build.skin`, text
   "skin=id", "none" = the model's own look over a default build's skin, `Build.Reserved` keeps "skin" / "tier" / "color." out
   of the slot names): texture sets per material name (diffuse, emission, metallicSmoothness in URP's layout, normal, colours)
   put on copies of the build's materials (`ModShips.ApplySkin`, before the colours) and an optional `engineColor` for every
@@ -2482,8 +2529,10 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   mode with throwaway skin mods: the Phantom's Customize screen (Skin + Weapon colour rows), its crimson skin on the
   turntable and in flight with a mod weapon colour, the game's Groza (22) skinned in the hangar, the mod turned off (plain). Used by the GoF3 Ships mod (version 2: one kit "gof3", a hull part per ship, its GoF3 paint schemes as
   skins, the GoF3 guns as hardpoint models by weapon, a GoF3-parts turret on every hull, GoF3's projectile colours as its
-  "weapons" palette (Colorize_Color1 of the GoF3 weapon effects' materials); built by
-  `~/Downloads/gof3assets/tools/build_gof3_mod.py`). The ES2 converter adds ES2's player turret
+  "weapons" palette (Colorize_Color1 of the GoF3 weapon effects' materials); built by the gof3-ships-importer's
+  `tools/build_gof3_mod.py`, which finds each hardpoint's pylon by its number (several hulls borrow another's pylons) and
+  moves any gun or turret mount that would float onto the hull (`snap_floating_mounts`: the gap measured with every gun
+  model it may carry; the Krotac's lower turret hung 10 m under the hull, the Cronus' wing guns 1.5 m above it)). The ES2 converter adds ES2's player turret
   (`SK_Turret_PlayerShip_001`, skinned, split by bone into rigid base / pivot / gun meshes) and its weapon models
   (`SM_PrimaryWeapon_*`, the missile pod) with their muzzle sockets, mapped onto GoF2's weapons by item / category. Verified in
   Play mode on the Gunship: the hangar turntable's guns, pod and turret, the guns firing from the models' muzzles, the turret

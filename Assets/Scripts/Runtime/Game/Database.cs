@@ -317,6 +317,12 @@ namespace GoF2Remake.Data
         public float coneLength = 650f;      // at full throttle (GoF3's 12.1 units)
         public float coneWidth = 87f;        // half width (GoF3's 1.62 units)
         public float coneIntensity = 1f;
+        public float nozzle;                 // the nozzle radius the effect is drawn for (game units; 0 = coneWidth): exhaust
+                                             // styles are sized against it, on this ship and as a style (Modding.ModExhausts)
+        public float[] coneProfile;          // the cards' rings: [share of the length, brightness, u] per ring, nozzle first
+                                             // (GoF3's own exhaust mesh; default the Nivelian one: 0 / 0.143 / 0.571 / 1)
+        public float[] coneFade;             // [from, to]: the cards fade out as they turn edge-on, |N.V| from 'to' down to
+                                             // 'from' (GoF3's AngleBlend: from straight behind only the flares show)
         public string trail;                 // the stream: one soft streak (taller than wide), repeated along each trail
         public int trailCount = 2;           // trails per exhaust
         public float trailLength = 2800f;    // how far behind the nozzle it reaches at full throttle
@@ -338,6 +344,7 @@ namespace GoF2Remake.Data
         public float[] color;                // RGB 0..1, for mounts without glowColor and ships without engineGlowColor
         public float[] flareColor, coneColor, trailColor, spiralColor;   // RGB 0..1, each part's own (default: the engine's colour)
         public bool Any => !string.IsNullOrEmpty(glow) || !string.IsNullOrEmpty(cone) || !string.IsNullOrEmpty(trail) || !string.IsNullOrEmpty(spiral);
+        public float NozzleRadius => nozzle > 0f ? nozzle : coneWidth;
     }
 
     [System.Serializable] public class AssemblyData
