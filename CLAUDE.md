@@ -2142,7 +2142,9 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   points made a zigzag), the streak's middle row across them (whole copies per segment read as beads) and a random brightness
   per point. EngineDrive levels (thrust 0.3..1 length, boost longer; a third of the glow at idle, unlike the ES2 flames); in the station capped; materials copies of
   `ModAssets.fxAdditive` (`ModMaterials.CopyOf`) at `_Glow` 0.75 / 0.5 / 1 / 0.45 (flare, cone, trail, helix). A mount's `fxScale` sizes it (GoF3's helper scale:
-  the Retro 0.5 / 1.62) and its `rotation` turns it (`ModHardpoints.MountTurn`; five Vossk hulls' engines 8.5-10 deg inward).
+  the Retro 0.5 / 1.62) and its `rotation` turns it (`ModHardpoints.MountTurn`; five Vossk hulls' engines 8.5-10 deg inward;
+  an engine on the centreline keeps no sideways turn, the builder's `centreline_turn`: the K'ssshar Ka's centre helper
+  carried its right engine's 8.5 deg, so its plume crossed toward that engine).
   The helix (`spiral*`, only the Nivelian engine has one: `_spiral.ae4meshgroup`, two ribbon strands, radius 0.5 -> 0.1 over
   10.5 units, spun by its animation): camera-facing strands rebuilt each frame round the exhaust's axis, the texture (GoF3's
   `vfx_generic_electricity_000`, a guess: the spiral's material names its flow textures by GUID only) along them, scrolled, faded
