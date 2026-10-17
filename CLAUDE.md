@@ -2206,8 +2206,9 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   1 to 5 x smaller (the Atauno Rheep's 16 units in its ~90-unit hexagon). An `engineFx` now says which nozzle it is drawn
   for (`nozzle`, game units, default `coneWidth`; `CustomEngineFx.NozzleRadius`), measured by the builder on the hulls from
   behind (`ENGINE_NOZZLE`: Nivelian 87, the cone fills its nozzles; Terran 100, the Argus' 75-110 under a 138 cone; Vossk
-  45, the K'ssshar Ka's ~46 and the Shaan'ra-Grth's ~34 under a 138 cone); on a ship with an `engineFx` of its own the shapes
-  are scaled to it (`FitToOwnEffect`: the median of mean / fxScale becomes `NozzleRadius`, each keeping its shape and its
+  45, the K'ssshar Ka's ~46 and the Shaan'ra-Grth's ~34 under a 138 cone); on a ship with an `engineFx` of its own that gives a `nozzle` the shapes
+  are scaled to it (`FitToOwnEffect`: the median of mean / fxScale becomes `nozzle`; without one, a mod written before
+  the field, the shapes are kept, each keeping its shape and its
   size against the others), and an `engineFx` style's default `nozzle` is its `NozzleRadius`: a GoF3 hull wearing its own
   race's style shows it exactly as its own effect, and the styles fit game, GoF3 and ES2 hulls alike (on GoF3 hulls they
   were a fifth of the size, on the Vossk ones next to nothing; with the cone as every engine's nozzle the Vossk hulls' were

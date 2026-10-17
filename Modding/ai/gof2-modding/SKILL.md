@@ -330,8 +330,8 @@ origin at the nozzle exit, flame along -Z. Any ship (the game's too) then has a 
 style) and its two colours (engineFx: flare+cone / trails+helix; model: flame / boost cards); each exhaust scaled by its nozzle
 against "nozzle" by its nozzle's mean radius, its cross-section bent to the nozzle's outline (a mount's `"outline": [x0, y0, ...]`
 game units around it, used only when at least half the mount's glowSize and centred within 1.5 x it; else meshes with
-"nozzle" in a material name; else glowSize as an oval; game ships measured; a ship with its own engineFx: its nozzles taken
-as large as that effect's nozzle x fxScale) and the player's Exhaust size (0.5-2); the model's own exhaust hidden; a flame
+"nozzle" in a material name; else glowSize as an oval; game ships measured; a ship with its own engineFx giving a nozzle: its nozzles
+taken as large as that nozzle x fxScale) and the player's Exhaust size (0.5-2); the model's own exhaust hidden; a flame
 model's boost cards only on its own mod's ships (elsewhere the boost recolours the main flame); a flame model style isn't
 offered on its own mod's ships (cut from their own exhaust parts). Builds: `"exhaust": "mod_id:id"`, `"exhaustColor"`, `"exhaustColor2"`,
 `"exhaustSize"`.

@@ -322,7 +322,11 @@ namespace GoF2Remake.Modding
         {
             var m = new Mesh { name = "engine_fx_cone" };
             var v = new List<Vector3>(); var uv = new List<Vector2>(); var col = new List<Color>(); var tr = new List<int>();
-            float[] rings = coneRings ?? ConeRings, bright = coneBright ?? ConeBright, us = coneU ?? ConeU;
+            // The engine's own rings only when they were given: Instantiate copies a null serialized array as an empty one,
+            // so every ship (a copy of its template) without a "coneProfile" had no rings and no cone.
+            bool own = coneRings != null && coneRings.Length >= 2 && coneBright != null && coneBright.Length == coneRings.Length
+                       && coneU != null && coneU.Length == coneRings.Length;
+            float[] rings = own ? coneRings : ConeRings, bright = own ? coneBright : ConeBright, us = own ? coneU : ConeU;
             for (int card = 0; card < ConeCards; card++)
             {
                 float a = card * Mathf.PI / 4f;

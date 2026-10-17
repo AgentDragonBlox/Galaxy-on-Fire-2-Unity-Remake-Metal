@@ -433,16 +433,17 @@ namespace GoF2Remake.Modding
             return FitToOwnEffect(ship, exhausts, shapes);
         }
 
-        /// <summary>A ship with Galaxy on Fire 3's engine effect of its own ("engineFx"): its nozzles as large as the nozzle that
-        /// effect is drawn for (its "nozzle", else coneWidth, x each mount's fxScale) on the median, each keeping its shape and
+        /// <summary>A ship with Galaxy on Fire 3's engine effect of its own ("engineFx") that names its "nozzle": its nozzles as
+        /// large as the nozzle that effect is drawn for (x each mount's fxScale) on the median, each keeping its shape and
         /// its size against the others. The GoF3 builder measures a nozzle by the hottest texels of its glow, a core of 1 to
         /// 5 x less than the nozzle (the Atauno Rheep's 16 units in its ~85-unit hexagon), while the game's ships' and EVERSPACE
         /// 2's nozzles are measured whole: a style was a fifth of its size on a GoF3 hull, and a GoF3 hull wearing its own
-        /// race's style now shows it as large as its own effect.</summary>
+        /// race's style now shows it as large as its own effect. Without "nozzle" the shapes are kept (a mod written before it:
+        /// coneWidth as every engine's nozzle made the GoF3 Vossk hulls' styles three times too big).</summary>
         static NozzleShape[] FitToOwnEffect(int ship, List<WeaponMount> exhausts, NozzleShape[] shapes)
         {
             var fx = CustomShips.Get(ship)?.engineFx;
-            if (fx == null || !fx.Any || fx.NozzleRadius <= 0f || shapes.Length == 0) return shapes;
+            if (fx == null || !fx.Any || fx.nozzle <= 0f || shapes.Length == 0) return shapes;
             var perScale = new List<float>();
             for (int i = 0; i < shapes.Length; i++)
                 if (shapes[i] != null && shapes[i].Mean > 0f) perScale.Add(shapes[i].Mean / FxScale(exhausts[i]));
