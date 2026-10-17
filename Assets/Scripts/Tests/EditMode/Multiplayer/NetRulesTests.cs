@@ -5,9 +5,9 @@
 // on / off toggles, saved to server_settings.json beside the profiles, an option given on the command line wins).
 // Expected values: CLAUDE.md's rule list and defaults (cloak shakes off pursuers off, pirate outposts and bosses on,
 // capital ship enhancements off, the informer missions' original rule off, stackable Kaamo upgrades on, stored ships keep
-// their equipment on, the cloak bay on, EMP breaks cloaks on, smarter NPC targeting on, precise ship collision off) and flags (-cloakhides,
+// their equipment on, the cloak bay on, EMP breaks cloaks on, smarter NPC targeting on; the ship collision mode, mixed by default, a setting of its own) and flags (-cloakhides,
 // -nopirateevents, -capitalships, -informeroriginal, -nokaamostacking, -nokaamoequipment, -nocloakbay, -noempcloak,
-// -originaltargeting, -precisecollision); the setting ranges (2..100 players,
+// -originaltargeting, -shipcollision exact|mixed|original, the old -precisecollision = exact); the setting ranges (2..100 players,
 // 0..100 claims per faction, 1..3650 lapse days).
 
 using System.IO;
@@ -33,11 +33,10 @@ namespace GoF2Remake.Tests
             ("cloakbay", "-nocloakbay", true),
             ("empcloak", "-noempcloak", true),
             ("smarttargeting", "-originaltargeting", true),
-            ("precisecollision", "-precisecollision", false),
         };
 
         [Test]
-        public void TenRulesWithTheirFlagsAndDefaults()
+        public void NineRulesWithTheirFlagsAndDefaults()
         {
             Assert.AreEqual(Documented.Length, NetRules.All.Count);
             foreach (var (key, flag, on) in Documented)
@@ -77,6 +76,7 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(SessionRules.EmpBreaksCloak, NetRules.EmpBreaksCloak);
             Assert.AreEqual(SessionRules.SmarterNpcTargeting, NetRules.SmarterNpcTargeting);
             Assert.AreEqual(SessionRules.PreciseShipCollision, NetRules.PreciseShipCollision);
+            Assert.AreEqual(SessionRules.OriginalCollision, NetRules.OriginalCollision);
         }
 
         [Test]
@@ -185,6 +185,29 @@ namespace GoF2Remake.Tests
                 Assert.AreEqual(1, NetFactions.LapseDays);
                 NetServerSettings.Set("maxplayers", "1,000", "test");
                 Assert.AreEqual(100, NetGame.MaxPlayers, "thousands separators are fine");
+            }
+            finally { EndSettings(); }
+        }
+
+        [Test]
+        public void ShipCollisionIsASessionSetting()
+        {
+            BeginSettings();
+            try
+            {
+                Assert.AreEqual(SessionRules.CollisionMixed, SessionRules.CollisionOf(NetRules.Defaults), "mixed by default");
+                Assert.AreEqual(SessionRules.CollisionExact, SessionRules.ParseCollision("precise"), "the old name");
+                Assert.AreEqual(-1, SessionRules.ParseCollision("sometimes"));
+                Assert.That(NetServerSettings.Set("shipcollision", "sometimes", "test"), Does.Contain("exact, mixed or original"));
+                NetServerSettings.Set("shipcollision", "Original", "test");
+                Assert.AreEqual(SessionRules.CollisionOriginal, NetRules.HostCollision);
+                Assert.AreNotEqual(0, NetRules.Host & NetRules.OriginalCollision);
+                NetServerSettings.Set("shipcollision", "exact", "test");
+                Assert.AreEqual(SessionRules.CollisionExact, NetRules.HostCollision);
+                Assert.AreEqual(0, NetRules.Host & NetRules.OriginalCollision, "one mode at a time");
+                Assert.AreEqual("exact", NetServerSettings.All.Single(s => s.key == "shipcollision").get());
+                NetServerSettings.Set("shipcollision", "mixed", "test");
+                Assert.AreEqual(0, NetRules.Host & (NetRules.PreciseShipCollision | NetRules.OriginalCollision));
             }
             finally { EndSettings(); }
         }

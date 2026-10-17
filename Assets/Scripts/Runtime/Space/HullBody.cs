@@ -19,16 +19,16 @@ namespace GoF2Remake.Flight
         [System.NonSerialized] public readonly List<MeshCollider> colliders = new List<MeshCollider>();
         /// <summary>A ship a player can fly (a fighter: an NPC's, the player's own, another player's; not a freighter, the
         /// battleship, a capital ship, a station, a turret or an object): with the Gameplay option "Ship collision" on
-        /// Original (Settings.PreciseShipCollision off, a session rule) its hull takes no part (Collides), so shots hit it on
-        /// the original's hit cube and the player meets another player's ship on its collision sphere again.</summary>
+        /// Mixed (Settings.ShipCollision, a session rule) its hull takes no part (Collides), so shots hit it on the original's
+        /// hit cube and the player meets another player's ship on its collision sphere again.</summary>
         [System.NonSerialized] public bool flyableShip;
 
         /// <summary>Its colliders exist and take part (the model shown).</summary>
         public bool Active => isActiveAndEnabled && colliders.Count > 0;
 
-        /// <summary>Shots and the player's ship meet this hull: active, and not a flyable ship's while the option is on
-        /// Original (HullCollision.PreciseShips).</summary>
-        public bool Collides => Active && (!flyableShip || HullCollision.PreciseShips);
+        /// <summary>Shots and the player's ship meet this hull: active, and taken by the ship collision mode (Exact: every
+        /// hull; Mixed: not a flyable ship's; Original: none, HullCollision.Takes).</summary>
+        public bool Collides => Active && HullCollision.Takes(flyableShip);
 
         void OnDestroy()
         {
