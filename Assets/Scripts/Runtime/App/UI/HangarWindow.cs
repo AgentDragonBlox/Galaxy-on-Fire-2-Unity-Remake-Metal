@@ -1370,8 +1370,9 @@ namespace GoF2Remake.UI
         /// step while one of them is short (NetStock.RestockLeft); redrawn when a second ticks over.</summary>
         void UpdateRestock()
         {
+            float reset = -1f, rare = -1f;
             bool show = IsOpen && tab == Tab.Shop && !hangar.Storage
-                        && GoF2Remake.Multiplayer.NetStock.RestockLeft(hangar.Station, out float reset, out float rare);
+                        && GoF2Remake.Multiplayer.NetStock.RestockLeft(hangar.Station, out reset, out rare);
             restockLabel.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
             if (!show) { restockShown = int.MinValue; return; }
             int r = Mathf.CeilToInt(reset), g = rare < 0f ? -1 : Mathf.CeilToInt(rare);
