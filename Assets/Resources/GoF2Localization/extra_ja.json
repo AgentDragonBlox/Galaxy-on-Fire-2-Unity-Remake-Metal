@@ -1471,5 +1471,9 @@
  "saveFolderStartEmpty": "空で開始",
  "saveFolderMergeQuestion": "{0}には既に{1}件のセーブデータがあり、この端末には{2}件あります。各スロットの新しい方を残しますか（もう一方はSaves/Deletedへ）、それともフォルダーのものだけにしますか（この端末のものはSaves/BeforeFolderへ）？",
  "saveFolderMerge": "新しい方を残す",
- "saveFolderUseFolder": "フォルダーのみ"
+ "saveFolderUseFolder": "フォルダーのみ",
+ "chaseCamera": "追従カメラ",
+ "chaseCameraRemake": "リメイク",
+ "chaseCameraOriginal": "オリジナル",
+ "chaseCameraHelp": "リメイク：カメラは船のすぐ後ろにとどまり、船は画面の中央付近に保たれます。オリジナル：原作と同じく、カメラはゆっくり追従します。旋回すると船が横に振れ、照準が中央から外れます。"
 }

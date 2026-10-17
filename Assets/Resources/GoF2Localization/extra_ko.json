@@ -1471,5 +1471,9 @@
  "saveFolderStartEmpty": "비우고 시작",
  "saveFolderMergeQuestion": "{0}에 이미 저장 파일 {1}개가 있고 이 기기에는 {2}개가 있습니다. 슬롯마다 더 최근 저장을 유지할까요(다른 하나는 Saves/Deleted로), 아니면 폴더의 것만 사용할까요(이 기기의 것은 Saves/BeforeFolder로)?",
  "saveFolderMerge": "최근 것 유지",
- "saveFolderUseFolder": "폴더 것만"
+ "saveFolderUseFolder": "폴더 것만",
+ "chaseCamera": "추적 카메라",
+ "chaseCameraRemake": "리메이크",
+ "chaseCameraOriginal": "오리지널",
+ "chaseCameraHelp": "리메이크: 카메라가 함선 바로 뒤에 머물러 함선이 화면 중앙 가까이에 있습니다. 오리지널: 원작처럼 카메라가 더 느리게 따라옵니다. 선회할 때 함선이 옆으로 밀려나고 조준선이 중앙에서 벗어납니다."
 }

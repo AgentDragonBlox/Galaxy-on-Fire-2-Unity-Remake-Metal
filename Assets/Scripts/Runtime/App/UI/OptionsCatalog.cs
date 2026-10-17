@@ -251,6 +251,10 @@ namespace GoF2Remake.UI
                 () => Settings.FieldOfView, v => Settings.FieldOfView = Mathf.Round(v), v => $"{Mathf.RoundToInt(v)}°"));
             list.Add(Slider("cameraShake", OptionPage.Graphics, () => X("cameraShake", "Camera shake"), 0f, 1f,
                 () => Settings.CameraShake, v => Settings.CameraShake = v, Percent));
+            list.Add(Choice("chaseCamera", OptionPage.Graphics, () => X("chaseCamera", "Chase camera"), true,
+                () => new[] { X("chaseCameraRemake", "Remake"), X("chaseCameraOriginal", "Original") },
+                () => Settings.OriginalChaseCamera ? 1 : 0, i => Settings.OriginalChaseCamera = i == 1,
+                () => X("chaseCameraHelp", "Remake: the camera stays close behind the ship, which stays near the middle of the screen. Original: the camera follows more slowly, as in the original game: in a turn the ship swings out to the side and the crosshair moves off centre.")));
             list.Add(Toggle("showFps", OptionPage.Graphics, () => X("showFps", "Show FPS"), () => Settings.ShowFps, v => Settings.ShowFps = v));
 
             // ---- controls

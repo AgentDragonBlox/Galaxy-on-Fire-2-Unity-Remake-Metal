@@ -136,6 +136,10 @@ namespace GoF2Remake.Data
         /// <summary>Camera shake and rumble strength, 0..1 (hits, collisions, explosions, cutscenes).</summary>
         public static float CameraShake { get => Get("cameraShake", 1f); set => Set("cameraShake", Mathf.Clamp01(value)); }
 
+        /// <summary>The chase camera follows at the original's damping and looks at its eased point (#114, ChaseCamera); off
+        /// (default) = the remake's tighter follow (2026.10.09's: twice the rate, a slerped rotation).</summary>
+        public static bool OriginalChaseCamera { get => GetBool("originalChaseCamera", false); set => SetBool("originalChaseCamera", value); }
+
         // ---- controls ----------------------------------------------------------------------------------------
 
         /// <summary>Steering sensitivity (FlightModel.Sensitivity, 0..2.2).</summary>
@@ -390,7 +394,7 @@ namespace GoF2Remake.Data
         {
             "displayMode", "resolutionWidth", "resolutionHeight", "frameRate", "quality", "renderScale", "upscaler", "upscalerQuality",
             "msaa", "brightness", "bloom", "bloomStyle", "hangarShadows", "hangarDof", "lensFlare", "npcPlayerEngines", "fov",
-            "cameraShake", "showFps",
+            "cameraShake", "originalChaseCamera", "showFps",
         };
         public static readonly string[] ControlsKeys =
         {

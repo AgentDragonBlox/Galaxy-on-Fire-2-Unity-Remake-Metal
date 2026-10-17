@@ -1471,5 +1471,9 @@
  "saveFolderStartEmpty": "खाली शुरू करें",
  "saveFolderMergeQuestion": "{0} में पहले से {1} सेव हैं और इस डिवाइस पर {2}। हर स्लॉट का नया सेव रखें (दूसरा Saves/Deleted में जाएगा), या केवल फ़ोल्डर के (इस डिवाइस के Saves/BeforeFolder में जाएँगे)?",
  "saveFolderMerge": "नया रखें",
- "saveFolderUseFolder": "केवल फ़ोल्डर के"
+ "saveFolderUseFolder": "केवल फ़ोल्डर के",
+ "chaseCamera": "पीछा कैमरा",
+ "chaseCameraRemake": "रीमेक",
+ "chaseCameraOriginal": "मूल",
+ "chaseCameraHelp": "रीमेक: कैमरा जहाज़ के ठीक पीछे रहता है, और जहाज़ स्क्रीन के बीच के पास रहता है। मूल: कैमरा मूल गेम की तरह धीरे पीछा करता है: मोड़ पर जहाज़ एक तरफ़ झूल जाता है और क्रॉसहेयर बीच से हट जाता है।"
 }
