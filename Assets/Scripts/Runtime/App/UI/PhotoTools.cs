@@ -112,6 +112,7 @@ namespace GoF2Remake.UI
 
             panel = new VisualElement();
             panel.AddToClassList("photo-panel");
+            panel.AddToClassList(SafeArea.EdgeClass);
             var title = new Label(T("photoSettings", "CAMERA SETTINGS")) { pickingMode = PickingMode.Ignore };
             title.AddToClassList("photo-panel-title");
             title.AddToClassList("gof-semibold");
@@ -133,6 +134,7 @@ namespace GoF2Remake.UI
             // After a screenshot: where it went, and (desktop) a button / O to show it in the file browser.
             notice = new VisualElement { pickingMode = PickingMode.Ignore };
             notice.AddToClassList("photo-saved");
+            notice.AddToClassList(SafeArea.EdgeClass);
             noticePath = new Label { pickingMode = PickingMode.Ignore };
             noticePath.AddToClassList("photo-saved-path");
             notice.Add(noticePath);

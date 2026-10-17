@@ -194,7 +194,10 @@ namespace GoF2Remake.UI
         // UI
         PanelRenderer panelRenderer;
         PanelSettings runtimePanel;
-        VisualElement root, touch, labels, systemHeader, keyBox, hints, dialog;
+        VisualElement root, touch, labels, systemHeader, keyBox, hints, dialog, mapSafe;
+        /// <summary>The screen size and safe area the map's corners were last kept clear for (SafeArea).</summary>
+        Rect lastSafeArea;
+        Vector2Int lastSafeScreen;
         Label energyLine;
         Button backButton, keyButton, zoomButton, voidButton, dialogYes, dialogNo;
         Action dialogAction, dialogNoAction;
@@ -303,6 +306,8 @@ namespace GoF2Remake.UI
             root.pickingMode = PickingMode.Ignore;
             touch = root.Q("mapTouch");
             labels = root.Q("mapLabels");
+            mapSafe = root.Q("mapSafe");
+            lastSafeScreen = default;   // insets applied again on the next frame
             systemHeader = root.Q("systemHeader");
             keyBox = root.Q("keyBox");
             hints = root.Q("hints");
@@ -1498,9 +1503,23 @@ namespace GoF2Remake.UI
 
         // ---- per frame (StarMap::update) -------------------------------------------------------------------
 
+        /// <summary>Remake: the header, system block, key legend and footer buttons inside the device's safe area (the
+        /// iPhone's Dynamic Island / notch and home indicator, cutouts); the map itself stays full screen.</summary>
+        void UpdateSafeArea()
+        {
+            if (mapSafe == null) return;
+            var rt = runtimePanel != null ? runtimePanel.targetTexture : null;
+            var size = rt != null ? new Vector2Int(rt.width, rt.height) : new Vector2Int(Screen.width, Screen.height);
+            if (size == lastSafeScreen && Screen.safeArea == lastSafeArea) return;
+            lastSafeScreen = size;
+            lastSafeArea = Screen.safeArea;
+            SafeArea.Apply(root, mapSafe, Mathf.Max(1, size.x), Mathf.Max(1, size.y), rt != null, SafeArea.Mode.Position);
+        }
+
         void Update()
         {
             if (root == null) return;
+            UpdateSafeArea();
             if (pendingFocus >= 0 && cam != null) { int focus = pendingFocus; pendingFocus = -1; FocusSystem(focus); }
             float dtMs = Time.unscaledDeltaTime * 1000f;
             float f = dtMs / (1000f / 60f);   // the original's per-frame factors, at 60 fps

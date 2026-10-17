@@ -817,7 +817,7 @@ The FMOD data comes from the FEV's LGCY chunk (`Reference/tools/audio/fev_lgcy.p
 ## UI and platforms
 
 - **UI Toolkit only** (runtime): shared theme `UI/GoF2Theme.tss`; per-screen UXML/USS; controllers in `Scripts/Runtime/App/UI` (`GoF2Remake.UI`). The theme doesn't include Unity's default runtime theme, so built-in controls are styled in `GoF2Common.uss` and the document root is stretched in code.
-- **Landscape only** (portrait disallowed in Player Settings). Supported from 4:3 to 32:9 and phones: the panel scales to screen height (reference 1920x1080, 1600x900 on phones), UI stays inside a centred max-21:9 safe area, `layout-narrow` / `layout-phone` classes adapt the layout, device safe-area insets are applied. The phone test reads `UnityEngine.Device.Application.isMobilePlatform` (PR #108),
+- **Landscape only** (portrait disallowed in Player Settings). Supported from 4:3 to 32:9 and phones: the panel scales to screen height (reference 1920x1080, 1600x900 on phones), UI stays inside a centred max-21:9 safe area, `layout-narrow` / `layout-phone` classes adapt the layout, device safe-area insets are applied (`UI.SafeArea`: the notch / Dynamic Island, the home indicator, cutouts; see **iOS**). The phone test reads `UnityEngine.Device.Application.isMobilePlatform` (PR #108),
   so the Device Simulator shows the phone layout (`UnityEngine.Application` stays the Editor there); the same in a build. Cameras use `Aspect.VerticalFov` (Hor+ on wide screens, never narrower than 16:9); the bars `Aspect.VerticalFovKeepWidth` (wider screens keep the 16:9 width and lose a little top and bottom: the bars are only modelled as far as the original's camera sees); the hangars are back on Hor+ (`StationLevel.SetLens(..., keepWidth: false)`): a new hangar model is being made, so their cut-off edges on 21:9 / 32:9 are left for it.
 - **Keyboard** (flight): the PC / Mac version's defaults (Galaxy on Fire 2 Full HD: the PCGameControls wiki list, and the PC help texts in the text table: 17 / 18, 587, 638, 1731 / 1732, 1752, 1754, 1879 with their `#KEY_*` tokens, `FlightHints.KeyTokens`): arrows steer, W booster, S brake (the PC version's "Brake" 3361: the engines stop while held, the throttle is kept; a boost overrides it), `]` / `/` (and the wheel) thrust, Space / LMB primary, R / RMB secondary, A / D strafe (held; the PC binding screen's 3350 / 3351 "Strafe left / right", `PlayerEgo::strafe` 0xad838, never called on the phone: sideways speed ramp x min(H' x 0.06, 2) u/ms, the ramp 0.1 x1.5 a frame, x0.7 a frame after release, the camera moves with it; the dodge keeps the touch swipe and the right-stick flick and can be bound), 1 / 3 roll ("Turn left / right", remake roll: the phone original only auto-levels; touch: the Level button slid sideways), F the action prompt (Dock: dock, the autopilot to a locked station, the planet jump; Enter too), Q autopilot (the target list, again = off) and E actions (the quick menu), 1-8 pick a menu entry, Tab fast-forward ("Speed up"), T view, V wingmen, K Khador Drive, C cloak, M / middle mouse toggle mouse steering, Esc pause. Strafe works on the autopilot too (remake). Remake keys: 2 level out, G switch secondary, U unlock target (see "NPCs and combat", Radar), X time extender, Y turret auto fire, F1 toggle HUD (Full / Minimal / Off, see **Options**), F12 a screenshot anywhere (`ScreenshotKey`, saved like the photo mode's: PC Pictures/Galaxy on Fire 2, Android MediaStore). The phone binary has no flight keys (`MGame::OnKeyPress` is empty). These are the defaults: every flight
   control is rebindable (see **Key bindings**).
@@ -1011,6 +1011,30 @@ The FMOD data comes from the FEV's LGCY chunk (`Reference/tools/audio/fev_lgcy.p
   installs beside the published game (the same package signed with another key has to replace it); put back after the build
   like `BuildVersionStamp`. The beta has its own data folder (saves, mods, Transfer). The Java class
   `com.joppietoppie.gof2remake.ModImportActivity` keeps its name: a class's Java package is not the app's package.
+- **iOS** (remake, 2026-10-17; checked in the iPhone 18 Pro simulator: main menu, flight HUD, cutscene pause button, station, hangar, lounge, star map, Missions, Status, Inspect ship, Action Freeze, pause and autopilot menus; not yet run on an iPhone): **Safe area**: `UI.SafeArea` (App/UI) turns `Screen.safeArea`
+  into a panel's insets, clamped to the screen (a safe area under half the screen ignored); iPhones in landscape report the
+  Dynamic Island / notch inset on both the left and the right and the home indicator's at the bottom. The main menu
+  (margins: its children are absolutely placed, which a parent's padding never moves, so its old padding inset nothing),
+  the flight HUD and the station (their `safeArea` element's position) and the star map (`mapSafe`, which it
+  never inset before) use `SafeArea.Apply`; full-screen overlays keep their edge-anchored parts clear with
+  `SafeArea.KeepClear(overlay)`, margins on every descendant with the class `safe-edge` (`SafeArea.EdgeClass`): Action
+  Freeze's and Inspect ship's title, hints, footer, photo settings panel and saved notice, the Customize panel, the Mod
+  Builder's top bar, side panels and status line (the overlay itself stays full screen: the photo frame bars must match the
+  screenshot); the story-step label moves in by the right inset only (the bottom one lifted it onto the station's ticker). A new screen with controls at the edges uses
+  these. **Player settings and Info.plist** (`IosPlayerSetup`, Editor, on Editor load and before an iOS build, each only
+  while at Unity's default): bundle id `com.joppietoppie.gof2remake`, the home indicator auto-hidden, system gestures
+  deferred on the top and bottom edges; after the build Info.plist gets `CFBundleDisplayName` "GoF2 Remake" (never through
+  `PlayerSettings.iOS.applicationDisplayName`: that is the product name itself, which names the desktop save folder and
+  PlayerPrefs), `UIFileSharingEnabled` + `LSSupportsOpeningDocumentsInPlace` (Documents = persistentDataPath in the Files
+  app: Saves, Mods, Transfer, Screenshots), `CADisableMinimumFrameDurationOnPhone` (ProMotion above 60 fps),
+  `NSLocalNetworkUsageDescription` (iOS 14+ blocks LAN games without it), `NSPhotoLibraryAddUsageDescription`, Game Mode
+  (`LSApplicationCategoryType` action games, `GCSupportsGameMode`) and controller support (`GCSupportsControllerUserInteraction`,
+  `GCSupportedGameControllers` ExtendedGamepad). **Native plugins** (`Assets/Plugins/iOS`, each .mm's meta naming its
+  framework): `PhoneHaptics.mm` (Core Haptics behind `PhoneVibrator`: every pulse at its intensity, none on iPads),
+  `PhotoLibrary.mm` (`PhotoMode.StoreAt`: Documents/Screenshots and the photo library, add-only), `FileImportPicker.mm`
+  (`ModImport.Pick`), `SaveFolderPicker.mm` (the save folder). Local network adapters by iOS name (`NetGame.AdapterName`:
+  en0 Wi-Fi, bridge Hotspot, utun VPN; mobile data and AirDrop left out). Switching the active target to iOS adds a default
+  iOS entry to every texture .meta (like UWP's): harmless, revert them before committing.
 - **Android Vulkan pre-transform off** (Player settings > Android > "Apply display rotation during rendering",
   `PlayerSettings.vulkanEnablePreTransform`, off since 2026-10-14; a player's report): with it on, at render scale 100 %
   without anti-aliasing part of the screen froze (the same symptom as #45's FSR at 100 %+: URP's final pass through an
@@ -3031,7 +3055,7 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   activity around ACTION_OPEN_DOCUMENT that copies on a worker thread and is polled through its static fields, registered
   in the unityLibrary manifest by the Editor's `AndroidModImportActivity`; Windows: `FileDialog.Open(title, filter, exts)`;
   Linux: zenity, else kdialog, on a worker thread; macOS: osascript's choose file; UWP: `FileOpenPicker` on the UI thread;
-  the Editor: its open panel; none on iOS, `ModImport.Available`), `Inspect` reads it as a zip mod (mod.json, a valid id),
+  the Editor: its open panel; iOS: the document picker, `Plugins/iOS/FileImportPicker.mm`, which copies the file itself; `ModImport.Available`), `Inspect` reads it as a zip mod (mod.json, a valid id),
   `Install` moves it into `ModManager.MainFolder` as `<id>.zip` (a mod with that id: replaced in its own folder
   after the menu's Yes / No, keeping on / off and its load order); Delete asks (naming the mods that need it), turns it off,
   releases its zip and deletes the file or folder. The browser takes the menu's `ShowDialog` / `ShowNotice`. Verified in the

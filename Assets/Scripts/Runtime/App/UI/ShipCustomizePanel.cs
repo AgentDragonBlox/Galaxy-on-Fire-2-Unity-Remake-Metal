@@ -52,6 +52,7 @@ namespace GoF2Remake.UI
         public ShipCustomizePanel()
         {
             Root = new VisualElement { name = "shipCustomize", pickingMode = PickingMode.Position };
+            Root.AddToClassList(SafeArea.EdgeClass);   // clear of the notch / Dynamic Island (SafeArea.KeepClear)
             var s = Root.style;
             s.position = Position.Absolute; s.left = 48; s.top = PanelTop; s.width = 620;
             s.flexDirection = FlexDirection.Column;
