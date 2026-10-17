@@ -1916,7 +1916,7 @@ now takes an option right after another (a dash and a letter) as no value). `Boo
   docking (`SaveGame.AutoSave`), every 60 s, when leaving (`NetGame.Shutdown`); each is checked like an imported save
   (`SaveGame.TryParse`), and without `-allowdebug` also turned away when the profile's worth (credits + ship prices +
   items at `minPrice`, `NetProfiles.Worth`) grew more than 2 000 000 + `-maxearn` per minute online since the last
-  accepted one, or for hulls 13 / 14 / 15 (the player gets "The server didn't save your progress: ..."). Not a server
+  accepted one, or for hulls 13 / 14 / 15 (the player gets "The server didn't save your progress: ..."). The money log (`NetAudit`, `Server: audit` lines, SERVER.md "The money log"): uploads whose worth grew 100 000+ (per part, the item gains; a warning from 150 000 / min or a refusal), each player's shop runs per item and station (a unit price outside the item's range a warning), faction deposits / withdrawals / tolls. Not a server
   authority: the client still runs the economy (the plan's phase 2: server-priced trades, claimed rewards). Kaamo upgrades
   past `Session.MaxModLevel` per mod and hull (builds of 2026-10-08 stacked them uncapped; a player had ten of each) are cut
   back at sign-in (`SendProfile` rewrites the file) and on every upload (`NetProfiles.ClampMods`). A refused upload is logged
