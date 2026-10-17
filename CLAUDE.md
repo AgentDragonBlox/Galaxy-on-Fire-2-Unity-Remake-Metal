@@ -1140,7 +1140,11 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   scene it is in and `StationLevel.PlayerDeparting`), ship, name, hull, and in space the pose. The others in the same
   orbit (`SharesOrbit`) see the ship model with the pilot name, lockable, a sphere `Obstacle` (1.6 x the model's bounding
   radius) the local ship slides along; elsewhere it is hidden. Remote motion is smoothed (`NetSmoothing`: velocity
-  estimate, at most 250 ms ahead, eased, snapped beyond 250 m). It also writes its shield / armor fractions (-1 = none).
+  estimate, at most 250 ms ahead, eased, snapped beyond 250 m). It also writes its shield / armor fractions (-1 = none),
+  which its copy hands its Target (`netShield` / `netArmor`) for the HUD marker (`CombatView.DrawPools`, players' request):
+  near, a second frame of the faction's bar 11 px above the hull bar with the shield in the status bar's cyan, and the hull
+  bar's fill in the status bar's red with the yellow armor over it (shield, armor, then hull drain, `Player::damage`); a
+  pool of -1 is left out, NPC markers (both -1) are unchanged.
 - **Players against players**: another player is a yellow (neutral) marker until one of the two attacks the other (weapons or EMP, 3 hits or 50 damage within 10 s, so a stray shot doesn't count: the victim's game counts in `NetPlayer.HitRpc` / `EmpRpc`, the attacker's game in `RemoteDamage` / `RemoteEmp`): then both are enemies to each other for 120 s from the last hit either way, like an NPC that turned (`NetAggression`): red markers, and the auto turrets, a debug hull's turrets and the sentry guns fire (they read `hostileToPlayer`); forgotten when either is destroyed or the session ends. Hits on their ship (guns, missiles, blasts,
   NPC shots from the authority's side) go to their game (`NetPlayer.HitRpc`, `Target.RemoteDamage` with the NPC flag),
   which applies them to its own ship. Destroyed by a player: "X was destroyed by Y." for everyone
