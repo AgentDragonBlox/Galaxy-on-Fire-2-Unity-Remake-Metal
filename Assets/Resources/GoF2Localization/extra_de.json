@@ -1469,5 +1469,7 @@
  "saveFolderStartEmpty": "Leer beginnen",
  "saveFolderMergeQuestion": "{0} enthält schon {1} Spielstände, dieses Gerät hat {2}. Den neueren Spielstand jedes Platzes behalten (der andere kommt nach Saves/Deleted) oder nur die des Ordners (die dieses Geräts kommen nach Saves/BeforeFolder)?",
  "saveFolderMerge": "Neuere behalten",
- "saveFolderUseFolder": "Nur die des Ordners"
+ "saveFolderUseFolder": "Nur die des Ordners",
+ "filesOnMyIpad": "Dateien › Auf meinem iPad",
+ "filesOnMyIphone": "Dateien › Auf meinem iPhone"
 }

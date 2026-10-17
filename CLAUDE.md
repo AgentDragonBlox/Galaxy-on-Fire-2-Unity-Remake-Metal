@@ -1530,7 +1530,7 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   renames one with `AssetDatabase.MoveAsset` (its GUID kept) and rewrites its enum option types `GoF2Remake.Multiplayer.Event*`
   -> `GoF2Remake.Events.Event*`, which Graph Toolkit stores by name; the game's reader ignores them); the built-ins and the
   event audio in `Resources/GoF2Events`. The chat command layer they run (`NetCommands`, `NetAdmin`, `NetTeleport`) stays in
-  Multiplayer. Verified: every graph re-imported without a reader / Graph Toolkit mismatch, a template opened and compiled by
+  Multiplayer. The enum type names carry their assembly too: graphs saved before the layered assemblies named Assembly-CSharp (the enums are in GoF2.Net), so Graph Toolkit couldn't resolve them and the import failed ("Type provided must be an Enum", hidden by cached imports until an iOS platform switch reimported them, 2026-10-17; the built-in graphs were then missing from Resources); `EventGraphUpgrade.FixAssemblies` writes the right assembly into every imported graph, and `EventGraphImporter` turns a Graph Toolkit failure into a warning (the game's own reader doesn't use those names). Verified: every graph re-imported without a reader / Graph Toolkit mismatch, a template opened and compiled by
   Graph Toolkit, an old-format graph converted on import, a mod's old .gof2netevent and the built-ins loaded at runtime.
 - **Events** (`EventRunner`, `/event <name [setting=value ...] | stop | list>`, admins and the console only): node graphs run
   on the server: `<name>.gof2event` (see Event graphs below) in an Events folder (`persistentDataPath/Events`,
@@ -3055,12 +3055,12 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   activity around ACTION_OPEN_DOCUMENT that copies on a worker thread and is polled through its static fields, registered
   in the unityLibrary manifest by the Editor's `AndroidModImportActivity`; Windows: `FileDialog.Open(title, filter, exts)`;
   Linux: zenity, else kdialog, on a worker thread; macOS: osascript's choose file; UWP: `FileOpenPicker` on the UI thread;
-  the Editor: its open panel; iOS: the document picker, `Plugins/iOS/FileImportPicker.mm`, which copies the file itself; `ModImport.Available`), `Inspect` reads it as a zip mod (mod.json, a valid id),
+  the Editor: its open panel; iOS: the document picker, `Plugins/iOS/FileImportPicker.mm`, which moves the system's "asCopy" copy out of tmp/<bundle id>-Inbox (copied, it stayed there as a second copy); `ModImport.Available`), `Inspect` reads it as a zip mod (mod.json, a valid id),
   `Install` moves it into `ModManager.MainFolder` as `<id>.zip` (a mod with that id: replaced in its own folder
   after the menu's Yes / No, keeping on / off and its load order); Delete asks (naming the mods that need it), turns it off,
   releases its zip and deletes the file or folder. The browser takes the menu's `ShowDialog` / `ShowNotice`. Verified in the
   Editor (a non-zip refused, a zip with a top folder installed, replaced by a newer zip and kept on, deleted through the
-  dialog) and compiled for Android / Windows / Linux / UWP; not yet run on a phone, Linux, macOS or UWP.
+  dialog) and compiled for Android / Windows / Linux / UWP; on iOS (the iPhone 18 Pro simulator, 2026-10-17) the private es2_ships zip (120 MB, 60 .ogg sounds) picked from On My iPhone, installed, turned on and loaded (the sounds without a warning: runtime Ogg Vorbis works on iOS; the textures cached as ETC2, the simulator offers no DXT) and its Sentinel flown; the browser names the folder as the Files app shows it on iOS (`ModBrowser.Shown`: "Files › On My iPhone › GoF2 Remake › Mods", not the sandbox path); not yet run on an Android phone, Linux, macOS or UWP.
 - **Multiplayer** (`NetMods`): the Host card's "Mods (N on)" Off / Allowed (`mp_allow_mods`, off by default; a dedicated
   server's `-allowmods` / `ALLOWMODS=1` = every usable mod in its Mods folders). Every session starts without mods
   (`PrepareSession` → `BeginClient`); the host's `BeginHost` sets `ModManager.BeginSession` and `NetMods.SessionList`

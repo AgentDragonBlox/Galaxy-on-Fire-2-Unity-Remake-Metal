@@ -53,7 +53,11 @@ static char* gof2PickCopy(NSString* s)
     NSString* target = [gof2PickFolder stringByAppendingPathComponent:@"picked.tmp"];
     [files removeItemAtPath:target error:nil];
     BOOL access = [url startAccessingSecurityScopedResource];
-    BOOL copied = [files copyItemAtPath:url.path toPath:target error:&error];
+    // "asCopy" already made a copy in the app's tmp/<bundle id>-Inbox: moved, not copied again (a mod zip of 120 MB stayed
+    // there twice); a file outside the app's own folders is copied.
+    BOOL copied = [url.path hasPrefix:NSTemporaryDirectory()]
+        && [files moveItemAtPath:url.path toPath:target error:nil];
+    if (!copied) copied = [files copyItemAtPath:url.path toPath:target error:&error];
     if (access) [url stopAccessingSecurityScopedResource];
     if (!copied)
     {
