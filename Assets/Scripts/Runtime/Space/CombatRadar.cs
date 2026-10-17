@@ -65,7 +65,7 @@ namespace GoF2Remake.Flight
         public int LockFrame { get; private set; } = -1;
         /// <summary>A ship or crate candidate exists (blocks the asteroid lock, Navigation.ShipLockActive).</summary>
         public bool Busy => Candidate != null || CrateCandidate != null || StealCandidate != null || cloudCandidate >= 0;
-        public event Action<string, int> Message;   // text, colour (0 white, 1 red, 2 green)
+        public event Action<string, int, HudMessageKind> Message;   // text, colour (0 white, 1 red, 2 green), kind
 
         Database db;
         ShipController ship;
@@ -311,7 +311,7 @@ namespace GoF2Remake.Flight
                     {
                         // Radar::draw: 540 "No tractor beam."; remake: once, and the salvage lock is dropped (the ring goes)
                         // instead of staying full.
-                        if (!noTractorShown) { noTractorShown = true; Message?.Invoke(Localization.Get(540), 0); }
+                        if (!noTractorShown) { noTractorShown = true; Message?.Invoke(Localization.Get(540), 0, HudMessageKind.Normal); }
                         refusedCrate = CrateCandidate;
                         refusedSteal = StealCandidate;
                         CrateCandidate = null;
@@ -364,9 +364,9 @@ namespace GoF2Remake.Flight
             var ship = traffic.Ships.Find(s => s != null && s.Target == locked);
             if (ship == null) return;
             var cargo = ship.CargoList;
-            if (cargo == null || cargo.Count == 0) { Message?.Invoke(Localization.Get(542), 0); return; }
+            if (cargo == null || cargo.Count == 0) { Message?.Invoke(Localization.Get(542), 0, HudMessageKind.Scan); return; }
             for (int i = 0; i < cargo.Count; i++)
-                if (cargo[i].amount > 0) { Message?.Invoke($"{cargo[i].amount}t {GameNames.Item(cargo[i].item)}", 0); return; }
+                if (cargo[i].amount > 0) { Message?.Invoke($"{cargo[i].amount}t {GameNames.Item(cargo[i].item)}", 0, HudMessageKind.Scan); return; }
         }
 
         void StartSalvage(Crate crate)
@@ -529,7 +529,7 @@ namespace GoF2Remake.Flight
                 bool known = Blueprints.IsUnlocked(entry.item);
                 Blueprints.Unlock(entry.item);
                 Message?.Invoke(string.Format(known ? Localization.Extra("bpKnown", "Blueprint already known: {0}")
-                                                    : Localization.Extra("bpFound", "Blueprint found: {0}"), GameNames.Item(entry.item)), 2);
+                                                    : Localization.Extra("bpFound", "Blueprint found: {0}"), GameNames.Item(entry.item)), 2, HudMessageKind.Normal);
                 crate.CapturedHere?.Invoke();
                 Destroy(crate.gameObject);
                 return;
@@ -546,7 +546,7 @@ namespace GoF2Remake.Flight
             Standing.ApplyDelict(crate.race, 2);                               // Standing::applyStealCargo
             if (free < n)
             {
-                Message?.Invoke(Localization.Get(322), 1);
+                Message?.Invoke(Localization.Get(322), 1, HudMessageKind.Normal);
                 if (crate.missionCrate && ship == null) { crate.pulled = false; return; }
                 entry.amount -= n;
                 ship?.StealFrom(entry.item, n);
@@ -567,7 +567,7 @@ namespace GoF2Remake.Flight
             // A Void crate counts for Alien Hunter (Status+0xcc), another race's booze for Barkeeper.
             if (crate.race == Standing.Void) Session.AlienRemainsCollected += n;
             else if (Session.IsBooze(entry.item)) Session.BoozeTypes.Add(entry.item);
-            Message?.Invoke($"{n}t {GameNames.Item(entry.item)}", 2);
+            Message?.Invoke($"{n}t {GameNames.Item(entry.item)}", 2, HudMessageKind.Gain);
             // Remake: a crate of several stacks (the remake's own: a capital ship's, a pirate outpost's by tier; the
             // original's crates hold one) gives every one of them, as far as the hold has room (it used to give the first).
             if (ship == null && !crate.missionCrate)
@@ -575,7 +575,7 @@ namespace GoF2Remake.Flight
                 {
                     if (more == entry || more.amount <= 0) continue;
                     int room = Shop.FreeCargo(db);
-                    if (room <= 0) { Message?.Invoke(Localization.Get(322), 1); break; }
+                    if (room <= 0) { Message?.Invoke(Localization.Get(322), 1, HudMessageKind.Normal); break; }
                     int k = Mathf.Min(more.amount, room);
                     more.amount -= k;
                     var mountedMore = db.Item(more.item)?.TypeId == 1 ? Session.Equipment.Find(e => e.item == more.item) : null;
@@ -583,7 +583,7 @@ namespace GoF2Remake.Flight
                     Session.CratesSalvaged += k;
                     if (crate.race == Standing.Void) Session.AlienRemainsCollected += k;
                     else if (Session.IsBooze(more.item)) Session.BoozeTypes.Add(more.item);
-                    Message?.Invoke($"{k}t {GameNames.Item(more.item)}", 2);
+                    Message?.Invoke($"{k}t {GameNames.Item(more.item)}", 2, HudMessageKind.Gain);
                 }
             crate.CapturedHere?.Invoke();   // multiplayer: the capture reaches the crate's owner (NetCrate)
             Destroy(crate.gameObject);

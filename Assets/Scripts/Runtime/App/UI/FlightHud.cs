@@ -153,13 +153,13 @@ namespace GoF2Remake.UI
             pauseMenu?.Close();   // the scene is going: sounds and time back to normal
             UnityEngine.Cursor.lockState = CursorLockMode.None;   // the captured mouse (mouse steering) is released
             UnityEngine.Cursor.visible = true;
-            if (mining != null) mining.Message -= OnMiningMessage;
+            if (mining != null) mining.Message -= OnKindMessage;
             if (docking != null) docking.Message -= OnMiningMessage;
-            if (nav != null) nav.Message -= OnMiningMessage;
+            if (nav != null) nav.Message -= OnKindMessage;
             if (jump != null) jump.Message -= OnMiningMessage;
             if (traffic != null) traffic.Message -= OnMiningMessage;
             if (traffic != null) traffic.ChoiceRequested -= OnChoiceRequested;
-            if (radar != null) radar.Message -= OnCombatMessage;
+            if (radar != null) radar.Message -= OnRadarMessage;
             if (health != null) health.GameOverStarted -= OnGameOver;
             panelRenderer?.UnregisterUIReloadCallback(OnUIReload);
             InputMode.Changed -= ApplyInputMode;
@@ -886,12 +886,12 @@ namespace GoF2Remake.UI
                 weapons = level.Weapons;
                 if (weapons != null) weapons.mouseOverControls = MouseOverControls;
                 mining = level.Mining;
-                if (mining != null) mining.Message += OnMiningMessage;
+                if (mining != null) mining.Message += OnKindMessage;
                 docking = level.Docking;
                 if (docking != null) docking.Message += OnMiningMessage;
-                if (level.GasClouds != null) level.GasClouds.Message += OnMiningMessage;
+                if (level.GasClouds != null) level.GasClouds.Message += OnKindMessage;
                 nav = level.Navigation;
-                if (nav != null) nav.Message += OnMiningMessage;
+                if (nav != null) nav.Message += OnKindMessage;
                 jump = level.SystemJump;
                 if (jump != null) jump.Message += OnMiningMessage;
                 health = level.Health;
@@ -909,7 +909,7 @@ namespace GoF2Remake.UI
                     var ca = CombatAssets.Load();
                     if (ca != null && ca.missionAccomplished != null) Sfx.PlayAt(ca.missionAccomplished, Camera.main != null ? Camera.main.transform.position : Vector3.zero);
                 };
-                if (radar != null) radar.Message += OnCombatMessage;
+                if (radar != null) radar.Message += OnRadarMessage;
                 if (health != null) health.GameOverStarted += OnGameOver;
                 story = level.StorySpace;
                 if (story != null)
@@ -1385,6 +1385,9 @@ namespace GoF2Remake.UI
         }
 
         void OnMiningMessage(string text) => miningView?.ShowMessage(text);
+        /// <summary>Remake: scans, target notices and cargo gains replace each other on the plate (HudMessageQueue).</summary>
+        void OnKindMessage(string text, HudMessageKind kind) => miningView?.ShowMessage(text, 0, kind);
+        void OnRadarMessage(string text, int colour, HudMessageKind kind) => miningView?.ShowMessage(text, colour, kind);
 
         /// <summary>A ChoiceWindow in flight (MGame+0x90): the pause menu's choice page, the game paused.</summary>
         void OnChoiceRequested(string text, string yes, string no, System.Action onYes, System.Action onNo)
