@@ -126,8 +126,8 @@ namespace GoF2Remake.Multiplayer
         public const string FlightKey = "flightmodel", FlightFlag = "-flightmodel",
                             FlightLabel = "Flight model: gof2 (the game's), es2 (EVERSPACE 2 style) or player (each player's own)";
 
-        /// <summary>The server's flight model (SessionRules.ParseFlight's values; NetGame.StartHost: the game's;
-        /// DedicatedServer.Boot: -flightmodel, else the game's; an admin's /flightmodel or /set flightmodel). NetState carries
+        /// <summary>The server's flight model (SessionRules.ParseFlight's values; NetGame.StartHost: SessionRules.DefaultFlight,
+        /// each player's own; DedicatedServer.Boot: -flightmodel, else the default; an admin's /flightmodel or /set flightmodel). NetState carries
         /// it.</summary>
         public static int HostFlight { get; set; } = SessionRules.DefaultFlight;
 

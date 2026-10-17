@@ -14,8 +14,8 @@
 //   -cloakhides -capitalships -informeroriginal -nopirateevents -nokaamostacking -nokaamoequipment -nocloakbay -noempcloak -originaltargeting -originalcollision
 //                    the session's gameplay options (NetRules), each the other way from the game's default
 //   -kaamomaxlevel N how many times one Kaamo Club upgrade can be fitted to a ship (2..20, default 5; NetRules)
-//   -flightmodel M   the flight model everyone flies: gof2 (the game's, default), es2 (EVERSPACE 2 style) or player (each
-//                    player's own option; NetRules.HostFlight)
+//   -flightmodel M   the flight model: gof2 (the game's) or es2 (EVERSPACE 2 style) for everyone, or player / any (each
+//                    player's own option, the default; NetRules.HostFlight)
 //   -noprofiles      no player profiles (NetProfiles; on by default: credits, ships, cargo, Kaamo Club, squad kept
 //                    per player between sessions; no limit, one unused for 30 days is pruned); -maxearn N (worth a profile may gain
 //                    per minute online without -allowdebug, default 1 000 000), -profiledir PATH (default

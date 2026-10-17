@@ -1963,8 +1963,9 @@ now takes an option right after another (a dash and a letter) as no value). `Boo
   is a number beside the bits (`NetRules.HostKaamoLevel`, `NetState.KaamoLevel`, `GameHooks.SessionKaamoLevel`;
   `-kaamomaxlevel N`, `/set kaamomaxlevel`, 2..20, default 5). So is the flight model (2026-10-16; players flying free
   flight beside the original in PvP had other turn rates, strafing and drift): `NetRules.HostFlight` (`SessionRules`:
-  FlightStyles.Original "gof2" by default, Free "es2", or `PlayerFlight` -1 "player" = each player's own option; no Host
-  card switch, the user found "free" confusing there): a player host's session starts at gof2, a dedicated server's
+  FlightStyles.Original "gof2", Free "es2", or `PlayerFlight` -1 "player" / "any" / "unrestricted" = each player's own
+  option, the default since 2026-10-17 (the user: the players choose; it was gof2); no Host card switch, the user found
+  "free" confusing there): a player host's session starts at player, a dedicated server's
   `-flightmodel gof2 | es2 | player` (the launchers' `FLIGHT`), and admins' `/flightmodel [gof2 | es2 | player]` (no
   argument shows it; `NetCommands.FlightModel` -> `NetServerSettings.Set`, saved where the server keeps its settings) or
   `/set flightmodel`; `NetState.FlightModel` (sent as style + 2, 0 = not

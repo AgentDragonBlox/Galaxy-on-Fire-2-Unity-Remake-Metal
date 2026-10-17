@@ -195,7 +195,9 @@ namespace GoF2Remake.Tests
             BeginSettings();
             try
             {
-                Assert.AreEqual(FlightStyles.Original, SessionRules.DefaultFlight, "the game's flight model by default (fair PvP)");
+                Assert.AreEqual(SessionRules.PlayerFlight, SessionRules.DefaultFlight, "each player's own flight model by default");
+                Assert.AreEqual(SessionRules.PlayerFlight, SessionRules.ParseFlight("any"));
+                Assert.AreEqual(SessionRules.PlayerFlight, SessionRules.ParseFlight("Unrestricted"));
                 var s = NetServerSettings.All.Single(x => x.key == "flightmodel");
                 Assert.AreEqual("-flightmodel", s.option);
                 NetServerSettings.Set("flightmodel", "es2", "test");
