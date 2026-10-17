@@ -14,7 +14,7 @@
 //   Suppressed  the main menu's backdrop builds no hulls (nobody flies there; the cooking would only cost loading)
 // Sweep, Shown and Suppressed follow a contributor's precise-collision version (2026-10-11).
 // Ship collision (Options > Gameplay, Settings.PreciseShipCollision, a session rule; players found the fighters hard to hit
-// on their real shapes, 2026-10-17): Precise (default) as above; Original leaves the flyable ships' hulls out
+// on their real shapes, 2026-10-17): Precise as above; Original (default) leaves the flyable ships' hulls out
 // (HullBody.flyableShip / Collides, PreciseShips): shots hit fighters, the player's ship and other players' ships on the
 // original's hit cube, and the player meets another player's ship on its sphere. Freighters, the battleship, the capital
 // ships, stations, gates, turrets and objects keep their hulls either way.
@@ -47,7 +47,7 @@ namespace GoF2Remake.Flight
         public static bool Suppressed;
 
         static int preciseFrame = -1;
-        static bool precise = true;
+        static bool precise;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics()

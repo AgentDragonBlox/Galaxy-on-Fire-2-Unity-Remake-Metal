@@ -270,12 +270,12 @@ namespace GoF2Remake.Data
         /// A session rule.</summary>
         public static bool CapitalShips { get => Rule(R.CapitalShips, "capitalShips", false); set => SetRule(R.CapitalShips, "capitalShips", value); }
         /// <summary>Remake (players' report, 2026-10-17: since the mesh collision the fighters were hard to hit): Options >
-        /// Gameplay "Ship collision". Precise (on, default): shots hit the ships a player can fly on their real shape and the
-        /// player meets other players' ships on theirs (Flight.HullCollision). Original (off): those take the original's hit
-        /// cube and collision sphere again (HullBody.flyableShip); freighters, the battleship, capital ships, stations,
-        /// gates, turrets and objects keep their real shape either way. A session rule (the host's or the server's,
-        /// -originalcollision).</summary>
-        public static bool PreciseShipCollision { get => Rule(R.PreciseShipCollision, "preciseShipCollision", true); set => SetRule(R.PreciseShipCollision, "preciseShipCollision", value); }
+        /// Gameplay "Ship collision". Original (off, default since 2026-10-17): the ships a player can fly take the original's
+        /// hit cube and collision sphere (HullBody.flyableShip). Precise (on): shots hit them on their real shape and the
+        /// player meets other players' ships on theirs (Flight.HullCollision). Freighters, the battleship, capital ships,
+        /// stations, gates, turrets and objects keep their real shape either way. A session rule (the host's or the
+        /// server's, -precisecollision).</summary>
+        public static bool PreciseShipCollision { get => Rule(R.PreciseShipCollision, "preciseShipCollision", false); set => SetRule(R.PreciseShipCollision, "preciseShipCollision", value); }
 
         /// <summary>The Gameplay options that change how the game plays are the session's in multiplayer (NetRules), else the
         /// player's own.</summary>
@@ -295,7 +295,7 @@ namespace GoF2Remake.Data
             if (GetBool("cloakBay", true)) m |= R.CloakBay;
             if (GetBool("empBreaksCloak", true)) m |= R.EmpBreaksCloak;
             if (GetBool("smarterNpcTargeting", true)) m |= R.SmarterNpcTargeting;
-            if (GetBool("preciseShipCollision", true)) m |= R.PreciseShipCollision;
+            if (GetBool("preciseShipCollision", false)) m |= R.PreciseShipCollision;
             return m;
         }
 

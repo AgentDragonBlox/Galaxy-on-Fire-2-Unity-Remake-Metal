@@ -154,7 +154,7 @@ Players on a different game version are turned away with a message saying which 
 | `-nocloakbay` | A cloak mounted on the Specter or the Scimitar takes an equipment slot, as in the original (by default it goes into their integrated cloak's bay). |
 | `-noempcloak` | EMP hits don't break cloaks, as in the original (by default an EMP hit drops a cloak at once). |
 | `-originaltargeting` | NPC fighters go for the player first, as in the original (by default they take the nearest hostile ship and spread out over their targets). |
-| `-originalcollision` | Ship collision Original: shots hit fighters and players' ships on the original's hit box, and players' ships meet each other as spheres (by default they are hit and met on their real shape). Freighters, capital ships, stations and objects keep their real shape. |
+| `-precisecollision` | Ship collision Precise: shots hit fighters and players' ships on their real shape, and players' ships meet each other on it (by default, as in the original, they are hit on a box and meet as spheres). Freighters, capital ships, stations and objects keep their real shape either way. |
 | `-port N` | The port for local network play (default 7777, UDP). |
 | `-fps N` | The server's frame rate (default 60). |
 | `-noconsole` | Windows: no console window of its own. |

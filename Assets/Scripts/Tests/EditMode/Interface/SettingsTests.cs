@@ -85,10 +85,9 @@ namespace GoF2Remake.Tests
             Assert.IsTrue(Settings.CloakBay, "on by default");
             Assert.IsTrue(Settings.EmpBreaksCloak, "on by default");
             Assert.IsTrue(Settings.SmarterNpcTargeting, "on by default");
-            Assert.IsTrue(Settings.PreciseShipCollision, "Precise by default");
+            Assert.IsFalse(Settings.PreciseShipCollision, "Original by default");
             int expected = SessionRules.PirateEvents | SessionRules.KaamoStacking | SessionRules.KaamoKeepsEquipment
-                         | SessionRules.CloakBay | SessionRules.EmpBreaksCloak | SessionRules.SmarterNpcTargeting
-                         | SessionRules.PreciseShipCollision;
+                         | SessionRules.CloakBay | SessionRules.EmpBreaksCloak | SessionRules.SmarterNpcTargeting;
             Assert.AreEqual(expected, Settings.LocalRules());
         }
 
@@ -97,11 +96,11 @@ namespace GoF2Remake.Tests
         {
             // Options > Gameplay "Ship collision" (Flight.HullCollision.PreciseShips, HullBody.flyableShip / Collides).
             AllDefaults();
-            Assert.IsTrue(Flight.HullCollision.PreciseShips, "Precise by default: the real shapes");
-            Settings.PreciseShipCollision = false;
-            Assert.IsFalse(Flight.HullCollision.PreciseShips, "Original: the flyable ships' cube and sphere");
+            Assert.IsFalse(Flight.HullCollision.PreciseShips, "Original by default: the flyable ships' cube and sphere");
             Settings.PreciseShipCollision = true;
-            Assert.IsTrue(Flight.HullCollision.PreciseShips);
+            Assert.IsTrue(Flight.HullCollision.PreciseShips, "Precise: the real shapes");
+            Settings.PreciseShipCollision = false;
+            Assert.IsFalse(Flight.HullCollision.PreciseShips);
             foreach (int ship in new[] { 0, 10, 28, 44, 64 }) Assert.IsTrue(Flight.HullCollision.FlyableShip(ship), ship + " flyable");
             foreach (int ship in new[] { -1, 13, 14, 15 }) Assert.IsFalse(Flight.HullCollision.FlyableShip(ship), ship + ": freighter, battleship, none");
         }
