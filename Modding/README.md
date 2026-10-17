@@ -544,10 +544,12 @@ styles](#exhaust-styles)), 4 manoeuvring jet (`"direction": [x, y, z]`, the way 
 | `sounds` | Optional. The ship's own engine and boost sounds, see [Ship sounds](#ship-sounds). |
 | `integrated` | Optional, also in an `override`. Equipment built into the hull, like the Kothar ships' Khador Drive (Cronus, Typhon, Nemesis) and the Specter's / Scimitar's cloak: `{ "khadorDrive": true, "cloak": true }`. `khadorDrive`: the ship can make Khador jumps without the drive in a slot (it still needs energy cells). `cloak`: `true` (the U'tool's stats), a cloak item (a number or `"mod:id"`, e.g. `96`) whose stats it has, or `false`; a cloak the player mounts replaces it, and with the Gameplay option "Cloak bay on cloaking ships" it goes into the built-in cloak's bay instead of a slot. `false` takes an original ship's away. |
 
-Ship and station materials get the original game's hull shine: the system's reflection and a rim light, stronger where
-the surface is smoother (the smoothness / alpha of the metallic map), like the game's own ships; metal parts reflect
-through the normal lighting instead. A custom hangar or bar (interiors.json) has none, like the game's rooms. A mod system
-reflects its template system's sky.
+Ship and station materials are lit physically (URP Lit): they reflect the system's sky by their smoothness (the
+alpha of the metallic map) and metalness, the way PBR engines draw them. The game's own hulls add the original's shine
+on top, from specular maps made for it; a mod's smoothness map is a different thing, so mod materials don't get it. In
+the game's hangars a mod hull is lit from above with less of the room's flat ambient light, so it keeps its shading
+(models have no shading painted into their textures, the game's do). A custom hangar or bar (interiors.json) lights
+mod and game ships alike. A mod system reflects its template system's sky.
 
 The model's own materials (base colour, metallic-roughness with its metallic / roughness factors, normal map, emission,
 transparency) are used as they are. glTF
