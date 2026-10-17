@@ -722,6 +722,11 @@ Research: `Reference/research/shop.md` (+ `item_icons.json`, reference price cod
 - **List after a trade** (remake, `HangarWindow.Rebuild`; after a mount, demount or swap too, #45: they reset the selection to the top): the same row stays selected; when it is gone (missiles of a mounted
   type bought out: they go onto the mounted stack, not the hold) the row that took its place (or the one before it at the
   end, `NearestSelectable`), so the list keeps its place; it used to jump back to the top.
+- **Lists wrap round** (remake, players' request; `HangarWindow.MoveSelection`, `CarrierShopWindow.Move`): up on the
+  first row selects the last and down on the last the first (every tab, the blueprint ingredients, the carrier's shop),
+  scrolled to it, so the commodities are one press up from the shop's top; only a fresh press wraps, a held key's repeat
+  stops at the end. The mouse wheel / touch scrolling don't wrap; the station's focus-navigated lists (lounge visitors,
+  Missions, save slots) don't either.
 - **Mounting:** first free slot of the item's type; on docking the equipment is fitted to the ship's slots (remake, `Hangar.FitToSlots`, from `StationLevel`: a mod lowering a ship's slots or a debug hull swap could leave more mounted than it has; the rest goes to the hold in slot order like a bought ship's, story items keep their place); secondaries move with their ammo; one-per-ship categories (shield, armor, booster, scanner...) swap (287); bought missiles of a mounted type join the mounted stack. Remaining missiles are written back to `Equipment` when docking. Remake: the Ship tab tints mounted rows with a cyan edge and badges the hold's candidates IN CARGO under an amber "Available in cargo" header; a a passenger cabin can't be demounted while the other cabins couldn't seat the passengers aboard (323, `HangarWindow::selectItem` 0x178e20); a double click / double tap mounts or demounts (the Mount / Demount button's action; a controller's confirm button does the same).
 - **Hangar opened with A / Enter** (#104, `StationMenu.hangarConfirmHeld`): the window ignores Enter / A until the press that
   opened it is released; the Hangar button took the press, and in the same frame the window bought its first row.
