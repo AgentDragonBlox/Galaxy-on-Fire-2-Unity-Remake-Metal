@@ -1469,5 +1469,7 @@
  "saveFolderStartEmpty": "Zacznij od zera",
  "saveFolderMergeQuestion": "{0} ma już {1} zapisów, a to urządzenie {2}. Zachować nowszy zapis każdego miejsca (drugi trafi do Saves/Deleted) czy tylko te z folderu (te z urządzenia trafią do Saves/BeforeFolder)?",
  "saveFolderMerge": "Zachowaj nowszy",
- "saveFolderUseFolder": "Tylko z folderu"
+ "saveFolderUseFolder": "Tylko z folderu",
+ "hangarRestock": "Dostawa",
+ "hangarRareRestock": "Rzadkie towary"
 }

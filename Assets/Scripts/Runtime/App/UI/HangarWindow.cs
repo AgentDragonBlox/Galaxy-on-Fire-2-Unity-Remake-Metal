@@ -133,6 +133,12 @@ namespace GoF2Remake.UI
             tradePrice = root.Q<Label>("tradePrice");
             cargoLabel = root.Q<Label>("cargoLabel");
             creditsLabel = root.Q<Label>("creditsLabel");
+            // Remake: a multiplayer session's shared stock counts down to its next restock, between the hold and the credits.
+            restockLabel = new Label { pickingMode = PickingMode.Ignore };
+            restockLabel.AddToClassList("footer-restock");
+            restockLabel.AddToClassList("gof-semibold");
+            restockLabel.style.display = DisplayStyle.None;
+            creditsLabel.parent.Insert(creditsLabel.parent.IndexOf(creditsLabel), restockLabel);
             tabShip = root.Q<Button>("tabShip");
             tabShop = root.Q<Button>("tabShop");
             tabBlueprints = root.Q<Button>("tabBlueprints");
@@ -1357,8 +1363,30 @@ namespace GoF2Remake.UI
             detailStats.Add(row);
         }
 
+        readonly Label restockLabel;
+        int restockShown = int.MinValue;
+
+        /// <summary>The Shop tab in a session: "RESTOCK m:ss" to the shared stock's next re-roll, and the rare goods' next
+        /// step while one of them is short (NetStock.RestockLeft); redrawn when a second ticks over.</summary>
+        void UpdateRestock()
+        {
+            bool show = IsOpen && tab == Tab.Shop && !hangar.Storage
+                        && GoF2Remake.Multiplayer.NetStock.RestockLeft(hangar.Station, out float reset, out float rare);
+            restockLabel.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!show) { restockShown = int.MinValue; return; }
+            int r = Mathf.CeilToInt(reset), g = rare < 0f ? -1 : Mathf.CeilToInt(rare);
+            int key = r * 100000 + g;
+            if (key == restockShown) return;
+            restockShown = key;
+            static string Clock(int s) => $"{s / 60}:{s % 60:00}";
+            string text = $"{Localization.Extra("hangarRestock", "Restock").ToUpperInvariant()}  {Clock(r)}";
+            if (g >= 0) text += $"   {Localization.Extra("hangarRareRestock", "Rare goods").ToUpperInvariant()}  {Clock(g)}";
+            restockLabel.text = text;
+        }
+
         void UpdateFooter()
         {
+            UpdateRestock();
             cargoLabel.text = $"{Localization.Get(184).ToUpperInvariant()}  {hangar.Load} / {hangar.MaxLoad} t";
             cargoLabel.EnableInClassList("footer-cargo--over", hangar.Overloaded);
             creditsLabel.text = ItemInfo.Credits(Session.Credits);
@@ -1741,6 +1769,7 @@ namespace GoF2Remake.UI
         public void Update(float dtMs)
         {
             if (IsOpen) PollTradeAllHold(dtMs);
+            UpdateRestock();
             if (!IsOpen || heldDirection == 0) return;
             heldMs += dtMs;
             repeatMs += dtMs;

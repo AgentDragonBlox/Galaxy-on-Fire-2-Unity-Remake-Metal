@@ -1469,5 +1469,7 @@
  "saveFolderStartEmpty": "비우고 시작",
  "saveFolderMergeQuestion": "{0}에 이미 저장 파일 {1}개가 있고 이 기기에는 {2}개가 있습니다. 슬롯마다 더 최근 저장을 유지할까요(다른 하나는 Saves/Deleted로), 아니면 폴더의 것만 사용할까요(이 기기의 것은 Saves/BeforeFolder로)?",
  "saveFolderMerge": "최근 것 유지",
- "saveFolderUseFolder": "폴더 것만"
+ "saveFolderUseFolder": "폴더 것만",
+ "hangarRestock": "재입고",
+ "hangarRareRestock": "희귀 화물"
 }

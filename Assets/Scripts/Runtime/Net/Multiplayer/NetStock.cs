@@ -19,6 +19,8 @@
 // (Buskat, Vossk Organs, Implants, the add-ons' rare goods) don't come back with the 15-minute list. Each list's roll sets
 // how many of each the station should have (Entry.rareTarget: the roll's amount, 0 when the roll has none), what is left
 // is kept, and every RareStepSeconds a sold-out or short row gets a third of its target back: empty to full in 30 minutes.
+// Remake (players' request): the list carries the seconds to the next re-roll and to the next rare-goods step (Encode), so
+// the hangar window's footer can count them down (RestockLeft); the clocks run per station from its first docking.
 
 using System;
 using System.Collections.Generic;
@@ -51,6 +53,8 @@ namespace GoF2Remake.Multiplayer
         static readonly Dictionary<int, Entry> stocks = new Dictionary<int, Entry>();   // the host's
         static Database db;
         static readonly List<Action> pending = new List<Action>();
+        /// <summary>A player's: each station's clocks as the last list said (seconds left, -1 = none) and when it arrived.</summary>
+        static readonly Dictionary<int, (float at, int reset, int rare)> clocks = new Dictionary<int, (float, int, int)>();
         static readonly Dictionary<long, (Action granted, Action refused)> reservations = new Dictionary<long, (Action, Action)>();
         static long Key(int station, int ship) => (long)station << 32 | (uint)ship;
 
@@ -68,6 +72,19 @@ namespace GoF2Remake.Multiplayer
             stocks.Clear();
             pending.Clear();
             reservations.Clear();
+            clocks.Clear();
+        }
+
+        /// <summary>The hangar window's footer: seconds to the next re-roll of 'station's shared stock and to its rare goods'
+        /// next restock step (-1 = no rare row is short), counted down from the last list; false = no list (yet).</summary>
+        public static bool RestockLeft(int station, out float reset, out float rare)
+        {
+            reset = rare = -1f;
+            if (!Shared(station) || !clocks.TryGetValue(station, out var c) || c.reset < 0) return false;
+            float gone = Time.unscaledTime - c.at;
+            reset = Mathf.Max(0f, c.reset - gone);
+            if (c.rare >= 0) rare = Mathf.Max(0f, c.rare - gone);
+            return true;
         }
 
         /// <summary>NetState, every frame: what arrived is applied now (not inside a trade).</summary>
@@ -161,7 +178,8 @@ namespace GoF2Remake.Multiplayer
         {
             var stock = Session.RecentStations.Find(s => s.station == station);
             if (stock == null || !Shared(station)) return;
-            Decode(text, out var items, out var ships);
+            Decode(text, out var items, out var ships, out int reset, out int rare);
+            clocks[station] = (Time.unscaledTime, reset, rare);
             stock.items.Clear();
             stock.items.AddRange(items);
             if (stock.ships == null) stock.ships = new List<int>();
@@ -371,13 +389,25 @@ namespace GoF2Remake.Multiplayer
                 if (i > 0) sb.Append(',');
                 sb.Append(e.ships[i]);
             }
+            // "|reset|rare": the seconds to the next re-roll and the next rare step (-1 when no rare row is short).
+            int reset = Mathf.Max(0, Mathf.CeilToInt(e.made + ResetSeconds - Time.unscaledTime));
+            bool rareShort = false;
+            foreach (var kv in e.rareTarget)
+            {
+                if (kv.Value <= 0) continue;
+                var row = e.items.Find(r => r.item == kv.Key);
+                if (row == null || row.amount < kv.Value) { rareShort = true; break; }
+            }
+            int rare = rareShort ? Mathf.Max(0, Mathf.CeilToInt(e.rareNext - Time.unscaledTime)) : -1;
+            sb.Append('|').Append(reset).Append('|').Append(rare);
             return sb.ToString();
         }
 
-        static void Decode(string text, out List<ItemStack> items, out List<int> ships)
+        static void Decode(string text, out List<ItemStack> items, out List<int> ships, out int reset, out int rare)
         {
             items = new List<ItemStack>();
             ships = new List<int>();
+            reset = rare = -1;
             if (string.IsNullOrEmpty(text)) return;
             var parts = text.Split('|');
             foreach (var one in parts[0].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
@@ -388,6 +418,7 @@ namespace GoF2Remake.Multiplayer
             if (parts.Length < 2) return;
             foreach (var one in parts[1].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                 if (int.TryParse(one, out int ship)) ships.Add(ship);
+            if (parts.Length >= 4 && int.TryParse(parts[2], out int r1) && int.TryParse(parts[3], out int r2)) { reset = r1; rare = r2; }
         }
     }
 }

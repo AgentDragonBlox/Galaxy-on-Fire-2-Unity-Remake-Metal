@@ -1469,5 +1469,7 @@
  "saveFolderStartEmpty": "Começar vazio",
  "saveFolderMergeQuestion": "{0} já tem {1} saves e este dispositivo tem {2}. Manter o save mais recente de cada espaço (o outro vai para Saves/Deleted) ou só os da pasta (os deste dispositivo vão para Saves/BeforeFolder)?",
  "saveFolderMerge": "Manter o mais recente",
- "saveFolderUseFolder": "Só os da pasta"
+ "saveFolderUseFolder": "Só os da pasta",
+ "hangarRestock": "Reposição",
+ "hangarRareRestock": "Bens raros"
 }
