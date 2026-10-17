@@ -1421,5 +1421,6 @@
  "photoMove": "BEWEGEN",
  "photoLook": "UMSEHEN",
  "photoUpDown": "HOCH / RUNTER",
- "photoTouchFree": "ZIEHEN ZUM UMSEHEN · ZWEI FINGER ZUM BEWEGEN"
+ "photoTouchFree": "ZIEHEN ZUM UMSEHEN · ZWEI FINGER ZUM BEWEGEN",
+ "photoShowInFolder": "IM ORDNER ZEIGEN"
 }

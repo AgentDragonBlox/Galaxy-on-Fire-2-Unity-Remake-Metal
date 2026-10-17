@@ -1421,5 +1421,6 @@
  "photoMove": "이동",
  "photoLook": "둘러보기",
  "photoUpDown": "위 / 아래",
- "photoTouchFree": "드래그하여 둘러보기 · 핀치하여 이동"
+ "photoTouchFree": "드래그하여 둘러보기 · 핀치하여 이동",
+ "photoShowInFolder": "폴더에서 보기"
 }

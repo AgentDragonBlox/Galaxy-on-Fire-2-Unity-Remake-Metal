@@ -1421,5 +1421,6 @@
  "photoMove": "MOVER",
  "photoLook": "OLHAR",
  "photoUpDown": "SUBIR / DESCER",
- "photoTouchFree": "ARRASTE PARA OLHAR · PINCE PARA MOVER"
+ "photoTouchFree": "ARRASTE PARA OLHAR · PINCE PARA MOVER",
+ "photoShowInFolder": "MOSTRAR NA PASTA"
 }

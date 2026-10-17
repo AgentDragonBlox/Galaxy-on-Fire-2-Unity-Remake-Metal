@@ -100,6 +100,34 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
+        public void APressThatBeganOnTheUiNeverTurnsTheCamera()
+        {
+            // A slider dragged off the settings panel: the press began on it, so the camera ignores it until release.
+            var tools = new PhotoTools(new UnityEngine.UIElements.VisualElement(), null);
+            bool overUi = true;
+            System.Func<Vector2, bool> ui = _ => overUi;
+            Assert.IsTrue(tools.PressOverUi(new Vector2(10f, 10f), ui), "pressed on the slider");
+            overUi = false;   // dragged off it
+            Assert.IsTrue(tools.PressOverUi(new Vector2(900f, 10f), ui), "still the slider's press");
+            Assert.IsFalse(tools.PressOverUi(null, ui), "released");
+            Assert.IsFalse(tools.PressOverUi(new Vector2(900f, 10f), ui), "a new press on the view turns the camera");
+            overUi = true;    // that press passing over the UI stays the camera's
+            Assert.IsFalse(tools.PressOverUi(new Vector2(10f, 10f), ui));
+        }
+
+        [TestCase(1920, 1080, 0, 1)]
+        [TestCase(1920, 1080, 1, 2)]
+        [TestCase(1920, 1080, 2, 4)]
+        [TestCase(3840, 2160, 2, 4)]      // 15360 px wide: within a texture's 16384
+        [TestCase(5120, 1440, 2, 3)]      // a super-wide screen at x4 would pass it: x3
+        public void TheScreenshotSizeStaysWithinATexture(int w, int h, int size, int expected)
+        {
+            int before = PhotoSettings.Size;
+            try { PhotoSettings.Size = size; Assert.AreEqual(expected, PhotoSettings.SuperSize(w, h)); }
+            finally { PhotoSettings.Size = before; }
+        }
+
+        [Test]
         public void TheHangarOrbitTakesTheFreePoseAndKeepsItThroughTheBlendBack()
         {
             var insp = new HangarInspect();

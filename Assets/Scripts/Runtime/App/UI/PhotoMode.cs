@@ -195,7 +195,9 @@ namespace GoF2Remake.UI
                 Vector2? pos = null;
                 if (down == 1) pos = ts.primaryTouch.position.ReadValue();
                 else if (Mouse.current != null && Mouse.current.leftButton.isPressed) pos = Mouse.current.position.ReadValue();
-                if (pos.HasValue && (dragging || (!OverControl(pos.Value) && !tools.OverPanel(pos.Value))))
+                // A press that began on the panel (a slider) or a button stays theirs when the pointer leaves them.
+                bool overUi = tools.PressOverUi(pos, OverControl);
+                if (pos.HasValue && !overUi)
                 {
                     if (!dragging) { dragging = true; lastPointer = pos.Value; draggingFinger = down == 1 ? 1 : -1; dragTravel = 0f; }
                     delta = (pos.Value - lastPointer) * scale;
@@ -317,7 +319,35 @@ namespace GoF2Remake.UI
         }
 
         /// <summary>Saves a PNG to the pictures library (also the F12 screenshots, ScreenshotKey).</summary>
-        public static bool Store(byte[] png, string name)
+        public static bool Store(byte[] png, string name) => StoreAt(png, name) != null;
+
+        /// <summary>The system's file browser can show a saved screenshot (desktop: Windows, macOS, Linux).</summary>
+        public static bool CanShowInFolder =>
+#if UNITY_STANDALONE || UNITY_EDITOR
+            true;
+#else
+            false;
+#endif
+
+        /// <summary>Opens the folder holding 'path' in the file browser, the file selected where the system can (Windows).</summary>
+        public static void ShowInFolder(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            try
+            {
+                System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{path.Replace('/', '\\')}\"");
+                return;
+            }
+            catch (Exception e) { Debug.LogWarning("PhotoMode: explorer " + e.Message); }
+#endif
+            string dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir)) Application.OpenURL("file:///" + dir.Replace('\\', '/'));
+        }
+
+        /// <summary>Saves a PNG to the pictures library; returns where (the file's full path; on Android the library's
+        /// "Pictures/Galaxy on Fire 2/name"), null when it couldn't.</summary>
+        public static string StoreAt(byte[] png, string name)
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
             try
@@ -332,11 +362,11 @@ namespace GoF2Remake.UI
                 using var media = new AndroidJavaClass("android.provider.MediaStore$Images$Media");
                 using var uri = media.GetStatic<AndroidJavaObject>("EXTERNAL_CONTENT_URI");
                 using var item = resolver.Call<AndroidJavaObject>("insert", uri, values);
-                if (item == null) return false;
+                if (item == null) return null;
                 using var stream = resolver.Call<AndroidJavaObject>("openOutputStream", item);
                 stream.Call("write", png);
                 stream.Call("close");
-                return true;
+                return "Pictures/Galaxy on Fire 2/" + name;
             }
             catch (Exception e) { Debug.LogWarning("PhotoMode: MediaStore " + e.Message); }
 #elif !UNITY_WSA || UNITY_EDITOR
@@ -349,8 +379,9 @@ namespace GoF2Remake.UI
                 {
                     string preferred = Path.Combine(pictures, "Galaxy on Fire 2");
                     Directory.CreateDirectory(preferred);
-                    File.WriteAllBytes(Path.Combine(preferred, name), png);
-                    return true;
+                    string file = Path.Combine(preferred, name);
+                    File.WriteAllBytes(file, png);
+                    return file;
                 }
                 catch (Exception e) { Debug.LogWarning("PhotoMode: Pictures " + e.Message); }
             }
@@ -358,9 +389,10 @@ namespace GoF2Remake.UI
             // The fallback: <persistentDataPath>/Screenshots (Android without MediaStore, UWP, an unwritable Pictures folder).
             string dir = Path.Combine(GoF2Remake.GamePaths.Data, "Screenshots");
             Directory.CreateDirectory(dir);
-            File.WriteAllBytes(Path.Combine(dir, name), png);
+            string saved = Path.Combine(dir, name);
+            File.WriteAllBytes(saved, png);
             Debug.Log("PhotoMode: saved to " + dir);
-            return true;
+            return saved;
         }
     }
 }

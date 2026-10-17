@@ -1421,5 +1421,6 @@
  "photoMove": "MUOVI",
  "photoLook": "GUARDA",
  "photoUpDown": "SU / GIÙ",
- "photoTouchFree": "TRASCINA PER GUARDARE · PIZZICA PER MUOVERTI"
+ "photoTouchFree": "TRASCINA PER GUARDARE · PIZZICA PER MUOVERTI",
+ "photoShowInFolder": "MOSTRA NELLA CARTELLA"
 }

@@ -10,8 +10,8 @@
 //   Camera settings a panel at the left (Tab, the controller's View or the hint): orbit / free, field of view, roll, the
 //                   free camera's speed, depth of field (the game's, off, on the ship, a focus distance) with its blur,
 //                   exposure, contrast, saturation, vignette, film grain, hide the ship, a thirds grid, a frame (16:9,
-//                   21:9, 4:3, 1:1, 9:16: the screenshot is cut to it) and the screenshot's size (the screen's or twice
-//                   it), Reset; PhotoSettings keeps them for the run.
+//                   21:9, 4:3, 1:1, 9:16: the screenshot is cut to it) and the screenshot's size (the screen's, x2 or
+//                   x4), Reset; PhotoSettings keeps them for the run.
 //   Effects         a global URP volume of its own on layer 26 at priority 1000 (over the game's and the hangar's depth of
 //                   field), its profile made in code: URP keeps the effects' shaders in a build only because
 //                   Assets/Settings/PhotoModeShaders.asset has them on.
@@ -66,6 +66,13 @@ namespace GoF2Remake.UI
         bool shipHidden;
 
         bool dragging;
+        bool pressOverUi, wasPressed;   // a press that began on the panel or a button never turns the camera
+        readonly VisualElement notice;
+        readonly Label noticePath;
+        readonly Button noticeButton;
+        string savedPath;
+        float noticeMs;
+        const float NoticeMs = 8000f;
         float dragTravel;
         /// <summary>A short click / tap on the view with the free camera (no drag).</summary>
         public event Action Tapped;
@@ -122,6 +129,20 @@ namespace GoF2Remake.UI
                 scroll.Add(c.Root);
             }
             overlay.Add(panel);
+
+            // After a screenshot: where it went, and (desktop) a button / O to show it in the file browser.
+            notice = new VisualElement { pickingMode = PickingMode.Ignore };
+            notice.AddToClassList("photo-saved");
+            noticePath = new Label { pickingMode = PickingMode.Ignore };
+            noticePath.AddToClassList("photo-saved-path");
+            notice.Add(noticePath);
+            noticeButton = new Button(ShowSaved) { text = T("photoShowInFolder", "SHOW IN FOLDER"), focusable = false };
+            noticeButton.AddToClassList("photo-saved-button");
+            noticeButton.AddToClassList("gof-semibold");
+            noticeButton.RegisterCallback<PointerDownEvent>(_ => sound?.Invoke(true), TrickleDown.TrickleDown);
+            notice.Add(noticeButton);
+            overlay.Add(notice);
+            notice.style.display = DisplayStyle.None;
             ShowPanel(false);
         }
 
@@ -167,7 +188,7 @@ namespace GoF2Remake.UI
                 choices = () => { var c = (string[])PhotoSettings.FrameNames.Clone(); c[0] = T("photoFrameFull", "Full screen"); return c; },
                 getIndex = () => PhotoSettings.Frame, setIndex = i => PhotoSettings.Frame = i };
             yield return new OptionDef { kind = OptionKind.Choice, segmented = true, label = () => T("photoSize", "Screenshot size"),
-                choices = () => new[] { T("photoSizeScreen", "Screen"), "x2" },
+                choices = () => new[] { T("photoSizeScreen", "Screen"), "x2", "x4" },
                 getIndex = () => PhotoSettings.Size, setIndex = i => PhotoSettings.Size = i };
             yield return new OptionDef { kind = OptionKind.Button, label = () => T("photoReset", "RESET"),
                 action = () => { PhotoSettings.Reset(); Refresh(); Changed?.Invoke(); } };
@@ -279,9 +300,22 @@ namespace GoF2Remake.UI
         /// <summary>A screen point (pixels, y up) over the open panel: a press there isn't a drag of the camera.</summary>
         public bool OverPanel(Vector2 screen)
         {
-            if (!PanelOpen || panel.panel == null) return false;
+            if (panel.panel == null) return false;
             var p = RuntimePanelUtils.ScreenToPanel(panel.panel, new Vector2(screen.x, Screen.height - screen.y));
-            return panel.worldBound.Contains(p);
+            if (PanelOpen && panel.worldBound.Contains(p)) return true;
+            return notice.resolvedStyle.display != DisplayStyle.None && noticeButton.resolvedStyle.display != DisplayStyle.None
+                   && noticeButton.worldBound.Contains(p);
+        }
+
+        /// <summary>The press latch: true while the pointer held now went down on the panel or one of the host's buttons
+        /// ('overUi', checked only as the press begins), so dragging a slider off the panel doesn't turn the camera.</summary>
+        public bool PressOverUi(Vector2? pressed, Func<Vector2, bool> overUi)
+        {
+            bool down = pressed.HasValue;
+            if (down && !wasPressed) pressOverUi = OverPanel(pressed.Value) || (overUi != null && overUi(pressed.Value));
+            if (!down) pressOverUi = false;
+            wasPressed = down;
+            return pressOverUi;
         }
 
         // ---- input ------------------------------------------------------------------------------------------------
@@ -293,6 +327,7 @@ namespace GoF2Remake.UI
         {
             backTaken = false;
             if (!active) return false;
+            if (kb != null && kb.oKey.wasPressedThisFrame && notice.resolvedStyle.display != DisplayStyle.None) ShowSaved();
             if ((kb != null && kb.tabKey.wasPressedThisFrame) || (pad != null && pad.selectButton.wasPressedThisFrame)) ToggleSettings();
             if (!PanelOpen)
             {
@@ -386,7 +421,8 @@ namespace GoF2Remake.UI
                 bool touch = down == 1;
                 if (touch) pos = ts.primaryTouch.position.ReadValue();
                 else if (Mouse.current != null && (Mouse.current.leftButton.isPressed || Mouse.current.rightButton.isPressed)) pos = Mouse.current.position.ReadValue();
-                if (pos.HasValue && (dragging || (!OverPanel(pos.Value) && (overControl == null || !overControl(pos.Value)))))
+                bool overUi = PressOverUi(pos, overControl);
+                if (pos.HasValue && !overUi)
                 {
                     if (!dragging) { dragging = true; lastPointer = pos.Value; dragTravel = 0f; }
                     var px = (pos.Value - lastPointer) * scale;
@@ -435,6 +471,26 @@ namespace GoF2Remake.UI
             frame.EnableInClassList("photo-frame--shown", PhotoSettings.FrameAspect > 0f || PhotoSettings.Grid);
             gridLines.style.display = PhotoSettings.Grid ? DisplayStyle.Flex : DisplayStyle.None;
             if (InputMode.Current == InputKind.Touch) Highlight();
+            if (noticeMs > 0f && (noticeMs -= Time.unscaledDeltaTime * 1000f) <= 0f) notice.style.display = DisplayStyle.None;
+        }
+
+        /// <summary>The saved screenshot's notice: its path, and the button where the system's file browser can show it.</summary>
+        void ShowNotice(string path)
+        {
+            savedPath = path;
+            noticePath.text = path.Replace('\\', '/');
+            bool canShow = PhotoMode.CanShowInFolder && System.IO.Path.IsPathRooted(path);
+            noticeButton.style.display = canShow ? DisplayStyle.Flex : DisplayStyle.None;
+            noticeButton.text = T("photoShowInFolder", "SHOW IN FOLDER") + (canShow && InputMode.Current == InputKind.KeyboardMouse ? "  (O)" : "");
+            notice.style.display = DisplayStyle.Flex;
+            noticeMs = NoticeMs;
+        }
+
+        void ShowSaved()
+        {
+            if (string.IsNullOrEmpty(savedPath) || !PhotoMode.CanShowInFolder) return;
+            sound?.Invoke(false);
+            PhotoMode.ShowInFolder(savedPath);
         }
 
         // ---- the ship hidden ----------------------------------------------------------------------------------
@@ -584,7 +640,7 @@ namespace GoF2Remake.UI
             {
                 // Twice the size: Unity renders the frame again at 2x (the post-processing, the bloom and the lens flare
                 // with it; a URP single camera request lost them).
-                shot = ScreenCapture.CaptureScreenshotAsTexture(PhotoSettings.Size > 0 ? 2 : 1);
+                shot = ScreenCapture.CaptureScreenshotAsTexture(PhotoSettings.SuperSize(Screen.width, Screen.height));
                 var rect = PhotoSettings.FrameRect(shot.width, shot.height, PhotoSettings.FrameAspect);
                 if (rect.width != shot.width || rect.height != shot.height)
                 {
@@ -594,7 +650,9 @@ namespace GoF2Remake.UI
                     UnityEngine.Object.Destroy(shot);
                     shot = cut;
                 }
-                ok = PhotoMode.Store(shot.EncodeToPNG(), $"GoF2_{DateTime.Now:yyyyMMdd_HHmmss}.png");
+                string saved = PhotoMode.StoreAt(shot.EncodeToPNG(), $"GoF2_{DateTime.Now:yyyyMMdd_HHmmss}.png");
+                ok = saved != null;
+                if (ok) ShowNotice(saved);
             }
             catch (Exception e) { Debug.LogWarning("Photo mode screenshot: " + e.Message); }
             if (shot != null) UnityEngine.Object.Destroy(shot);

@@ -1968,6 +1968,7 @@ namespace GoF2Remake.UI
                                () => (insp.OrbitPosition, insp.OrbitRotation), true);
             BuildInspectHints(InputMode.Current);
             if (inspectOverlay != null) inspectOverlay.AddToClassList("inspect-overlay--shown");
+            root.AddToClassList("station-inspecting");   // the menu's dark shades fade out with it
         }
 
         void EndInspect()
@@ -1979,6 +1980,7 @@ namespace GoF2Remake.UI
             inspectTools.End();   // the free pose, roll and lens stay with HangarInspect through the blend back
             level.EndInspect();
             if (inspectOverlay != null) inspectOverlay.RemoveFromClassList("inspect-overlay--shown");
+            root.RemoveFromClassList("station-inspecting");
             Select(inspectButton);   // back where it was opened (keys / controller)
         }
 
@@ -2202,7 +2204,9 @@ namespace GoF2Remake.UI
                 Vector2? pos = null;
                 if (down == 1) pos = ts.primaryTouch.position.ReadValue();
                 else if (Mouse.current != null && Mouse.current.leftButton.isPressed) pos = Mouse.current.position.ReadValue();
-                if (pos.HasValue && (inspectDragging || !OverInspectButton(pos.Value)))
+                // A press that began on the settings panel (a slider) or a button stays theirs when the pointer leaves them.
+                bool overUi = inspectTools.PressOverUi(pos, OverInspectButton);
+                if (pos.HasValue && !overUi)
                 {
                     if (!inspectDragging) { inspectDragging = true; inspectLast = pos.Value; inspectDragTravel = 0f; }
                     delta = (pos.Value - inspectLast) * scale;

@@ -1421,5 +1421,6 @@
  "photoMove": "RUCH",
  "photoLook": "ROZGLĄDANIE",
  "photoUpDown": "GÓRA / DÓŁ",
- "photoTouchFree": "PRZECIĄGNIJ, BY SIĘ ROZEJRZEĆ · ZSZCZYPNIJ, BY SIĘ RUSZYĆ"
+ "photoTouchFree": "PRZECIĄGNIJ, BY SIĘ ROZEJRZEĆ · ZSZCZYPNIJ, BY SIĘ RUSZYĆ",
+ "photoShowInFolder": "POKAŻ W FOLDERZE"
 }

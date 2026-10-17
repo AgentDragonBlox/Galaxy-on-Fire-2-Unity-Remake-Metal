@@ -1421,5 +1421,6 @@
  "photoMove": "MOVER",
  "photoLook": "MIRAR",
  "photoUpDown": "SUBIR / BAJAR",
- "photoTouchFree": "ARRASTRA PARA MIRAR · PELLIZCA PARA MOVER"
+ "photoTouchFree": "ARRASTRA PARA MIRAR · PELLIZCA PARA MOVER",
+ "photoShowInFolder": "MOSTRAR EN LA CARPETA"
 }

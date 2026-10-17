@@ -1421,5 +1421,6 @@
  "photoMove": "चलें",
  "photoLook": "देखें",
  "photoUpDown": "ऊपर / नीचे",
- "photoTouchFree": "देखने के लिए खींचें · चलने के लिए पिंच करें"
+ "photoTouchFree": "देखने के लिए खींचें · चलने के लिए पिंच करें",
+ "photoShowInFolder": "फ़ोल्डर में दिखाएँ"
 }

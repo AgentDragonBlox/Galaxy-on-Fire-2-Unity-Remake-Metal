@@ -1421,5 +1421,6 @@
  "photoMove": "DÉPLACER",
  "photoLook": "REGARDER",
  "photoUpDown": "MONTER / DESCENDRE",
- "photoTouchFree": "GLISSER POUR REGARDER · PINCER POUR AVANCER"
+ "photoTouchFree": "GLISSER POUR REGARDER · PINCER POUR AVANCER",
+ "photoShowInFolder": "AFFICHER DANS LE DOSSIER"
 }

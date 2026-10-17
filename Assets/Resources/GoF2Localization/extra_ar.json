@@ -1421,5 +1421,6 @@
  "photoMove": "تحرك",
  "photoLook": "انظر",
  "photoUpDown": "أعلى / أسفل",
- "photoTouchFree": "اسحب للنظر · اقرص للتحرك"
+ "photoTouchFree": "اسحب للنظر · اقرص للتحرك",
+ "photoShowInFolder": "إظهار في المجلد"
 }

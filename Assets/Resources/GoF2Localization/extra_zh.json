@@ -1421,5 +1421,6 @@
  "photoMove": "移动",
  "photoLook": "环顾",
  "photoUpDown": "上 / 下",
- "photoTouchFree": "拖动环顾 · 双指捏合移动"
+ "photoTouchFree": "拖动环顾 · 双指捏合移动",
+ "photoShowInFolder": "在文件夹中显示"
 }

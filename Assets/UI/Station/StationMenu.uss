@@ -393,6 +393,19 @@
     width: 380px;
 }
 
+/* Inspect ship (and its Customize screen): the menu's dark shades fade with the menu, so the view (and its screenshots) has
+   no dark gradient on the left. */
+.side-shade,
+.bottom-shade {
+    transition-property: opacity;
+    transition-duration: 0.45s;
+}
+
+.station-inspecting .side-shade,
+.station-inspecting .bottom-shade {
+    opacity: 0;
+}
+
 /* The star map (StarMap) is open: it draws the whole screen. */
 .station-map-open .station-safe,
 .station-map-open .side-shade,

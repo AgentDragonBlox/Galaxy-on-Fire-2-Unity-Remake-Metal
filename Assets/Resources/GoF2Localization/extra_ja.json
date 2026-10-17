@@ -1421,5 +1421,6 @@
  "photoMove": "移動",
  "photoLook": "見回す",
  "photoUpDown": "上昇 / 下降",
- "photoTouchFree": "ドラッグで見回す · ピンチで移動"
+ "photoTouchFree": "ドラッグで見回す · ピンチで移動",
+ "photoShowInFolder": "フォルダーで表示"
 }

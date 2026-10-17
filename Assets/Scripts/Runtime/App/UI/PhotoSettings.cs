@@ -33,7 +33,7 @@ namespace GoF2Remake.UI
         public static float Grain;           // 0..1
         public static bool HideShip, Grid;
         public static int Frame;             // FrameAspects
-        public static int Size;              // the screenshot: 0 = the screen's size, 1 = twice it
+        public static int Size;              // the screenshot: 0 = the screen's size, 1 = twice it, 2 = four times
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() { Reset(); Free = false; DefaultFov = 60f; Fov = DefaultFov; }
@@ -55,6 +55,17 @@ namespace GoF2Remake.UI
 
         /// <summary>The manual focus distance in metres.</summary>
         public static float FocusMetres => Mathf.Max(1f, Mathf.Pow(MaxFocusMetres, Mathf.Clamp01(Focus)));
+
+        public const int MaxShotPixels = 16384;   // a texture's largest side
+
+        /// <summary>ScreenCapture's superSize for Size on a w x h screen: 1, 2 or 4, less when the picture would pass
+        /// MaxShotPixels (a 4K screen at x4).</summary>
+        public static int SuperSize(int w, int h)
+        {
+            int want = Size >= 2 ? 4 : Size == 1 ? 2 : 1;
+            int fit = Mathf.Max(1, MaxShotPixels / Mathf.Max(1, Mathf.Max(w, h)));
+            return Mathf.Clamp(Mathf.Min(want, fit), 1, 4);
+        }
 
         public static float FrameAspect => Frame > 0 && Frame < FrameAspects.Length ? FrameAspects[Frame] : 0f;
 
