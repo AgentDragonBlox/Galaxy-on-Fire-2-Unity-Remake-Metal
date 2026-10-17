@@ -1434,5 +1434,7 @@
  "keepEnemyLock": "Manter trava inimiga",
  "keepEnemyLockHelp": "Enquanto uma nave hostil estiver travada, uma nave neutra ou amiga que passe pela mira não toma a trava (seus mísseis continuam no seu alvo). Desligado: você pode travar e escanear qualquer nave durante uma batalha. Só com a trava de mira inteligente.",
  "targetLockPriorityHelp": "Inteligente: naves hostis são travadas primeiro, depois a mais próxima da mira. Original: trava a primeira nave dentro da caixa, seja ela qual for, e cada nova trava substitui a anterior.",
- "targetLockUnlock": "A tecla Soltar alvo (Teclas, U por padrão) desfaz a trava; no toque, toque na placa do alvo."
+ "targetLockUnlock": "A tecla Soltar alvo (Teclas, U por padrão) desfaz a trava; no toque, toque na placa do alvo.",
+ "miningSite": "Local de mineração",
+ "miningSiteBriefing": "A usina de mineração fica em um local remoto desta órbita. Enviei as coordenadas para você: siga o ponto de rota \"Local de mineração\", extraia o minério no campo de asteroides ao redor da usina e descarregue-o lá."
 }

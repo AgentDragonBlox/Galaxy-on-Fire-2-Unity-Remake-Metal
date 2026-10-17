@@ -1751,9 +1751,22 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   that mission (`NetState.MissionTeam`). In sessions the generator also rolls **15 Ore Mining** (never rolled by the
   original's generator, freelance_missions.md 2.3 / 4.1; offer text 801): one of the offering station's top 3 asteroid
   ores, 30-119 t; the orbit has int((int(0.2d)+1)hc) enemies of the client's enemy race on a route, the mining plant
-  (`Traffic.MiningPlant`, docking type 1) at the asteroid field and 2 client-race haulers looping 30 km that never
-  fire; docking at the plant unloads the ore (`ObjectDocking`, 1 t per second, counted in the mission's `status`); won at
-  the amount.
+  (`Traffic.MiningPlant`, docking type 1) and 2 client-race haulers looping 30 km that never fire; docking at the plant
+  unloads the ore (`ObjectDocking`, 1 t per second, counted in the mission's `status`); won at the amount. Remake
+  (players' feedback, 2026-10-17: 5-6 km in front of the station it felt out of place): all of it at a remote site 9-11 km
+  out (`MiningSite`, plain C#: from the mission's seed, `MiningSite.Seed` = the orbit's shared seed with the squad's
+  `netId`, else the mission's own values, so every game of the squad builds the same; first 40-60 km, too long a flight
+  with a session's fast-forward at x1; the direction is drawn again until its field keeps 140 000 units from the orbit's
+  field and the plant 50 000 from a jumpgate), with an asteroid field of its own
+  beyond the plant (`OrbitBuilder.SpawnField`, `FreelanceOrbit.SiteAsteroids`: 5-7 big + 18-25 small rocks, all of the
+  mission's ore, none within 15 000 units of the plant or 9000 of the way in) built in the runner's and the followers'
+  games (`BuildSite`); the enemies asleep beside it (awake from afar they blocked the fast-forward all the way there); the
+  player's route is the lockable "Mining site" waypoint 12 000 units short of the plant (`Route.name`, which the HUD, the
+  autopilot menu and its "Target:" notice show instead of 548 / 573), and the briefing names it (Extra
+  `miningSiteBriefing`). The site field's asteroids are indexed from `MiningSite.IndexBase` (1000 + 100 per slot, past the
+  orbit's own field: `NetOrbit.AddField`), so NetState's destroyed lists and the drilling / landed indices keep them apart;
+  players outside the team don't have the field and ignore those indices. A follower's stand-in plant and a takeover
+  (`Promote`) use the site's own plant position.
 - **Shared shop stock** (`NetStock`): every station's items and dealer ships are one list for all players, kept by the
   host: made with the single-player rules (`Shop.GenerateItems` / `GenerateShips`) the first time anyone docks there and
   made again every 15 minutes (`NetStock.ResetSeconds`; no 3-station re-roll or re-docking nibble in sessions); rare goods (commodities with a max price of 5000+: Buskat, Vossk Organs, Implants...; a report: Buskat back at Sao Perula after one system) don't come back with it: each roll sets their target amount (0 if the roll has none), what is left is kept, and every 10 minutes a short row gets a third of its target back, empty to full in 30 minutes (`NetStock.Make` / `UpdateRare`); a docking

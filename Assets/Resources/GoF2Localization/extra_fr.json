@@ -1434,5 +1434,7 @@
  "keepEnemyLock": "Garder le verrouillage ennemi",
  "keepEnemyLockHelp": "Tant qu'un vaisseau hostile est verrouillé, un vaisseau neutre ou ami qui passe dans le viseur ne peut pas prendre le verrouillage (tes missiles restent sur ta cible). Désactivé : tu peux verrouiller et scanner n'importe quel vaisseau pendant un combat. Seulement avec le verrouillage intelligent.",
  "targetLockPriorityHelp": "Intelligent : les vaisseaux hostiles sont verrouillés d'abord, puis celui le plus proche du viseur. Original : le premier vaisseau dans le cadre est verrouillé, quel qu'il soit, et chaque nouveau verrouillage remplace l'ancien.",
- "targetLockUnlock": "La touche Libérer la cible (Touches, U par défaut) annule le verrouillage ; sur écran tactile, touche la plaque de la cible."
+ "targetLockUnlock": "La touche Libérer la cible (Touches, U par défaut) annule le verrouillage ; sur écran tactile, touche la plaque de la cible.",
+ "miningSite": "Site minier",
+ "miningSiteBriefing": "La station minière se trouve sur un site isolé de cette orbite. Je t'ai envoyé ses coordonnées : suis le point de passage « Site minier », extrais le minerai dans le champ d'astéroïdes autour de la station et décharge-le là-bas."
 }

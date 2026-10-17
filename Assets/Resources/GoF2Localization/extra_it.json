@@ -1434,5 +1434,7 @@
  "keepEnemyLock": "Mantieni aggancio nemico",
  "keepEnemyLockHelp": "Finché una nave ostile è agganciata, una nave neutrale o amica che passa nel mirino non può prendere l'aggancio (i tuoi missili restano sul tuo bersaglio). Disattivato: puoi agganciare e scansionare qualsiasi nave durante una battaglia. Solo con l'aggancio intelligente.",
  "targetLockPriorityHelp": "Intelligente: le navi ostili vengono agganciate per prime, poi quella più vicina al mirino. Originale: viene agganciata la prima nave nel riquadro, chiunque sia, e ogni nuovo aggancio sostituisce il precedente.",
- "targetLockUnlock": "Il tasto Sgancia bersaglio (Comandi, U di default) toglie l'aggancio; sul touch, tocca la targhetta del bersaglio."
+ "targetLockUnlock": "Il tasto Sgancia bersaglio (Comandi, U di default) toglie l'aggancio; sul touch, tocca la targhetta del bersaglio.",
+ "miningSite": "Sito minerario",
+ "miningSiteBriefing": "L'impianto minerario si trova in un sito isolato di quest'orbita. Ti ho inviato le coordinate: segui il waypoint \"Sito minerario\", estrai il minerale nel campo di asteroidi intorno all'impianto e scaricalo lì."
 }

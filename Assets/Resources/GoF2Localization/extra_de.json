@@ -1434,5 +1434,7 @@
  "keepEnemyLock": "Feindliche Erfassung halten",
  "keepEnemyLockHelp": "Solange ein feindliches Schiff erfasst ist, kann ein neutrales oder freundliches Schiff, das durch das Fadenkreuz fliegt, die Erfassung nicht übernehmen (deine Raketen bleiben an deinem Ziel). Aus: du kannst im Kampf jedes Schiff erfassen und scannen. Nur mit der schlauen Zielerfassung.",
  "targetLockPriorityHelp": "Schlau: feindliche Schiffe werden zuerst erfasst, dann das dem Fadenkreuz nächste. Original: das erste Schiff im Kasten wird erfasst, egal wer es ist, und jede neue Erfassung ersetzt die alte.",
- "targetLockUnlock": "Die Taste Ziel freigeben (Tastenbelegung, standardmäßig U) löst die Erfassung; auf dem Touchscreen tippe auf die Zielanzeige."
+ "targetLockUnlock": "Die Taste Ziel freigeben (Tastenbelegung, standardmäßig U) löst die Erfassung; auf dem Touchscreen tippe auf die Zielanzeige.",
+ "miningSite": "Abbaustelle",
+ "miningSiteBriefing": "Die Bergbauanlage liegt an einer abgelegenen Stelle in diesem Orbit. Ich habe dir die Koordinaten geschickt: Folge dem Wegpunkt \"Abbaustelle\", baue das Erz im Asteroidenfeld um die Anlage ab und lade es dort ab."
 }
