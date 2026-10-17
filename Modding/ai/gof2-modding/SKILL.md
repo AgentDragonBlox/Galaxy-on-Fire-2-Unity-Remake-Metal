@@ -435,6 +435,9 @@ required). `override` changes originals (name, techLevel, looks, music...).
   `sn_planet_024_*` ... `sn_planet_026_*`, `sun_000` ..., `sn_sun_011`, `sn_planet_ring`): one whole disc image each, keep the
   transparent edge. `backdrop.json` `{ "planets": "star", "planetGlow": 2, "planetFlare": 0.35 }` draws the retextured planets
   as stars (facing the camera, no ring, a core glow, a weaker copy of the sun's flare).
+- `textures/<name>.png` also replaces the combat HUD's images by their `Assets/Resources/GoF2Hud` names: `ship_dot_<faction>`,
+  `ship_ring_<faction>`, `ship_ring_open_<faction>`, `ship_bracket_<faction>`, `ship_bar_` / `ship_fill_<faction>` (faction
+  `enemy` / `friend` / `neutral`), `crate_dot`, `bracket`, `crate_off`, `lock_00` ... `lock_23`; drawn at their own size.
 
 ## Quests made as step lists (.gof2quest)
 

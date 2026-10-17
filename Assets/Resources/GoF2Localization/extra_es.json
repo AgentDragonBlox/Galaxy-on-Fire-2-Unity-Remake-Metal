@@ -1438,5 +1438,12 @@
  "targetLockPriorityHelp": "Inteligente: primero se fijan las naves hostiles, luego la más cercana a la mira. Original: se fija la primera nave en el recuadro, sea quien sea, y cada nueva fijación sustituye a la anterior.",
  "targetLockUnlock": "La tecla Soltar blanco (Controles, U por defecto) suelta la fijación; en pantalla táctil, toca la placa del blanco.",
  "miningSite": "Zona minera",
- "miningSiteBriefing": "La planta minera está en una zona apartada de esta órbita. Te he enviado sus coordenadas: sigue el punto de ruta \"Zona minera\", extrae el mineral del campo de asteroides que la rodea y descárgalo allí."
+ "miningSiteBriefing": "La planta minera está en una zona apartada de esta órbita. Te he enviado sus coordenadas: sigue el punto de ruta \"Zona minera\", extrae el mineral del campo de asteroides que la rodea y descárgalo allí.",
+ "farShipMarkers": "Marcadores de naves lejanas",
+ "farMarkerOriginal": "Original",
+ "farMarkerRing": "Anillo",
+ "farMarkerSmallDot": "Punto pequeño",
+ "farShipMarkersHelp": "Cómo se marca en pantalla una nave lejana. Original: un punto relleno sobre la nave. Anillo: un anillo hueco a su alrededor. Punto pequeño: un punto pequeño justo encima. Ambos dejan ver la nave; una nave fijada lleva un corchete alrededor.",
+ "markerDistance": "Distancia en los marcadores",
+ "markerDistanceHelp": "Muestra la distancia bajo el marcador de cada nave lejana, no solo bajo el de la nave fijada."
 }

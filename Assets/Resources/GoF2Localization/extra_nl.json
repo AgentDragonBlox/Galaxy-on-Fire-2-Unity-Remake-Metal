@@ -1438,5 +1438,12 @@
  "targetLockPriorityHelp": "Slim: vijandige schepen worden eerst vergrendeld, daarna het schip dat het dichtst bij het vizier is. Origineel: het eerste schip in het kader wordt vergrendeld, wie het ook is, en elke nieuwe vergrendeling vervangt de oude.",
  "targetLockUnlock": "De toets Doel loslaten (Toetsen, standaard U) heft de vergrendeling op; tik op een touchscreen op het doelplaatje.",
  "miningSite": "Mijnbouwlocatie",
- "miningSiteBriefing": "De mijnbouwinstallatie ligt op een afgelegen plek in deze baan. Ik heb je de coördinaten gestuurd: volg het routepunt \"Mijnbouwlocatie\", delf het erts in het asteroïdenveld rond de installatie en lever het daar af."
+ "miningSiteBriefing": "De mijnbouwinstallatie ligt op een afgelegen plek in deze baan. Ik heb je de coördinaten gestuurd: volg het routepunt \"Mijnbouwlocatie\", delf het erts in het asteroïdenveld rond de installatie en lever het daar af.",
+ "farShipMarkers": "Markeringen van verre schepen",
+ "farMarkerOriginal": "Origineel",
+ "farMarkerRing": "Ring",
+ "farMarkerSmallDot": "Kleine stip",
+ "farShipMarkersHelp": "Hoe een ver schip op het scherm wordt gemarkeerd. Origineel: een gevulde stip over het schip. Ring: een holle ring eromheen. Kleine stip: een kleine stip net erboven. Bij beide blijft het schip zichtbaar; een vergrendeld schip krijgt een kader eromheen.",
+ "markerDistance": "Afstand bij scheepsmarkeringen",
+ "markerDistanceHelp": "Toont de afstand onder de markering van elk ver schip, niet alleen onder die van het vergrendelde schip."
 }

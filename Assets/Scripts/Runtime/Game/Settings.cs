@@ -305,6 +305,14 @@ namespace GoF2Remake.Data
         /// the HUD messages. Menus, conversations, the radio, the minigames and the touch controls always show.</summary>
         public const int HudFull = 0, HudMinimal = 1, HudOff = 2;
         public static int HudMode { get => Mathf.Clamp(Mathf.RoundToInt(Get("hudMode", HudFull)), HudFull, HudOff); set => Set("hudMode", Mathf.Clamp(value, HudFull, HudOff)); }
+        /// <summary>Remake (players' request, 2026-10-17: the far ship's dot hid the ship): a far ship's on-screen marker
+        /// (CombatView, UI.FarShipMarkers). 0 Original: the filled dot over the ship, the ring when locked; 1 Ring: the lock
+        /// ring's arcs without its centre around the ship; 2 Small dot: a small dot just above the ship. Locked, the remake's
+        /// styles take the faction bracket around the ship. Per player.</summary>
+        public const int FarMarkerOriginal = 0, FarMarkerRing = 1, FarMarkerSmallDot = 2;
+        public static int FarShipMarkers { get => Mathf.Clamp(Mathf.RoundToInt(Get("farShipMarkers", FarMarkerOriginal)), FarMarkerOriginal, FarMarkerSmallDot); set => Set("farShipMarkers", Mathf.Clamp(value, FarMarkerOriginal, FarMarkerSmallDot)); }
+        /// <summary>Remake: the distance under every far ship's on-screen marker, not only the locked one's (CombatView).</summary>
+        public static bool MarkerDistance { get => GetBool("markerDistance", false); set => SetBool("markerDistance", value); }
         /// <summary>Remake: every primary weapon item sounds its own shots (the original: only the first primary gun).</summary>
         public static bool EachWeaponSound { get => GetBool("eachWeaponSound", false); set => SetBool("eachWeaponSound", value); }
         /// <summary>Remake: the touch fire button's double-press autofire latch on the keyboard / mouse / controller fire
@@ -360,6 +368,7 @@ namespace GoF2Remake.Data
         {
             "launchCamera", "hangarFlights", "tutorialHints", "showStoryStep", "pirateEvents", "capitalShips", "kaamoStacking", "kaamoMaxLevel", "kaamoKeepsEquipment", "cloakBay", "informerOriginalRule",
             "originalTargetLock", "keepEnemyLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "smarterNpcTargeting", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "hudMode", "discordPresence",
+            "farShipMarkers", "markerDistance",
         };
         public static readonly string[] LanguageKeys = { "voiceLanguage" };
 

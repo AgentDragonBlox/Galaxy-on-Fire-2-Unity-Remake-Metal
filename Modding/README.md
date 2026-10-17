@@ -1633,6 +1633,25 @@ To draw your retextured planets as stars, add a `backdrop.json` to the mod (the 
 
 Planets you don't retexture stay planets.
 
+### Flight HUD markers
+
+The combat HUD's images are replaced the same way, by their names in the game's `Assets/Resources/GoF2Hud` folder: the ship
+markers `ship_dot_<faction>` (a far ship), `ship_ring_<faction>` (a far locked ship), `ship_ring_open_<faction>` (a far ship
+with the "Far ship markers" option on Ring), `ship_bracket_<faction>` (a locked ship's bracket), `ship_bar_<faction>` /
+`ship_fill_<faction>` (a near ship's hull bar), with `<faction>` `enemy`, `friend` or `neutral`; the containers `crate_dot`,
+`bracket`, `crate_off`; the lock ring's frames `lock_00` ... `lock_23`; the status bars and the hit arcs. Each is drawn at its
+own size, placed where the original's is, so keep the transparent edge and roughly the original's size. Other HUD images
+(the crosshair, the navigation markers, the touch controls) can't be replaced yet.
+
+```
+small_markers/
+  mod.json
+  textures/
+    ship_dot_enemy.png
+    ship_dot_friend.png
+    ship_dot_neutral.png
+```
+
 ## The game's own models
 
 Anywhere a mod takes a 3D model, it can name one of the game's own models instead of a `.glb` file: `"gof2:<model name>"`,

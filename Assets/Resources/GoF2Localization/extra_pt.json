@@ -1438,5 +1438,12 @@
  "targetLockPriorityHelp": "Inteligente: naves hostis são travadas primeiro, depois a mais próxima da mira. Original: trava a primeira nave dentro da caixa, seja ela qual for, e cada nova trava substitui a anterior.",
  "targetLockUnlock": "A tecla Soltar alvo (Teclas, U por padrão) desfaz a trava; no toque, toque na placa do alvo.",
  "miningSite": "Local de mineração",
- "miningSiteBriefing": "A usina de mineração fica em um local remoto desta órbita. Enviei as coordenadas para você: siga o ponto de rota \"Local de mineração\", extraia o minério no campo de asteroides ao redor da usina e descarregue-o lá."
+ "miningSiteBriefing": "A usina de mineração fica em um local remoto desta órbita. Enviei as coordenadas para você: siga o ponto de rota \"Local de mineração\", extraia o minério no campo de asteroides ao redor da usina e descarregue-o lá.",
+ "farShipMarkers": "Marcadores de naves distantes",
+ "farMarkerOriginal": "Original",
+ "farMarkerRing": "Anel",
+ "farMarkerSmallDot": "Ponto pequeno",
+ "farShipMarkersHelp": "Como uma nave distante é marcada na tela. Original: um ponto preenchido sobre a nave. Anel: um anel vazado ao redor dela. Ponto pequeno: um ponto pequeno logo acima. Ambos deixam a nave visível; uma nave travada ganha um colchete ao redor.",
+ "markerDistance": "Distância nos marcadores",
+ "markerDistanceHelp": "Mostra a distância sob o marcador de cada nave distante, não só sob o da nave travada."
 }

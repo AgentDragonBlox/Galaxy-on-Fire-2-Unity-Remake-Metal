@@ -448,6 +448,16 @@ namespace GoF2Remake.UI
                 () => new[] { X("hudFull", "Full"), X("hudMinimal", "Minimal"), X("hudOff", "Off") },
                 () => Settings.HudMode, i => Settings.HudMode = i,
                 () => X("hudModeHelp", "Minimal: only the crosshair, the action prompt, warnings and messages. Off: only messages, for maximum immersion. Menus, conversations and the radio always show. The Toggle HUD key (F1 by default) switches it in flight.")));
+            // Remake (players' request): a far ship's marker that leaves the ship in view, and its distance (CombatView,
+            // FarShipMarkers).
+            list.Add(Choice("farShipMarkers", OptionPage.Gameplay, () => X("farShipMarkers", "Far ship markers"), true,
+                () => new[] { X("farMarkerOriginal", "Original"), X("farMarkerRing", "Ring"), X("farMarkerSmallDot", "Small dot") },
+                () => Settings.FarShipMarkers, i => Settings.FarShipMarkers = i,
+                () => X("farShipMarkersHelp", "How a distant ship is marked on screen. Original: a filled dot over the ship. Ring: a hollow ring around it. Small dot: a small dot just above it. Both leave the ship in view; a locked ship gets a bracket around it.")));
+            var markerDistance = Toggle("markerDistance", OptionPage.Gameplay, () => X("markerDistance", "Distance on ship markers"),
+                () => Settings.MarkerDistance, v => Settings.MarkerDistance = v);
+            markerDistance.description = () => X("markerDistanceHelp", "Shows the distance under every distant ship's marker, not only under the locked ship's.");
+            list.Add(markerDistance);
             // Remake: Discord Rich Presence (DiscordPresence), desktop only.
             if (!Application.isMobilePlatform)
                 list.Add(Toggle("discordPresence", OptionPage.Gameplay, () => X("discordPresence", "Show what I'm doing in Discord"),

@@ -1438,5 +1438,12 @@
  "targetLockPriorityHelp": "Schlau: feindliche Schiffe werden zuerst erfasst, dann das dem Fadenkreuz nächste. Original: das erste Schiff im Kasten wird erfasst, egal wer es ist, und jede neue Erfassung ersetzt die alte.",
  "targetLockUnlock": "Die Taste Ziel freigeben (Tastenbelegung, standardmäßig U) löst die Erfassung; auf dem Touchscreen tippe auf die Zielanzeige.",
  "miningSite": "Abbaustelle",
- "miningSiteBriefing": "Die Bergbauanlage liegt an einer abgelegenen Stelle in diesem Orbit. Ich habe dir die Koordinaten geschickt: Folge dem Wegpunkt \"Abbaustelle\", baue das Erz im Asteroidenfeld um die Anlage ab und lade es dort ab."
+ "miningSiteBriefing": "Die Bergbauanlage liegt an einer abgelegenen Stelle in diesem Orbit. Ich habe dir die Koordinaten geschickt: Folge dem Wegpunkt \"Abbaustelle\", baue das Erz im Asteroidenfeld um die Anlage ab und lade es dort ab.",
+ "farShipMarkers": "Markierung ferner Schiffe",
+ "farMarkerOriginal": "Original",
+ "farMarkerRing": "Ring",
+ "farMarkerSmallDot": "Kleiner Punkt",
+ "farShipMarkersHelp": "Wie ein entferntes Schiff auf dem Bildschirm markiert wird. Original: ein gefüllter Punkt über dem Schiff. Ring: ein hohler Ring um das Schiff. Kleiner Punkt: ein kleiner Punkt knapp über dem Schiff. Bei beiden bleibt das Schiff sichtbar; ein erfasstes Schiff bekommt eine Klammer um sich.",
+ "markerDistance": "Entfernung an Schiffsmarkierungen",
+ "markerDistanceHelp": "Zeigt die Entfernung unter der Markierung jedes entfernten Schiffs, nicht nur unter der des erfassten Schiffs."
 }

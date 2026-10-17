@@ -1438,5 +1438,12 @@
  "targetLockPriorityHelp": "Intelligent : les vaisseaux hostiles sont verrouillés d'abord, puis celui le plus proche du viseur. Original : le premier vaisseau dans le cadre est verrouillé, quel qu'il soit, et chaque nouveau verrouillage remplace l'ancien.",
  "targetLockUnlock": "La touche Libérer la cible (Touches, U par défaut) annule le verrouillage ; sur écran tactile, touche la plaque de la cible.",
  "miningSite": "Site minier",
- "miningSiteBriefing": "La station minière se trouve sur un site isolé de cette orbite. Je t'ai envoyé ses coordonnées : suis le point de passage « Site minier », extrais le minerai dans le champ d'astéroïdes autour de la station et décharge-le là-bas."
+ "miningSiteBriefing": "La station minière se trouve sur un site isolé de cette orbite. Je t'ai envoyé ses coordonnées : suis le point de passage « Site minier », extrais le minerai dans le champ d'astéroïdes autour de la station et décharge-le là-bas.",
+ "farShipMarkers": "Marqueurs des vaisseaux lointains",
+ "farMarkerOriginal": "Original",
+ "farMarkerRing": "Anneau",
+ "farMarkerSmallDot": "Petit point",
+ "farShipMarkersHelp": "Comment un vaisseau lointain est signalé à l'écran. Original : un point plein sur le vaisseau. Anneau : un anneau creux autour de lui. Petit point : un petit point juste au-dessus. Les deux laissent voir le vaisseau ; un vaisseau verrouillé est entouré d'un crochet.",
+ "markerDistance": "Distance sur les marqueurs",
+ "markerDistanceHelp": "Affiche la distance sous le marqueur de chaque vaisseau lointain, pas seulement sous celui du vaisseau verrouillé."
 }

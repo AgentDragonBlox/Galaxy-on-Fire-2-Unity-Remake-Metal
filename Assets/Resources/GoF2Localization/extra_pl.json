@@ -1438,5 +1438,12 @@
  "targetLockPriorityHelp": "Inteligentne: najpierw namierzane są wrogie statki, potem ten najbliżej celownika. Oryginał: namierzany jest pierwszy statek w ramce, kimkolwiek jest, a każde nowe namierzenie zastępuje poprzednie.",
  "targetLockUnlock": "Klawisz Zwolnij cel (Klawisze, domyślnie U) zwalnia namierzenie; na ekranie dotykowym dotknij tabliczki celu.",
  "miningSite": "Miejsce wydobycia",
- "miningSiteBriefing": "Stacja wydobywcza znajduje się w odległym miejscu tej orbity. Wysłałem ci jej współrzędne: leć do punktu nawigacyjnego „Miejsce wydobycia”, wydobądź rudę z pola asteroid wokół stacji i rozładuj ją tam."
+ "miningSiteBriefing": "Stacja wydobywcza znajduje się w odległym miejscu tej orbity. Wysłałem ci jej współrzędne: leć do punktu nawigacyjnego „Miejsce wydobycia”, wydobądź rudę z pola asteroid wokół stacji i rozładuj ją tam.",
+ "farShipMarkers": "Znaczniki dalekich statków",
+ "farMarkerOriginal": "Oryginalne",
+ "farMarkerRing": "Pierścień",
+ "farMarkerSmallDot": "Mała kropka",
+ "farShipMarkersHelp": "Jak daleki statek jest oznaczony na ekranie. Oryginalne: wypełniona kropka na statku. Pierścień: pusty pierścień wokół niego. Mała kropka: mała kropka tuż nad nim. Oba pozostawiają statek widocznym; namierzony statek otacza nawias.",
+ "markerDistance": "Odległość przy znacznikach",
+ "markerDistanceHelp": "Pokazuje odległość pod znacznikiem każdego dalekiego statku, nie tylko namierzonego."
 }
