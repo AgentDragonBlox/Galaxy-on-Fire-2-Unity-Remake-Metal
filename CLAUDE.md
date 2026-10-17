@@ -2514,8 +2514,10 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   mode with throwaway skin mods: the Phantom's Customize screen (Skin + Weapon colour rows), its crimson skin on the
   turntable and in flight with a mod weapon colour, the game's Groza (22) skinned in the hangar, the mod turned off (plain). Used by the GoF3 Ships mod (version 2: one kit "gof3", a hull part per ship, its GoF3 paint schemes as
   skins, the GoF3 guns as hardpoint models by weapon, a GoF3-parts turret on every hull, GoF3's projectile colours as its
-  "weapons" palette (Colorize_Color1 of the GoF3 weapon effects' materials); built by
-  `~/Downloads/gof3assets/tools/build_gof3_mod.py`). The ES2 converter adds ES2's player turret
+  "weapons" palette (Colorize_Color1 of the GoF3 weapon effects' materials); built by the gof3-ships-importer's
+  `tools/build_gof3_mod.py`, which finds each hardpoint's pylon by its number (several hulls borrow another's pylons) and
+  moves any gun or turret mount that would float onto the hull (`snap_floating_mounts`: the gap measured with every gun
+  model it may carry; the Krotac's lower turret hung 10 m under the hull, the Cronus' wing guns 1.5 m above it)). The ES2 converter adds ES2's player turret
   (`SK_Turret_PlayerShip_001`, skinned, split by bone into rigid base / pivot / gun meshes) and its weapon models
   (`SM_PrimaryWeapon_*`, the missile pod) with their muzzle sockets, mapped onto GoF2's weapons by item / category. Verified in
   Play mode on the Gunship: the hangar turntable's guns, pod and turret, the guns firing from the models' muzzles, the turret
