@@ -50,9 +50,10 @@ through yet. Multiplayer and VR are experimental. A build's version is the date 
     boss with a bounty and a threat tier, reported on the Missions window's Pirate activity board.
   - **Smarter NPC targeting** (an option, on by default): enemy fighters attack the nearest hostile ship instead of all
     going for you. **EMP breaks cloaks**, and the Disruptor does double damage to shields, as its description says.
-  - **Precise collision** on the ships' real shapes: shots hit what they touch and you slide along stations, freighters
-    and other players' hulls. **Ship collision: Original** (an option) gives fighters and players' ships the original's
-    larger hit box again, which makes them easier to hit.
+  - **Collision on the real shapes**: shots hit what they touch and you slide along stations and freighters. The
+    **Ship collision** option: Exact shape (everything, other players' hulls too), Mixed (the default: fighters and
+    players' ships keep the original's larger hit box, so they are easier to hit) or Original (the original's boxes
+    everywhere).
   - A **missile warning**, and boosting or cloaking shakes off homing missiles.
   - **New Game+:** with a finished game in your saves, start again with its credits, blueprints, medals and ships.
   - A new game's **Game options**: the Kaamo Club from the start, **Hardcore** (permadeath: dying deletes the run's

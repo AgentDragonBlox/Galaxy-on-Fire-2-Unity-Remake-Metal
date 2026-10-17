@@ -8,7 +8,39 @@ namespace GoF2Remake.Data
     {
         public const int CloakLosesPursuers = 1, PirateEvents = 2, CapitalShips = 4, InformerOriginalRule = 8,
                          KaamoStacking = 16, KaamoKeepsEquipment = 32, CloakBay = 64, EmpBreaksCloak = 128,
-                         SmarterNpcTargeting = 256, PreciseShipCollision = 512;
+                         SmarterNpcTargeting = 256, PreciseShipCollision = 512, OriginalCollision = 1024;
+
+        /// <summary>Remake: the ship collision mode (Settings.ShipCollision), carried in sessions by two bits:
+        /// PreciseShipCollision = Exact, OriginalCollision = Original (it wins), neither = Mixed.
+        /// Exact: every hull on its real shape (Flight.HullCollision). Mixed (default since 2026-10-17): the ships a player
+        /// can fly on the original's hit cube and sphere, everything else on its real shape. Original: no mesh collision,
+        /// every object on the original's boxes, spheres and cubes.</summary>
+        public const int CollisionExact = 0, CollisionMixed = 1, CollisionOriginal = 2, DefaultCollision = CollisionMixed;
+
+        public static int CollisionOf(int rules) =>
+            (rules & OriginalCollision) != 0 ? CollisionOriginal : (rules & PreciseShipCollision) != 0 ? CollisionExact : CollisionMixed;
+
+        public static int WithCollision(int rules, int mode)
+        {
+            rules &= ~(PreciseShipCollision | OriginalCollision);
+            if (mode == CollisionExact) rules |= PreciseShipCollision;
+            else if (mode == CollisionOriginal) rules |= OriginalCollision;
+            return rules;
+        }
+
+        /// <summary>A collision mode's name ("exact" / "precise", "mixed", "original" / "gof2"), -1 = none of them.</summary>
+        public static int ParseCollision(string text)
+        {
+            switch ((text ?? "").Trim().ToLowerInvariant())
+            {
+                case "exact": case "precise": case "mesh": case "0": return CollisionExact;
+                case "mixed": case "1": return CollisionMixed;
+                case "original": case "gof2": case "2": return CollisionOriginal;
+                default: return -1;
+            }
+        }
+
+        public static string CollisionText(int mode) => mode == CollisionExact ? "exact" : mode == CollisionOriginal ? "original" : "mixed";
 
         /// <summary>Remake: the highest level of one Kaamo Club upgrade on a ship while stacking is on (Settings.KaamoMaxLevel,
         /// Session.MaxModLevel); a number, so the session carries it beside the bits (NetRules.HostKaamoLevel). 5 by default; 10 was the
