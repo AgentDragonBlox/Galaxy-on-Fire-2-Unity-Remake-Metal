@@ -851,6 +851,10 @@ namespace GoF2Remake.UI
             dialog.RemoveFromClassList("station-dialog-backdrop--shown");
             dialogAction = null;
             dialogNoAction = null;
+            // A controller's A (or Enter) that answered the dialog isn't also the hangar window's Action: the UI takes the
+            // press first, and in the same frame the hangar saw A just pressed and bought the selected ship again (a
+            // player's report). The window waits for it to be released, like after the press that opened it (#104).
+            if (HangarOpen) hangarConfirmHeld = true;
             if (SystemMenuOpen)
             {
                 // Back to the slot just picked (or the first item of the page).
