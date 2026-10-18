@@ -215,7 +215,18 @@ The game stores every object as several meshes (hull, `_lights_add`, `_emissive`
   bar rooms or the sky props (plain URP Lit, the original's have no cube reflection); globals `_GoF2HullReflection` (1) and
   `_GoF2HullRimColor` (3 x `DAT_00258d34[sysTex]`, the sun colour table but systems 11 / 15, `StarSystem::initLight`).
   URP Lit alone reflected ~4 % (a dielectric): the hulls had none of the original's shine. The mods' material templates
-  (`ModAssetsBuilder`) use it too; a mod's hangar / bar goes back to Lit (`ModMaterials.PlainLit`). Measured: no frame-time
+  (`ModAssetsBuilder`) use it with `_GOF2_PBR`, which leaves the GoF2 terms out (2026-10-17, the user's report: mod ships
+  milky white in the hangars): a mod's `_MetallicGlossMap` alpha is PBR smoothness over the whole hull, not the original's
+  sparse specular mask (the game's 39 ship maps: mean 0.21, mostly 0; GoF3's hulls 0.3-0.6 everywhere), so the terms laid
+  the bright hangar cubemap over every panel on top of URP's own reflection. In a GoF2 hangar (`SkyReflection.SetHangar`;
+  `SetSystem` clears both for space and the lounge) the mods' PBR hulls also lose 70 % of their indirect light
+  (`_GoF2PbrIndirectDim`, through URP's occlusion: they have no occlusion map) and take their main light from above, the
+  camera's left and toward it instead of the key light's camera side (`_GoF2PbrLight` / `_GoF2PbrLightColor`:
+  `HullForwardPass` takes the main light's term out and puts that one in; `SkyReflection.HangarPbrLightToward` /
+  `HangarPbrLightStrength`): front-lit the PBR hulls had no shading, the original's textures carry theirs painted in.
+  Matched by eye to GoF3's own render of the Cronus (thumbs/ship_terran_020); the room and the game's ships are unchanged.
+  `ModAssetsGuard` puts the keyword back before a build (else the variant is stripped). A mod's hangar / bar goes back to
+  Lit (`ModMaterials.PlainLit`). Tests `ModHullLightingTests`. Measured: no frame-time
   difference (a 4K frame filled with hull, on, off and plain Lit within ±0.1 ms). When URP is updated, copy its Lit.shader
   again and redo the two marked lines. Anything that picks hull renderers by shader name accepts "GoF2/Hull" (the cloaks,
   the star map).
