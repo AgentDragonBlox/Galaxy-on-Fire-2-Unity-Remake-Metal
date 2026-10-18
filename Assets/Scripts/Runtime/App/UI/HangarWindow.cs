@@ -190,14 +190,6 @@ namespace GoF2Remake.UI
             actionArea = new VisualElement();
             actionArea.AddToClassList("detail-action-area");
             previewSide.Add(actionArea);
-            // Remake: for a ship the head shows the item window's hint (643) instead of its name and race, drawn like the
-            // description's title bar.
-            detailHelp = new Label { pickingMode = PickingMode.Ignore };
-            detailHelp.AddToClassList("info-desc-title");
-            detailHelp.AddToClassList("gof-semibold");
-            detailHelp.AddToClassList("detail-help");
-            detailHelp.style.display = DisplayStyle.None;
-            detailName.parent?.Add(detailHelp);
             previewSide.RegisterCallback<GeometryChangedEvent>(_ => FitActions());
             previewRow.Add(previewSide);
             previewRow.style.display = DisplayStyle.None;
@@ -230,7 +222,6 @@ namespace GoF2Remake.UI
         readonly ShipPreview shipPreview = new ShipPreview(new Vector3(0f, -24000f, 0f), 1268, 636, 0.9f);   // Remake: the item window's view (was 1400 x 460, 0.6)
         /// <summary>Remake: the ship's stats (left) beside its view (right).</summary>
         readonly VisualElement previewRow, previewStats, previewSide, actionArea;
-        readonly Label detailHelp;
         readonly Label detailDescTitle;
         /// <summary>Remake: the details panel; any other item's row of stats (left) and description (right).</summary>
         readonly VisualElement detailsPanel, itemRow;
@@ -266,9 +257,7 @@ namespace GoF2Remake.UI
             previewRow.style.display = ship3d ? DisplayStyle.Flex : DisplayStyle.None;
             detailDescTitle.text = Localization.Get(280).ToUpperInvariant();
             detailDescTitle.style.display = DisplayStyle.Flex;
-            detailHelp.text = Localization.Get(643).ToUpperInvariant();
-            if (detailHelp.parent != null) detailHelp.parent.style.marginLeft = ship3d ? new StyleLength(0f) : new StyleLength(StyleKeyword.Null);   // flush with the title below
-            detailHelp.style.display = ship3d ? DisplayStyle.Flex : DisplayStyle.None;
+            // A ship's head is empty: its view and stats say it (the item window's hint 643 stood there until 2026-10-18).
             detailName.style.display = ship3d ? DisplayStyle.None : DisplayStyle.Flex;
             detailSub.style.display = ship3d ? DisplayStyle.None : DisplayStyle.Flex;
             // Remake: the stats beside the ship's view, or beside any other item's description (left of it).
