@@ -31,6 +31,10 @@
   "bpShipTradedIn": "La tua {0} è stata ritirata per {1}.",
  "bpSoldHere": "IN VENDITA QUI",
  "cameraShake": "Vibrazione della telecamera",
+ "chaseCamera": "Telecamera di inseguimento",
+ "chaseCameraRemake": "Remake",
+ "chaseCameraOriginal": "Originale",
+ "chaseCameraHelp": "Remake: la telecamera resta vicina dietro la nave, che rimane vicino al centro dello schermo. Originale: la telecamera segue più lentamente, come nel gioco originale: in virata la nave si sposta di lato e il mirino si allontana dal centro.",
  "capitalCarrier": "Portaerei",
  "capitalDesc": "Le corazzate e le portaerei ottengono una scorta e torrette più potenti; le portaerei e le corazzate vossk possono essere distrutte per il bottino, le portaerei lanciano Inflict e fanno attraccare i piloti fidati per rifornirsi. Anche in Opzioni > Gioco.",
  "capitalOff": "Originali",
@@ -265,6 +269,9 @@
  "inspectWheel": "ROTELLA",
  "inspectZoom": "ZOOM",
  "invertDrillX": "Trivella: inverti sinistra / destra",
+ "invertOrbitY": "Visuali telecamera: inverti su / giù",
+ "invertOrbitX": "Visuali telecamera: inverti sinistra / destra",
+ "invertOrbitHelp": "Le telecamere che ruoti attorno alla nave: visuale libera, Action Freeze, Ispeziona nave e il Mod Builder, trascinando, con lo stick o con i tasti. Separato dall'inversione dei comandi di volo.",
  "invertDrillY": "Trivella: inverti su / giù",
  "invertX": "Inverti sinistra / destra",
  "invertY": "Inverti su / giù",
@@ -1473,5 +1480,7 @@
  "saveFolderMerge": "Tieni il più recente",
  "saveFolderUseFolder": "Solo la cartella",
  "hangarRestock": "Rifornimento",
- "hangarRareRestock": "Merci rare"
+ "hangarRareRestock": "Merci rare",
+ "filesOnMyIpad": "File › Su iPad",
+ "filesOnMyIphone": "File › Su iPhone"
 }

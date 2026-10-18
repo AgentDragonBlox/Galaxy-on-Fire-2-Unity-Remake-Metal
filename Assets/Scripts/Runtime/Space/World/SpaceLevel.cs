@@ -190,7 +190,7 @@ namespace GoF2Remake.World
             string want = PlayerHull.Assembly(db, Session.ShipIndex)?.name;
             string shown = Player.visualModel != null ? Player.visualModel.name.Replace("(Clone)", "") : null;
             // ... or its exhaust style's flame model arrived (ModExhausts: loaded on demand).
-            bool exhaust = Player.visualModel != null && Modding.ModExhausts.Find(Modding.ModShipKits.PlayerBuild(Session.ShipIndex)?.exhaust) != null
+            bool exhaust = Player.visualModel != null && Modding.ModExhausts.Find(Modding.ModShipKits.PlayerBuild(Session.ShipIndex)?.exhaust, Session.ShipIndex) != null
                            && PlayerHull.OwnEngines(db) && !Modding.ModExhausts.HasHolder(Player.visualModel);
             if ((want != null && want != shown) || exhaust) SwapPlayerShip(Session.ShipIndex);
         }

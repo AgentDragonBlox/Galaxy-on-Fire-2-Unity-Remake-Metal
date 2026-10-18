@@ -251,6 +251,10 @@ namespace GoF2Remake.UI
                 () => Settings.FieldOfView, v => Settings.FieldOfView = Mathf.Round(v), v => $"{Mathf.RoundToInt(v)}°"));
             list.Add(Slider("cameraShake", OptionPage.Graphics, () => X("cameraShake", "Camera shake"), 0f, 1f,
                 () => Settings.CameraShake, v => Settings.CameraShake = v, Percent));
+            list.Add(Choice("chaseCamera", OptionPage.Graphics, () => X("chaseCamera", "Chase camera"), true,
+                () => new[] { X("chaseCameraRemake", "Remake"), X("chaseCameraOriginal", "Original") },
+                () => Settings.OriginalChaseCamera ? 1 : 0, i => Settings.OriginalChaseCamera = i == 1,
+                () => X("chaseCameraHelp", "Remake: the camera stays close behind the ship, which stays near the middle of the screen. Original: the camera follows more slowly, as in the original game: in a turn the ship swings out to the side and the crosshair moves off centre.")));
             list.Add(Toggle("showFps", OptionPage.Graphics, () => X("showFps", "Show FPS"), () => Settings.ShowFps, v => Settings.ShowFps = v));
 
             // ---- controls
@@ -293,6 +297,15 @@ namespace GoF2Remake.UI
             list.Add(Toggle("invertYaw", OptionPage.Controls, () => X("invertX", "Invert left / right"), () => Settings.InvertYaw, v => Settings.InvertYaw = v));
             list.Add(Toggle("invertDrillY", OptionPage.Controls, () => X("invertDrillY", "Mining drill: invert up / down"), () => Settings.InvertDrillY, v => Settings.InvertDrillY = v));
             list.Add(Toggle("invertDrillX", OptionPage.Controls, () => X("invertDrillX", "Mining drill: invert left / right"), () => Settings.InvertDrillX, v => Settings.InvertDrillX = v));
+            // Remake (#121): the cameras turned round the ship (free look, Action Freeze, Inspect ship) have their own pair.
+            var orbitY = Toggle("invertOrbitY", OptionPage.Controls, () => X("invertOrbitY", "Camera views: invert up / down"),
+                () => Settings.InvertOrbitY, v => Settings.InvertOrbitY = v);
+            orbitY.description = () => X("invertOrbitHelp", "The cameras you turn around the ship: free look, Action Freeze, Inspect ship and the Mod Builder, by drag, stick or keys. Separate from the flight controls' inversion.");
+            list.Add(orbitY);
+            var orbitX = Toggle("invertOrbitX", OptionPage.Controls, () => X("invertOrbitX", "Camera views: invert left / right"),
+                () => Settings.InvertOrbitX, v => Settings.InvertOrbitX = v);
+            orbitX.description = orbitY.description;
+            list.Add(orbitX);
             if (Flight.ControllerGyro.Supported)
             {
                 list.Add(Toggle("gyroSteering", OptionPage.Controls, () => X("gyroSteering", "Controller gyro (DualSense, DualShock 4, Switch Pro)"),

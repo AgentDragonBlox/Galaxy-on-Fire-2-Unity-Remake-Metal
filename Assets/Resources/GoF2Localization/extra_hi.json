@@ -1473,5 +1473,14 @@
  "saveFolderMerge": "नया रखें",
  "saveFolderUseFolder": "केवल फ़ोल्डर के",
  "hangarRestock": "पुनः भंडारण",
- "hangarRareRestock": "दुर्लभ माल"
+ "hangarRareRestock": "दुर्लभ माल",
+ "chaseCamera": "पीछा कैमरा",
+ "chaseCameraRemake": "रीमेक",
+ "chaseCameraOriginal": "मूल",
+ "chaseCameraHelp": "रीमेक: कैमरा जहाज़ के ठीक पीछे रहता है, और जहाज़ स्क्रीन के बीच के पास रहता है। मूल: कैमरा मूल गेम की तरह धीरे पीछा करता है: मोड़ पर जहाज़ एक तरफ़ झूल जाता है और क्रॉसहेयर बीच से हट जाता है।",
+ "filesOnMyIpad": "फ़ाइलें › मेरे iPad पर",
+ "filesOnMyIphone": "फ़ाइलें › मेरे iPhone पर",
+ "invertOrbitY": "कैमरा दृश्य: ऊपर / नीचे उलटें",
+ "invertOrbitX": "कैमरा दृश्य: बाएँ / दाएँ उलटें",
+ "invertOrbitHelp": "जहाज़ के चारों ओर घुमाए जाने वाले कैमरे: फ़्री लुक, Action Freeze, जहाज़ देखें और Mod Builder, खींचकर, स्टिक से या कुंजियों से। उड़ान नियंत्रण के उलटाव से अलग।"
 }

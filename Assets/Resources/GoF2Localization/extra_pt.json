@@ -31,6 +31,10 @@
   "bpShipTradedIn": "Sua {0} foi dada como parte do pagamento por {1}.",
  "bpSoldHere": "VENDIDO AQUI",
  "cameraShake": "Tremor da câmera",
+ "chaseCamera": "Câmera de perseguição",
+ "chaseCameraRemake": "Remake",
+ "chaseCameraOriginal": "Original",
+ "chaseCameraHelp": "Remake: a câmera fica bem atrás da nave, que permanece perto do centro da tela. Original: a câmera segue mais devagar, como no jogo original: numa curva a nave vai para o lado e a mira sai do centro.",
  "capitalCarrier": "Porta-naves",
  "capitalDesc": "Encouraçados e porta-naves ganham escoltas e torres mais fortes; porta-naves e encouraçados vossk podem ser destruídos para saque, porta-naves lançam Inflicts e deixam pilotos de confiança atracar para reabastecer. Também em Opções > Jogabilidade.",
  "capitalOff": "Originais",
@@ -265,6 +269,9 @@
  "inspectWheel": "RODA",
  "inspectZoom": "ZOOM",
  "invertDrillX": "Broca de escavação: inverter esquerda / direita",
+ "invertOrbitY": "Visões de câmera: inverter cima / baixo",
+ "invertOrbitX": "Visões de câmera: inverter esquerda / direita",
+ "invertOrbitHelp": "As câmeras que você gira ao redor da nave: visão livre, Action Freeze, Inspecionar nave e o Mod Builder, arrastando, com o analógico ou com teclas. Separado da inversão dos controles de voo.",
  "invertDrillY": "Broca de escavação: inverter cima / baixo",
  "invertX": "Inverter esquerda / direita",
  "invertY": "Inverter cima / baixo",
@@ -1473,5 +1480,7 @@
  "saveFolderMerge": "Manter o mais recente",
  "saveFolderUseFolder": "Só os da pasta",
  "hangarRestock": "Reposição",
- "hangarRareRestock": "Bens raros"
+ "hangarRareRestock": "Bens raros",
+ "filesOnMyIpad": "Arquivos › No Meu iPad",
+ "filesOnMyIphone": "Arquivos › No Meu iPhone"
 }

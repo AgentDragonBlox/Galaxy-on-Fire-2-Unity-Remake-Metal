@@ -360,7 +360,14 @@ namespace GoF2Remake.Data
 
         /// <summary>What a dealer ship costs here (multiplayer: a faction station's VAT markup for non-members); ShipPrice is
         /// its value (a trade-in, the club's storage).</summary>
-        public int BuyShipPrice(int ship) => Storage ? ShipPrice(ship) : (GameHooks.FactionShipBuyPrice != null ? GameHooks.FactionShipBuyPrice(Station, ShipPrice(ship)) : ShipPrice(ship));
+        public int BuyShipPrice(int ship) => CronusGift(ship) ? 0
+            : Storage ? ShipPrice(ship) : (GameHooks.FactionShipBuyPrice != null ? GameHooks.FactionShipBuyPrice(Station, ShipPrice(ship)) : ShipPrice(ship));
+
+        /// <summary>#122: Khador's Cronus at Kothar during step 77, once (Session.KhadorCronusGift; ModStation::OnTouchEnd
+        /// 0xea4ec's makeShip(37, 0)). Its value (ShipPrice, a later trade-in) stays the table's, as the original rebuilds the
+        /// flown ship with makeShip(-1).</summary>
+        bool CronusGift(int ship) => ship == 37 && Station == 100 && !Storage && Session.KhadorCronusGift
+                                     && !Session.FreePlay && Session.CampaignMission == 77;
 
         /// <summary>HangarWindow::selectItem (ship row): 'need' = missing credits after trading in the current ship.</summary>
         public Result CanBuyShip(int ship, out int need)
@@ -383,6 +390,7 @@ namespace GoF2Remake.Data
             int old = Session.ShipIndex;
             var oldMods = new List<int>(Session.ShipMods ?? new List<int>());
             if (!Cheats.FreeShopping) ChangeCredits(ShipPrice(old) - BuyShipPrice(ship));
+            if (CronusGift(ship)) Session.KhadorCronusGift = false;   // the gift is taken: a row of it later is priced
             SwitchTo(ship, Stock.TakeMods(ship), dismount: true);
             int row = Stock.ships.IndexOf(ship);
             if (row >= 0) Stock.ships[row] = old; else Stock.ships.Add(old);
@@ -533,6 +541,7 @@ namespace GoF2Remake.Data
             int old = Session.ShipIndex;
             var oldMods = Session.ShipMods;
             if (!Cheats.FreeShopping) ChangeCredits(-BuyShipPrice(ship));
+            if (CronusGift(ship)) Session.KhadorCronusGift = false;
             var kept = EquipmentToStore(moveEquipment);
             SwitchTo(ship, Stock.TakeMods(ship), dismount: !moveEquipment);   // the bought row's mods (OnTouchEnd: getMods of the row, both branches)
             Stock.ships.Remove(ship);   // the bought row is gone

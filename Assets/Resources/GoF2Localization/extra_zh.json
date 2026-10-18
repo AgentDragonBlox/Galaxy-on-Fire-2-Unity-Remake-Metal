@@ -1473,5 +1473,14 @@
  "saveFolderMerge": "保留较新的",
  "saveFolderUseFolder": "只用文件夹的",
  "hangarRestock": "补货",
- "hangarRareRestock": "稀有货物"
+ "hangarRareRestock": "稀有货物",
+ "chaseCamera": "追踪镜头",
+ "chaseCameraRemake": "重制版",
+ "chaseCameraOriginal": "原版",
+ "chaseCameraHelp": "重制版：镜头紧跟在飞船后方，飞船保持在屏幕中央附近。原版：镜头跟随得更慢，与原版游戏相同：转弯时飞船会偏向一侧，准星也会偏离中心。",
+ "filesOnMyIpad": "文件 › 我的 iPad",
+ "filesOnMyIphone": "文件 › 我的 iPhone",
+ "invertOrbitY": "镜头视角：上下反转",
+ "invertOrbitX": "镜头视角：左右反转",
+ "invertOrbitHelp": "绕飞船旋转的镜头：自由视角、Action Freeze、检视飞船和 Mod Builder，通过拖动、摇杆或按键操作。与飞行操控的反转设置相互独立。"
 }

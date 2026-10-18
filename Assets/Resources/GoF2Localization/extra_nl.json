@@ -31,6 +31,10 @@
   "bpShipTradedIn": "Je {0} is ingeruild voor {1}.",
  "bpSoldHere": "HIER TE KOOP",
  "cameraShake": "Camerabeving",
+ "chaseCamera": "Volgcamera",
+ "chaseCameraRemake": "Remake",
+ "chaseCameraOriginal": "Origineel",
+ "chaseCameraHelp": "Remake: de camera blijft dicht achter het schip, dat dicht bij het midden van het scherm blijft. Origineel: de camera volgt langzamer, zoals in het originele spel: in een bocht zwaait het schip naar de zijkant en schuift het vizier uit het midden.",
  "capitalCarrier": "Vliegdekschip",
  "capitalDesc": "Slagschepen en vliegdekschepen krijgen escortes en sterkere geschutstorens; vliegdekschepen en Vossk-slagschepen zijn te vernietigen voor buit, vliegdekschepen lanceren Inflicts en laten vertrouwde piloten aanmeren om te bevoorraden. Ook in Opties > Gameplay.",
  "capitalOff": "Origineel",
@@ -265,6 +269,9 @@
  "inspectWheel": "SCROLLWIEL",
  "inspectZoom": "ZOOMEN",
  "invertDrillX": "Boor: links / rechts omkeren",
+ "invertOrbitY": "Cameraweergaven: omhoog / omlaag omkeren",
+ "invertOrbitX": "Cameraweergaven: links / rechts omkeren",
+ "invertOrbitHelp": "De camera's die je om het schip draait: vrij rondkijken, Action Freeze, Schip bekijken en de Mod Builder, met slepen, stick of toetsen. Los van de omkering van de vluchtbesturing.",
  "invertDrillY": "Boor: omhoog / omlaag omkeren",
  "invertX": "Links / rechts omkeren",
  "invertY": "Omhoog / omlaag omkeren",
@@ -1473,5 +1480,7 @@
  "saveFolderMerge": "Nieuwste houden",
  "saveFolderUseFolder": "Alleen die van de map",
  "hangarRestock": "Aanvulling",
- "hangarRareRestock": "Zeldzame goederen"
+ "hangarRareRestock": "Zeldzame goederen",
+ "filesOnMyIpad": "Bestanden › Op mijn iPad",
+ "filesOnMyIphone": "Bestanden › Op mijn iPhone"
 }

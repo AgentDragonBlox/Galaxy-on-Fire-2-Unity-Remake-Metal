@@ -31,6 +31,10 @@
   "bpShipTradedIn": "Twój {0} został przyjęty w rozliczeniu za {1}.",
  "bpSoldHere": "DOSTĘPNE TUTAJ",
  "cameraShake": "Wstrząsy kamery",
+ "chaseCamera": "Kamera pościgowa",
+ "chaseCameraRemake": "Remake",
+ "chaseCameraOriginal": "Oryginalna",
+ "chaseCameraHelp": "Remake: kamera trzyma się blisko za statkiem, który pozostaje blisko środka ekranu. Oryginalna: kamera podąża wolniej, jak w oryginalnej grze: w zakręcie statek odchyla się na bok, a celownik odsuwa się od środka.",
  "capitalCarrier": "Lotniskowiec",
  "capitalDesc": "Pancerniki i lotniskowce dostają eskortę i silniejsze wieżyczki; lotniskowce i pancerniki Vossk można zniszczyć dla łupu, lotniskowce wypuszczają Inflicty i pozwalają zaufanym pilotom zadokować, by uzupełnić zapasy. Także w Opcje > Rozgrywka.",
  "capitalOff": "Oryginalne",
@@ -265,6 +269,9 @@
  "inspectWheel": "KÓŁKO",
  "inspectZoom": "ZOOM",
  "invertDrillX": "Wiertło: odwróć lewo / prawo",
+ "invertOrbitY": "Widoki kamery: odwróć góra / dół",
+ "invertOrbitX": "Widoki kamery: odwróć lewo / prawo",
+ "invertOrbitHelp": "Kamery, które obracasz wokół statku: swobodne rozglądanie, Action Freeze, Obejrzyj statek i Mod Builder, przeciąganiem, gałką lub klawiszami. Niezależnie od odwrócenia sterowania lotem.",
  "invertDrillY": "Wiertło: odwróć górę / dół",
  "invertX": "Odwróć lewo / prawo",
  "invertY": "Odwróć górę / dół",
@@ -1473,5 +1480,7 @@
  "saveFolderMerge": "Zachowaj nowszy",
  "saveFolderUseFolder": "Tylko z folderu",
  "hangarRestock": "Dostawa",
- "hangarRareRestock": "Rzadkie towary"
+ "hangarRareRestock": "Rzadkie towary",
+ "filesOnMyIpad": "Pliki › Na moim iPadzie",
+ "filesOnMyIphone": "Pliki › Na moim iPhonie"
 }

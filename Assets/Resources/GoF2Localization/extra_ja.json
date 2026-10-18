@@ -265,6 +265,9 @@
  "inspectWheel": "ホイール",
  "inspectZoom": "ズーム",
  "invertDrillX": "採掘ドリル：左右反転",
+ "invertOrbitY": "カメラビュー：上下反転",
+ "invertOrbitX": "カメラビュー：左右反転",
+ "invertOrbitHelp": "船の周りを回すカメラ（フリールック、Action Freeze、機体を見る、Mod Builder）のドラッグ・スティック・キー操作。飛行操作の反転とは別の設定です。",
  "invertDrillY": "採掘ドリル：上下反転",
  "invertX": "左右反転",
  "invertY": "上下反転",
@@ -1473,5 +1476,11 @@
  "saveFolderMerge": "新しい方を残す",
  "saveFolderUseFolder": "フォルダーのみ",
  "hangarRestock": "入荷",
- "hangarRareRestock": "希少品"
+ "hangarRareRestock": "希少品",
+ "chaseCamera": "追従カメラ",
+ "chaseCameraRemake": "リメイク",
+ "chaseCameraOriginal": "オリジナル",
+ "chaseCameraHelp": "リメイク：カメラは船のすぐ後ろにとどまり、船は画面の中央付近に保たれます。オリジナル：原作と同じく、カメラはゆっくり追従します。旋回すると船が横に振れ、照準が中央から外れます。",
+ "filesOnMyIpad": "ファイル › このiPad内",
+ "filesOnMyIphone": "ファイル › このiPhone内"
 }

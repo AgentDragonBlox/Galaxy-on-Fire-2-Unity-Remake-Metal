@@ -582,21 +582,9 @@ namespace GoF2Remake.UI
             ApplySafeArea(w, h, offscreen);
         }
 
-        /// <summary>Safe area insets (pixels -> panel units) once the panel is laid out (its size is NaN before).</summary>
-        void ApplySafeArea(float w, float h, bool offscreen)
-        {
-            root.schedule.Execute(() =>
-            {
-                if (safeArea == null) return;
-                if (!(root.layout.width > 0f)) { ApplySafeArea(w, h, offscreen); return; }   // also catches NaN
-                float k = root.layout.width / w;
-                var sa = offscreen ? new Rect(0f, 0f, w, h) : Screen.safeArea;
-                safeArea.style.paddingLeft = sa.xMin * k;
-                safeArea.style.paddingRight = (w - sa.xMax) * k;
-                safeArea.style.paddingTop = (h - sa.yMax) * k;
-                safeArea.style.paddingBottom = sa.yMin * k;
-            }).ExecuteLater(1);
-        }
+        /// <summary>Safe area insets (the notch / Dynamic Island, the home indicator, cutouts) as the safe area's margins,
+        /// see SafeArea (its children are all absolutely placed: the padding it had before never moved them).</summary>
+        void ApplySafeArea(float w, float h, bool offscreen) => SafeArea.Apply(root, safeArea, w, h, offscreen, SafeArea.Mode.Margins);
 
         void OnDestroy()
         {

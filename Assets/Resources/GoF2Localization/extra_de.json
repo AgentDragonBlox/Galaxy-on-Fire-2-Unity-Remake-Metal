@@ -31,6 +31,10 @@
   "bpShipTradedIn": "Deine {0} wurde für {1} in Zahlung gegeben.",
  "bpSoldHere": "HIER ERHÄLTLICH",
  "cameraShake": "Kamerawackeln",
+ "chaseCamera": "Verfolgerkamera",
+ "chaseCameraRemake": "Remake",
+ "chaseCameraOriginal": "Original",
+ "chaseCameraHelp": "Remake: Die Kamera bleibt dicht hinter dem Schiff, das nahe der Bildmitte bleibt. Original: Die Kamera folgt langsamer, wie im Originalspiel: In einer Kurve schwenkt das Schiff zur Seite aus und das Fadenkreuz wandert aus der Mitte.",
  "capitalCarrier": "Träger",
  "capitalDesc": "Schlachtschiffe und Träger bekommen Begleitschutz und stärkere Geschütze; Träger und Vossk-Schlachtschiffe lassen sich für Beute zerstören, Träger starten Inflicts und lassen vertrauenswürdige Piloten zum Nachschub andocken. Auch unter Optionen > Spielablauf.",
  "capitalOff": "Original",
@@ -265,6 +269,9 @@
  "inspectWheel": "MAUSRAD",
  "inspectZoom": "ZOOM",
  "invertDrillX": "Bohrer: links / rechts umkehren",
+ "invertOrbitY": "Kameraansichten: oben / unten umkehren",
+ "invertOrbitX": "Kameraansichten: links / rechts umkehren",
+ "invertOrbitHelp": "Die Kameras, die du um das Schiff drehst: freier Blick, Action Freeze, Schiff ansehen und der Mod Builder, per Ziehen, Stick oder Tasten. Unabhängig von der Umkehrung der Flugsteuerung.",
  "invertDrillY": "Bohrer: oben / unten umkehren",
  "invertX": "Links / rechts umkehren",
  "invertY": "Oben / unten umkehren",
@@ -1473,5 +1480,7 @@
  "saveFolderMerge": "Neuere behalten",
  "saveFolderUseFolder": "Nur die des Ordners",
  "hangarRestock": "Nachschub",
- "hangarRareRestock": "Seltene Waren"
+ "hangarRareRestock": "Seltene Waren",
+ "filesOnMyIpad": "Dateien › Auf meinem iPad",
+ "filesOnMyIphone": "Dateien › Auf meinem iPhone"
 }

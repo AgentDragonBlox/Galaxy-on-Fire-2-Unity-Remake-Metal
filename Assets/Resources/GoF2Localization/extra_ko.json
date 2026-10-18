@@ -265,6 +265,9 @@
  "inspectWheel": "휠",
  "inspectZoom": "확대/축소",
  "invertDrillX": "채굴 드릴: 좌우 반전",
+ "invertOrbitY": "카메라 시점: 위 / 아래 반전",
+ "invertOrbitX": "카메라 시점: 왼쪽 / 오른쪽 반전",
+ "invertOrbitHelp": "함선 주위를 도는 카메라(자유 시점, Action Freeze, 함선 살펴보기, Mod Builder)의 드래그, 스틱, 키 조작. 비행 조작 반전과는 별개입니다.",
  "invertDrillY": "채굴 드릴: 상하 반전",
  "invertX": "좌우 반전",
  "invertY": "상하 반전",
@@ -1473,5 +1476,11 @@
  "saveFolderMerge": "최근 것 유지",
  "saveFolderUseFolder": "폴더 것만",
  "hangarRestock": "재입고",
- "hangarRareRestock": "희귀 화물"
+ "hangarRareRestock": "희귀 화물",
+ "chaseCamera": "추적 카메라",
+ "chaseCameraRemake": "리메이크",
+ "chaseCameraOriginal": "오리지널",
+ "chaseCameraHelp": "리메이크: 카메라가 함선 바로 뒤에 머물러 함선이 화면 중앙 가까이에 있습니다. 오리지널: 원작처럼 카메라가 더 느리게 따라옵니다. 선회할 때 함선이 옆으로 밀려나고 조준선이 중앙에서 벗어납니다.",
+ "filesOnMyIpad": "파일 › 나의 iPad",
+ "filesOnMyIphone": "파일 › 나의 iPhone"
 }

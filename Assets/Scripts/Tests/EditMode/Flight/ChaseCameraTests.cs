@@ -3,7 +3,8 @@
 // moves the camera position / look point by k(dt) of the way to their goals, k(dt) = c0 / dt + c1 + c2 dt + c3 dt^2 + c4 dt^3
 // with the c's fitted polynomials in the coefficient x (TargetFollowCamera::aproximateCooefficientsForAproximationOfDamping
 // Funktion 0x186a10; the two terms near x / 2 are the c2 candidates, the decompile's register order leaves which is which
-// open, and both agree within 1 %). The remake's ChaseCamera.Ease is 1 - e^(-x dt / 2). Also the model's bank
+// open, and both agree within 1 %). ChaseCamera.Ease is 1 - e^(-x dt / 2); the camera itself follows at ChaseCamera.Follow,
+// 1 - e^(-x dt), twice that rate (2026.10.09's tighter follow, back after #114's original rate). Also the model's bank
 // (PlayerEgo::update 0xaa5f4): roll = -yawRate * 2 pi / 4096 rad, tilt = pitchRate * 0.25 * 2 pi / 4096.
 
 using GoF2Remake.Flight;
@@ -61,8 +62,17 @@ namespace GoF2Remake.Tests
             // Two 16.5 ms steps leave as much of the gap as one 33 ms step.
             float x = 0.005f, two = (1f - ChaseCamera.Ease(x, 16.5f)) * (1f - ChaseCamera.Ease(x, 16.5f));
             Assert.AreEqual(1f - ChaseCamera.Ease(x, 33f), two, 1e-5f);
-            // and not the old 1 - e^(-x dt), twice as fast
             Assert.AreEqual(1f - Mathf.Exp(-0.5f * x * 33f), ChaseCamera.Ease(x, 33f), 1e-6f);
+        }
+
+        [Test]
+        public void TheCameraFollowsAtTwiceTheOriginalsRate()
+        {
+            // One frame of Follow leaves as much of the gap as two of the original's damping over the same time.
+            float x = 0.005f;
+            float original = (1f - ChaseCamera.Ease(x, 16.5f)) * (1f - ChaseCamera.Ease(x, 16.5f)) * (1f - ChaseCamera.Ease(x, 16.5f)) * (1f - ChaseCamera.Ease(x, 16.5f));
+            Assert.AreEqual(1f - ChaseCamera.Follow(x, 33f), original, 1e-5f);
+            Assert.AreEqual(1f - Mathf.Exp(-x * 33f), ChaseCamera.Follow(x, 33f), 1e-6f);
         }
 
         [Test]
