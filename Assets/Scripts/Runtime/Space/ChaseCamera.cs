@@ -26,6 +26,10 @@
 //    ship hidden (PlayerEgo::hideShipForFirstPersonCameraView), the hit shake x0.001 and the rumble x0.0015. Remake
 //    (FreeLookCamera.Mode.FirstPerson): reachable, on the bow instead of the pivot (FirstPersonSeat), the shake and the
 //    rumble as small turns of the view, the boost's FOV at half.
+//  * The shake and the rumble draw a new random offset each frame of the original's 30 fps. Remake (players' reports
+//    2026-10-18, extreme shaking): each offset is held for that 33 ms (HeldJitter) instead of a new one every rendered
+//    frame (at 144 fps an explosion's rumble jolted the view 2.8 deg every 7 ms), and laid on top of the follow, taken
+//    off again the next frame (UndoJitter): drawn into the eased pose, it piled up through the easing.
 
 using UnityEngine;
 
@@ -72,6 +76,59 @@ namespace GoF2Remake.Flight
         bool lookValid;
         float shakeMs, shakeUnits, rumble;
         bool wasBoosting;
+        // The shake / rumble on top of the follow (header): the held random directions, the pose without them and the one
+        // shown with them.
+        Vector3 shakeDir, rumbleDir;
+        float jitterAgeMs = JitterMs;
+        Vector3 basePos, shownPos;
+        Quaternion baseRot, shownRot;
+        bool jittered;
+
+        /// <summary>The original's frame (30 fps): a shake or rumble offset lasts this long.</summary>
+        public const float JitterMs = 1000f / 30f;
+
+        /// <summary>A random direction in [-1, 1] per axis, drawn again once 'ageMs' reaches JitterMs (the original's frame)
+        /// rather than every rendered frame. Shared with the cutscene camera's rumble.</summary>
+        public static Vector3 HeldJitter(ref Vector3 dir, ref float ageMs, float dtMs)
+        {
+            ageMs += dtMs;
+            if (ageMs >= JitterMs || dir == Vector3.zero)
+            {
+                ageMs = ageMs >= 2f * JitterMs ? 0f : ageMs - JitterMs;
+                dir = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), Random.Range(-1f, 1f));
+            }
+            return dir;
+        }
+
+        /// <summary>Last frame's shake / rumble comes off before the follow eases on (unless something else has moved the
+        /// camera since: a snap, another camera).</summary>
+        void UndoJitter()
+        {
+            if (jittered && transform.position == shownPos && transform.rotation == shownRot)
+                transform.SetPositionAndRotation(basePos, baseRot);
+            jittered = false;
+        }
+
+        void BeginJitter()
+        {
+            basePos = transform.position;
+            baseRot = transform.rotation;
+        }
+
+        void EndJitter()
+        {
+            shownPos = transform.position;
+            shownRot = transform.rotation;
+            jittered = shownPos != basePos || shownRot != baseRot;
+        }
+
+        /// <summary>The rumble as a turn of the view: the look-at 'look' moved by 'jitter' (metres), seen from the camera.</summary>
+        void TurnBy(Vector3 look, Vector3 jitter)
+        {
+            var from = look - transform.position;
+            if (from.sqrMagnitude < 1e-6f) return;
+            transform.rotation = Quaternion.FromToRotation(from, from + jitter) * transform.rotation;
+        }
 
         /// <summary>TargetFollowCamera::hit / hitSmall: the camera position jitters rnd(2a) - a units per axis per frame
         /// ('ms' 1000 / a 6 when the player is hit, 50 / 2 per own shot).</summary>
@@ -130,9 +187,12 @@ namespace GoF2Remake.Flight
             var ship = target.transform;
             var model = target.Model;
             float dtMs = Time.deltaTime * 1000f * TimeExtender.PlayerFactor;   // TargetFollowCamera gets the player's dt
+            UndoJitter();
             // TargetFollowCamera::update 0x186e40 does everything inside `if (0 < dt)`: paused, the camera neither follows,
             // shakes nor rumbles (the shake timer would never run out, the jitter piled up every frame).
             if (dtMs <= 0f) { rumble = 0f; return; }
+            HeldJitter(ref shakeDir, ref jitterAgeMs, dtMs);
+            rumbleDir = new Vector3(shakeDir.y, shakeDir.z, shakeDir.x);   // drawn with it, its own mix of the axes
             if (constantRumble > 0f) rumble = Mathf.Max(rumble, constantRumble);
             // Remake: the same rumble on the controller / phone (Haptics; its own option, not the camera shake's): explosions,
             // the Liberator, the boost below; the boost's start as a pulse.
@@ -154,12 +214,14 @@ namespace GoF2Remake.Flight
                 float k = followRigid ? 1f : 1f - Mathf.Exp(-0.01f * dtMs);
                 transform.position = Vector3.Lerp(transform.position, fp, k);
                 transform.rotation = Quaternion.Slerp(transform.rotation, fr, k);
+                BeginJitter();
                 if (rumble > 0f)
                 {
                     float j = rumble * 0.6f;
-                    transform.rotation *= Quaternion.Euler(Random.Range(-j, j), Random.Range(-j, j), 0f);
+                    transform.rotation *= Quaternion.Euler(rumbleDir.x * j, rumbleDir.y * j, 0f);
                     rumble = 0f;
                 }
+                EndJitter();
                 if (cam != null) cam.fieldOfView = GoF2Remake.Visuals.Aspect.VerticalFov(baseFov, cam.aspect);
                 lookValid = false;
                 EndFirstPerson();   // the turret view, free look, the Liberator: the hull shows
@@ -242,23 +304,25 @@ namespace GoF2Remake.Flight
                     transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(toLook, ship.up), rotEase);
             }
 
+            BeginJitter();
             if (shakeMs > 0f)
             {
                 shakeMs -= dtMs;
                 float a = shakeUnits * target.metersPerUnit * GoF2Remake.Data.Settings.CameraShake;
-                transform.position += new Vector3(Random.Range(-a, a), Random.Range(-a, a), Random.Range(-a, a));
+                transform.position += shakeDir * a;
+                // The Original follow looks at its point from where the camera is: the shake turns the view a little too.
+                if (original && lookValid && (lookPoint - transform.position).sqrMagnitude > 1e-6f)
+                    transform.rotation = Quaternion.LookRotation(lookPoint - transform.position, ship.up);
             }
             if (boosting)
                 rumble = Mathf.Max(rumble, boostRumble * GoF2Remake.Data.Settings.CameraShake);
             if (rumble > 0f)
             {
                 // 50 units at the look-at point (about 690 units away) = about 4 degrees.
-                var look = lookValid ? lookPoint : ship.TransformPoint(lookOffset);
-                float j = rumble * 50f * target.metersPerUnit;
-                look += new Vector3(Random.Range(-j, j), Random.Range(-j, j), Random.Range(-j, j));
-                transform.rotation = Quaternion.LookRotation(look - transform.position, transform.up);
+                TurnBy(lookValid ? lookPoint : ship.TransformPoint(lookOffset), rumbleDir * (rumble * 50f * target.metersPerUnit));
                 rumble = 0f;
             }
+            EndJitter();
 
             if (cam != null)   // a heavy hull's boost pushes the view out less (it gathers speed slowly anyway)
                 cam.fieldOfView = GoF2Remake.Visuals.Aspect.VerticalFov(baseFov + boostFovAdd * model.BoostVisualPercent * Mathf.Lerp(1f, 0.5f, mass), cam.aspect);
@@ -329,7 +393,7 @@ namespace GoF2Remake.Flight
             j += rumble * 1.3f;
             rumble = 0f;
             j *= GoF2Remake.Data.Settings.CameraShake;
-            if (j > 0f) rot *= Quaternion.Euler(Random.Range(-j, j), Random.Range(-j, j), 0f);
+            if (j > 0f) rot *= Quaternion.Euler(rumbleDir.x * j, rumbleDir.y * j, 0f);
             transform.SetPositionAndRotation(ship.TransformPoint(fpSeat), rot);
             slide = Vector3.zero;
             lookValid = false;

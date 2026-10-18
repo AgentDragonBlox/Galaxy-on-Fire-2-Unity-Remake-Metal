@@ -83,5 +83,25 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(25.05f, 285f * ShipController.RateToDegrees, 0.01f);
             Assert.AreEqual(285f * 2f * Mathf.PI / 4096f * Mathf.Rad2Deg, 285f * ShipController.RateToDegrees, 1e-3f);
         }
+
+        [Test]
+        public void TheShakeKeepsItsDirectionForAnOriginalFrame()
+        {
+            // Players' reports (2026-10-18): a new random jolt every rendered frame shook wildly at 144 fps; the original draws
+            // one per 30 fps frame.
+            Vector3 dir = Vector3.zero;
+            float age = ChaseCamera.JitterMs;
+            var first = ChaseCamera.HeldJitter(ref dir, ref age, 7f);
+            Assert.AreNotEqual(Vector3.zero, first);
+            Assert.IsTrue(Mathf.Abs(first.x) <= 1f && Mathf.Abs(first.y) <= 1f && Mathf.Abs(first.z) <= 1f);
+            for (int i = 0; i < 3; i++) Assert.AreEqual(first, ChaseCamera.HeldJitter(ref dir, ref age, 7f), "held through a 144 fps frame " + i);
+            int changed = 0;
+            for (int i = 0; i < 20; i++)
+            {
+                var before = dir;
+                if (ChaseCamera.HeldJitter(ref dir, ref age, ChaseCamera.JitterMs) != before) changed++;
+            }
+            Assert.Greater(changed, 15, "a new one each original frame");
+        }
     }
 }
