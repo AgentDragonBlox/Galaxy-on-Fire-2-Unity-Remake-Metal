@@ -1385,7 +1385,8 @@ namespace GoF2Remake.World
         /// over ChatZoomMs.</summary>
         const float ChatZoomIn = 0.25f, ChatZoomMs = 800f;
         /// <summary>Where the visitor talked to stands across the screen, from the left (0) to the right (1): the middle of
-        /// the room left of the chat window (LoungePanel sets it from the window's place).</summary>
+        /// the room beside the chat window, left of it or (the window on the left) right of it (LoungePanel sets it from the
+        /// window's place).</summary>
         public float ChatFrameX = 0.24f;
         int chatVisitor = -1;
         Vector3 chatTarget;
