@@ -1,6 +1,7 @@
 {
  "animatedDialogue": "Diálogo animado",
  "antiAliasing": "Antialiasing",
+ "msaaByUpscaler": "El escalador se encarga del antialiasing: desactívalo para usar MSAA",
  "autoAdvance": "Pasar automáticamente las páginas de diálogo con voz",
  "autosaveHint": "Se guarda automáticamente al acoplar",
  "battleCallTerran": "A todas las naves terranas: el acorazado vossk está a tiro. ¡Derribadlo!",

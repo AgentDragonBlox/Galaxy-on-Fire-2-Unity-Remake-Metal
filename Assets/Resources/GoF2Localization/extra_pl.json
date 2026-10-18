@@ -1,6 +1,7 @@
 {
  "animatedDialogue": "Animowane dialogi",
  "antiAliasing": "Wygładzanie krawędzi",
+ "msaaByUpscaler": "Upscaler wygładza krawędzie: wyłącz go, aby użyć MSAA",
  "autoAdvance": "Automatycznie przewijaj strony dialogów z głosem",
  "autosaveHint": "Zapis automatyczny przy dokowaniu",
  "battleCallTerran": "Do wszystkich terrańskich statków: pancernik Vossk jest w zasięgu. Zestrzelić go!",

@@ -1,6 +1,7 @@
 {
  "animatedDialogue": "Animierte Dialoge",
  "antiAliasing": "Kantenglättung",
+ "msaaByUpscaler": "Der Upscaler übernimmt die Kantenglättung: schalte ihn aus, um MSAA zu nutzen",
  "autoAdvance": "Vertonte Dialogseiten automatisch umblättern",
  "autosaveHint": "Wird beim Andocken automatisch gespeichert",
  "battleCallTerran": "An alle terranischen Schiffe: Das Vossk-Schlachtschiff ist in Reichweite. Holt es runter!",

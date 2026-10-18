@@ -1,6 +1,7 @@
 {
  "animatedDialogue": "Diálogo animado",
  "antiAliasing": "Anti-aliasing",
+ "msaaByUpscaler": "O upscaler faz o anti-aliasing: desative-o para usar MSAA",
  "autoAdvance": "Avançar páginas com voz automaticamente",
  "autosaveHint": "Salvo automaticamente ao atracar",
  "battleCallTerran": "A todas as naves terranas: o encouraçado vossk está ao alcance. Derrubem-no!",

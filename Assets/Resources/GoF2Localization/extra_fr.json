@@ -1,6 +1,7 @@
 {
  "animatedDialogue": "Dialogues animés",
  "antiAliasing": "Anticrénelage",
+ "msaaByUpscaler": "L'upscaler se charge de l'anticrénelage : désactivez-le pour utiliser le MSAA",
  "autoAdvance": "Tourner automatiquement les pages de dialogue doublées",
  "autosaveHint": "Sauvegarde automatique à l'amarrage",
  "battleCallTerran": "À tous les vaisseaux terriens : le cuirassé vossk est à portée. Abattez-le !",

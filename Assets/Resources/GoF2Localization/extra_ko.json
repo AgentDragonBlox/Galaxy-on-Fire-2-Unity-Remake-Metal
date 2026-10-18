@@ -1,6 +1,7 @@
 {
  "animatedDialogue": "대화 애니메이션",
  "antiAliasing": "안티에일리어싱",
+ "msaaByUpscaler": "안티에일리어싱은 업스케일러가 처리합니다. MSAA를 쓰려면 업스케일러를 끄세요",
  "autoAdvance": "음성 대화 페이지 자동 넘기기",
  "autosaveHint": "도킹 시 자동 저장",
  "battleCallTerran": "모든 테란 함선에 알린다: 보스크 전함이 사정거리에 들어왔다. 격추하라!",

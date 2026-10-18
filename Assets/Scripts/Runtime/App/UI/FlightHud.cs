@@ -153,7 +153,7 @@ namespace GoF2Remake.UI
             builderSpace = null;
             pauseMenu?.Close();   // the scene is going: sounds and time back to normal
             UnityEngine.Cursor.lockState = CursorLockMode.None;   // the captured mouse (mouse steering) is released
-            UnityEngine.Cursor.visible = true;
+            UnityEngine.Cursor.visible = InputMode.CursorShown;
             if (mining != null) mining.Message -= OnKindMessage;
             if (docking != null) docking.Message -= OnMiningMessage;
             if (nav != null) nav.Message -= OnKindMessage;
@@ -707,7 +707,8 @@ namespace GoF2Remake.UI
             if (mining != null) mining.mouseDrill = cursor && mining.State == Mining.Phase.Mining;
             var wantLock = cursor ? CursorLockMode.Locked : CursorLockMode.None;
             if (UnityEngine.Cursor.lockState != wantLock) UnityEngine.Cursor.lockState = wantLock;
-            if (UnityEngine.Cursor.visible == cursor) UnityEngine.Cursor.visible = !cursor;
+            bool cursorShown = !cursor && InputMode.CursorShown;   // a controller in use hides it too
+            if (UnityEngine.Cursor.visible != cursorShown) UnityEngine.Cursor.visible = cursorShown;
             if (mouseReticle != null && mouseReticle.parent == null) mouseReticle = null;   // a UI reload rebuilt the tree
             if (mouseReticle == null && safeArea != null)
             {

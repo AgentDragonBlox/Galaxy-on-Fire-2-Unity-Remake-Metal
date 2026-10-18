@@ -1,6 +1,7 @@
 {
  "animatedDialogue": "Dialoghi animati",
  "antiAliasing": "Anti-aliasing",
+ "msaaByUpscaler": "L'upscaler si occupa dell'anti-aliasing: disattivalo per usare l'MSAA",
  "autoAdvance": "Sfoglia automaticamente le pagine di dialogo doppiate",
  "autosaveHint": "Salvataggio automatico all'attracco",
  "battleCallTerran": "A tutte le navi terrestri: la corazzata vossk è a tiro. Abbattetela!",

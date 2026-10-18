@@ -254,7 +254,7 @@ namespace GoF2Remake.UI
             // the mouse focused its first entry, and that highlight stayed beside the hovered one.
             root.RegisterCallback<PointerOverEvent>(e =>
             {
-                if (e.pointerType != PointerType.mouse || !(e.target is VisualElement t)) return;
+                if (e.pointerType != PointerType.mouse || !InputMode.MouseMovedRecently || !(e.target is VisualElement t)) return;   // not a list scrolling under it
                 var b = t as Button ?? t.GetFirstAncestorOfType<Button>();
                 if (b != null && b.ClassListContains("station-button") && Navigable(b) && b.focusController?.focusedElement != b) b.Focus();
             });

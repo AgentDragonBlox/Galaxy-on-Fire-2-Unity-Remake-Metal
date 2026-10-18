@@ -1,6 +1,7 @@
 {
   "animatedDialogue": "动画对话",
   "antiAliasing": "抗锯齿",
+  "msaaByUpscaler": "抗锯齿由超分辨率技术完成：关闭它才能使用 MSAA",
   "autoAdvance": "有配音的对话页自动翻页",
   "autosaveHint": "停靠时自动保存",
   "battleCallTerran": "所有Terran飞船注意：Vossk战舰已进入射程。击沉它！",

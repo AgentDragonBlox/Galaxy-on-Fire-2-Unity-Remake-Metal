@@ -1,6 +1,7 @@
 {
  "animatedDialogue": "Geanimeerde dialogen",
  "antiAliasing": "Anti-aliasing",
+ "msaaByUpscaler": "De upscaler doet de anti-aliasing: zet hem uit om MSAA te gebruiken",
  "autoAdvance": "Ingesproken dialoogpagina's automatisch omslaan",
  "autosaveHint": "Wordt automatisch opgeslagen bij het aanmeren",
  "battleCallTerran": "Aan alle Terraanse schepen: het Vossk-slagschip is binnen bereik. Haal het neer!",

@@ -28,6 +28,7 @@ namespace GoF2Remake.UI
         public bool inGameOnly;            // only in a running game's menus (pause / station), not the main menu
         public bool menuOnly;              // only in the main menu (no game loaded), not the pause / station menus
         public Func<bool> visible;         // optional: the row shows only while true (OptionControl.Refresh)
+        public Func<bool> enabled;         // optional: the row is greyed out and skipped by the keys / controller while false
 
         // Slider
         public float min, max;
@@ -217,9 +218,9 @@ namespace GoF2Remake.UI
                 quality.visible = DlssOrFsrOn;
                 list.Add(quality);
             }
-            // MSAA with a temporal upscaler on (STP, DLSS, FSR 2+, MetalFX Temporal): its anti-aliasing takes the place (shown as off); picking MSAA
-            // turns the upscaler off.
-            list.Add(Choice("msaa", OptionPage.Graphics, () => X("antiAliasing", "Anti-aliasing"), true,
+            // MSAA with a temporal upscaler on (STP, DLSS, FSR 2+, MetalFX Temporal): its anti-aliasing takes the place, so the row
+            // is greyed out (a player's request: with DLAA it read as if it did something) and says why.
+            var msaa = Choice("msaa", OptionPage.Graphics, () => X("antiAliasing", "Anti-aliasing"), true,
                 () => new[] { X("off", "Off"), "MSAA 2×", "MSAA 4×", "MSAA 8×" },
                 () => Bootstrap.IsTemporal(Bootstrap.ActiveUpscaler) ? 0
                     : Math.Max(0, Array.IndexOf(MsaaSamples, Settings.Msaa > 0 ? Settings.Msaa : Bootstrap.DefaultMsaa)),
@@ -227,7 +228,11 @@ namespace GoF2Remake.UI
                 {
                     if (i > 0 && Bootstrap.IsTemporal(Bootstrap.ActiveUpscaler)) Settings.Upscaler = Settings.UpscalerOff;
                     Settings.Msaa = MsaaSamples[i];
-                }));
+                },
+                () => Bootstrap.IsTemporal(Bootstrap.ActiveUpscaler)
+                    ? X("msaaByUpscaler", "The upscaler does the anti-aliasing: turn it off to use MSAA") : "");
+            msaa.enabled = () => !Bootstrap.IsTemporal(Bootstrap.ActiveUpscaler);
+            list.Add(msaa);
             list.Add(Choice("brightness", OptionPage.Graphics, () => Localization.Get(503), true,
                 () => new[] { Localization.Get(513), Localization.Get(514), Localization.Get(515) },
                 () => Settings.Brightness, i => Settings.Brightness = i));

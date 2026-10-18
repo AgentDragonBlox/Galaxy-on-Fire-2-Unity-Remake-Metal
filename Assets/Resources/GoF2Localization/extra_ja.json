@@ -1,6 +1,7 @@
 {
  "animatedDialogue": "会話アニメーション",
  "antiAliasing": "アンチエイリアス",
+ "msaaByUpscaler": "アンチエイリアスはアップスケーラーが行います。MSAA を使うにはオフにしてください",
  "autoAdvance": "ボイス付きの会話ページを自動で送る",
  "autosaveHint": "ドッキング時に自動セーブ",
  "battleCallTerran": "テラン全艦へ：ヴォスク戦艦が射程内に入った。撃沈せよ！",
