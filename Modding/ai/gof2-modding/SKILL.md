@@ -411,7 +411,10 @@ the game. `"flightStyle": "free" | "original"`: the campaign's games always fly 
 
 `looksLike` borrows only an original station's model and collision (reference.md's Model column): its special rules (the
 Kaamo Club's storage and siege, a pirate base) stay with the original number. Stations have no hidden flag: every station of
-a visible system shows on the map.
+a visible system shows on the map. A system's `"available"` condition (an expression, e.g. `"quest(smuggler_run) == 1"`)
+shows it only while it holds and hides it otherwise (a player inside is taken to the nearest visible system); events and
+quests can also `system <system> show | hide | reset` (step `system`, node Show / Hide System), saved until reset, over
+`available`.
 
 Systems: race 0-3, security 0 (lawless) - 3 (secure), map position (originals x 15-94, y 2-96, z 10-90), sky 0-18, gates
 both ways, up to 7 stations each. Skybox images: 2:1 panorama or 6:1 cube strip (right, left, up, down, front, back), light

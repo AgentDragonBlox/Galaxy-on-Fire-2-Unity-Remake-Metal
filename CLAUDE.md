@@ -2305,6 +2305,21 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   from another device; `ModRegistry.Adopt` takes the save's number when free) and removes a missing mod's items (equipment,
   cargo, Kaamo storage, the parked ship refunded at the saved price; shop rows, bar sellers, records, blueprints, a Purchase
   mission dropped). Imports accept a modded number the save names (`ModSaves.Names`).
+- **Systems that come and go** (remake mods, 2026-10-18; a user's request: a system shown only while a mission runs):
+  systems.json `"available"` (new systems and overrides; `ModUnlocks.SystemAvailable`, each condition read once a frame)
+  shows the system while it holds and hides it while it doesn't, whatever was revealed; the command `/system [players]
+  <system> <show | hide | reset>` (NetAdmin Order.System 32, `NetAdmin.ParseSystem`: number, "mod_id:id" or the whole
+  name), the quest step `system` (field kind `QuestFieldKind.System`, the builder's system picker) and the graph node Show
+  / Hide System (`EventSystemAction`) set `Session.SystemShown` (saved as `systemShown`, a mod's system by its key), which
+  wins over the condition until reset (`GalaxyMap.SetShown`). `GalaxyMap.Visibility` returns the effective map: a copy of
+  `Session.SystemVisible` (the revealed state, what is saved) with those applied (`GalaxyMap.Forced`), so a hidden system
+  that comes back is as revealed as it was; routes, jumps, the lounge and the Wanted board follow it. The star map keeps its
+  own copy and always shows the player's own system. A player in a system hidden on purpose (`GalaxyMap.ForcedHidden`) gets
+  a HUD message and 4 s of game time later a stream-out arrival at `GalaxyMap.FallbackStation` (the nearest system on the
+  map along the gate routes: its gate station, else its first; else the station last docked at, else the first visible
+  system's, else Var Hastra) (`SpaceLevel.UpdateHiddenSystem`; not in cutscenes, jumps, the launch camera, death, the Void,
+  an arena, a story orbit or the Mod Builder's own work); docked there nothing happens until the launch. The Mod Builder's
+  Systems page has the condition ("On the map only when"). Stations have no condition of their own.
 - **Systems and stations** (`ModWorld`, systems.json / stations.json): new systems after the original 34 (a race template,
   map position, sky, gates both ways, `gateStation`), new stations after the 135 (at most 7 per system, `looksLike` = the
   original station whose model / collision it uses, `StationLook` in `OrbitBuilder`), overrides; registry kinds System /

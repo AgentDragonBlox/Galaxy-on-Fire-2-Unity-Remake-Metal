@@ -546,6 +546,8 @@
  "mpCmdRespawn": "admins : où les vaisseaux détruits réapparaissent dans l'espace (pas amarrés), jusqu'à off",
  "mpCmdRestrict": "admins : pas de sauts (planète, porte, Khador) et / ou pas d'amarrage, jusqu'à off",
  "mpCmdReveal": "admins : tous les systèmes sur la carte stellaire",
+ "systemClosing": "Ce système n'est plus sur la carte : vous le quittez.",
+ "mpCmdSystem": "admins : affiche ou masque un système sur leur carte stellaire (routes et sauts aussi) jusqu'à reset ; son numéro, son nom ou \"mod_id:id\"",
  "mpCmdReward": "admins : un paiement de mission (crédits et / ou objets) dans la fenêtre de récompense",
  "mpCmdSay": "admins : une annonce sous ton rôle",
  "mpCmdSet": "admins : change un réglage du serveur (enregistré)",

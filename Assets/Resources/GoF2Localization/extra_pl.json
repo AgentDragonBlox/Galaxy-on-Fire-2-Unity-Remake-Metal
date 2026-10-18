@@ -546,6 +546,8 @@
  "mpCmdRespawn": "admini: gdzie zniszczone statki wracają w przestrzeni (nie zadokowane), do off",
  "mpCmdRestrict": "admini: bez skoków (planeta, wrota, Khador) i / lub bez dokowania, do off",
  "mpCmdReveal": "admini: wszystkie systemy na mapie gwiezdnej",
+ "systemClosing": "Tego układu nie ma już na mapie: opuszczasz go.",
+ "mpCmdSystem": "admini: pokazuje lub ukrywa układ na ich mapie gwiezdnej (także trasy i skoki) do reset; jego numer, nazwa lub \"mod_id:id\"",
  "mpCmdReward": "admini: wypłata za misję (kredyty i / lub przedmioty) w oknie nagrody",
  "mpCmdSay": "admini: ogłoszenie pod twoją rolą",
  "mpCmdSet": "admini: zmienia ustawienie serwera (zapisywane)",

@@ -507,6 +507,40 @@ namespace GoF2Remake.World
             Navigation.HostilesPresent = (Traffic != null && (Traffic.HostileCount > 0 || Traffic.ChatterVisible != null)) || (Campaign != null && Campaign.Radio != null && Campaign.Radio.Busy);
             if (Extender != null && ExtenderBlocked) Extender.Cancel();
             UpdateWormholeRide();
+            UpdateHiddenSystem();
+        }
+
+        // ---- remake mods: a system that disappears (GalaxyMap.ForcedHidden) ----------------------------------------------
+
+        const float HiddenCheckMs = 500f, HiddenLeaveMs = 4000f;
+        float hiddenCheckMs, hiddenMs;
+
+        /// <summary>A system an event / quest hid ("system ... hide") or whose mod's "available" condition stopped holding,
+        /// with the player in it: a HUD message, and 4 s of game time later a stream-out arrival at GalaxyMap.FallbackStation
+        /// (the nearest system on the map along the gate routes). Not during a cutscene, a jump, the launch camera or death
+        /// (the clock waits), nor in the Void, an arena, a story orbit or the Mod Builder's own work.</summary>
+        void UpdateHiddenSystem()
+        {
+            if (Leaving || Layout.alienOrbit || Layout.stationIndex < 0 || IsStoryOrbit || GoF2Remake.World.SpaceHooks.InArena
+                || (Modding.ModBuilder.Active && !Modding.ModBuilder.PlayTesting)) { hiddenMs = 0f; return; }
+            if (Cutscene || Navigation.Jumping || launchCameraMs > 0f || (SystemJump != null && SystemJump.Cinematic)
+                || (Health != null && Health.Dead) || Time.deltaTime <= 0f) return;
+            if ((hiddenCheckMs -= Time.unscaledDeltaTime * 1000f) <= 0f)
+            {
+                hiddenCheckMs = HiddenCheckMs;
+                bool hidden = GalaxyMap.ForcedHidden(Layout.systemIndex);
+                if (!hidden) { hiddenMs = 0f; return; }
+                if (hiddenMs <= 0f)
+                {
+                    hiddenMs = 0.001f;
+                    Radar?.Say(Localization.Extra("systemClosing", "This system is off the map now: leaving it."), 1);
+                }
+            }
+            if (hiddenMs <= 0f) return;
+            hiddenMs += Time.deltaTime * 1000f;
+            if (hiddenMs < HiddenLeaveMs) return;
+            hiddenMs = 0f;
+            TravelTo(GalaxyMap.FallbackStation(db, Layout.systemIndex));
         }
 
         // ---- the wormhole (landmark 3) -----------------------------------------------------------------------

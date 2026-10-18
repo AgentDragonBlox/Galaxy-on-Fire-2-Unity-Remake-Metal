@@ -546,6 +546,8 @@
  "mpCmdRespawn": "Admins: wo zerstörte Schiffe im All wieder auftauchen (nicht angedockt), bis off",
  "mpCmdRestrict": "Admins: keine Sprünge (Planet, Tor, Khador) und / oder kein Andocken, bis off",
  "mpCmdReveal": "Admins: alle Systeme auf der Sternenkarte",
+ "systemClosing": "Dieses System ist nicht mehr auf der Karte: du verlässt es.",
+ "mpCmdSystem": "Admins: ein System auf ihrer Sternenkarte zeigen oder verbergen (auch Routen und Sprünge) bis reset; seine Nummer, sein Name oder \"mod_id:id\"",
  "mpCmdReward": "Admins: eine Missionsauszahlung (Credits und / oder Gegenstände) im Belohnungsfenster",
  "mpCmdSay": "Admins: eine Ansage unter deiner Rolle",
  "mpCmdSet": "Admins: ändert eine Servereinstellung (gespeichert)",

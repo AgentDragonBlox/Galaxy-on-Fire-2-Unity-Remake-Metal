@@ -354,7 +354,10 @@ namespace GoF2Remake.UI
                 currentStation = Session.StationIndex;
                 currentSystem = db.Stations.Find(s => s.index == currentStation)?.system ?? 0;
                 current = db.Systems.Find(s => s.index == currentSystem);
-                visible = GalaxyMap.Visibility(db);
+                // A copy: the builder's map shows every system, and the player's own system is always shown (a mod's event can
+                // hide it while they are there: GalaxyMap.ForcedHidden; they are taken out of it in flight).
+                visible = (bool[])GalaxyMap.Visibility(db).Clone();
+                if (currentSystem >= 0 && currentSystem < visible.Length) visible[currentSystem] = true;
                 if (builder != null)
                 {
                     // The Mod Builder's map: every system, under the builder's panels, without the map's own header / footer.

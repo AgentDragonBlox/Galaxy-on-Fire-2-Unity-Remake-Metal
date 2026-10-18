@@ -1045,6 +1045,7 @@ New star systems and their stations. Both are lists: `"id"` adds one, `"override
 | `race` | Who owns it: 0 Terran, 1 Vossk, 2 Nivelian, 3 Midorian. It sets the hangars, bars, music, traffic, shops and the jumpgate. |
 | `security` | 0 (lawless) to 3 (secure): how many raiders show up. |
 | `visible` | On the star map from the start (default true). A hidden system can't be reached yet. |
+| `available` | A condition (the expressions of [Conditions](#conditions)) for a system that comes and goes: while it holds the system is on the star map, while it doesn't it is hidden, whatever was revealed, with its routes and jumps. A player inside when it disappears is told so and, 4 seconds later, taken to the nearest system on the map. For example `"available": "quest(smuggler_run) == 1"`: only while that quest or bar mission is under way. |
 | `position` | `[x, y, z]` on the star map. The original systems lie between 15 and 94 (x), 2 and 96 (y) and 10 and 90 (z). |
 | `sky` | Which of the original skies (nebula and sun) it uses, 0 to 18. |
 | `gates` | The systems its jumpgate reaches (numbers, or `"mod_id:system_id"`). Routes work both ways: the other system gets the route back. |
@@ -1054,7 +1055,12 @@ New star systems and their stations. Both are lists: `"id"` adds one, `"override
 | `skybox` | Its own sky, see [Skies](#skies). Default: the nebula of its `sky` and the game's stars. |
 | `spaceMusic`, `stationMusic` | A mod's track (see [Music](#music)). |
 
-Changing a system (`"override"`): `name`, `security`, `visible`, `sky`, `sunTexture`, `sunColor`, `skybox`, the music, and `gates` (added to its routes; links original systems too).
+Changing a system (`"override"`): `name`, `security`, `visible`, `available`, `sky`, `sunTexture`, `sunColor`, `skybox`, the music, and `gates` (added to its routes; links original systems too).
+
+Events and quests can also show or hide a system themselves: the `system` step (Show / hide a system), the graph's **Show /
+Hide System** node, or the command `system [players] <system> <show | hide | reset>` (the system by number, name or
+`"mod_id:system_id"`). It holds, and is saved, until the same system is reset, and it wins over `available`. A quest that
+shows a system for its mission hides (or resets) it again in its last steps, including the failure branch.
 
 ### Skies
 
@@ -1460,7 +1466,7 @@ the default; `@trigger` the player a When block is about; any selector). The ste
 |---|---|
 | Story | `dialog` (pages: speaker, text, voice), `radio` (speaker, text, voice), `objective` (text, station), `title` (title, subtitle, seconds), `note` (text: a comment) |
 | Flow | `wait` (seconds), `waituntil` (condition, timeout), `if` (condition, `then`, `else`), `while` (condition, `steps`), `repeat` (count, as, `steps`), `parallel` (`steps`: beside the rest), `every` (seconds, `steps`), `on` (trigger: died, docked, launched, kill, cleared, entered, near, respawned, hacked, joined, left, pvpkill; station; near: at "x y z", radius; `steps`), `ask` / `vote` (question, speaker, seconds, `answers`: [{ text, steps }]; a vote's `none` runs when nobody voted), `random` (`branches`: [{ weight, steps }]), `set` (variable, value), `checkpoint` (name), `startquest` (quest), `startevent` (event, settings), `complete` (reward, title), `fail` (title), `stop` |
-| Places | `goto` (station, `dock` true: docked there, false: in its orbit, objective), `waypoint` (station, at), `target` (station), `questorbit` (station, on), `restrict` (what: jumps / docking / all / off), `respawn` (station, at, spread, delay), `teleport` (station, dock, at) |
+| Places | `goto` (station, `dock` true: docked there, false: in its orbit, objective), `waypoint` (station, at), `target` (station), `questorbit` (station, on), `system` (system, action: show / hide / reset), `restrict` (what: jumps / docking / all / off), `respawn` (station, at, spread, delay), `teleport` (station, dock, at) |
 | Ships | `fight` (station, ships: ship / count / race / behaviour, name, quiet; ends when none is left), `spawn` (ship, count, race, behaviour, name, at, turrets), `wreck` (race, name, at: a hackable freighter wreck), `shipgoto` (ship, to, speed, radius, fight, then), `shiproute` (ship, route "place / place", loop, ...), `shipfollow` (ship, leader, offset, escort, speed), `shipattack` (ship, target), `shipaction` (ship, action: hold / resume / jump / dock / flee, seconds), `provoke` (race, within) |
 | The player | `reward` (credits, items, title), `give` (item, amount, mount), `cargo` (item, amount, station: waits until the hold has it), `credits` (amount), `ship` (hull, own), `heal`, `ammo`, `kill`, `reveal`, `peace` |
 | Cutscenes | `cutscene` (letterbox, freeze, invulnerable), `camera` (from, to, seconds, look, follow, fov, shake), `chasecamera`, `cutsceneend`, `fade` (direction: out / in / clear, seconds, colour), `letterbox` (on) |

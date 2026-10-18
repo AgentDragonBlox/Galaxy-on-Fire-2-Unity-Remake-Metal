@@ -36,6 +36,9 @@ namespace GoF2Remake.Data
         public List<int> seenItems, visitedStations, attackedStations;
         public List<KnownPrice> lowestPrices, highestPrices;
         public bool[] systemVisible;
+        /// <summary>Session.SystemShown: "system|1" shown / "system|0" hidden; a mod's system by its key ("mod_id:id"), so it
+        /// stays the same system wherever its number lands.</summary>
+        public List<string> systemShown;
         public int jumpgatesUsed, kills, pirateKills;
         public int[] standing;
         // version 2: the story
@@ -340,6 +343,8 @@ namespace GoF2Remake.Data
                 lowestPrices = Prices(Session.LowestKnownPrice),
                 highestPrices = Prices(Session.HighestKnownPrice),
                 systemVisible = Session.SystemVisible,
+                systemShown = Session.SystemShown.Select(kv => (Modding.ModWorld.SystemKey(kv.Key) ?? kv.Key.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                                                                + "|" + (kv.Value ? "1" : "0")).ToList(),
                 jumpgatesUsed = Session.JumpgatesUsed,
                 kills = Session.Kills,
                 pirateKills = Session.PirateKills,
@@ -514,6 +519,14 @@ namespace GoF2Remake.Data
             Session.LowestKnownPrice = Prices(s.lowestPrices);
             Session.HighestKnownPrice = Prices(s.highestPrices);
             Session.SystemVisible = s.systemVisible != null && s.systemVisible.Length > 0 ? s.systemVisible : null;
+            Session.SystemShown = new Dictionary<int, bool>();
+            foreach (var e in s.systemShown ?? new List<string>())
+            {
+                int bar = e?.LastIndexOf('|') ?? -1;
+                if (bar <= 0) continue;
+                string key = e.Substring(0, bar);
+                if (Modding.ModWorld.TryResolveSystem(key, out int system)) Session.SystemShown[system] = e.Substring(bar + 1) == "1";
+            }
             // GameRecord::load: Loma (the Valkyrie add-on owned) and Shima always visible after loading.
             if (Session.SystemVisible != null && Session.SystemVisible.Length > GalaxyMap.ShimaSystem)
                 Session.SystemVisible[GalaxyMap.LomaSystem] = Session.SystemVisible[GalaxyMap.ShimaSystem] = true;

@@ -546,6 +546,8 @@
  "mpCmdRespawn": "admins: dónde reaparecen las naves destruidas en el espacio (no acopladas), hasta off",
  "mpCmdRestrict": "admins: sin saltos (planeta, puerta, Khador) y / o sin acoplar, hasta off",
  "mpCmdReveal": "admins: todos los sistemas en el mapa estelar",
+ "systemClosing": "Este sistema ya no está en el mapa: lo abandonas.",
+ "mpCmdSystem": "admins: muestra u oculta un sistema en su mapa estelar (rutas y saltos también) hasta reset; su número, su nombre o \"mod_id:id\"",
  "mpCmdReward": "admins: un pago de misión (créditos y / u objetos) en la ventana de recompensa",
  "mpCmdSay": "admins: un anuncio con tu rol",
  "mpCmdSet": "admins: cambia un ajuste del servidor (se guarda)",

@@ -546,6 +546,8 @@
  "mpCmdRespawn": "admins: waar vernietigde schepen in de ruimte terugkomen (niet aangemeerd), tot off",
  "mpCmdRestrict": "admins: geen sprongen (planeet, poort, Khador) en / of niet aanmeren, tot off",
  "mpCmdReveal": "admins: alle stelsels op de sterrenkaart",
+ "systemClosing": "Dit stelsel staat niet meer op de kaart: je verlaat het.",
+ "mpCmdSystem": "admins: toont of verbergt een stelsel op hun sterrenkaart (ook routes en sprongen) tot reset; het nummer, de naam of \"mod_id:id\"",
  "mpCmdReward": "admins: een missie-uitbetaling (credits en / of voorwerpen) in het beloningsvenster",
  "mpCmdSay": "admins: een mededeling onder je rol",
  "mpCmdSet": "admins: wijzigt een serverinstelling (opgeslagen)",

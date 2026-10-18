@@ -322,6 +322,9 @@ namespace GoF2Remake.Data
         /// <summary>Status+0x38: which systems the star map shows (null = not set up yet, filled from systems.json
         /// initiallyVisible by GalaxyMap.Visibility).</summary>
         public static bool[] SystemVisible;
+        /// <summary>Remake mods: systems an event / quest showed (true) or hid (false) with "system ... show | hide", over the
+        /// map's revealed state and a mod's "available" condition until "reset" (GalaxyMap.Visibility). Saved.</summary>
+        public static Dictionary<int, bool> SystemShown = new Dictionary<int, bool>();
 
         /// <summary>Galaxy::getVisited: stations the player has docked at (the star map's "Already visited" tick).</summary>
         public static HashSet<int> VisitedStations = new HashSet<int> { 78 };
@@ -507,6 +510,7 @@ namespace GoF2Remake.Data
             DockedFromSpace = false;
             ArrivedBySystemJump = false;
             SystemVisible = null;
+            SystemShown = new Dictionary<int, bool>();
             VisitedStations = new HashSet<int> { 78 };
             ProgrammedStation = -1;
             InstantJump = false;
