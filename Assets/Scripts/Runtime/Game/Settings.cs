@@ -152,6 +152,13 @@ namespace GoF2Remake.Data
         /// <summary>Remake: the mining minigame's drill inverted on its own, up / down and left / right.</summary>
         public static bool InvertDrillY { get => GetBool("invertDrillY", false); set => SetBool("invertDrillY", value); }
         public static bool InvertDrillX { get => GetBool("invertDrillX", false); set => SetBool("invertDrillX", value); }
+        /// <summary>Remake (#121): the cameras that turn round the ship or look around by a drag, a stick or keys inverted on
+        /// their own, up / down and left / right: free look, Action Freeze, Inspect ship, the photo tools' free camera and the
+        /// Mod Builder's views (not the flight's steering, which has its own pair).</summary>
+        public static bool InvertOrbitY { get => GetBool("invertOrbitY", false); set => SetBool("invertOrbitY", value); }
+        public static bool InvertOrbitX { get => GetBool("invertOrbitX", false); set => SetBool("invertOrbitX", value); }
+        /// <summary>An orbit / look camera's turn input with InvertOrbitX / InvertOrbitY applied.</summary>
+        public static Vector2 OrbitTurn(Vector2 d) => new Vector2(InvertOrbitX ? -d.x : d.x, InvertOrbitY ? -d.y : d.y);
         /// <summary>Globals::mouseCursorActivated (the PC version): the mouse moves the crosshair and steers (desktop only).</summary>
         public static bool MouseSteering { get => GetBool("mouseSteering", true); set => SetBool("mouseSteering", value); }
         /// <summary>Remake: mouse steering's dead zone, a fraction of the steering range around the centre (0 = none, the
@@ -266,9 +273,9 @@ namespace GoF2Remake.Data
         public static bool EmpBreaksCloak { get => Rule(R.EmpBreaksCloak, "empBreaksCloak", true); set => SetRule(R.EmpBreaksCloak, "empBreaksCloak", value); }
         /// <summary>Remake (players' report, 2026-10-17: a raider group ignored the patrols beside it and shredded the
         /// player): an NPC fighter takes the nearest hostile target in its box, the player a little likelier, and spreads out
-        /// over the targets (NpcShip.UpdateSmartTargeting, NpcTargetRules). Off = the original: the player first. A session
-        /// rule.</summary>
-        public static bool SmarterNpcTargeting { get => Rule(R.SmarterNpcTargeting, "smarterNpcTargeting", true); set => SetRule(R.SmarterNpcTargeting, "smarterNpcTargeting", value); }
+        /// over the targets (NpcShip.UpdateSmartTargeting, NpcTargetRules). Off (default since 2026-10-18, #121: players found
+        /// the fights too easy) = the original: the player first. A session rule.</summary>
+        public static bool SmarterNpcTargeting { get => Rule(R.SmarterNpcTargeting, "smarterNpcTargeting", false); set => SetRule(R.SmarterNpcTargeting, "smarterNpcTargeting", value); }
         /// <summary>Remake (players' suggestion): the capital ships fight back (World.CapitalShips): escorts, stronger turrets,
         /// a killable carrier and Vossk battleship with loot, the carrier's Inflicts and its resupply dock. Off = the original.
         /// A session rule.</summary>
@@ -325,7 +332,7 @@ namespace GoF2Remake.Data
             if (GetBool("kaamoKeepsEquipment", true)) m |= R.KaamoKeepsEquipment;
             if (GetBool("cloakBay", true)) m |= R.CloakBay;
             if (GetBool("empBreaksCloak", true)) m |= R.EmpBreaksCloak;
-            if (GetBool("smarterNpcTargeting", true)) m |= R.SmarterNpcTargeting;
+            if (GetBool("smarterNpcTargeting", false)) m |= R.SmarterNpcTargeting;
             return R.WithCollision(m, LocalCollision);
         }
 
@@ -399,7 +406,7 @@ namespace GoF2Remake.Data
         public static readonly string[] ControlsKeys =
         {
             "tiltSteering", "tiltSensitivity", "sensitivity", "keyAutofire", "levelPitch", "invertPitch", "invertYaw", "invertDrillY",
-            "invertDrillX", "gyroSteering", "gyroSensitivity", "mouseSteering", "mouseDeadzone", "vrGrabControls", "haptics", "stickDeadzone",
+            "invertDrillX", "invertOrbitY", "invertOrbitX", "gyroSteering", "gyroSensitivity", "mouseSteering", "mouseDeadzone", "vrGrabControls", "haptics", "stickDeadzone",
             "touchLeftHeight", "touchRightHeight", "flightStyle", "padGlyphs",
         };
         public static readonly string[] GameplayKeys =

@@ -153,7 +153,7 @@ Players on a different game version are turned away with a message saying which 
 | `-nokaamoequipment` | Ships stored in the Kaamo Club hand their equipment over, as in the original (they keep it by default). |
 | `-nocloakbay` | A cloak mounted on the Specter or the Scimitar takes an equipment slot, as in the original (by default it goes into their integrated cloak's bay). |
 | `-noempcloak` | EMP hits don't break cloaks, as in the original (by default an EMP hit drops a cloak at once). |
-| `-originaltargeting` | NPC fighters go for the player first, as in the original (by default they take the nearest hostile ship and spread out over their targets). |
+| `-smarttargeting` | NPC fighters take the nearest hostile ship and spread out over their targets (by default they go for the player first, as in the original). |
 | `-shipcollision MODE` | Ship collision: `exact` (shots hit every ship and object on its real shape, and players' ships meet each other on it), `mixed` (the default: fighters and players' ships are hit on a box and meet as spheres, as in the original; freighters, capital ships, stations and objects keep their real shape) or `original` (the original's boxes and spheres for everything). The old `-precisecollision` still means `exact`. |
 | `-port N` | The port for local network play (default 7777, UDP). |
 | `-fps N` | The server's frame rate (default 60). |

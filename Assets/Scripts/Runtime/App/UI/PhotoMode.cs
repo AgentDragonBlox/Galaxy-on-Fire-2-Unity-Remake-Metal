@@ -251,6 +251,7 @@ namespace GoF2Remake.UI
                 if (Mathf.Abs(steps) > 0f) wheel += steps;
             }
             if (Mathf.Abs(wheel) > 0.01f) { distance += wheel * -50f * frames; wheel *= Mathf.Pow(0.9f, frames); } else wheel = 0f;
+            delta = Settings.OrbitTurn(delta);   // #121: the camera views' own inversion
             px += delta.x;
             py += delta.y;
             if (flingClamps) py = Mathf.Clamp(py, -200f, 200f);

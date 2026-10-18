@@ -407,7 +407,9 @@ namespace GoF2Remake.UI
                 var mid = (a + b) * 0.5f * scale;
                 if (pinchSpan >= 0f)
                 {
-                    free.Move(new Vector3(0f, 0f, 1f), (span - pinchSpan) * 0.15f * PhotoSettings.Speed);
+                    // Spread: forward; pinched: back (FreeCamera.Move takes a direction and a positive distance).
+                    float spread = span - pinchSpan;
+                    free.Move(new Vector3(0f, 0f, Mathf.Sign(spread)), Mathf.Abs(spread) * 0.15f * PhotoSettings.Speed);
                     var d = mid - pinchMid;
                     free.Move(new Vector3(-d.x, -d.y, 0f).normalized, d.magnitude * 0.12f * PhotoSettings.Speed);
                 }
@@ -446,6 +448,7 @@ namespace GoF2Remake.UI
             }
             // The look is slower through a long lens, so a zoomed-in view can still be aimed.
             float lens = Mathf.Clamp(PhotoSettings.Fov / 60f, 0.2f, 1.5f);
+            look = Settings.OrbitTurn(look);   // #121: the camera views' own inversion
             free.Look(look.x * lens, look.y * lens);
             free.Move(move, speed * dt);
             if (zoom != 0f) { PhotoSettings.Fov = Mathf.Clamp(PhotoSettings.Fov * Mathf.Exp(zoom), PhotoSettings.MinFov, PhotoSettings.MaxFov); Refresh(); }

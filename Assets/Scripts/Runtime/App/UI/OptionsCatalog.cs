@@ -297,6 +297,15 @@ namespace GoF2Remake.UI
             list.Add(Toggle("invertYaw", OptionPage.Controls, () => X("invertX", "Invert left / right"), () => Settings.InvertYaw, v => Settings.InvertYaw = v));
             list.Add(Toggle("invertDrillY", OptionPage.Controls, () => X("invertDrillY", "Mining drill: invert up / down"), () => Settings.InvertDrillY, v => Settings.InvertDrillY = v));
             list.Add(Toggle("invertDrillX", OptionPage.Controls, () => X("invertDrillX", "Mining drill: invert left / right"), () => Settings.InvertDrillX, v => Settings.InvertDrillX = v));
+            // Remake (#121): the cameras turned round the ship (free look, Action Freeze, Inspect ship) have their own pair.
+            var orbitY = Toggle("invertOrbitY", OptionPage.Controls, () => X("invertOrbitY", "Camera views: invert up / down"),
+                () => Settings.InvertOrbitY, v => Settings.InvertOrbitY = v);
+            orbitY.description = () => X("invertOrbitHelp", "The cameras you turn around the ship: free look, Action Freeze, Inspect ship and the Mod Builder, by drag, stick or keys. Separate from the flight controls' inversion.");
+            list.Add(orbitY);
+            var orbitX = Toggle("invertOrbitX", OptionPage.Controls, () => X("invertOrbitX", "Camera views: invert left / right"),
+                () => Settings.InvertOrbitX, v => Settings.InvertOrbitX = v);
+            orbitX.description = orbitY.description;
+            list.Add(orbitX);
             if (Flight.ControllerGyro.Supported)
             {
                 list.Add(Toggle("gyroSteering", OptionPage.Controls, () => X("gyroSteering", "Controller gyro (DualSense, DualShock 4, Switch Pro)"),

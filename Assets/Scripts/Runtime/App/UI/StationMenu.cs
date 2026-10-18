@@ -2264,6 +2264,7 @@ namespace GoF2Remake.UI
                 float steps = Mathf.Clamp(Mouse.current.scroll.ReadValue().y, -1f, 1f);   // a notch reads 1 or 120
                 if (Mathf.Abs(steps) > 0f) insp.Zoom(Mathf.Pow(0.85f, steps));
             }
+            delta = Settings.OrbitTurn(delta);   // #121: the camera views' own inversion
             insp.Turn(delta.x * 0.005f, delta.y * 0.005f);   // PhotoMode's 0.005 rad per pixel
         }
 
