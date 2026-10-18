@@ -1486,7 +1486,10 @@
  "saveFolderMergeQuestion": "{0} ya tiene {1} partidas y este dispositivo tiene {2}. ¿Conservar la más reciente de cada ranura (la otra va a Saves/Deleted) o solo las de la carpeta (las de este dispositivo van a Saves/BeforeFolder)?",
  "saveFolderMerge": "Conservar la más reciente",
  "saveFolderUseFolder": "Solo las de la carpeta",
- "hangarRestock": "Reposición",
+ "hangarShipment": "Próximo envío",
+ "hangarEtaMinutes": "~{0} min",
+ "hangarEtaSoon": "pronto",
+ "hangarEtaDue": "en cualquier momento",
  "hangarRareRestock": "Bienes raros",
  "filesOnMyIpad": "Archivos › En mi iPad",
  "filesOnMyIphone": "Archivos › En mi iPhone"

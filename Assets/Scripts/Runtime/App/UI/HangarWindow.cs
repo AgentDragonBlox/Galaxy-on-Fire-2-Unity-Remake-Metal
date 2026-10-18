@@ -1365,25 +1365,34 @@ namespace GoF2Remake.UI
         }
 
         readonly Label restockLabel;
-        int restockShown = int.MinValue;
+        bool restockVisible;
 
-        /// <summary>The Shop tab in a session: "RESTOCK m:ss" to the shared stock's next re-roll, and the rare goods' next
-        /// step while one of them is short (NetStock.RestockLeft); redrawn when a second ticks over.</summary>
+        /// <summary>The Shop tab in a session: when the next shipment is expected (the shared stock's re-roll) and, while one
+        /// of them is short, the rare goods' next one (NetStock.RestockLeft). An estimate, like a delivery's: the shipments
+        /// really come a little early or late (NetStock.Shipment), so it shows "~N min", "soon" in the last 90 s and "any
+        /// moment" once the scheduled time has passed; written only when the text changes.</summary>
         void UpdateRestock()
         {
             float reset = -1f, rare = -1f;
             bool show = IsOpen && tab == Tab.Shop && !hangar.Storage
                         && GoF2Remake.Multiplayer.NetStock.RestockLeft(hangar.Station, out reset, out rare);
-            restockLabel.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
-            if (!show) { restockShown = int.MinValue; return; }
-            int r = Mathf.CeilToInt(reset), g = rare < 0f ? -1 : Mathf.CeilToInt(rare);
-            int key = r * 100000 + g;
-            if (key == restockShown) return;
-            restockShown = key;
-            static string Clock(int s) => $"{s / 60}:{s % 60:00}";
-            string text = $"{Localization.Extra("hangarRestock", "Restock").ToUpperInvariant()}  {Clock(r)}";
-            if (g >= 0) text += $"   {Localization.Extra("hangarRareRestock", "Rare goods").ToUpperInvariant()}  {Clock(g)}";
-            restockLabel.text = text;
+            if (show != restockVisible)
+            {
+                restockVisible = show;
+                restockLabel.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+            if (!show) return;
+            string text = $"{Localization.Extra("hangarShipment", "Next shipment").ToUpperInvariant()}  {Eta(reset)}";
+            if (rare >= 0f) text += $"   {Localization.Extra("hangarRareRestock", "Rare goods").ToUpperInvariant()}  {Eta(rare)}";
+            if (restockLabel.text != text) restockLabel.text = text;
+        }
+
+        /// <summary>A shipment's estimate from its scheduled seconds.</summary>
+        static string Eta(float seconds)
+        {
+            if (seconds <= 0f) return Localization.Extra("hangarEtaDue", "any moment").ToUpperInvariant();
+            if (seconds <= 90f) return Localization.Extra("hangarEtaSoon", "soon").ToUpperInvariant();
+            return string.Format(Localization.Extra("hangarEtaMinutes", "~{0} min"), Mathf.CeilToInt(seconds / 60f)).ToUpperInvariant();
         }
 
         void UpdateFooter()

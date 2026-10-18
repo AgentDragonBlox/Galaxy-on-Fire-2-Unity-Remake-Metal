@@ -1486,7 +1486,10 @@
  "saveFolderMergeQuestion": "{0} ma już {1} zapisów, a to urządzenie {2}. Zachować nowszy zapis każdego miejsca (drugi trafi do Saves/Deleted) czy tylko te z folderu (te z urządzenia trafią do Saves/BeforeFolder)?",
  "saveFolderMerge": "Zachowaj nowszy",
  "saveFolderUseFolder": "Tylko z folderu",
- "hangarRestock": "Dostawa",
+ "hangarShipment": "Następna dostawa",
+ "hangarEtaMinutes": "~{0} min",
+ "hangarEtaSoon": "wkrótce",
+ "hangarEtaDue": "lada chwila",
  "hangarRareRestock": "Rzadkie towary",
  "filesOnMyIpad": "Pliki › Na moim iPadzie",
  "filesOnMyIphone": "Pliki › Na moim iPhonie"

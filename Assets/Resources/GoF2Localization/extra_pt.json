@@ -1486,7 +1486,10 @@
  "saveFolderMergeQuestion": "{0} já tem {1} saves e este dispositivo tem {2}. Manter o save mais recente de cada espaço (o outro vai para Saves/Deleted) ou só os da pasta (os deste dispositivo vão para Saves/BeforeFolder)?",
  "saveFolderMerge": "Manter o mais recente",
  "saveFolderUseFolder": "Só os da pasta",
- "hangarRestock": "Reposição",
+ "hangarShipment": "Próxima entrega",
+ "hangarEtaMinutes": "~{0} min",
+ "hangarEtaSoon": "em breve",
+ "hangarEtaDue": "a qualquer momento",
  "hangarRareRestock": "Bens raros",
  "filesOnMyIpad": "Arquivos › No Meu iPad",
  "filesOnMyIphone": "Arquivos › No Meu iPhone"
