@@ -112,6 +112,11 @@ namespace GoF2Remake.Data
         /// (the original checks the medals at docking, before the hangar can change the loadout; the remake's check waits for
         /// the landing and the conversations, and stripping the ship meanwhile earned it, #46). Not saved: a load docks anew.</summary>
         public static bool ArrivedWithoutGear;
+        /// <summary>#122: Khador's Cronus at Kothar is a gift once (ModStation::OnTouchEnd 0xea4ec, step 77:
+        /// Station::addShip(Ship::makeShip(ships[0x25], 0)), a dealer row priced 0 whatever the table says; the Default economy
+        /// lists the Cronus at 1 200 000). Set as that row appears, cleared when it is bought (Hangar.BuyShipPrice): a traded-
+        /// back Cronus is a row at the table price again, as in the original. Saved.</summary>
+        public static bool KhadorCronusGift;
         public static HashSet<int> OreTypesMined = new HashSet<int>(), CoreTypesMined = new HashSet<int>();
         /// <summary>Status+0xa8 (medal 8 Personal Need): the booze tonnes gained per hangar visit (ModStation::OnKeyPress /
         /// OnTouchEnd); Status+0xac (medal 9 Barkeeper): the booze types traded (items 132-153); Status+0xcc (medal 21
@@ -452,6 +457,7 @@ namespace GoF2Remake.Data
             LastArrivalHullPercent = 100;
             CapitalLootReadyAt = 0f;
             ArrivedWithoutGear = false;
+            KhadorCronusGift = false;
             OreTypesMined = new HashSet<int>();
             BoozeBought = AlienRemainsCollected = 0;
             BoozeTypes = new HashSet<int>();
