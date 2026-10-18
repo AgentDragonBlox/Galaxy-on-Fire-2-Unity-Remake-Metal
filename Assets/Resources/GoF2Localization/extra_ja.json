@@ -1482,6 +1482,8 @@
  "saveFolderMergeQuestion": "{0}には既に{1}件のセーブデータがあり、この端末には{2}件あります。各スロットの新しい方を残しますか（もう一方はSaves/Deletedへ）、それともフォルダーのものだけにしますか（この端末のものはSaves/BeforeFolderへ）？",
  "saveFolderMerge": "新しい方を残す",
  "saveFolderUseFolder": "フォルダーのみ",
+ "hangarRestock": "入荷",
+ "hangarRareRestock": "希少品",
  "chaseCamera": "追従カメラ",
  "chaseCameraRemake": "リメイク",
  "chaseCameraOriginal": "オリジナル",

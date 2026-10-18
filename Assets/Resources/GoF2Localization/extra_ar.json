@@ -1482,6 +1482,8 @@
  "saveFolderMergeQuestion": "يحتوي {0} بالفعل على {1} ملفات حفظ وعلى هذا الجهاز {2}. هل تحتفظ بالأحدث في كل خانة (ينتقل الآخر إلى Saves/Deleted) أم بملفات المجلد فقط (تنتقل ملفات هذا الجهاز إلى Saves/BeforeFolder)؟",
  "saveFolderMerge": "احتفظ بالأحدث",
  "saveFolderUseFolder": "ملفات المجلد فقط",
+ "hangarRestock": "إعادة التخزين",
+ "hangarRareRestock": "سلع نادرة",
  "chaseCamera": "كاميرا المطاردة",
  "chaseCameraRemake": "النسخة الجديدة",
  "chaseCameraOriginal": "الأصلية",

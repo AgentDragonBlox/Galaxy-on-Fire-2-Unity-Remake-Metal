@@ -1473,6 +1473,8 @@
  "saveFolderMergeQuestion": "{0} में पहले से {1} सेव हैं और इस डिवाइस पर {2}। हर स्लॉट का नया सेव रखें (दूसरा Saves/Deleted में जाएगा), या केवल फ़ोल्डर के (इस डिवाइस के Saves/BeforeFolder में जाएँगे)?",
  "saveFolderMerge": "नया रखें",
  "saveFolderUseFolder": "केवल फ़ोल्डर के",
+ "hangarRestock": "पुनः भंडारण",
+ "hangarRareRestock": "दुर्लभ माल",
  "chaseCamera": "पीछा कैमरा",
  "chaseCameraRemake": "रीमेक",
  "chaseCameraOriginal": "मूल",

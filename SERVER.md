@@ -22,6 +22,7 @@ arenas, distress calls and their chat commands), see [Playing together](docs/MUL
 - [The server console](#the-server-console)
 - [The web admin](#the-web-admin)
 - [Files the server keeps](#files-the-server-keeps)
+- [The money log](#the-money-log)
 - [Running it as a Linux service](#running-it-as-a-linux-service)
 - [When the connection drops](#when-the-connection-drops)
 - [Updating the server](#updating-the-server)
@@ -331,6 +332,27 @@ There is no limit on the number of profiles. A profile nobody has signed in to f
 start and once an hour, except one that is online or belongs to staff (ops, admins, the master admin). Its file moves to
 `Pruned/`, where the newest 50 are kept, with its entry from `accounts.json`. The console's `profile restore <id>`
 brings one back: the player's devices sign in to it again (it has left its faction).
+
+## The money log
+
+Each player's game runs its own economy, so the server only sees what the games tell it. To help spot a profile that
+grows faster than play allows, the server writes every money event it sees to its log with the prefix
+`Server: audit`. List them with `grep "Server: audit"` on the log file, or `journalctl -u gof2 | grep audit` for the
+Linux service.
+
+- **Uploads.** A profile's upload whose worth grew by 100 000 or more since its last accepted upload gets a line. A
+  refused upload always gets one. The line gives the worth before and after, the minutes between, the growth per minute
+  and how each part changed: credits, ship, equipment, cargo, Kaamo Club and parked ship. It also names a ship change
+  and the five items that grew most. Growth of 150 000 a minute or more, or a refusal, is logged as a warning.
+- **Shop trades.** Each player's buys and sells of one item at one station are added up. The total is logged once they
+  stop for 8 seconds, for example `Sleek (c716f6fcf5b65ebd) sold 120 x Gold (14) at Festus for 72 000 (600 each)`. A unit
+  price outside the item's price range is a warning (`PRICE OUTSIDE`): no station asks that price.
+- **Faction banks.** Every deposit, withdrawal and toll, with the bank's balance after it. Claims and sieges were
+  logged before.
+
+A profile that shows big credit growth in its uploads but no shop trades, missions or trades with other players is
+worth a closer look (`profile info <name>`, its file in `ServerProfiles/`). The log changes nothing the server accepts:
+`-maxearn` is still the limit.
 
 ## Running it as a Linux service
 

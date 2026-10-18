@@ -1486,6 +1486,8 @@
  "saveFolderMergeQuestion": "{0} bevat al {1} opgeslagen spellen en dit apparaat heeft er {2}. Het nieuwste van elk slot houden (het andere gaat naar Saves/Deleted), of alleen die van de map (die van dit apparaat gaan naar Saves/BeforeFolder)?",
  "saveFolderMerge": "Nieuwste houden",
  "saveFolderUseFolder": "Alleen die van de map",
+ "hangarRestock": "Aanvulling",
+ "hangarRareRestock": "Zeldzame goederen",
  "filesOnMyIpad": "Bestanden › Op mijn iPad",
  "filesOnMyIphone": "Bestanden › Op mijn iPhone"
 }
