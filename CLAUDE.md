@@ -2945,7 +2945,7 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   (`ProjectShip.FillFromGame`: a hand-written one had no slots). `ModProject.AddFile` never hands out a name twice in a
   run (ModMaterials keeps textures by path until the project is read again). Verified in Play mode: projects, open, a .glb ship (auto hardpoints,
   textures), a Phantom override, placing / dragging points, the loadout, test flight, dock back, exit, export. Not yet: a
-  real file-picker run, touch / controller use of the gizmo.
+  real file-picker run, controller use of the gizmo. Touch (2026-10-18): with touch input the gizmo's balls and arrows are 1.5x larger and picked within a fingertip (`ModBuilderGizmo.Reach`: 0.17 / 0.12 inch at `Screen.dpi`; 16 / 12 px at 1080 p were about a millimetre on a phone), the arrows from 45 % of their length so a tap on the ball moves the ball; the number fields (IntegerField / FloatField) take a tap's focus like text fields (`TextFieldKeys.InTextField`: the menus' touch handling had taken it away, so they couldn't be typed into on Android).
   **Its other kinds** (2026-10-15): the kinds are `ModBuilder.Kind` (12) and each is edited where it lives in the game
   (`ModBuilder.PlaceOf`: Ships / Items / Skins / Blueprints / Campaign in the hangar, Characters / Quests / Audio in the Space
   Lounge, Systems on the star map, Stations / Weapon fx in space, Hangars & bars in the room itself); a kind of the other
