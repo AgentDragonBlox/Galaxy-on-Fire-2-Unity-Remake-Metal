@@ -2122,7 +2122,19 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   37 / 38 / 40, `Ship::hasJumpDriveIntegrated`; read by `GalaxyMap.HasIntegratedDrive` through `Database.Shared`) and
   `cloak` true (95's stats) / a cloak item (category 21) / false (`Database.IntegratedCloaks`, defaults 44 / 49 -> 95,
   `Ship::hasCloakIntegrated`; `PlayerCloak.HasCloak` / `Attach`, `Hangar.HasCloakBay`); an override can take an original's
-  away; NPCs' cloaking is unchanged (Specters and ship 49). The glow: a material's `engineIdle` (with `engine`, 0..1, its
+  away; NPCs' cloaking is unchanged (Specters and ship 49). Any item (2026-10-18, the user's request): `integrated.items`
+  [n | "mod:id" | { item, amount }] (`Database.IntegratedItems` / `BuiltInItems`; a secondary's amount its starting ammo,
+  default 10; a commodity refused with a warning): `Hangar.SyncBuiltIn` (at docking before `FitToSlots`, `SpaceLevel`'s
+  spawn and `SwapPlayerShip`, `SwitchTo`, `Story.TakeShip`, `StationLevel.ReplacePlayerShip`, the Mod Builder's loadout)
+  puts the flown ship's first in `Session.Equipment` as `ItemStack.builtIn` stacks (saved with the flag), so every reader of
+  the mounted items has them; they take no slot (`Hangar.TakesSlot`, `MountedOfType`, `FitToSlots`, the Customize stats),
+  can't be demounted or swapped, and never go to the hold, the Kaamo Club, another ship, a preset, a profile's worth or an
+  original-game export; another ship's go at the next sync, a missing one comes back (an emergency system used up: back at
+  the next docking; a kept secondary keeps its ammo, the shops' missiles join it). Like the Specter's cloak bay, a fitted
+  one-per-ship equipment item (`Hangar.Replaceable`: type 3, `Shop.CanInstallMultiple` false) of a built-in one's kind
+  takes its place without a slot (`InBuiltInPlace`) and the built-in one steps aside until it is demounted (SyncBuiltIn
+  leaves it out); built-in weapons and turrets add to the slots. The hangar's Ship tab lists them under "Built into the
+  ship" (BUILT IN badge; a fitted one there "Replaces the built-in X"). The glow: a material's `engineIdle` (with `engine`, 0..1, its
   share at throttle 0, `EngineMaterialGlow.Target`; 1 = lit whenever the engines run, dark parked) and a throttle glow's
   `off` (`ThrottleGlow.off`: its level parked in a hangar with the engine part hidden, default -1 = idle; idle = full with
   off 0 = steady): before, a mod ship's glow either followed the throttle or stayed lit on the pad. Tests in

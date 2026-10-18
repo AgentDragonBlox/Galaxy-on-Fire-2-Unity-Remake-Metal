@@ -1482,5 +1482,9 @@
  "invertOrbitX": "镜头视角：左右反转",
  "invertOrbitHelp": "绕飞船旋转的镜头：自由视角、Action Freeze、检视飞船和 Mod Builder，通过拖动、摇杆或按键操作。与飞行操控的反转设置相互独立。",
  "systemClosing": "该星系已不在星图上：正在离开。",
- "mpCmdSystem": "管理员：在其星图上显示或隐藏一个星系（包括航线和跃迁），直到 reset；编号、名称或 \"mod_id:id\""
+ "mpCmdSystem": "管理员：在其星图上显示或隐藏一个星系（包括航线和跃迁），直到 reset；编号、名称或 \"mod_id:id\"",
+ "shopBuiltInHeader": "飞船内置",
+ "shopBuiltIn": "内置",
+ "shopBuiltInStays": "内置于{0}：随飞船保留。",
+ "shopReplacesBuiltIn": "取代内置的{0}"
 }

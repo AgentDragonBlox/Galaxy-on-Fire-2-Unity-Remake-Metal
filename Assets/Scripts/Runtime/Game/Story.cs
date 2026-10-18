@@ -354,7 +354,7 @@ namespace GoF2Remake.Data
             // A gift (the Cronus at 77, #122) costs nothing: the old ship's trade-in is credited whole.
             Session.Credits += Mathf.Max(0, Shop.ShipPrice(db, Session.ShipIndex, station) - (gift ? 0 : Shop.ShipPrice(db, ship, station)));
             var slots = db.Ship(ship).slots;
-            var mounted = Session.Equipment;
+            var mounted = Session.Equipment.Where(e => !e.builtIn).ToList();   // the old hull's built-ins stay with it
             Session.ShipIndex = ship;
             Session.ShipMods = new List<int>();
             Session.Equipment = new List<ItemStack>();
@@ -368,6 +368,7 @@ namespace GoF2Remake.Data
                     Session.Equipment.Add(e);
                 else Shop.AddToCargo(e.item, Mathf.Max(1, e.amount));
             }
+            Hangar.SyncBuiltIn(db);
         }
 
         /// <summary>The debug start: the equipment the step's planet-jump checks ask for (RequirementRefusal, 532), so a jump

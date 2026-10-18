@@ -738,6 +738,7 @@ namespace GoF2Remake.World
             Session.ShipIndex = shipIndex;
             var prefab = AssembledObject.LoadPrefab(PlayerHull.Assembly(db, shipIndex));
             if (prefab == null) { Session.ShipIndex = before; return; }
+            Hangar.SyncBuiltIn(db);   // the new hull's built-in items, the old one's gone
             var root = ctrl.gameObject;
             PlayerHull.RemoveTurrets(this);   // before the old model goes (they ride on it)
             if (ctrl.visualModel != null) Destroy(ctrl.visualModel.gameObject);
@@ -781,6 +782,7 @@ namespace GoF2Remake.World
 
         void SpawnPlayer()
         {
+            Hangar.SyncBuiltIn(db);   // remake mods: the flown ship's built-in items (ships.json "integrated": "items")
             var ship = db.Ships.Find(s => s.index == Session.ShipIndex);
             var root = new GameObject($"Player ({ship?.name})");
             if (Session.ArrivedByTravel)

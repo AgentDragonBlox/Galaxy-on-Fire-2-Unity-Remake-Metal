@@ -436,6 +436,14 @@ namespace GoF2Remake.Data
         public static readonly int[] DefaultIntegratedDrives = { 37, 38, 40 };
         public static readonly Dictionary<int, int> DefaultIntegratedCloaks = new Dictionary<int, int> { { 44, 95 }, { 49, 95 } };
         public const int IntegratedCloakItem = 95;
+        /// <summary>Remake mods (ships.json "integrated": "items"): the items a ship has built in, by ship index (a secondary
+        /// with its starting ammo); Hangar.SyncBuiltIn mounts them on the flown ship as built-in stacks.</summary>
+        [System.NonSerialized] public Dictionary<int, List<ItemStack>> IntegratedItems = new Dictionary<int, List<ItemStack>>();
+
+        /// <summary>The items 'ship' has built in (IntegratedItems), empty = none.</summary>
+        public List<ItemStack> BuiltInItems(int ship) =>
+            IntegratedItems != null && IntegratedItems.TryGetValue(ship, out var list) ? list : NoItems;
+        static readonly List<ItemStack> NoItems = new List<ItemStack>();
 
         public bool HasIntegratedDrive(int ship) => IntegratedDrives != null && IntegratedDrives.Contains(ship);
 

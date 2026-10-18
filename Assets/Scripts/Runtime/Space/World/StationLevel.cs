@@ -191,6 +191,7 @@ namespace GoF2Remake.World
             // Remake debug (PlayerHull): a hull the player can't normally fly never sits in a hangar (an old save from the
             // battleship toggle): back in the player's own ship.
             if (!PlayerHull.PlayerShip) PlayerHull.ForceOwnShip();
+            Hangar.SyncBuiltIn(db);  // remake mods: the flown ship's built-in items (ships.json "integrated": "items")
             Hangar.FitToSlots(db);   // remake: no more mounted than the ship has slots (a mod's lower slot count, a debug swap)
             shipIndex = shipOverride >= 0 ? shipOverride : Session.ShipIndex;
             Station = db.Stations.Find(s => s.index == station);
@@ -402,6 +403,7 @@ namespace GoF2Remake.World
             if (dbRevision != Modding.ModManager.Revision) { db = Database.Load(); dbRevision = Modding.ModManager.Revision; }
             if (playerShip != null) Destroy(playerShip.gameObject);
             shipIndex = index;
+            if (index == Session.ShipIndex) Hangar.SyncBuiltIn(db);   // its built-in items (a purchase, a stored hull, a debug swap)
             var ship = SpawnShip(index, PadPosition(index), Quaternion.identity, hangarRoot, "Player ship");
             playerShip = ship != null ? ship.transform : null;
             if (playerShip != null) PlayerHull.FitHangar(playerShip);   // remake debug: a freighter / capital ship shrunk

@@ -532,6 +532,13 @@ namespace GoF2Remake.UI
             {
                 AddHeader(T(183));
                 AddRow(new Row { kind = RowKind.OwnShip, ship = Session.ShipIndex });
+                // Remake mods: the ship's built-in items (ships.json "integrated": "items"), in no slot.
+                var builtIn = hangar.BuiltInStacks();
+                if (builtIn.Count > 0)
+                {
+                    AddHeader(Localization.Extra("shopBuiltInHeader", "Built into the ship"), true);
+                    foreach (int e in builtIn) AddRow(new Row { kind = RowKind.Slot, equipment = e, item = Session.Equipment[e].item, type = hangar.TypeOf(Session.Equipment[e].item) });
+                }
                 for (int type = 0; type <= 3; type++)
                 {
                     int slots = hangar.SlotCount(type);
@@ -682,7 +689,12 @@ namespace GoF2Remake.UI
                     tex = ItemInfo.ItemIcon(stack.item);
                     name.text = ItemInfo.ItemName(stack.item) + (stack.amount > 1 ? $" ({stack.amount})" : "");
                     subText.text = ItemInfo.Category(db.Item(stack.item));
-                    sub.Insert(0, Badge(Localization.Extra("shopMounted", "MOUNTED"), "row-badge--mounted"));
+                    sub.Insert(0, stack.builtIn ? Badge(Localization.Extra("shopBuiltIn", "BUILT IN"), "row-badge--mounted")
+                                                : Badge(Localization.Extra("shopMounted", "MOUNTED"), "row-badge--mounted"));
+                    // A fitted item in a built-in one's place: which one it stands in for (it is back when this is demounted).
+                    if (!stack.builtIn && Hangar.InBuiltInPlace(db, stack)
+                        && db.BuiltInItems(Session.ShipIndex).Find(b => db.Item(b.item)?.categoryId == db.Item(stack.item)?.categoryId) is ItemStack replaced)
+                        subText.text = string.Format(Localization.Extra("shopReplacesBuiltIn", "Replaces the built-in {0}"), ItemInfo.ItemName(replaced.item));
                     break;
                 }
                 case RowKind.Slot:
@@ -1001,7 +1013,7 @@ namespace GoF2Remake.UI
                     }
                 }
                 else if (selected.kind == RowKind.Slot)
-                    ShowAction(T(282).ToUpperInvariant(), true);
+                    ShowAction(T(282).ToUpperInvariant(), !(selected.equipment >= 0 && Session.Equipment[selected.equipment].builtIn));
                 else if (selected.kind == RowKind.CargoItem)
                 {
                     var r = hangar.CanMount(item, out _);
@@ -1544,6 +1556,11 @@ namespace GoF2Remake.UI
                 case RowKind.Slot when selected.equipment >= 0:
                 {
                     int item = Session.Equipment[selected.equipment].item;
+                    if (Session.Equipment[selected.equipment].builtIn)
+                    {
+                        menu.ShowToast(string.Format(Localization.Extra("shopBuiltInStays", "Built into the {0}: it stays with the ship."), ItemInfo.ShipName(Session.ShipIndex)));
+                        break;
+                    }
                     if (!Hangar.IsSaleable(item)) { menu.ShowToast(Localization.Get(323)); break; }
                     // HangarWindow::selectItem 0x178e20: a passenger cabin stays while the others couldn't seat the passengers aboard.
                     var cabin = level.Database.Item(item);

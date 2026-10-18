@@ -623,7 +623,7 @@ namespace GoF2Remake.Multiplayer
             long Items(List<ItemStack> list)
             {
                 long v = 0;
-                if (list != null) foreach (var st in list) if (st != null) v += (long)(db.Item(st.item)?.minPrice ?? 0) * Math.Max(0, st.amount);
+                if (list != null) foreach (var st in list) if (st != null && !st.builtIn) v += (long)(db.Item(st.item)?.minPrice ?? 0) * Math.Max(0, st.amount);   // built-ins are the hull's
                 return v;
             }
             long ShipPrice(int ship) => db.Ship(ship)?.price ?? 0;

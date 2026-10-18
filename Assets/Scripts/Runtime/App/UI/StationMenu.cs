@@ -2067,7 +2067,7 @@ namespace GoF2Remake.UI
             int[] slots = { e.primary >= 0 ? e.primary : c.slots.primary, e.secondary >= 0 ? e.secondary : c.slots.secondary,
                             e.turret >= 0 ? e.turret : c.slots.turret, Mathf.Max(0, c.slots.equipment + e.equipment) + Session.ModLevel(2) };
             var used = new int[4];
-            foreach (var st in Session.Equipment) { int t = level.Db.Item(st.item)?.TypeId ?? 4; if (t >= 0 && t < 4) used[t]++; }
+            foreach (var st in Session.Equipment) { if (!Hangar.TakesSlot(level.Db, st)) continue; int t = level.Db.Item(st.item)?.TypeId ?? 4; if (t >= 0 && t < 4) used[t]++; }
             int over = 0;
             for (int t = 0; t < 4; t++) over += Mathf.Max(0, used[t] - slots[t]);
             string Sign(float v) => v == 0f ? "" : $" ({(v > 0 ? "+" : "")}{v:0}%)";
