@@ -635,6 +635,9 @@ namespace GoF2Remake.UI
         public IEnumerator Capture(VisualElement overlay, Action<bool> done)
         {
             overlay.style.visibility = Visibility.Hidden;
+            // The open settings panel sets its own 'visibility: visible' (.photo-panel--open, for its fade), which beats the
+            // overlay's inherited hidden: hide it inline too, or it lands in the picture.
+            panel.style.visibility = Visibility.Hidden;
             bool fps = FpsCounter.Suppressed;
             FpsCounter.Suppressed = true;
             yield return null;   // a frame drawn without the overlay
@@ -662,6 +665,7 @@ namespace GoF2Remake.UI
             catch (Exception e) { Debug.LogWarning("Photo mode screenshot: " + e.Message); }
             if (shot != null) UnityEngine.Object.Destroy(shot);
             overlay.style.visibility = StyleKeyword.Null;
+            panel.style.visibility = StyleKeyword.Null;
             FpsCounter.Suppressed = fps;
             done?.Invoke(ok);
         }
