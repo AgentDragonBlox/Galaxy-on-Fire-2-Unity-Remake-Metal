@@ -1961,6 +1961,7 @@ namespace GoF2Remake.UI
             if (level == null || level.View != StationView.Hangar || ArrivalPending || UiBlocked || DialogOpen || SystemMenuOpen
                 || HangarOpen || StarMap.IsOpen || (storyDialogue != null && storyDialogue.IsOpen)) return;
             if (!level.BeginInspect()) return;
+            if (!customizing) level.InspectFrameX = 0.5f;   // re-entered while a Customize screen's turn is blending back
             inspectDragging = false;
             inspectFling = Vector2.zero;
             inspectPinch = -1f;
@@ -2100,7 +2101,7 @@ namespace GoF2Remake.UI
             level.PreviewEngineDrive(1f);
             level.PreviewEngines(false);
             customize.Hide();
-            level.InspectFrameX = 0.5f;
+            // InspectFrameX stays until the orbit has blended back (StationLevel resets it), so the view turns back with it.
             inspectHints.style.display = StyleKeyword.Null;
             inspectFooter.style.display = StyleKeyword.Null;
             EndInspect();

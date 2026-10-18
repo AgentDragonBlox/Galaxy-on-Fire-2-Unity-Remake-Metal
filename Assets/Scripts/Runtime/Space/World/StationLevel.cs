@@ -1302,16 +1302,20 @@ namespace GoF2Remake.World
                     // The photo tools' field of view (UI.PhotoTools), eased in with the orbit.
                     if (Inspect.FovDeg > 0f) mainCamera.fieldOfView = Mathf.Lerp(mainCamera.fieldOfView, Inspect.FovDeg, Mathf.SmoothStep(0f, 1f, Inspect.Blend));
                     // A panel over part of the screen (the Customize screen): the view turns aside so the ship stands in the
-                    // middle of the free part (InspectFrameX), eased, with the orbit's blend.
-                    inspectFrame = Mathf.MoveTowards(inspectFrame, InspectFrameX, Time.unscaledDeltaTime * 1000f / InspectFrameMs);
-                    float off = (inspectFrame - 0.5f) * Inspect.Blend;
+                    // middle of the free part (InspectFrameX). The turn comes and goes with the orbit's own eased blend, so
+                    // the Customize screen moves in and out like Inspect ship (a separate linear ease times the raw blend
+                    // started and stopped abruptly, and the target reset on leaving swung the view back before the orbit
+                    // did); a change of the panel's width once in eases over InspectFrameMs.
+                    if (!Inspect.Active || Inspect.Blend < 1f) inspectFrame = InspectFrameX;
+                    else inspectFrame = Mathf.MoveTowards(inspectFrame, InspectFrameX, Time.unscaledDeltaTime * 1000f / InspectFrameMs);
+                    float off = (inspectFrame - 0.5f) * Mathf.SmoothStep(0f, 1f, Inspect.Blend);
                     if (Mathf.Abs(off) > 0.0005f)
                     {
                         float halfTanX = Mathf.Tan(mainCamera.fieldOfView * 0.5f * Mathf.Deg2Rad) * mainCamera.aspect;
                         cam.rotation *= Quaternion.AngleAxis(-Mathf.Atan(halfTanX * 2f * off) * Mathf.Rad2Deg, Vector3.up);
                     }
                 }
-                else inspectFrame = 0.5f;
+                else inspectFrame = InspectFrameX = 0.5f;   // the blend back has ended: the frame back in the middle
             }
             else
             {
