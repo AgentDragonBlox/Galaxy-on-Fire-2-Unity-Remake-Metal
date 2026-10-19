@@ -346,9 +346,15 @@ namespace GoF2Remake.World
                 foreach (var a in roomGo.GetComponentsInChildren<PartAnimation>(true))
                 {
                     a.play = true;
-                    a.pingPongRotation = true;
+                    // Modified: not the Terran hangar's bots (hangar_terran_bot_*): they drive a keyed loop, a heading swung
+                    // back on every other loop turned them against their path.
+                    a.pingPongRotation = !a.gameObject.name.Contains("_bot_");
                     // Remake: and the Nivelian hangar's flashing light (hangar_nivelian_add, PartAnimation.HasSignedExtra).
-                    if (a.gameObject.name.Contains("_anim") || a.HasSignedExtra) a.applyMaterialChannels = true;
+                    // Modified: and the Terran hangar's blinking light (hangar_terran_add_part0, its `extra` 0..100).
+                    if (a.gameObject.name.Contains("_anim") || a.HasSignedExtra || a.gameObject.name.StartsWith("hangar_terran_add"))
+                        a.applyMaterialChannels = true;
+                    // Modified: the Terran hangar's beta bots are keyed heading first (PartAnimation.headingFirst).
+                    if (a.gameObject.name.StartsWith("hangar_terran_bot_")) a.headingFirst = true;
                 }
             if (customHangar == null) PlaceValkyrieHangarParts(roomGo);
             CollectRoomHighlights(roomGo);
