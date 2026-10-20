@@ -1162,6 +1162,11 @@ namespace GoF2Remake.UI
         {
             if (fineChecked || level == null || level.Station == null) return false;
             fineChecked = true;
+            // ModStation::OnInitialize skips the whole block after a load (setGameLoaded sets +0xac): #131, a save made at a
+            // station with a low reputation charged the fine at every load.
+            bool loaded = Session.ArrivedByLoad;
+            Session.ArrivedByLoad = false;
+            if (loaded) return false;
             int st = level.Station.index;
             var sys = level.Database.Systems.Find(s => s.index == level.Station.system);
             int race = sys != null ? sys.raceId : -1;

@@ -208,6 +208,7 @@ namespace GoF2Remake.World
         {
             Story.ReopenUnshownSuccess();   // #88
             HullCollision.Suppressed = false;   // the main menu's backdrop had them off (whichever scene's code runs first)
+            Session.ArrivedByLoad = false;   // a load's no-fine docking is only the station it opened
             // Multiplayer: loaded after its session ended (a docking queued behind the menu): on to the menu (nothing is
             // saved, SaveGame.SessionGame).
             if (GoF2Remake.Data.NetSession.SessionLost) SceneManager.LoadScene("MainMenu");
