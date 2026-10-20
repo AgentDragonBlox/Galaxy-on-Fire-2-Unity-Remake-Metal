@@ -711,7 +711,7 @@ namespace GoF2Remake.Data
                 {
                     int drive = Session.Equipment.FindIndex(e => db.Item(e.item)?.categoryId == 18);
                     if (drive >= 0) Session.Equipment.RemoveAt(drive);
-                    else Shop.RemoveFromCargo(GalaxyMap.KhadorDriveItem, 1);
+                    else Shop.RemoveFromCargo(GalaxyMap.KhadorDriveItem, CargoOf(GalaxyMap.KhadorDriveItem));   // Ship::removeCargo(Item*): the whole stack
                     // The original's unsaleable flag was on that Item: it goes with it (the remake's flag is per item
                     // number, so it stayed and locked every later Khador Drive).
                     Session.Unsaleable.Remove(GalaxyMap.KhadorDriveItem);
