@@ -1250,9 +1250,12 @@ namespace GoF2Remake.World
             if (View == StationView.Hangar && flingVelocity != 0f)
             {
                 shipYaw += flingVelocity * Time.deltaTime;
-                flingVelocity *= Mathf.Pow(0.9f, dtMs / 20f);
-                // Stops below 1 px per frame (1/120 rad per 20 ms).
-                if (Mathf.Abs(flingVelocity) < 1f / StationTables.TurntablePixelsPerRadian / 0.02f) flingVelocity = 0f;
+                // Modified: a fast flick keeps the ship turning and slows it gently (to 35 % a second; the original's x0.9 per
+                // 20 ms frame stopped it within half a second), down to a crawl before it stops (it snapped still at 1 px a
+                // frame, ~24 deg/s). How much of the speed is left after a second, and the speed it stops at (rad/s):
+                const float FlingKeptPerSecond = 0.35f, FlingStopSpeed = 0.03f;
+                flingVelocity *= Mathf.Pow(FlingKeptPerSecond, dtMs / 1000f);
+                if (Mathf.Abs(flingVelocity) < FlingStopSpeed) flingVelocity = 0f;
                 ApplyShipYaw();
             }
 

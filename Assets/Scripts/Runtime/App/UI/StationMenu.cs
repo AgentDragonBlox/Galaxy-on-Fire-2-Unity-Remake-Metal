@@ -1634,7 +1634,9 @@ namespace GoF2Remake.UI
             dragZone.RegisterCallback<PointerMoveEvent>(e =>
             {
                 if (e.pointerId != dragPointer) return;
-                if (e.pressedButtons == 0) { EndDrag(e.pointerId, false); return; }   // released where we didn't hear it
+                // Released where we didn't hear it. Modified: with its fling: a quick flick's last move often comes with the
+                // button already up (the release in the same frame), and ending it without one lost most flings.
+                if (e.pressedButtons == 0) { EndDrag(e.pointerId, true); return; }
                 float rad = (e.position.x - dragLastX) / UnitsPerRadian;
                 level.RotateShip(rad);
                 dragFrameRadians += rad;
@@ -2416,6 +2418,14 @@ namespace GoF2Remake.UI
         {
             if (root == null || level == null) return;
             if (builderView != null) { builderView.Update(); return; }   // the Mod Builder's hangar
+            // Release velocity: the turn per frame, smoothed (the original uses the last frame's dx). Modified: first thing, so
+            // the hangar's window (Ship / Shop, open most of the time in the hangar) and the other early returns below no
+            // longer skip it: a drag let go there always measured 0 and the ship never kept turning.
+            if (dragPointer >= 0)
+            {
+                dragVelocity = Mathf.Lerp(dragVelocity, dragFrameRadians / Mathf.Max(Time.unscaledDeltaTime, 1e-3f), 0.6f);
+                dragFrameRadians = 0f;
+            }
             if (lastScreen != ScreenSize() || lastSafeArea != Screen.safeArea) UpdateLayout();
             UpdateTicker();   // scrolls on under dialogs and windows (it used to wait, then fly in again)
             UpdateFunds();
@@ -2591,12 +2601,7 @@ namespace GoF2Remake.UI
                 return;
             }
 
-            if (dragPointer >= 0)
-            {
-                // Release velocity: the turn per frame, smoothed (the original uses the last frame's dx).
-                dragVelocity = Mathf.Lerp(dragVelocity, dragFrameRadians / Mathf.Max(Time.unscaledDeltaTime, 1e-3f), 0.6f);
-                dragFrameRadians = 0f;
-            }
+            if (dragPointer >= 0) { }   // the release velocity: at the top (Modified)
             else if (level.View == StationView.Hangar)
             {
                 float turn = 0f;
