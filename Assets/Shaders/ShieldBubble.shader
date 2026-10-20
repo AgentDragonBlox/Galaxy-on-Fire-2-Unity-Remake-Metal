@@ -41,7 +41,7 @@ Shader "GoF2/ShieldBubble"
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float4 tangentOS : TANGENT; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
-            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float3 eyeTS : TEXCOORD1; UNITY_VERTEX_OUTPUT_STEREO };
+            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float3 eyeTS : TEXCOORD1; float3 dirOS : TEXCOORD2; UNITY_VERTEX_OUTPUT_STEREO };
 
             Varyings vert(Attributes i)
             {
@@ -51,6 +51,7 @@ Shader "GoF2/ShieldBubble"
                 float3 ws = TransformObjectToWorld(i.positionOS.xyz);
                 o.positionCS = TransformWorldToHClip(ws);
                 o.uv = i.uv;
+                o.dirOS = i.positionOS.xyz;
                 // v_eye_dir = TBN * (eye - position), per vertex like the original
                 float3 n = TransformObjectToWorldNormal(i.normalOS);
                 float3 t = TransformObjectToWorldDir(i.tangentOS.xyz);
@@ -63,7 +64,16 @@ Shader "GoF2/ShieldBubble"
             half4 frag(Varyings i) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-                half4 noise = SAMPLE_TEXTURE2D(_NoiseMap, sampler_NoiseMap, i.uv);
+                // Remake: the noise is sampled around the sphere by three blended planar projections of its direction, not by
+                // the mesh's UVs: the noise image doesn't tile, so where the UVs wrap (the side the chase camera looks at) the
+                // refraction broke into a cut (the user's report, 2026-10-21). 0.25 a unit of direction is about the UVs' own
+                // density (a turn of the sphere is one texture width).
+                float3 d = normalize(i.dirOS);
+                float3 w = pow(abs(d), 4.0);
+                w /= max(w.x + w.y + w.z, 1e-5);
+                half4 noise = SAMPLE_TEXTURE2D(_NoiseMap, sampler_NoiseMap, d.yz * 0.25 + 0.5) * w.x
+                            + SAMPLE_TEXTURE2D(_NoiseMap, sampler_NoiseMap, d.xz * 0.25 + 0.5) * w.y
+                            + SAMPLE_TEXTURE2D(_NoiseMap, sampler_NoiseMap, d.xy * 0.25 + 0.5) * w.z;
                 #if !defined(UNITY_COLORSPACE_GAMMA)
                 noise.rgb = LinearToSRGB(noise.rgb);   // a data texture imported as colour
                 #endif
