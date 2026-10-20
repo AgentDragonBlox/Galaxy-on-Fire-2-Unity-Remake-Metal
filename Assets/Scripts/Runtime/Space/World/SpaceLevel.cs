@@ -550,7 +550,8 @@ namespace GoF2Remake.World
             {
                 hiddenCheckMs = HiddenCheckMs;
                 bool hidden = GalaxyMap.ForcedHidden(Layout.systemIndex);
-                if (!hidden) { hiddenMs = 0f; return; }
+                if (!hidden) { hiddenMs = 0f; hiddenNowhere = false; return; }
+                if (hiddenNowhere) return;   // no shown system to go to: the player stays
                 if (hiddenMs <= 0f)
                 {
                     hiddenMs = 0.001f;
@@ -561,8 +562,13 @@ namespace GoF2Remake.World
             hiddenMs += Time.deltaTime * 1000f;
             if (hiddenMs < HiddenLeaveMs) return;
             hiddenMs = 0f;
-            TravelTo(GalaxyMap.FallbackStation(db, Layout.systemIndex));
+            int to = GalaxyMap.FallbackStation(db, Layout.systemIndex);
+            if (to < 0 || to == Layout.stationIndex) { hiddenNowhere = true; return; }   // nowhere shown: stay (it looped into hidden Mido)
+            TravelTo(to);
         }
+
+        /// <summary>The hidden system has no shown system to leave for (GalaxyMap.FallbackStation -1): the player stays.</summary>
+        bool hiddenNowhere;
 
         // ---- the wormhole (landmark 3) -----------------------------------------------------------------------
 
