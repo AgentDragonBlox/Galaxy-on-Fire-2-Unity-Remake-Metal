@@ -348,7 +348,9 @@ namespace GoF2Remake.Flight
                 // world up (the ship levels out, no roll).
                 float turn = Mathf.Min(stats.handling / 100f + 0.2f * stats.handlingUpgrades + 2.7f, 4f) * Model.TurnScale;   // remake debug: a heavy hull turns slower
                 var to = (autopilotTarget() - transform.position).normalized;
-                var dir = (transform.forward + (to - transform.forward) * ((int)(dtMs * turn) / 4096f)).normalized;
+                // Remake: without the original's (int): at 30 fps it rounds off under 1 %, at 261 fps up to 10 % a frame, a
+                // wobble on the autopilot (Discord report, 2026-10-18).
+                var dir = (transform.forward + (to - transform.forward) * (dtMs * turn / 4096f)).normalized;
                 // The model banks into the turn (#45: it flew the turns flat).
                 float turnAngle = Mathf.Acos(Mathf.Clamp(Vector3.Dot(transform.forward, dir), -1f, 1f));
                 if (Vector3.Dot(transform.right, dir) > 0f) turnAngle = -turnAngle;
