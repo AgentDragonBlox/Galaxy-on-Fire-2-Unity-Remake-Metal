@@ -1893,7 +1893,11 @@ namespace GoF2Remake.UI
         {
             var h = new VisualElement { pickingMode = PickingMode.Ignore };
             h.AddToClassList("hint");
-            foreach (var g in glyphs) h.Add(g);
+            // Modified: the glyphs in a row of their own (hint-keys), so the hangar window can put the label under them.
+            var keys = new VisualElement { pickingMode = PickingMode.Ignore };
+            keys.AddToClassList("hint-keys");
+            foreach (var g in glyphs) keys.Add(g);
+            h.Add(keys);
             var l = new Label(label) { pickingMode = PickingMode.Ignore };
             l.AddToClassList("hint-label");
             l.AddToClassList("gof-semibold");
