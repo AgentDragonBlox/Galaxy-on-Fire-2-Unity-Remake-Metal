@@ -441,8 +441,13 @@ namespace GoF2Remake.Flight
         {
             if (freeLook == null) freeLook = GetComponent<FreeLookCamera>();
             if (freeLook == null || !freeLook.FreeLookActive) return false;
+            // A quick flick can press and release inside one input update: WasPressedThisFrame holds but activeControl is
+            // already gone, so the binding's paths decide (Discord report, 2026-10-17: the right stick dodged in free look).
             var c = a.activeControl;
-            return c != null && c.path.Contains("Stick", System.StringComparison.OrdinalIgnoreCase);
+            if (c != null) return c.path.Contains("Stick", System.StringComparison.OrdinalIgnoreCase);
+            foreach (var b in a.bindings)
+                if (b.effectivePath != null && b.effectivePath.Contains("Stick", System.StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
         }
 
         bool brakeOverridden;
@@ -457,7 +462,10 @@ namespace GoF2Remake.Flight
                 return Vector2.ClampMagnitude(GameControls.Steer.ReadValue<Vector2>(), 1f);
             }
             float throttle = GameControls.Throttle.ReadValue<float>();
-            if (Mathf.Abs(throttle) > 0.01f) Model.ChangeThrottle(throttle * throttleChangePerSecond * Time.deltaTime);
+            if (freeLook == null) freeLook = GetComponent<FreeLookCamera>();
+            // In free look the throttle keys zoom the camera instead (FreeLookCamera; a controller has no wheel or pinch).
+            if (Mathf.Abs(throttle) > 0.01f && (freeLook == null || !freeLook.FreeLookActive))
+                Model.ChangeThrottle(throttle * throttleChangePerSecond * Time.deltaTime);
             // Brake (S): the engines stop while it is held (FlightModel.Braking); a boost overrides it until it is pressed again.
             bool brake = GameControls.Brake.IsPressed();
             // Presses wait while a menu holds the controls and on the frame it closes (#85: A in the pause, autopilot and quick

@@ -278,6 +278,10 @@ namespace GoF2Remake.Flight
             // A notch reads 1 (the Input System's uniform scroll) or 120 (raw): one step either way.
             if (mouse != null) wheel += Mathf.Clamp(mouse.scroll.ReadValue().y, -1f, 1f);
             if (Mathf.Abs(wheel) > 0.01f) { distance += wheel * -50f * frames; wheel *= Mathf.Pow(0.9f, frames); } else wheel = 0f;
+            // Remake: the throttle binding (LB / RB, ] / /) zooms in free look; ShipController leaves the throttle alone meanwhile
+            // (Discord report, 2026-10-17: no zoom on a controller).
+            float zoom = GameControls.Throttle.ReadValue<float>();
+            if (Mathf.Abs(zoom) > 0.01f) distance -= zoom * 150f * frames;
             delta = GoF2Remake.Data.Settings.OrbitTurn(delta);   // #121: the camera views' own inversion
             px += delta.x;
             py = Mathf.Clamp(py + delta.y, -200f, 200f);
