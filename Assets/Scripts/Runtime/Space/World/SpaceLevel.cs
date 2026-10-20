@@ -324,7 +324,10 @@ namespace GoF2Remake.World
             Traffic.Setup(db, Layout, Health.Target, Station, ownPassive || (GoF2Remake.Data.NetSession.Active && !NetAuthority), Wormhole);
             Traffic.LaunchCameraRunning = () => !LaunchCameraOver;
             Traffic.RadarHidden = () => Cutscene;
-            Navigation.RadarHidden = () => Cutscene || !LaunchCameraOver;   // no locks or lock sounds
+            // No locks or lock sounds (the scanner off). Remake: also in the planet jump, the jumpgate / Khador Drive scenes and
+            // while a level script holds the controls (its cutscene camera moves before or after Cutscene says so).
+            Navigation.RadarHidden = () => Cutscene || !LaunchCameraOver || Navigation.Jumping
+                || (SystemJump != null && SystemJump.Cinematic) || (Player != null && Player.inputLocked);
             PlayerHull.AttachTurrets(this);   // remake debug: a capital ship's turrets on the player's hull (PlayerHull)
             // Docking at the story's objects (PlayerEgo::dockToDockingPoint): locked through Navigation.
             Docking = Player.gameObject.AddComponent<ObjectDocking>();
@@ -492,6 +495,11 @@ namespace GoF2Remake.World
         bool ExtenderBlocked => launchCameraMs > 0f || Navigation.Jumping || (SystemJump != null && SystemJump.Cinematic) || Cutscene
                                 || Health == null || Health.Dead;
 
+        /// <summary>Modified: what ends a running time extender: a cinematic, the launch camera or the player's death. Not the
+        /// jumps any more (the jumpgate / Khador drive scenes, the planet jump): a running slow-down carries on through them
+        /// (it can't be started there, ExtenderBlocked) until the next place loads, which ends it (TimeExtender.OnDestroy).</summary>
+        bool ExtenderCancelled => launchCameraMs > 0f || Cutscene || Health == null || Health.Dead;
+
         void Update()
         {
             // MGame::OnUpdate: the wingmen's contract runs down while flying (fast-forward included, not while paused).
@@ -505,7 +513,7 @@ namespace GoF2Remake.World
             Collision.ignoreGate = Navigation.GoingToGate;
             // Hostiles, or a radio line on screen, block fast-forward (MGame::OnUpdate).
             Navigation.HostilesPresent = (Traffic != null && (Traffic.HostileCount > 0 || Traffic.ChatterVisible != null)) || (Campaign != null && Campaign.Radio != null && Campaign.Radio.Busy);
-            if (Extender != null && ExtenderBlocked) Extender.Cancel();
+            if (Extender != null && ExtenderCancelled) Extender.Cancel();
             UpdateWormholeRide();
             UpdateHiddenSystem();
         }
