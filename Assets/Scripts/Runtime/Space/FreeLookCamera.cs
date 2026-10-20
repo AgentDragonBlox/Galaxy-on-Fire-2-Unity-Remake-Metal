@@ -223,7 +223,9 @@ namespace GoF2Remake.Flight
         void Update()
         {
             bool halted = Time.timeScale <= 0f;
-            if (!halted && cycleAction.WasPressedThisFrame()) Cycle();
+            // Not under a menu either (Navigation.PressesBlocked): in a multiplayer session the game doesn't pause, and the
+            // pause / autopilot / secondary weapon menus' D-pad up cycled the camera (Discord report, 2026-10-17).
+            if (!halted && !Navigation.PressesBlocked && cycleAction.WasPressedThisFrame()) Cycle();
             // Remake: free look while a key is held (GameControls.FreeLookHold, EVERSPACE 2's Alt in the free-flight layout):
             // from the standard view, back to it on release.
             if (!halted && !Navigation.InputHalted)
@@ -237,7 +239,7 @@ namespace GoF2Remake.Flight
             if (Current != Mode.FreeLook) return;
             if (Blocked != null && Blocked()) { Set(Base, false); return; }
             if (chase != null && chase.follow != anchor && chase.follow != null) { Current = Mode.Standard; Set(Base, false); return; }   // taken over (the Liberator)
-            if (halted) return;
+            if (halted || Navigation.InputHalted) return;   // a menu's sticks and keys aren't the orbit's
 
             float frames = Time.deltaTime * 1000f / FrameMs;
             float scale = 1080f / Mathf.Max(1, Screen.height);   // the original's pixels
