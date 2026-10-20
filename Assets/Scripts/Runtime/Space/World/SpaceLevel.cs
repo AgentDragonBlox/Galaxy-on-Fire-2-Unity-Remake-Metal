@@ -335,7 +335,8 @@ namespace GoF2Remake.World
             Docking.Setup(db, Player, chase, Weapons);
             if (FreeLook != null)
                 FreeLook.Blocked = () => Cutscene || !LaunchCameraOver || (Mining != null && Mining.State != Mining.Phase.Idle)
-                                         || (Docking != null && Docking.Busy && Docking.State != ObjectDocking.Phase.Approach)   // the approach is an autopilot leg
+                                         // the approach is an autopilot leg; docked (not hacking) free look is the view (#132)
+                                         || (Docking != null && Docking.Busy && Docking.State != ObjectDocking.Phase.Approach && !DockedLook)
                                          || (Navigation != null && Navigation.Jumping)
                                          || (SystemJump != null && SystemJump.Cinematic) || (Health != null && Health.Dead);
             // MGame::switchCamera / PlayerEgo::setTurretMode refuse the turret view only while docking to an asteroid, mining,
@@ -343,6 +344,14 @@ namespace GoF2Remake.World
             // the remake refused it from the approach on).
             if (FreeLook != null) FreeLook.TurretAllowed = () => Docking != null && (Docking.State == ObjectDocking.Phase.Entering || Docking.IsDocked)
                                                                  && Docking.Hacking == null && !Cutscene;
+            if (FreeLook != null)
+            {
+                // PlayerEgo::approachDockingPoint / MGame::OnUpdate: docked, the camera goes to free look by itself (not while
+                // hacking: setDockingState(2) suppresses it); the undock's end goes back to the standard view (Blocked while
+                // leaving).
+                FreeLook.DockedView = () => DockedLook;
+                Docking.Docked += () => { if (DockedLook) FreeLook.EnterDockedLook(); };
+            }
             Navigation.Docking = Docking;
             Navigation.Ships = Traffic.Ships;
             Collision.docking = Docking;
@@ -493,6 +502,9 @@ namespace GoF2Remake.World
         public bool ComingFromVoid { get; private set; }
 
         /// <summary>A cinematic, a jump, the launch camera or the player's death stops the time extender (MGame::OnUpdate 0x1af162).</summary>
+        /// <summary>Docked at an object and not hacking (free look allowed, FreeLookCamera.DockedView).</summary>
+        bool DockedLook => Docking != null && Docking.IsDocked && Docking.Hacking == null && !Cutscene;
+
         bool ExtenderBlocked => launchCameraMs > 0f || Navigation.Jumping || (SystemJump != null && SystemJump.Cinematic) || Cutscene
                                 || Health == null || Health.Dead;
 

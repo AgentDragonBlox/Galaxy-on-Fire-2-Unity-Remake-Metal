@@ -53,6 +53,9 @@ namespace GoF2Remake.Flight
         public Func<bool> Blocked;
         /// <summary>While Blocked: the turret views may still be cycled (docked at an object, SpaceLevel), not free look.</summary>
         public Func<bool> TurretAllowed;
+        /// <summary>Docked at an object (not hacking): MGame::switchCamera doesn't go back to the standard view there, the
+        /// camera button cycles the manual turrets and free look (SpaceLevel).</summary>
+        public Func<bool> DockedView;
 
         ChaseCamera chase;
         int turretIndex;   // which manual turret the Turret mode looks through
@@ -118,6 +121,16 @@ namespace GoF2Remake.Flight
         /// <summary>The camera button (touch, V, D-pad up).</summary>
         public void Cycle()
         {
+            // Docked at an object: each manual turret -> free look -> the turrets again (#132: the remake had no free look
+            // there at all).
+            if (DockedView != null && DockedView() && (Blocked == null || !Blocked()))
+            {
+                if (Current == Mode.Turret && turretIndex + 1 < Manual().Count) { EnterTurret(turretIndex + 1, true); return; }
+                bool turrets = TurretMode && TurretAllowed != null && TurretAllowed();
+                Set(Current != Mode.Turret && turrets ? Mode.Turret : Mode.FreeLook);
+                if (Current == Mode.Standard) Set(Mode.FreeLook);   // a turret view refused
+                return;
+            }
             if (Blocked != null && Blocked())
             {
                 // Docked at an object: standard -> each manual turret -> standard (PlayerEgo::setTurretMode allows it there).
@@ -165,6 +178,16 @@ namespace GoF2Remake.Flight
             if (t == null || !t.InTurretView) { Current = Mode.Standard; turretIndex = 0; Set(Base, false); return; }
             int count = Manual().Count;
             if (announce) Message?.Invoke(Localization.Get(218) + (count > 1 ? " " + (index + 1) : ""));
+        }
+
+        /// <summary>Docked at an object (ObjectDocking.Docked): MGame::OnUpdate's switchCamera(3) with its preset orbit
+        /// (MGame+0x110 / +0x114 = -98 / 35 px, +0xb8 = 3800 units).</summary>
+        public void EnterDockedLook()
+        {
+            if (Current == Mode.FreeLook) return;
+            Set(Mode.FreeLook);
+            px = -98f; py = 35f; distance = 3800f;
+            Place();
         }
 
         void EnterFreeLook()

@@ -436,7 +436,11 @@ against the FEV's LGCY data, see "Sound").
   refuses only mining, the Liberator and auto turrets): the auto turrets fire and the camera key cycles standard / each
   manual turret (`FreeLookCamera.TurretAllowed`, from the ease-in on; the approach is an ordinary autopilot leg with the
   camera key free (`MGame::switchCamera` refuses only an asteroid docking; the remake refused it from the approach on until
-  2026-10); not free look; `PlayerTurret.GunsBlocked` ignores the docked ship's
+  2026-10); docked (not hacking) the camera goes to free look by itself with the original's preset orbit, -98 / 35 px at
+  3800 units, and the camera key cycles the manual turrets and free look (`PlayerEgo::approachDockingPoint` +0xb1,
+  `MGame::OnUpdate` switchCamera(3); `setDockingState(2)` suppresses it; `ObjectDocking.Docked`,
+  `FreeLookCamera.EnterDockedLook` / `DockedView`; #132: the remake had no free look docked); the undock's end goes back to
+  the standard view; `PlayerTurret.GunsBlocked` ignores the docked ship's
   blocked guns; the chase camera is on for the view; the stick still reads under `externalControl`; the mouse aims it with mouse steering (`FlightHud.UpdateMouseSteering` leaves it on in a docked turret view) and the fire button fires it (`WeaponSystem`: the docked ship's blocked guns don't halt the turret view; the press used to be latched, a player's report at step 135)). Fast-forward works on the approach while it is 20 000+ units out (`MGame::OnTouchBegin` key 0x100 takes `PlayerEgo::isDockingToDockingPoint` like the autopilot; `ObjectDocking.ApproachDistanceUnits`), and the quick menu opens approaching and docked (key 4 refuses only mining; not easing in / out or hacking, and without the Khador Drive entry while docked).
 - **Hacking** (`HackingGame` plain C#, `HackingView`): the 2x3 tile board, the left / right 2x2 blocks turn clockwise, scrambled
   2 x kind rounds and never solvable in `kind` moves (kind 1 at 91, else 4); won 1500 ms after solving. Keys A / D (Q / E, arrows),
