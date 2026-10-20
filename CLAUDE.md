@@ -942,8 +942,10 @@ The FMOD data comes from the FEV's LGCY chunk (`Reference/tools/audio/fev_lgcy.p
   original has none: `Engine::Vibrate` is an empty stub and `Globals::init` calls `VibrateEnable(false)`): `Haptics` (created
   by `Bootstrap`, kept for the run) sends to the controller last used while `InputMode` is Gamepad (the Input System's
   `SetMotorSpeeds`: XInput, DualShock 4 / DualSense; a no-op where the platform has no rumble) or to the phone while it is
-  Touch (on Android also while it is Gamepad, #73: the Input System's Android backend sends no controller rumble, so the
-  device's motor stands in, the one built-in controls of handhelds like the Konkr Pocket FIT have) (`PhoneVibrator`, Android `Vibrator` over JNI: `VibrationEffect.createOneShot` with the amplitude when the motor
+  Touch (on Android also while it is Gamepad with a controller that reports no vibrators, #73: the device's motor stands
+  in, the one built-in controls of handhelds like the Konkr Pocket FIT have; a controller that reports some, `vibratorCount`
+  in its Android capabilities, rumbles itself, `Haptics.HasVibrators`, #138: the Input System does it from 6000.6 on, and
+  from #73 to #138 every Android controller went to the phone) (`PhoneVibrator`, Android `Vibrator` over JNI: `VibrationEffect.createOneShot` with the amplitude when the motor
   has amplitude control, else shorter buzzes for weaker pulses; `AndroidVibratePermission` (Editor) adds the VIBRATE
   permission to the Gradle manifest). `HapticMixer` (plain C#) mixes the pulses (held for the first quarter, then a linear
   fade; the strongest per motor wins) and the frame's continuous rumble. Pulses (`Haptics.Play` with the presets in
