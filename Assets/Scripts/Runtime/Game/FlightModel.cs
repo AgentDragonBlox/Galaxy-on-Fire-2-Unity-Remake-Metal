@@ -616,9 +616,9 @@ namespace GoF2Remake.Flight
             // 2026-10-18: level out didn't work by the touch double tap and ended early on a controller).
             if (IsLeveling)
             {
-                float push = Mathf.Max(Mathf.Abs(steer.x), Mathf.Abs(steer.y));
+                float levelPush = Mathf.Max(Mathf.Abs(steer.x), Mathf.Abs(steer.y));
                 if (!yawInput && !pitchInput) { if ((levelNeutralMs += dtMs) >= LevelArmMs) levelSteerArmed = true; }
-                else { levelNeutralMs = 0f; if (levelSteerArmed && push >= LevelCancelInput) IsLeveling = false; }
+                else { levelNeutralMs = 0f; if (levelSteerArmed && levelPush >= LevelCancelInput) IsLeveling = false; }
             }
 
             // ---- rotation for this frame --------------------------------------------------------
