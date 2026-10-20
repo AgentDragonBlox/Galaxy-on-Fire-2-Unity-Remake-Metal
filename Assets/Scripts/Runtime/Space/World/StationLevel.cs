@@ -363,6 +363,7 @@ namespace GoF2Remake.World
             var ship = SpawnShip(shipIndex, shipPivot, Quaternion.identity, hangarRoot, "Player ship");
             playerShip = ship != null ? ship.transform : null;
             if (playerShip != null) PlayerHull.FitHangar(playerShip);   // remake debug: a freighter / capital ship shrunk
+            CentreOnPad();
             RefreshTurret(true);
             shipYaw = StationTables.StartYaw(HangarIndex);
             if (customHangar != null)
@@ -413,6 +414,7 @@ namespace GoF2Remake.World
             var ship = SpawnShip(index, PadPosition(index), Quaternion.identity, hangarRoot, "Player ship");
             playerShip = ship != null ? ship.transform : null;
             if (playerShip != null) PlayerHull.FitHangar(playerShip);   // remake debug: a freighter / capital ship shrunk
+            CentreOnPad();
             RefreshTurret(true);
             ApplyShipYaw();
             ApplyEnginePreview();
@@ -1067,7 +1069,29 @@ namespace GoF2Remake.World
 
         void ApplyShipYaw()
         {
-            if (playerShip != null && !PlayerFlying) playerShip.rotation = OrbitLayout.RotationToUnity(new Vector3(0f, shipYaw, 0f));
+            if (playerShip == null || PlayerFlying) return;
+            playerShip.rotation = OrbitLayout.RotationToUnity(new Vector3(0f, shipYaw, 0f));
+            // Modified: a hull off its pivot stands centred on the pad and turns about its own middle (CentreOnPad).
+            if (padCentre != Vector3.zero) playerShip.position = padPivot - playerShip.TransformVector(padCentre);
+        }
+
+        /// <summary>Modified: the VoidX (ship 8): its hull's middle sits ~18 m off its pivot along its length (the model's centre
+        /// at -355 units, the other hulls' within ~85), so on the pad it stood off the turntable and swung around it.</summary>
+        public const int OffCentreShip = 8;
+        /// <summary>The pad pivot the player's ship was spawned at, and its hull's middle in its own frame (horizontal; zero for
+        /// the hulls that stand on their pivot).</summary>
+        Vector3 padPivot, padCentre;
+
+        /// <summary>Modified: the player's ship centred on its pad (ApplyShipYaw keeps it so as it turns). The arrival flight
+        /// lands on the centred spot (it flies to where the ship stands).</summary>
+        void CentreOnPad()
+        {
+            padCentre = Vector3.zero;
+            if (playerShip == null) return;
+            padPivot = playerShip.position;
+            if (shipIndex != OffCentreShip) return;
+            var local = ShipLocalBounds(playerShip, false);
+            if (local.size != Vector3.zero) padCentre = new Vector3(local.center.x, 0f, local.center.z);
         }
 
         // ---- remake: Inspect ship (HangarInspect; UI.StationMenu reads the input) ----------------------------
