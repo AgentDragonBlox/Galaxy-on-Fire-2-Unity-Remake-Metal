@@ -419,7 +419,10 @@ namespace GoF2Remake.Data
             var e = Session.Equipment[equipmentIndex];
             if (e.builtIn) return;   // built into the ship (SyncBuiltIn)
             Session.Equipment.RemoveAt(equipmentIndex);
-            AddToCargo(e.item, Mathf.Max(1, e.amount));
+            // HangarWindow::demountItem: a secondary goes with its ammo, nothing when it is empty (#132: Max(1, ...) handed
+            // out a free missile); other items as 1 unit.
+            int amount = TypeOf(e.item) == 1 ? e.amount : Mathf.Max(1, e.amount);
+            if (amount > 0) AddToCargo(e.item, amount);
             SyncBuiltIn(db);   // a fitted item in a built-in one's place gone: the built-in one is back
         }
 
