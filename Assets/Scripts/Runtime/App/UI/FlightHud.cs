@@ -969,6 +969,9 @@ namespace GoF2Remake.UI
                 // Dead: no HUD, no controls (PlayerEgo::explode); then the game-over screen.
                 root.EnableInClassList("hud-cinematic", true);
                 dockPrompt.EnableInClassList("dock-prompt--hidden", true);
+                // The transfer counter sits on the root, outside what hud-cinematic hides (#131: "9 / 10 unloaded" stayed up through
+                // 92's Specter cutscene, which starts the frame the last evacuee is unloaded; Hud::draw doesn't run then).
+                transferCounter?.EnableInClassList("transfer-counter--hidden", true);
                 ship.SetSteer(Vector2.zero);
                 UpdateGameOver();
                 return;
@@ -981,6 +984,9 @@ namespace GoF2Remake.UI
                 // A LevelScript cutscene (MGame+0x5f): no HUD, no controls; the radio and fades still show.
                 root.EnableInClassList("hud-cinematic", true);
                 dockPrompt.EnableInClassList("dock-prompt--hidden", true);
+                // The transfer counter sits on the root, outside what hud-cinematic hides (#131: "9 / 10 unloaded" stayed up through
+                // 92's Specter cutscene, which starts the frame the last evacuee is unloaded; Hud::draw doesn't run then).
+                transferCounter?.EnableInClassList("transfer-counter--hidden", true);
                 ship.SetSteer(Vector2.zero);
                 weapons?.SetPrimaryHeld(false);
                 combatView.Update(radar, traffic, health, Camera.main, true, false);
