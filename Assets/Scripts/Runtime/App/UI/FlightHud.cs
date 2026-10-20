@@ -693,7 +693,10 @@ namespace GoF2Remake.UI
                       && !level.Cutscene && level.LaunchCameraOver && Time.timeScale > 0f && (health == null || !health.Dead)
                       // the Liberator too: the mouse steers it (it was off); docked at an object only the turret view (it aims the
                       // turret; the cursor is free for the HUD otherwise)
-                      && (level.Docking == null || !level.Docking.Busy || PlayerTurret.ViewActive(ship.gameObject))
+                      // (#132: the approach to the docking point is an ordinary autopilot leg: the cursor stays locked, it showed
+                      // the OS pointer on that leg)
+                      && (level.Docking == null || !level.Docking.Busy || level.Docking.State == ObjectDocking.Phase.Approach
+                          || PlayerTurret.ViewActive(ship.gameObject))
                       && !GoF2Remake.Multiplayer.NetChat.Typing   // multiplayer: the cursor free for the chat
                       && !MultiplayerWindow.IsOpenAny;            // and for the multiplayer window
             // PlayerEgo::right etc. forward to the MiningGame while drilling (0xacd48): the mouse steers the drill then (the PC

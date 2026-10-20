@@ -170,6 +170,10 @@ namespace GoF2Remake.Flight
             var mouse = Mouse.current;
             if (!mouseSteering || mouse == null) { MouseOffset = Vector2.zero; MouseInDeadzone = true; return Vector2.zero; }
             if (Model.FreeFlight) return ReadVirtualStick(mouse);
+            // Centred while the autopilot steers, as free flight's stick (#132: the offset kept adding up on the autopilot, the
+            // HUD drew a steering dot that steered nothing, and the ship lurched when it handed back). Not while steering is
+            // locked: the mouse aims the turret view or the Liberator then (SteerInput).
+            if (autopilotTarget != null) { MouseOffset = Vector2.zero; MouseInDeadzone = true; return Vector2.zero; }
             var lim = new Vector2(Screen.width * 0.5f * 0.7f, Screen.height * 0.5f * 0.7f);
             var o = MouseOffset + mouse.delta.ReadValue();
             MouseOffset = new Vector2(Mathf.Clamp(o.x, -lim.x, lim.x), Mathf.Clamp(o.y, -lim.y, lim.y));
