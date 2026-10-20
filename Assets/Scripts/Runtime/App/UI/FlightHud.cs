@@ -809,9 +809,9 @@ namespace GoF2Remake.UI
             int hudMode = Settings.HudMode;   // Options > Gameplay "Flight HUD" (immersion): FlightHud.uss hides the markings
             root.EnableInClassList("hud-minimal", hudMode == Settings.HudMinimal);
             root.EnableInClassList("hud-off", hudMode == Settings.HudOff);
-            // The FPS counter sits at the top centre over every screen: the lock plate and the HUD messages move under it
-            // (#137: a mission's reward line was drawn over the counter).
-            root.EnableInClassList("hud-fps", Settings.ShowFps);
+            // The FPS counter at the top centre (its default place, FpsCounter): the lock plate and the HUD messages move
+            // under it (#137: a mission's reward line was drawn over the counter).
+            root.EnableInClassList("hud-fps", Settings.ShowFps && Settings.FpsPosition == Settings.FpsTop);
             if (mapOpen) return;   // the map has its own input
 
             // MGame::OnUpdate: DialogueWindow::update runs only while the player lives; a conversation open at the death waits.

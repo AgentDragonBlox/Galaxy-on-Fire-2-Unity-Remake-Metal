@@ -1492,5 +1492,15 @@
  "hangarEtaDue": "elk moment",
  "hangarRareRestock": "Zeldzame goederen",
  "filesOnMyIpad": "Bestanden › Op mijn iPad",
- "filesOnMyIphone": "Bestanden › Op mijn iPhone"
+ "filesOnMyIphone": "Bestanden › Op mijn iPhone",
+ "fpsPosition": "Positie van de FPS-teller",
+ "fpsPosTopLeft": "Linksboven",
+ "fpsPosTop": "Boven",
+ "fpsPosTopRight": "Rechtsboven",
+ "fpsPosLeft": "Links",
+ "fpsPosRight": "Rechts",
+ "fpsPosBottomLeft": "Linksonder",
+ "fpsPosBottom": "Onder",
+ "fpsPosBottomRight": "Rechtsonder",
+ "fpsPositionHelp": "Waar de FPS-teller op het scherm staat: in een hoek of in het midden van een zijde."
 }

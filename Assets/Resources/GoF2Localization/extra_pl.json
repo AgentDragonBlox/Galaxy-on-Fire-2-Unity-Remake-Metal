@@ -1492,5 +1492,15 @@
  "hangarEtaDue": "lada chwila",
  "hangarRareRestock": "Rzadkie towary",
  "filesOnMyIpad": "Pliki › Na moim iPadzie",
- "filesOnMyIphone": "Pliki › Na moim iPhonie"
+ "filesOnMyIphone": "Pliki › Na moim iPhonie",
+ "fpsPosition": "Położenie licznika FPS",
+ "fpsPosTopLeft": "Lewy górny róg",
+ "fpsPosTop": "Góra",
+ "fpsPosTopRight": "Prawy górny róg",
+ "fpsPosLeft": "Lewa strona",
+ "fpsPosRight": "Prawa strona",
+ "fpsPosBottomLeft": "Lewy dolny róg",
+ "fpsPosBottom": "Dół",
+ "fpsPosBottomRight": "Prawy dolny róg",
+ "fpsPositionHelp": "Gdzie na ekranie wyświetla się licznik FPS: w rogu lub na środku jednej z krawędzi."
 }

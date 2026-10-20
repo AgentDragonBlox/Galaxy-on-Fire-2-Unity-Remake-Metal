@@ -1492,5 +1492,15 @@
  "shopBuiltInHeader": "飞船内置",
  "shopBuiltIn": "内置",
  "shopBuiltInStays": "内置于{0}：随飞船保留。",
- "shopReplacesBuiltIn": "取代内置的{0}"
+ "shopReplacesBuiltIn": "取代内置的{0}",
+ "fpsPosition": "FPS 计数器位置",
+ "fpsPosTopLeft": "左上",
+ "fpsPosTop": "上方",
+ "fpsPosTopRight": "右上",
+ "fpsPosLeft": "左侧",
+ "fpsPosRight": "右侧",
+ "fpsPosBottomLeft": "左下",
+ "fpsPosBottom": "下方",
+ "fpsPosBottomRight": "右下",
+ "fpsPositionHelp": "FPS 计数器在屏幕上的位置：某个角落，或某条边的中间。"
 }

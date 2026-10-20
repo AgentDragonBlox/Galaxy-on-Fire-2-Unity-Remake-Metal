@@ -1492,5 +1492,15 @@
  "shopBuiltInHeader": "जहाज़ में अंतर्निहित",
  "shopBuiltIn": "अंतर्निहित",
  "shopBuiltInStays": "{0} में अंतर्निहित: जहाज़ के साथ रहता है।",
- "shopReplacesBuiltIn": "अंतर्निहित {0} की जगह लेता है"
+ "shopReplacesBuiltIn": "अंतर्निहित {0} की जगह लेता है",
+ "fpsPosition": "FPS काउंटर की जगह",
+ "fpsPosTopLeft": "ऊपर बाएँ",
+ "fpsPosTop": "ऊपर",
+ "fpsPosTopRight": "ऊपर दाएँ",
+ "fpsPosLeft": "बाएँ",
+ "fpsPosRight": "दाएँ",
+ "fpsPosBottomLeft": "नीचे बाएँ",
+ "fpsPosBottom": "नीचे",
+ "fpsPosBottomRight": "नीचे दाएँ",
+ "fpsPositionHelp": "स्क्रीन पर FPS काउंटर कहाँ दिखे: किसी कोने में या किसी किनारे के बीच में।"
 }

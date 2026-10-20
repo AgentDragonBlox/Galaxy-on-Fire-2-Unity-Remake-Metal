@@ -1492,5 +1492,15 @@
  "hangarEtaDue": "d'un instant à l'autre",
  "hangarRareRestock": "Biens rares",
  "filesOnMyIpad": "Fichiers › Sur mon iPad",
- "filesOnMyIphone": "Fichiers › Sur mon iPhone"
+ "filesOnMyIphone": "Fichiers › Sur mon iPhone",
+ "fpsPosition": "Position du compteur FPS",
+ "fpsPosTopLeft": "En haut à gauche",
+ "fpsPosTop": "En haut",
+ "fpsPosTopRight": "En haut à droite",
+ "fpsPosLeft": "À gauche",
+ "fpsPosRight": "À droite",
+ "fpsPosBottomLeft": "En bas à gauche",
+ "fpsPosBottom": "En bas",
+ "fpsPosBottomRight": "En bas à droite",
+ "fpsPositionHelp": "L'endroit de l'écran où s'affiche le compteur FPS : un coin ou le milieu d'un bord."
 }

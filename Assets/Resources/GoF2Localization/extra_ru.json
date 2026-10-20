@@ -1492,5 +1492,15 @@
  "hangarEtaDue": "с минуты на минуту",
  "hangarRareRestock": "Редкие товары",
  "filesOnMyIpad": "Файлы › На iPad",
- "filesOnMyIphone": "Файлы › На iPhone"
+ "filesOnMyIphone": "Файлы › На iPhone",
+ "fpsPosition": "Положение счётчика FPS",
+ "fpsPosTopLeft": "Слева сверху",
+ "fpsPosTop": "Сверху",
+ "fpsPosTopRight": "Справа сверху",
+ "fpsPosLeft": "Слева",
+ "fpsPosRight": "Справа",
+ "fpsPosBottomLeft": "Слева снизу",
+ "fpsPosBottom": "Снизу",
+ "fpsPosBottomRight": "Справа снизу",
+ "fpsPositionHelp": "Где на экране находится счётчик FPS: в углу или посередине одной из сторон."
 }

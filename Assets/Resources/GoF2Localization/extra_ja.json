@@ -1492,5 +1492,15 @@
  "chaseCameraOriginal": "オリジナル",
  "chaseCameraHelp": "リメイク：カメラは船のすぐ後ろにとどまり、船は画面の中央付近に保たれます。オリジナル：原作と同じく、カメラはゆっくり追従します。旋回すると船が横に振れ、照準が中央から外れます。",
  "filesOnMyIpad": "ファイル › このiPad内",
- "filesOnMyIphone": "ファイル › このiPhone内"
+ "filesOnMyIphone": "ファイル › このiPhone内",
+ "fpsPosition": "FPSカウンターの位置",
+ "fpsPosTopLeft": "左上",
+ "fpsPosTop": "上",
+ "fpsPosTopRight": "右上",
+ "fpsPosLeft": "左",
+ "fpsPosRight": "右",
+ "fpsPosBottomLeft": "左下",
+ "fpsPosBottom": "下",
+ "fpsPosBottomRight": "右下",
+ "fpsPositionHelp": "画面上のFPSカウンターの位置：四隅のいずれか、または辺の中央。"
 }

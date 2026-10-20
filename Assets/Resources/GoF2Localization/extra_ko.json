@@ -1492,5 +1492,15 @@
  "chaseCameraOriginal": "오리지널",
  "chaseCameraHelp": "리메이크: 카메라가 함선 바로 뒤에 머물러 함선이 화면 중앙 가까이에 있습니다. 오리지널: 원작처럼 카메라가 더 느리게 따라옵니다. 선회할 때 함선이 옆으로 밀려나고 조준선이 중앙에서 벗어납니다.",
  "filesOnMyIpad": "파일 › 나의 iPad",
- "filesOnMyIphone": "파일 › 나의 iPhone"
+ "filesOnMyIphone": "파일 › 나의 iPhone",
+ "fpsPosition": "FPS 카운터 위치",
+ "fpsPosTopLeft": "왼쪽 위",
+ "fpsPosTop": "위",
+ "fpsPosTopRight": "오른쪽 위",
+ "fpsPosLeft": "왼쪽",
+ "fpsPosRight": "오른쪽",
+ "fpsPosBottomLeft": "왼쪽 아래",
+ "fpsPosBottom": "아래",
+ "fpsPosBottomRight": "오른쪽 아래",
+ "fpsPositionHelp": "화면에서 FPS 카운터가 표시되는 위치: 모서리 또는 한 변의 가운데."
 }

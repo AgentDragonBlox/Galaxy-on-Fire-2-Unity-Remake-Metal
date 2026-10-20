@@ -1492,5 +1492,15 @@
  "chaseCameraOriginal": "الأصلية",
  "chaseCameraHelp": "النسخة الجديدة: تبقى الكاميرا قريبة خلف السفينة، فتبقى السفينة قرب منتصف الشاشة. الأصلية: تتبع الكاميرا ببطء أكبر كما في اللعبة الأصلية: عند الانعطاف تنحرف السفينة إلى الجانب ويبتعد مؤشر التصويب عن المنتصف.",
  "filesOnMyIpad": "الملفات › على الـ iPad",
- "filesOnMyIphone": "الملفات › على الـ iPhone"
+ "filesOnMyIphone": "الملفات › على الـ iPhone",
+ "fpsPosition": "موضع عداد الإطارات (FPS)",
+ "fpsPosTopLeft": "أعلى اليسار",
+ "fpsPosTop": "أعلى",
+ "fpsPosTopRight": "أعلى اليمين",
+ "fpsPosLeft": "يسار",
+ "fpsPosRight": "يمين",
+ "fpsPosBottomLeft": "أسفل اليسار",
+ "fpsPosBottom": "أسفل",
+ "fpsPosBottomRight": "أسفل اليمين",
+ "fpsPositionHelp": "مكان عداد الإطارات (FPS) على الشاشة: في إحدى الزوايا أو في منتصف أحد الجوانب."
 }

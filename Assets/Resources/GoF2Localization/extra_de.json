@@ -1492,5 +1492,15 @@
  "hangarEtaDue": "jeden Moment",
  "hangarRareRestock": "Seltene Waren",
  "filesOnMyIpad": "Dateien › Auf meinem iPad",
- "filesOnMyIphone": "Dateien › Auf meinem iPhone"
+ "filesOnMyIphone": "Dateien › Auf meinem iPhone",
+ "fpsPosition": "Position der FPS-Anzeige",
+ "fpsPosTopLeft": "Oben links",
+ "fpsPosTop": "Oben",
+ "fpsPosTopRight": "Oben rechts",
+ "fpsPosLeft": "Links",
+ "fpsPosRight": "Rechts",
+ "fpsPosBottomLeft": "Unten links",
+ "fpsPosBottom": "Unten",
+ "fpsPosBottomRight": "Unten rechts",
+ "fpsPositionHelp": "Wo die FPS-Anzeige auf dem Bildschirm steht: in einer Ecke oder in der Mitte einer Seite."
 }
