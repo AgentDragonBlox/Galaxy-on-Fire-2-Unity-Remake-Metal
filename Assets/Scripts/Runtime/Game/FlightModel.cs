@@ -114,6 +114,11 @@ namespace GoF2Remake.Flight
         bool levelFine;       // PlayerEgo+0x324: the lean changed sides once, the last part goes slow
         bool rollLevelled;    // the roll part of a level-out is done
         bool levelSteerArmed; // the stick was neutral since the level-out began: steering now ends it (remake)
+        float levelNeutralMs; // how long the stick has been neutral during a level-out (arms it after LevelArmMs)
+        /// <summary>Remake: a level-out is armed by a neutral stick held this long (one stale neutral frame between a touch
+        /// double tap's taps armed it, and the second tap on the stick cancelled it at once), and only a real push
+        /// (LevelCancelInput of a full stick) ends it (a thumb resting past the dead zone did).</summary>
+        const float LevelArmMs = 150f, LevelCancelInput = 0.3f;
         /// <summary>Remake (#37, Settings.LevelPitch): a level-out also brings the nose to the horizon (world up, the
         /// orbit's and the station's up, like the autopilot's moveToPosition), not only the roll (the original).</summary>
         public bool LevelPitch;
@@ -569,7 +574,7 @@ namespace GoF2Remake.Flight
         public void UpdateCruise(bool cruising, float dtMs) =>
             CruiseVisual = Mathf.MoveTowards(CruiseVisual, cruising ? 1f : 0f, Mathf.Max(0f, dtMs) / CruiseEaseMs);
 
-        public void AlignToHorizon() { IsLeveling = true; levelSide = 0; levelFine = false; rollLevelled = false; levelSteerArmed = false; }
+        public void AlignToHorizon() { IsLeveling = true; levelSide = 0; levelFine = false; rollLevelled = false; levelSteerArmed = false; levelNeutralMs = 0f; }
         /// <summary>A manual roll (remake) cancels the auto-level.</summary>
         public void StopLeveling() => IsLeveling = false;
 
@@ -607,10 +612,13 @@ namespace GoF2Remake.Flight
             // levelled too (LevelPitch) it pulled the nose back to the horizon whenever pitch was let go, and with the nose
             // steep it never finished, so it fought the player's flying. Only steering that starts after the stick was
             // neutral counts: the touch double tap's second tap lands on the stick, and keys may still be held.
+            // Armed by a neutral stick held LevelArmMs, ended by a push of at least LevelCancelInput (Discord report,
+            // 2026-10-18: level out didn't work by the touch double tap and ended early on a controller).
             if (IsLeveling)
             {
-                if (!yawInput && !pitchInput) levelSteerArmed = true;
-                else if (levelSteerArmed) IsLeveling = false;
+                float push = Mathf.Max(Mathf.Abs(steer.x), Mathf.Abs(steer.y));
+                if (!yawInput && !pitchInput) { if ((levelNeutralMs += dtMs) >= LevelArmMs) levelSteerArmed = true; }
+                else { levelNeutralMs = 0f; if (levelSteerArmed && push >= LevelCancelInput) IsLeveling = false; }
             }
 
             // ---- rotation for this frame --------------------------------------------------------
