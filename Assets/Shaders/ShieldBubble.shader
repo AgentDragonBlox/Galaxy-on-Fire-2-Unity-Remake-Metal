@@ -4,7 +4,11 @@
 // with the eye direction in tangent space and the noise read as the normal, so the whole sphere wobbles, most at its rim.
 // The noise doesn't scroll (the shader reads u_CloakRate into an unused variable). The scene it shows is clamped to LDR,
 // like the original's: the remake's HDR sun core smeared over the bubble bloomed the screen white (#45).
-// Reads _CameraOpaqueTexture (the camera's opaque texture must be on).
+// Remake (Discord report "Emergency system invisible"): drawn by CloakPass (LightMode GoF2Cloak) from its copy of the frame
+// taken after the transparents, like the original's draw after Engine::CopyFBO, so the ship's additive lights, engine glow
+// and exhaust show through it (from URP's opaque texture the bubble painted them over); and the noise, a data texture the
+// import marks as colour, is read back in gamma space: linearised, its mid grey read 0.21, so (noise.xy - 0.5) shifted the
+// whole picture down-left instead of a wobble at the rim.
 Shader "GoF2/ShieldBubble"
 {
     Properties
@@ -21,15 +25,16 @@ Shader "GoF2/ShieldBubble"
 
         Pass
         {
-            Tags { "LightMode" = "UniversalForward" }
+            Tags { "LightMode" = "GoF2Cloak" }
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 
             TEXTURE2D(_NoiseMap); SAMPLER(sampler_NoiseMap);
+            TEXTURE2D_X(_GoF2CloakScene); SAMPLER(sampler_GoF2CloakScene);
             CBUFFER_START(UnityPerMaterial)
                 float4 _NoiseMap_ST;
                 float _Anim, _Strength;
@@ -59,10 +64,14 @@ Shader "GoF2/ShieldBubble"
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 half4 noise = SAMPLE_TEXTURE2D(_NoiseMap, sampler_NoiseMap, i.uv);
+                #if !defined(UNITY_COLORSPACE_GAMMA)
+                noise.rgb = LinearToSRGB(noise.rgb);   // a data texture imported as colour
+                #endif
                 float rim = smoothstep(0.0, 1.0, 1.0 - dot(normalize(i.eyeTS), noise.rgb * 2.0 - 1.0));
                 float2 suv = GetNormalizedScreenSpaceUV(i.positionCS);
                 float2 offset = (noise.xy - 0.5) * rim * 180.0 * _Strength / float2(1024.0, 768.0);
-                return half4(min(SampleSceneColor(saturate(suv + offset)), 1.0), 1);
+                half3 scene = SAMPLE_TEXTURE2D_X(_GoF2CloakScene, sampler_GoF2CloakScene, UnityStereoTransformScreenSpaceTex(saturate(suv + offset))).rgb;
+                return half4(min(scene, 1.0), 1);
             }
             ENDHLSL
         }
