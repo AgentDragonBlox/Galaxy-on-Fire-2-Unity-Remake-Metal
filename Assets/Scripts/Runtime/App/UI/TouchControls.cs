@@ -816,7 +816,9 @@ namespace GoF2Remake.UI
             gauge.style.height = fh;
             gaugeFill.style.top = fh - 83f;
             gauge.style.opacity = a;
-            gaugeText.text = ((int)(thrust * 100f)).ToString();
+            // Whole percent, cut like the original, past float error: the wheel's 0.1 steps leave 0.7 - 0.1 = 0.5999999,
+            // which read 59 (a player's report: scrolling down went 69, 59, ...).
+            gaugeText.text = Mathf.FloorToInt(thrust * 100f + 0.001f).ToString();
             Place(gaugeText, new Vector2(f.crosshair.x - 61f, f.crosshair.y + 83f / 1.6f));
             gaugeText.style.opacity = a;
         }
