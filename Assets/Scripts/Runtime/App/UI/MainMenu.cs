@@ -2549,6 +2549,7 @@ namespace GoF2Remake.UI
 
             if (NavigateGameOptions(e, focused)) return;
             if (NavigateOptions(e, focused)) return;
+            if (NavigateMultiplayer(e, focused)) return;
 
             var scope = dialog.ClassListContains("dialog-backdrop--shown") ? dialog : openPanel ?? mainButtons;
             var items = Focusables(scope);
@@ -2735,6 +2736,66 @@ namespace GoF2Remake.UI
             e.StopPropagation();
             root.focusController?.IgnoreEvent(e);
             return true;
+        }
+
+        /// <summary>The Multiplayer panel (a Discord report: with a controller the host card couldn't be reached from the server
+        /// browser): the neighbour on screen (SpatialNav), so left / right cross between the browser and the host card and up /
+        /// down stay in a column; across with nothing in the same row, the nearest item that way; the target is scrolled into
+        /// view (the host card's settings scroll). Before, the panel was one list in document order. False: not this panel,
+        /// or a dialog is open.</summary>
+        bool NavigateMultiplayer(NavigationMoveEvent e, VisualElement focused)
+        {
+            if (dialog.ClassListContains("dialog-backdrop--shown")) return false;
+            if (!panels.TryGetValue("multiplayerPanel", out var panel) || openPanel != panel) return false;
+            var items = Focusables(panel);
+            if (items.Count == 0) return false;
+            VisualElement to;
+            if (focused == null || !items.Contains(focused)) to = items.Find(v => !(v is TextField)) ?? items[0];
+            else
+            {
+                int dx = e.direction == NavigationMoveEvent.Direction.Left ? -1 : e.direction == NavigationMoveEvent.Direction.Right ? 1 : 0;
+                int dy = e.direction == NavigationMoveEvent.Direction.Up ? -1 : e.direction == NavigationMoveEvent.Direction.Down ? 1 : 0;
+                // Up / down stay in the card (the two cards' rows don't line up: the nearest row was often the other card's),
+                // then leave it (the name field above, Back below).
+                var card = CardOf(focused);
+                if (dy != 0)
+                {
+                    to = card != null ? SpatialNav.Next(items, focused, 0, dy, v => CardOf(v) == card) : null;
+                    to ??= SpatialNav.Next(items, focused, 0, dy, card != null ? v => CardOf(v) == null : null);
+                }
+                else if (card != null)
+                {
+                    // Across: the row's neighbour in either card, else the nearest item of the other card on that side.
+                    to = SpatialNav.Next(items, focused, dx, 0, v => CardOf(v) != null);
+                    if (to == null)
+                    {
+                        var f = focused.worldBound;
+                        float best = float.MaxValue;
+                        foreach (var c in items)
+                        {
+                            var r = c.worldBound;
+                            var other = CardOf(c);
+                            if (other == null || other == card || float.IsNaN(r.x) || (r.center.x - f.center.x) * dx <= 1f) continue;
+                            float d = (r.center - f.center).sqrMagnitude;
+                            if (d < best) { best = d; to = c; }
+                        }
+                    }
+                }
+                else to = SpatialNav.Next(items, focused, dx, 0, v => CardOf(v) == null);   // the name field, Back
+                to ??= focused;
+            }
+            if (to != focused) { to.Focus(); EnsureVisible(to); }
+            e.StopPropagation();
+            root.focusController?.IgnoreEvent(e);
+            return true;
+        }
+
+        /// <summary>The multiplayer panel's card (the server browser or the host card) 'v' is in, null = neither.</summary>
+        static VisualElement CardOf(VisualElement v)
+        {
+            for (var p = v; p != null; p = p.parent)
+                if (p.ClassListContains("mp-card")) return p;
+            return null;
         }
 
         /// <summary>What the keys can reach in 'scope', in order. 'scopeShown': the scope itself counts as shown whatever its

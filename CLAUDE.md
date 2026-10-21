@@ -1213,7 +1213,11 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   don't (three or more adapters, short screens) they scroll by wheel / touch / focus with an amber "More options" hint
   under them (`MainMenu.SetupHostMore`; the scroll bars are hidden everywhere). Before, the four switch rows squeezed the
   local network's address list and port field flat. Touch presses don't take the focus in the menu, except in a text field (the on-screen keyboard
-  needs it).
+  needs it). Keys / controller (`MainMenu.NavigateMultiplayer`, a Discord report: the host card couldn't be reached from
+  the server browser): the neighbour on screen (`SpatialNav`), up / down inside the card first (the two cards' rows
+  don't line up), then out to the name field / Back, left / right across the cards; a controller's D-pad never counts
+  as typing in a field (`TextFieldKeys.IsTyping` with `InputMode` Gamepad: on the Xbox a key the system keyboard left
+  "pressed" kept the focus in the fields).
 - **Online (Relay / Lobby)** (`NetGame.PrepareOnlineHost` / `StartClientOnline`, `NetLobby`): hosting online signs in
   (anonymous; a profile per `-mpname`, so two games on one machine are two players), reserves a Relay allocation (`NetGame.MaxPlayers`
   connections, one less for a player host; a dedicated server's `-maxplayers`) and its join code before the fade, then StartHost
