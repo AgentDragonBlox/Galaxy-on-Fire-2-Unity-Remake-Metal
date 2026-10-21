@@ -3,7 +3,8 @@
 // shop). The original (HangarWindow::update) repeats after 200 ms, every 30 ms once held 1.5 s, 5 units at a time after 4 s;
 // the remake's held arrow is also the Sell all / Buy all (the user's request: the separate buttons went): unit by unit,
 // faster and faster, the whole stack (counted at the press) gone after two seconds of holding (an ease-in, t^2), never
-// slower than one unit per 120 ms after the first 200 ms, so a small stack doesn't crawl; a bar fills the arrow meanwhile.
+// slower than one unit per 120 ms after the first 200 ms, so a small stack doesn't crawl; a bar fills the arrow with the
+// share of the stack traded.
 // Every unit plays the buy / sell button sound (Tick; the original's repeats were silent, only a tap sounded), its pitch
 // rising from StartPitch to MaxPitch (capped) as the stack goes, at most one per MinTickMs when several go in a frame.
 
@@ -40,8 +41,9 @@ namespace GoF2Remake.UI
             return n;
         }
 
-        /// <summary>How far the hold is toward the whole stack, 0..1 (the arrow's fill).</summary>
-        public static float Progress(float heldMs) => Mathf.Clamp01(heldMs / WholeStackMs);
+        /// <summary>The share of the stack traded, 0..1 (the arrow's fill): 'done' of the 'total' counted at the press. Not the
+        /// time held: a small stack, or one the hold's room cuts short, is done well before two seconds.</summary>
+        public static float Progress(int done, int total) => total <= 0 ? 0f : Mathf.Clamp01((float)done / total);
 
         /// <summary>The arrow's fill bar (HangarWindow.uss .trade-arrow-fill), behind its label.</summary>
         public static VisualElement AddFill(VisualElement arrow)
