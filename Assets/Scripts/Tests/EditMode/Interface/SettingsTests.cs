@@ -50,7 +50,7 @@ namespace GoF2Remake.Tests
         {
             AllDefaults();
             Assert.AreEqual(FrameRate.VSync, Settings.FrameRate, "default V-Sync");
-            Assert.AreEqual(Settings.HangarShadowsAll, Settings.HangarShadows, "default All ships");
+            Assert.AreEqual(Settings.HangarShadowsPlayer, Settings.HangarShadows, "default Player ship only");
             Assert.IsFalse(Settings.HangarDepthOfField, "off by default");
             Assert.AreEqual(1f, Settings.HapticsIntensity, "vibration 100 %");
             Assert.AreEqual(0.08f, Settings.MouseDeadzone, 1e-6f, "mouse dead zone 8 %");
