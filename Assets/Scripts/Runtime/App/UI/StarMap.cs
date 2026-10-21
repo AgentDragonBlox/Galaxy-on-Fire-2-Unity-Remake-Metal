@@ -835,6 +835,8 @@ namespace GoF2Remake.UI
         {
             var it = new Item { root = new VisualElement { pickingMode = PickingMode.Ignore } };
             it.root.AddToClassList("map-item");
+            // Modified: unseen until first placed (Place): for a frame every name box sat at the top left corner.
+            it.root.style.visibility = Visibility.Hidden;
             it.pulse = Img(it.root, "map-pulse", Tex("map_pulse"));
             it.ring = Img(it.root, "map-ring", Tex("map_ring"));
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -998,6 +1000,7 @@ namespace GoF2Remake.UI
         {
             e.style.left = p.x;
             e.style.top = p.y;
+            e.style.visibility = StyleKeyword.Null;   // Modified: shown once placed (MakeItem)
         }
 
         void UpdateOverlay()
