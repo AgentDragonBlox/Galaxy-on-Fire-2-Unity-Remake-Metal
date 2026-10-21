@@ -1599,5 +1599,6 @@
  "ctlFreeLookHold": "フリールック（長押し）",
  "kitExhaustColor": "排気の色",
  "kitExhaustColor2": "第2の色",
- "mbTestStart": "テスト飛行：前方に海賊。ステーションにドッキングする（またはEsc > Mod Builderに戻る）と戻ります。"
+ "mbTestStart": "テスト飛行：前方に海賊。ステーションにドッキングする（またはEsc > Mod Builderに戻る）と戻ります。",
+ "mpStartError": "セッションを開始できませんでした: {0}"
 }

@@ -1599,5 +1599,6 @@
  "ctlFreeLookHold": "النظر الحر (اضغط مطولًا)",
  "kitExhaustColor": "لون العادم",
  "kitExhaustColor2": "اللون الثاني",
- "mbTestStart": "رحلة تجريبية: قراصنة أمامك. التحم بالمحطة (أو Esc > العودة إلى Mod Builder) للعودة."
+ "mbTestStart": "رحلة تجريبية: قراصنة أمامك. التحم بالمحطة (أو Esc > العودة إلى Mod Builder) للعودة.",
+ "mpStartError": "تعذر بدء الجلسة: {0}"
 }

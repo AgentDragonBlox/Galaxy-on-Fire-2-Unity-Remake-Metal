@@ -1599,5 +1599,6 @@
  "ctlFreeLookHold": "Vrij rondkijken (ingedrukt houden)",
  "kitExhaustColor": "Uitlaatkleur",
  "kitExhaustColor2": "Tweede kleur",
- "mbTestStart": "Testvlucht: piraten vooruit. Meer aan bij het station (of Esc > Terug naar de Mod Builder) om terug te gaan."
+ "mbTestStart": "Testvlucht: piraten vooruit. Meer aan bij het station (of Esc > Terug naar de Mod Builder) om terug te gaan.",
+ "mpStartError": "Kan de sessie niet starten: {0}"
 }

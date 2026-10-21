@@ -73,7 +73,16 @@ namespace GoF2Remake.Modding
                 {
                     if (string.Equals(f, ModManifest.FileName, StringComparison.OrdinalIgnoreCase) || Manifest.MultiplayerIgnores(f)) continue;
                     Add(f.ToLowerInvariant() + "\n");
-                    var b = Source.ReadBytes(f) ?? Array.Empty<byte>();
+                    byte[] b;
+                    // An unreadable file (a damaged zip) is a warning of the mod and counts as different from every copy, like
+                    // Hash: thrown here, it stopped every multiplayer host and join (NetGame's connection data lists the
+                    // installed mods, on or off), the menu left on its fade or "Connecting...".
+                    try { b = Source.ReadBytes(f) ?? Array.Empty<byte>(); }
+                    catch (Exception e) when (ModFileException.IsFileError(e))
+                    {
+                        if (!Warnings.Contains(e.Message)) Warnings.Add(e.Message);
+                        b = Encoding.UTF8.GetBytes("damaged");
+                    }
                     sha.TransformBlock(b, 0, b.Length, null, 0);
                 }
                 sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);

@@ -1627,6 +1627,7 @@ namespace GoF2Remake.UI
                 if (mpStatus != null) mpStatus.text = Localization.Extra("mpOnlineStarting", "Starting an online session...");
                 var prep = GoF2Remake.Multiplayer.NetGame.PrepareOnlineHost(Mode == HostMode.Public ? SessionName() : null);
                 while (!prep.IsCompleted) yield return null;
+                if (prep.IsFaulted) GoF2Remake.Multiplayer.NetGame.AbortStart(prep.Exception);
                 if (prep.IsFaulted || !prep.Result)
                 {
                     if (mpStatus != null) mpStatus.text = GoF2Remake.Multiplayer.NetGame.Status;
@@ -1637,7 +1638,7 @@ namespace GoF2Remake.UI
                 fade.AddToClassList("fade--on");
                 StartCoroutine(FadeMusic(0f, 1.2f));
                 yield return new WaitForSeconds(1.3f);
-                started = GoF2Remake.Multiplayer.NetGame.StartHost();
+                started = TryStart(GoF2Remake.Multiplayer.NetGame.StartHost);
             }
             else if (address == null)
             {
@@ -1653,7 +1654,7 @@ namespace GoF2Remake.UI
                 fade.AddToClassList("fade--on");
                 StartCoroutine(FadeMusic(0f, 1.2f));
                 yield return new WaitForSeconds(1.3f);
-                started = GoF2Remake.Multiplayer.NetGame.StartHost();
+                started = TryStart(GoF2Remake.Multiplayer.NetGame.StartHost);
             }
             else
             {
@@ -1664,9 +1665,10 @@ namespace GoF2Remake.UI
                     // A join code: Relay finds the session, then it connects like an address.
                     var join = GoF2Remake.Multiplayer.NetGame.StartClientOnline(address);
                     while (!join.IsCompleted) yield return null;
+                    if (join.IsFaulted) GoF2Remake.Multiplayer.NetGame.AbortStart(join.Exception);
                     started = !join.IsFaulted && join.Result;
                 }
-                else started = GoF2Remake.Multiplayer.NetGame.StartClient(address);
+                else started = TryStart(() => GoF2Remake.Multiplayer.NetGame.StartClient(address));
                 while (started && GoF2Remake.Multiplayer.NetGame.Active && !GoF2Remake.Multiplayer.NetGame.Connected) yield return null;
                 if (started && GoF2Remake.Multiplayer.NetGame.Active)
                 {
@@ -1682,6 +1684,14 @@ namespace GoF2Remake.UI
             fade.RemoveFromClassList("fade--on");
             screen = MenuState.Menu;
             StartCoroutine(FadeMusic(Settings.MusicVolume, 1f));
+        }
+
+        /// <summary>A host / join start that threw ends with its reason in the status line (NetGame.AbortStart), not a
+        /// coroutine stopped on the fade or on "Connecting..." for good (a Discord report: unable to play multiplayer at all).</summary>
+        static bool TryStart(System.Func<bool> start)
+        {
+            try { return start(); }
+            catch (System.Exception e) { GoF2Remake.Multiplayer.NetGame.AbortStart(e); return false; }
         }
 
         // ---- debug panel (remake-only testing tools: F10 or five taps on the version text) -------

@@ -1599,5 +1599,6 @@
  "ctlFreeLookHold": "Swobodne rozglądanie (przytrzymaj)",
  "kitExhaustColor": "Kolor wydechu",
  "kitExhaustColor2": "Drugi kolor",
- "mbTestStart": "Lot próbny: przed tobą piraci. Zadokuj na stacji (albo Esc > Wróć do Kreatora modów), aby wrócić."
+ "mbTestStart": "Lot próbny: przed tobą piraci. Zadokuj na stacji (albo Esc > Wróć do Kreatora modów), aby wrócić.",
+ "mpStartError": "Nie udało się rozpocząć sesji: {0}"
 }

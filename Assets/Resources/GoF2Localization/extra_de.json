@@ -1599,5 +1599,6 @@
  "ctlFreeLookHold": "Freier Blick (halten)",
  "kitExhaustColor": "Strahlfarbe",
  "kitExhaustColor2": "Zweite Farbe",
- "mbTestStart": "Testflug: Piraten voraus. Dock an der Station an (oder Esc > Zurück zum Mod Builder), um zurückzukehren."
+ "mbTestStart": "Testflug: Piraten voraus. Dock an der Station an (oder Esc > Zurück zum Mod Builder), um zurückzukehren.",
+ "mpStartError": "Die Sitzung konnte nicht gestartet werden: {0}"
 }

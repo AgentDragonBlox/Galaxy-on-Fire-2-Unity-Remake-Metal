@@ -2084,7 +2084,11 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   ("X is damaged in Y.zip: download or import the mod again"). The loaders (`ModShips`, `ModStations`, `ModWeapons`,
   `ModCharacters`, `ModMaterials.Texture`, `ModJson.Read` as a ModJsonException, `ModInfo`, `EventRunner`) make it the mod's
   warning and never `Debug.LogException` a file error (`ModFileException.IsFileError`): the cloud diagnostics count every
-  logged exception as an unhandled one; a load the mods changed under says nothing (a newer one runs).
+  logged exception as an unhandled one; a load the mods changed under says nothing (a newer one runs). `ModInfo.NetHash`
+  (every installed mod's, on or off, in each multiplayer connection's data) hashes an unreadable file as "damaged" with a
+  warning, like `Hash` (`ModNetHashTests`): thrown, it would stop every host and join; the main menu's multiplayer start
+  catches anything thrown (`MainMenu.TryStart`, `NetGame.AbortStart`: the session closed, the reason in the panel's status
+  line, Extra `mpStartError`) instead of staying on its fade or "Connecting..." (a Discord report, cause not confirmed).
 - **A mod** = a folder or a `.zip` (files at its root or in one top folder, `ZipSource`) with `mod.json`
   (`ModManifest`: id (a-z 0-9 _ -, the lasting name), name / description (a string or per language), version, author,
   website, preview image (default preview.png), dependencies). Mod JSON is read with Newtonsoft's JToken (`ModJson`: comments

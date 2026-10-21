@@ -1599,5 +1599,6 @@
  "ctlFreeLookHold": "फ़्री लुक (दबाए रखें)",
  "kitExhaustColor": "एग्ज़ॉस्ट का रंग",
  "kitExhaustColor2": "दूसरा रंग",
- "mbTestStart": "टेस्ट उड़ान: आगे डाकू हैं। लौटने के लिए स्टेशन पर डॉक करें (या Esc > Mod Builder पर वापस)।"
+ "mbTestStart": "टेस्ट उड़ान: आगे डाकू हैं। लौटने के लिए स्टेशन पर डॉक करें (या Esc > Mod Builder पर वापस)।",
+ "mpStartError": "सत्र शुरू नहीं हो सका: {0}"
 }

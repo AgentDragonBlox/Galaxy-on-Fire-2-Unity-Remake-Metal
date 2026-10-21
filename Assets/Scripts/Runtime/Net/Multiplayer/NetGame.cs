@@ -502,6 +502,16 @@ namespace GoF2Remake.Multiplayer
         static bool closing, quitAfter, lostHandled;
         static string hostEndReason;
 
+        /// <summary>The main menu: hosting or joining threw (a bug, or data it couldn't read). The half-started session goes,
+        /// and the reason is the panel's status line instead of the menu waiting on its fade or "Connecting..." for good.</summary>
+        public static void AbortStart(Exception e)
+        {
+            Debug.LogException(e);
+            try { Shutdown(); }
+            catch (Exception again) { Debug.LogException(again); }
+            Status = string.Format(Localization.Extra("mpStartError", "Couldn't start the session: {0}"), e.GetBaseException().Message);
+        }
+
         /// <summary>Ends the session (leaving to the main menu, a failed connection). The host with players connected tells
         /// them why first and closes a moment later (NetDelayedShutdown), so the reason reaches them.</summary>
         public static void Shutdown()

@@ -1599,5 +1599,6 @@
  "ctlFreeLookHold": "Olhar livre (segurar)",
  "kitExhaustColor": "Cor do escapamento",
  "kitExhaustColor2": "Segunda cor",
- "mbTestStart": "Voo de teste: piratas à frente. Atraque na estação (ou Esc > Voltar ao Criador de mods) para voltar."
+ "mbTestStart": "Voo de teste: piratas à frente. Atraque na estação (ou Esc > Voltar ao Criador de mods) para voltar.",
+ "mpStartError": "Não foi possível iniciar a sessão: {0}"
 }

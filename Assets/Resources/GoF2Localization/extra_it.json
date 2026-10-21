@@ -1599,5 +1599,6 @@
  "ctlFreeLookHold": "Visuale libera (tieni premuto)",
  "kitExhaustColor": "Colore scarico",
  "kitExhaustColor2": "Secondo colore",
- "mbTestStart": "Volo di prova: pirati davanti. Attracca alla stazione (o Esc > Torna al Costruttore di mod) per tornare."
+ "mbTestStart": "Volo di prova: pirati davanti. Attracca alla stazione (o Esc > Torna al Costruttore di mod) per tornare.",
+ "mpStartError": "Impossibile avviare la sessione: {0}"
 }
