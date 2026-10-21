@@ -546,14 +546,12 @@ namespace GoF2Remake.UI
                 {
                     Hint(T("hudSelect", "SELECT"), InputGlyph.Key("↑"), InputGlyph.Key("↓"));
                     Hint(T("shopBuy", "BUY"), InputGlyph.Key("→"), InputGlyph.Key("ENTER", true));
-                    Hint(T("shopBuyAll", "BUY ALL"), InputGlyph.Key("SHIFT", true), InputGlyph.Key("→"));
                     Hint(T("hudUndock", "UNDOCK"), InputGlyph.Key("ESC"));
                 }
                 else
                 {
                     Hint(T("hudSelect", "SELECT"), InputGlyph.Pad(PadButton.DPad));
                     Hint(T("shopBuy", "BUY"), InputGlyph.Pad(PadButton.A));
-                    Hint(T("shopBuyAll", "BUY ALL"), InputGlyph.Pad(PadButton.X));
                     Hint(T("hudUndock", "UNDOCK"), InputGlyph.Pad(PadButton.B));
                 }
                 return;

@@ -36,11 +36,11 @@ namespace GoF2Remake.UI
         readonly Action<string> message;
         readonly Action closed;
 
-        readonly VisualElement window, details, detailIcon, detailStats, tradeBox, sellArrow, buyArrow, tradeAllRow;
+        readonly VisualElement window, details, detailIcon, detailStats, tradeBox, sellArrow, buyArrow, buyFill;
         readonly ScrollView list, detailScroll;
         readonly Label detailName, detailSub, detailText, tradeLeft, tradeRight, tradeNote, tradePrice, cargoLabel, creditsLabel;
         readonly VisualElement detailMods = ItemInfo.NewModBlock();   // the ship's Kaamo Club mods, under the repair's text
-        readonly Button buyAllButton, sellAllButton, actionButton, tab;
+        readonly Button actionButton, tab;
         readonly Label storeLabel;
         NpcShip host;
         CapitalShips.Store store;
@@ -51,11 +51,12 @@ namespace GoF2Remake.UI
         // A held buy (the arrow, a key or the D-pad): its repeat, like the hangar's held trade arrows.
         int heldPointer = -1;
         bool heldKey;
-        float heldMs, repeatMs;
+        float heldMs;
+        int holdTotal, holdDone;   // HeldTrade: what there is room for at the press, the units bought since
         int moveDirection;
         float moveMs;
 
-        const float RepeatAfterMs = 300f, RepeatEveryMs = 90f, MoveAfterMs = 350f, MoveEveryMs = 80f;
+        const float MoveAfterMs = 350f, MoveEveryMs = 80f;
 
         public bool IsOpen { get; private set; }
 
@@ -136,18 +137,7 @@ namespace GoF2Remake.UI
             tradeBox.Add(right);
             details.Add(tradeBox);
 
-            tradeAllRow = El("trade-all-row");
-            sellAllButton = new Button { focusable = false };
-            sellAllButton.AddToClassList("trade-all");
-            sellAllButton.AddToClassList("trade-all--first");
-            sellAllButton.style.visibility = Visibility.Hidden;
-            buyAllButton = new Button(() => BuyAll()) { text = X("shopBuyAll", "BUY ALL"), focusable = false };
-            buyAllButton.AddToClassList("trade-all");
-            buyAllButton.AddToClassList("trade-all--buy");
-            buyAllButton.AddToClassList("gof-semibold");
-            tradeAllRow.Add(sellAllButton);
-            tradeAllRow.Add(buyAllButton);
-            details.Add(tradeAllRow);
+            buyFill = HeldTrade.AddFill(buyArrow);   // remake: held, BUY speeds up to all there is room for in two seconds (HeldTrade)
 
             actionButton = new Button(() => Buy(1)) { focusable = false };
             actionButton.AddToClassList("detail-action");
@@ -177,10 +167,9 @@ namespace GoF2Remake.UI
             {
                 if (heldPointer >= 0 || buyArrow.ClassListContains("trade-arrow--disabled")) return;
                 heldPointer = e.pointerId;
-                heldMs = repeatMs = 0f;
                 buyArrow.CapturePointer(e.pointerId);
                 buyArrow.AddToClassList("trade-arrow--pressed");
-                Buy(1);
+                BeginHold();
                 e.StopPropagation();
             });
             buyArrow.RegisterCallback<PointerUpEvent>(e => { if (e.pointerId == heldPointer) ReleaseArrow(); });
@@ -377,7 +366,6 @@ namespace GoF2Remake.UI
                 detailName.text = X("resupplyRepair", "Repair hull and armor");
                 detailSub.text = ItemInfo.ShipName(Session.ShipIndex);
                 tradeBox.style.display = DisplayStyle.None;
-                tradeAllRow.style.display = DisplayStyle.None;
                 actionButton.style.display = DisplayStyle.Flex;
                 actionButton.text = o.room > 0 ? $"{X("resupplyRepairButton", "REPAIR")}   {ItemInfo.Credits(o.unitPrice)}" : X("resupplyIntact", "INTACT");
                 actionButton.EnableInClassList("detail-action--disabled", o.room <= 0 || o.unitPrice > Session.Credits);
@@ -400,7 +388,6 @@ namespace GoF2Remake.UI
             detailSub.text = $"{ItemInfo.Category(it)}  ·  {T(133)} {it.techLevel}";
             actionButton.style.display = DisplayStyle.None;
             tradeBox.style.display = DisplayStyle.Flex;
-            tradeAllRow.style.display = DisplayStyle.Flex;
             tradeLeft.text = o.stock < 0 ? "∞" : o.kind != CapitalShips.OfferKind.Ammo ? $"{o.stock} t" : o.stock.ToString();
             tradeRight.text = o.kind != CapitalShips.OfferKind.Ammo ? $"{o.have} t" : o.have.ToString();
             tradeNote.text = o.kind == CapitalShips.OfferKind.Ammo ? X("shopMounted", "MOUNTED").ToLowerInvariant() : "";
@@ -408,7 +395,6 @@ namespace GoF2Remake.UI
             tradePrice.EnableInClassList("trade-price--expensive", o.unitPrice > Session.Credits);
             bool canBuy = o.room > 0 && o.unitPrice <= Session.Credits;
             buyArrow.EnableInClassList("trade-arrow--disabled", !canBuy);
-            buyAllButton.EnableInClassList("trade-all--disabled", !canBuy);
             foreach (var (label, value) in ItemInfo.ItemStats(it)) AddStat(label, value);
             detailText.text = ItemInfo.ItemText(db, it, Shop.SystemOf(db, Session.StationIndex));
             detailScroll.scrollOffset = Vector2.zero;
@@ -440,11 +426,13 @@ namespace GoF2Remake.UI
             Rebuild();
         }
 
-        void BuyAll()
+        /// <summary>A press on BUY: one unit now, and what there is room for counted for the hold (HeldTrade).</summary>
+        void BeginHold()
         {
-            if (selected < 0 || selected >= rows.Count) return;
-            var o = rows[selected].offer;
-            Buy(o.kind == CapitalShips.OfferKind.Repair ? 1 : Mathf.Max(1, o.room));
+            heldMs = 0f;
+            holdDone = 1;
+            holdTotal = selected >= 0 && selected < rows.Count ? Mathf.Max(1, rows[selected].offer.room) : 1;
+            Buy(1);
         }
 
         void ReleaseArrow()
@@ -452,6 +440,7 @@ namespace GoF2Remake.UI
             if (heldPointer >= 0 && buyArrow.HasPointerCapture(heldPointer)) buyArrow.ReleasePointer(heldPointer);
             heldPointer = -1;
             buyArrow.RemoveFromClassList("trade-arrow--pressed");
+            HeldTrade.SetFill(buyFill, 0f);
         }
 
         // ---- per frame ---------------------------------------------------------------------------------------
@@ -489,21 +478,19 @@ namespace GoF2Remake.UI
                 if (moveMs >= MoveAfterMs) { moveMs -= MoveEveryMs; Move(dir); }
             }
 
-            bool shift = kb != null && (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed);
             bool rightHeld = (kb != null && (kb.rightArrowKey.isPressed || kb.dKey.isPressed))
                              || (pad != null && (pad.dpad.right.isPressed || pad.buttonSouth.isPressed));
             bool rightPressed = (kb != null && (kb.rightArrowKey.wasPressedThisFrame || kb.dKey.wasPressedThisFrame))
                                 || (pad != null && (pad.dpad.right.wasPressedThisFrame || pad.buttonSouth.wasPressedThisFrame));
-            if ((rightPressed && shift) || (pad != null && pad.buttonWest.wasPressedThisFrame)) { BuyAll(); return; }
             if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)) { Buy(1); return; }
-            if (rightPressed) { heldKey = true; heldMs = repeatMs = 0f; Buy(1); return; }
+            if (rightPressed) { heldKey = true; BeginHold(); return; }
             if (!rightHeld) heldKey = false;
             if ((heldKey || heldPointer >= 0) && selected >= 0 && rows[selected].offer.kind != CapitalShips.OfferKind.Repair)
             {
-                heldMs += dtMs;
-                if (heldMs < RepeatAfterMs) return;
-                repeatMs += dtMs;
-                if (repeatMs >= RepeatEveryMs) { repeatMs -= RepeatEveryMs; Buy(1); }
+                // Remake (HeldTrade): unit by unit, faster and faster, all there was room for in two seconds while BUY fills.
+                int units = HeldTrade.Step(ref heldMs, ref holdDone, holdTotal, dtMs);
+                HeldTrade.SetFill(buyFill, HeldTrade.Progress(heldMs));
+                if (units > 0) Buy(units);
             }
         }
 

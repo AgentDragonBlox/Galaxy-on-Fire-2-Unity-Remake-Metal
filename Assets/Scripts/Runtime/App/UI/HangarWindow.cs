@@ -7,7 +7,8 @@
 //             that could be mounted. Mount (281) / Demount (282), one-per-ship categories swap (287).
 // Details: icon on its type frame, stats (ItemInfo), description and known price range.
 // Controls: tap / click a row; up / down select (remake: a fresh press wraps round the ends), left / right sell / buy
-// (held arrows repeat like HangarWindow::update: after 200 ms, every 30 ms after 1.5 s, 5 units at a time after 4 s),
+// (held arrows repeat like HangarWindow::update; remake, HeldTrade: unit by unit, faster and faster, the whole stack in two
+// seconds, the Sell all / Buy all; in a multiplayer session the whole hold reaches the host as one message on release),
 // Enter / A the row's action, Q / E or LB / RB switch tabs. Sounds: 0x7c row, 0x65 buy (Button_to_ship), 0x64 sell
 // (Button_to_station), 0x62 mount, 0x60 demount.
 //   Blueprints tab (272, HangarList::initBlueprintTab 0x143208; blueprints_mods.md 1.5): 273 "Available blueprints" with
@@ -53,8 +54,7 @@ namespace GoF2Remake.UI
 
         readonly StationMenu menu;
         readonly StationLevel level;
-        readonly VisualElement window, details, detailIcon, detailStats, tradeBox, sellButton, buyButton, tradeAllRow;
-        readonly Button sellAllButton, buyAllButton;
+        readonly VisualElement window, details, detailIcon, detailStats, tradeBox, sellButton, buyButton;
         /// <summary>Remake: where the buy arrow sits in the trade box (an ingredient moves it under the blueprint's amount).</summary>
         readonly VisualElement buyHome;
         readonly int buyHomeIndex;
@@ -81,7 +81,8 @@ namespace GoF2Remake.UI
 
         // Held trade arrow or key (HangarWindow::update 0x172626); heldPointer -2 = a key / the D-pad.
         int heldDirection, heldPointer = -1;
-        float heldMs, repeatMs;
+        float heldMs;
+        int holdTotal, holdDone;   // HeldTrade: the stack counted at the press, the units traded since
         const int KeyHold = -2;
 
         // Held up / down (list selection): first repeat after 350 ms, then every 80 ms.
@@ -124,9 +125,6 @@ namespace GoF2Remake.UI
             buyButton = root.Q("buyButton");
             buyHome = buyButton.parent;
             buyHomeIndex = buyHome.IndexOf(buyButton);
-            tradeAllRow = root.Q("tradeAllRow");
-            sellAllButton = root.Q<Button>("sellAllButton");
-            buyAllButton = root.Q<Button>("buyAllButton");
             tradeStock = root.Q<Label>("tradeStock");
             tradeCargo = root.Q<Label>("tradeCargo");
             tradeMounted = root.Q<Label>("tradeMounted");
@@ -163,13 +161,8 @@ namespace GoF2Remake.UI
             if (actionButton2 != null) actionButton2.clicked += SecondaryAction;
             HookArrow(sellButton, -1);
             HookArrow(buyButton, 1);
-            // Remake: Sell all / Buy all are held for a second (a bar fills the button) instead of a click: one slip of the
-            // pointer emptied the hold or the account.
-            if (sellAllButton != null) { sellAllButton.focusable = false; sellAllFill = HoldToConfirm(sellAllButton, -1); }
-            if (buyAllButton != null) { buyAllButton.focusable = false; buyAllFill = HoldToConfirm(buyAllButton, 1); }
-            // Remake: with a controller the buttons show their triggers (LT / RT, StationMenu), placed left of the text.
-            AddPadGlyph(sellAllButton, PadButton.LeftTrigger);
-            AddPadGlyph(buyAllButton, PadButton.RightTrigger);
+            sellFill = HeldTrade.AddFill(sellButton);   // remake: a held arrow fills toward the whole stack (HeldTrade)
+            buyFill = HeldTrade.AddFill(buyButton);
             foreach (var b in new VisualElement[] { tabShip, tabShop, tabBlueprints, actionButton, actionButton2 }) if (b != null) b.focusable = false;
             list.focusable = detailScroll.focusable = false;
             detailText.parent?.Insert(detailText.parent.IndexOf(detailText) + 1, detailMods);
@@ -964,7 +957,6 @@ namespace GoF2Remake.UI
             UpdatePreview();
             details.style.visibility = selected == null ? Visibility.Hidden : Visibility.Visible;
             tradeBox.AddToClassList("trade-box--hidden");
-            tradeAllRow?.AddToClassList("trade-box--hidden");
             actionButton.AddToClassList("detail-action--hidden");
             actionButton.RemoveFromClassList("detail-action--disabled");
             actionButton2?.AddToClassList("detail-action--hidden");
@@ -1009,14 +1001,6 @@ namespace GoF2Remake.UI
                     tradePrice.EnableInClassList("trade-price--expensive", !store && price > Session.Credits);
                     sellButton.EnableInClassList("trade-arrow--disabled", cargo <= 0);
                     buyButton.EnableInClassList("trade-arrow--disabled", stock <= 0);
-                    if (tradeAllRow != null)
-                    {
-                        tradeAllRow.RemoveFromClassList("trade-box--hidden");
-                        sellAllButton.text = store ? Localization.Extra("shopStoreAll", "STORE ALL") : Localization.Extra("shopSellAll", "SELL ALL");
-                        buyAllButton.text = store ? Localization.Extra("shopTakeAll", "TAKE ALL") : Localization.Extra("shopBuyAll", "BUY ALL");
-                        sellAllButton.EnableInClassList("trade-all--disabled", cargo <= 0);
-                        buyAllButton.EnableInClassList("trade-all--disabled", stock <= 0);
-                    }
                 }
                 else if (selected.kind == RowKind.Slot)
                     ShowAction(T(282).ToUpperInvariant(), !(selected.equipment >= 0 && Session.Equipment[selected.equipment].builtIn));
@@ -1405,132 +1389,8 @@ namespace GoF2Remake.UI
 
         // ---- actions -----------------------------------------------------------------------------------------
 
-        /// <summary>Remake (players' suggestion): every unit of the selected shop item at once. Sell all / Store all: what the
-        /// hold has of it (mounted units stay); Buy all / Take all: the station's whole stock, as far as the hold has room and
-        /// the credits reach. In a multiplayer session the host hears of them as one message (Hangar.BeginBatch / EndBatch).
-        /// Shift + left / right does the same with keys, LT / RT with a controller.</summary>
-        public void TradeAll(int direction)
-        {
-            if (selected == null || selected.kind != RowKind.ShopItem) return;
-            int units;
-            if (direction < 0) units = hangar.CargoOf(selected.item);
-            else
-            {
-                int free = hangar.MaxLoad - hangar.Load;
-                if (free <= 0 && hangar.StockOf(selected.item) > 0)
-                {
-                    menu.ShowToast(Localization.Extra("shopHoldFull", "The cargo hold is full."));
-                    return;
-                }
-                units = Mathf.Min(hangar.StockOf(selected.item), free);
-            }
-            if (units <= 0) return;
-            hangar.BeginBatch();
-            try { Trade(direction, true, units, true); }
-            finally { hangar.EndBatch(); }
-        }
-
-        /// <summary>Remake: how long Sell all / Buy all are held to go through.</summary>
-        const float TradeAllHoldSeconds = 1f;
-        VisualElement sellAllFill, buyAllFill;
-        int keyAllDirection;
-        float keyAllMs;
-        bool keyAllDone;
-
-        /// <summary>Remake: LT / RT and Shift + left / right (Sell all / Buy all) held for TradeAllHoldSeconds too, filling the
-        /// button they stand for; one trade per press.</summary>
-        void PollTradeAllHold(float dtMs)
-        {
-            int dir = 0;
-            var pad = UnityEngine.InputSystem.Gamepad.current;
-            if (pad != null) { if (pad.leftTrigger.isPressed) dir = -1; else if (pad.rightTrigger.isPressed) dir = 1; }
-            var kb = GoF2Remake.Multiplayer.NetChat.Keys;
-            if (dir == 0 && kb != null && kb.shiftKey.isPressed)
-            {
-                bool left = kb.aKey.isPressed || kb.leftArrowKey.isPressed, right = kb.dKey.isPressed || kb.rightArrowKey.isPressed;
-                if (left != right) dir = left ? -1 : 1;
-            }
-            if (dir != keyAllDirection)
-            {
-                SetAllFill(keyAllDirection, 0f);
-                keyAllDirection = dir;
-                keyAllMs = 0f;
-                keyAllDone = false;
-            }
-            if (dir == 0) return;
-            var button = dir < 0 ? sellAllButton : buyAllButton;
-            if (button == null || tradeAllRow == null || tradeAllRow.ClassListContains("trade-box--hidden") || button.ClassListContains("trade-all--disabled"))
-            {
-                SetAllFill(dir, 0f);
-                return;
-            }
-            keyAllMs += dtMs;
-            float f = Mathf.Clamp01(keyAllMs / (TradeAllHoldSeconds * 1000f));
-            SetAllFill(dir, f);
-            if (f >= 1f && !keyAllDone) { keyAllDone = true; TradeAll(dir); }
-        }
-
-        void SetAllFill(int direction, float f)
-        {
-            var fill = direction < 0 ? sellAllFill : direction > 0 ? buyAllFill : null;
-            if (fill != null) fill.style.width = Length.Percent(f * 100f);
-        }
-
-        /// <summary>Remake: 'b' trades all (TradeAll(direction)) once held for TradeAllHoldSeconds; a fill shows the hold, letting
-        /// go earlier cancels it. One trade per press.</summary>
-        VisualElement HoldToConfirm(Button b, int direction)
-        {
-            b.clickable = null;   // no plain click
-            var fill = new VisualElement { pickingMode = PickingMode.Ignore };
-            fill.AddToClassList("trade-all-fill");
-            b.Insert(0, fill);
-            int pointerId = -1;
-            float start = 0f;
-            bool done = false;
-            IVisualElementScheduledItem tick = null;
-            void EndHold()
-            {
-                if (pointerId >= 0 && b.HasPointerCapture(pointerId)) b.ReleasePointer(pointerId);
-                pointerId = -1;
-                fill.style.width = Length.Percent(0f);
-                tick?.Pause();
-            }
-            b.RegisterCallback<PointerDownEvent>(e =>
-            {
-                if (pointerId >= 0 || b.ClassListContains("trade-all--disabled")) return;
-                pointerId = e.pointerId;
-                start = Time.unscaledTime;
-                done = false;
-                b.CapturePointer(pointerId);
-                menu.PlayPush();
-                if (tick == null)
-                    tick = b.schedule.Execute(() =>
-                    {
-                        if (pointerId < 0) return;
-                        float f = Mathf.Clamp01((Time.unscaledTime - start) / TradeAllHoldSeconds);
-                        fill.style.width = Length.Percent(f * 100f);
-                        if (f >= 1f && !done) { done = true; TradeAll(direction); }
-                    }).Every(16);
-                else tick.Resume();
-                e.StopPropagation();
-            });
-            b.RegisterCallback<PointerUpEvent>(e => { if (e.pointerId == pointerId) { EndHold(); e.StopPropagation(); } });
-            b.RegisterCallback<PointerCancelEvent>(e => { if (e.pointerId == pointerId) EndHold(); });
-            b.RegisterCallback<PointerCaptureOutEvent>(_ => { if (pointerId >= 0) EndHold(); });
-            return fill;
-        }
-
-        static void AddPadGlyph(VisualElement button, PadButton pad)
-        {
-            if (button == null) return;
-            var holder = new VisualElement { pickingMode = PickingMode.Ignore };
-            holder.AddToClassList("trade-all-pad");
-            holder.Add(InputGlyph.Pad(pad));
-            button.Add(holder);
-        }
-
-        /// <summary>Left / right: sell / buy one unit of the selected shop item (Item::transaction). 'all' (TradeAll): running out
-        /// of credits after some units just stops, without the "not enough credits" message.</summary>
+        /// <summary>Left / right: sell / buy one unit of the selected shop item (Item::transaction). 'all' (a held arrow's repeat,
+        /// HeldTrade): running out of credits after some units just stops, without the "not enough credits" message.</summary>
         public void Trade(int direction, bool sound = true, int units = 1, bool all = false)
         {
             if (selected != null && selected.kind == RowKind.Ingredient)
@@ -1725,10 +1585,9 @@ namespace GoF2Remake.UI
                 if (heldPointer >= 0 || arrow.ClassListContains("trade-arrow--disabled")) return;
                 heldPointer = e.pointerId;
                 heldDirection = direction;
-                heldMs = repeatMs = 0f;
                 arrow.CapturePointer(e.pointerId);
                 arrow.AddToClassList("trade-arrow--pressed");
-                Trade(direction);
+                BeginHold(direction);
                 e.StopPropagation();
             });
             arrow.RegisterCallback<PointerUpEvent>(e => { if (e.pointerId == heldPointer) ReleaseArrow(); });
@@ -1749,7 +1608,33 @@ namespace GoF2Remake.UI
             heldDirection = 0;
             sellButton.RemoveFromClassList("trade-arrow--pressed");
             buyButton.RemoveFromClassList("trade-arrow--pressed");
+            HeldTrade.SetFill(sellFill, 0f);
+            HeldTrade.SetFill(buyFill, 0f);
+            // The hold's trades to the multiplayer host as one message (the user's request: not one per unit).
+            if (holdBatch) { holdBatch = false; hangar.EndBatch(); }
         }
+
+        /// <summary>A press on an arrow: one unit now, the stack the hold will work through counted (HeldTrade: selling what
+        /// the hold has of it, buying the station's stock as far as the hold has room, adding to a blueprint what the hold has),
+        /// and on a shop row its units until the release are one batch (Hangar.BeginBatch), so a multiplayer session's host
+        /// hears of the whole hold once, when the arrow is let go (ReleaseArrow).</summary>
+        void BeginHold(int direction)
+        {
+            heldMs = 0f;
+            holdDone = 1;
+            holdTotal = 1;
+            if (selected != null && selected.kind == RowKind.ShopItem)
+            {
+                holdTotal = direction < 0 ? hangar.CargoOf(selected.item)
+                          : Mathf.Min(hangar.StockOf(selected.item), Mathf.Max(1, hangar.MaxLoad - hangar.Load));
+                if (!holdBatch) { hangar.BeginBatch(); holdBatch = true; }
+            }
+            else if (selected != null && selected.kind == RowKind.Ingredient && direction > 0) holdTotal = hangar.CargoOf(selected.item);
+            Trade(direction);
+        }
+
+        bool holdBatch;
+        VisualElement sellFill, buyFill;
 
         /// <summary>Keyboard / controller: the held vertical (select) and horizontal (sell / buy) direction, every frame.</summary>
         public void HoldDirections(int vertical, int horizontal, float dtMs)
@@ -1772,27 +1657,23 @@ namespace GoF2Remake.UI
             keyDirection = horizontal;
             if (heldPointer == KeyHold) ReleaseArrow();
             if (horizontal == 0 || heldPointer >= 0) return;   // released, or a finger / the mouse holds an arrow
-            var kb = GoF2Remake.Multiplayer.NetChat.Keys;
-            if (kb != null && kb.shiftKey.isPressed) return;   // remake: Shift + left / right = all, held (PollTradeAllHold)
             heldPointer = KeyHold;
             heldDirection = horizontal;
-            heldMs = repeatMs = 0f;
             (horizontal < 0 ? sellButton : buyButton).AddToClassList("trade-arrow--pressed");
-            Trade(horizontal);
+            BeginHold(horizontal);
         }
 
-        /// <summary>HangarWindow::update: repeat after 200 ms, every 30 ms once held 1.5 s, 5 units per repeat after 4 s.</summary>
+        /// <summary>HangarWindow::update's repeat of a held arrow; remake (HeldTrade): unit by unit, faster and faster, the whole
+        /// stack counted at the press in two seconds (the separate Sell all / Buy all went) while the arrow fills; running out
+        /// of credits just stops.</summary>
         public void Update(float dtMs)
         {
-            if (IsOpen) PollTradeAllHold(dtMs);
             UpdateRestock();
             if (!IsOpen || heldDirection == 0) return;
-            heldMs += dtMs;
-            repeatMs += dtMs;
-            float interval = heldMs > 1500f ? 30f : 200f;
-            if (repeatMs < interval) return;
-            repeatMs = 0f;
-            Trade(heldDirection, false, heldMs > 4000f ? 5 : 1);
+            int dir = heldDirection;
+            int units = HeldTrade.Step(ref heldMs, ref holdDone, holdTotal, dtMs);
+            HeldTrade.SetFill(dir < 0 ? sellFill : buyFill, HeldTrade.Progress(heldMs));
+            if (units > 0) Trade(dir, false, units, true);
         }
     }
 }

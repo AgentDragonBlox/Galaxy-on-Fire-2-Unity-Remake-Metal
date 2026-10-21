@@ -520,7 +520,10 @@
     white-space: normal;
 }
 
+/* The trade box and the action buttons keep their height (flex-shrink 0): a short details column squashed them; the stats
+   and description scroll instead. */
 .trade-box {
+    flex-shrink: 0;
     flex-direction: row;
     align-items: center;
     margin-top: 18px;
@@ -590,6 +593,17 @@
     border-color: var(--gof-amber);
 }
 
+/* Remake (HeldTrade): a held arrow fills from the left over the two seconds it takes to sell / buy the whole stack (it
+   replaced Sell all / Buy all). */
+.trade-arrow-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background-color: rgba(255, 166, 48, 0.35);
+}
+
 .can-hover .trade-arrow:hover {
     background-color: rgba(255, 255, 255, 0.08);
 }
@@ -610,81 +624,6 @@
     color: #FFFFFF;
 }
 
-/* Remake: Sell all / Buy all (Store all / Take all in the Kaamo Club's storage) under the trade arrows. */
-.trade-all-row {
-    flex-direction: row;
-    justify-content: space-between;
-    margin-top: 8px;
-}
-
-.trade-all {
-    flex-grow: 1;
-    flex-basis: 0;
-    margin: 0 0 0 8px;
-    padding: 8px 6px;
-    font-size: 17px;
-    letter-spacing: 3px;
-    -unity-text-align: middle-center;
-    color: #FFFFFF;
-    background-color: rgba(4, 10, 18, 0.6);
-    border-width: 2px;
-    border-color: var(--gof-cyan-soft);
-    border-radius: 2px;
-}
-
-/* Remake: USS has no first-child selector, so Sell all kept the 8px left margin and sat off to the right: the gap is split
-   between the two by name instead. */
-.trade-all--first,   /* the carrier shop's row */
-#sellAllButton {
-    margin-left: 0;
-    margin-right: 4px;
-}
-
-#buyAllButton {
-    margin-left: 4px;
-}
-
-/* Remake: the hold-to-confirm bar filling the button (HoldToConfirm). */
-.trade-all-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 0;
-    background-color: rgba(255, 166, 48, 0.35);
-}
-
-.trade-all--buy {
-    border-color: var(--gof-amber);
-}
-
-.can-hover .trade-all:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-.trade-all--disabled {
-    opacity: 0.3;
-}
-
-/* With a controller: the trigger that does it (LT sell all, RT buy all) at the button's left edge. */
-.trade-all-pad {
-    display: none;
-    position: absolute;
-    left: 4px;
-    top: 0;
-    bottom: 0;
-    justify-content: center;
-    letter-spacing: 0;
-}
-
-.input-gamepad .trade-all-pad {
-    display: flex;
-}
-
-.input-gamepad .trade-all {
-    padding-left: 52px;
-}
-
 .trade-price {
     flex-grow: 1;
     font-size: 28px;
@@ -697,6 +636,7 @@
 }
 
 .detail-action {
+    flex-shrink: 0;
     margin: 14px 0 0 0;
     padding: 14px;
     font-size: 24px;
