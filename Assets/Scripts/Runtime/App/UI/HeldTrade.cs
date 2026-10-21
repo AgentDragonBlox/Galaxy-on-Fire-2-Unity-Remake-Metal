@@ -4,15 +4,19 @@
 // the remake's held arrow is also the Sell all / Buy all (the user's request: the separate buttons went): unit by unit,
 // faster and faster, the whole stack (counted at the press) gone after two seconds of holding (an ease-in, t^2), never
 // slower than one unit per 120 ms after the first 200 ms, so a small stack doesn't crawl; a bar fills the arrow meanwhile.
+// Every unit plays the buy / sell button sound (Tick; the original's repeats were silent, only a tap sounded), its pitch
+// rising from StartPitch to MaxPitch (capped) as the stack goes, at most one per MinTickMs when several go in a frame.
 
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace GoF2Remake.UI
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class HeldTrade
     {
         public const float FirstRepeatMs = 200f, RepeatEveryMs = 120f, WholeStackMs = 2000f;
+        public const float StartPitch = 0.85f, MaxPitch = 1.5f, MinTickMs = 30f;
 
         /// <summary>The units traded by 'heldMs' of holding, the press's own unit included, of a stack of 'total'.</summary>
         public static int Due(float heldMs, int total)
@@ -51,6 +55,46 @@ namespace GoF2Remake.UI
         public static void SetFill(VisualElement fill, float progress)
         {
             if (fill != null) fill.style.width = Length.Percent(progress * 100f);
+        }
+
+        /// <summary>The pitch of a unit's sound once 'done' of 'total' are traded (the press's unit: StartPitch).</summary>
+        public static float Pitch(int done, int total) =>
+            total <= 1 ? StartPitch : Mathf.Lerp(StartPitch, MaxPitch, Mathf.Clamp01((done - 1f) / (total - 1f)));
+
+        const int Voices = 4;
+        static AudioSource[] voices;
+        static int nextVoice;
+        static float lastTick = -1f;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() { voices = null; nextVoice = 0; lastTick = -1f; }
+
+        /// <summary>A traded unit's button sound at Pitch(done, total), on voices of its own (a pitched PlayOneShot would bend
+        /// every sound of a shared source); 2D, through a pause (the carrier's window pauses the game).</summary>
+        public static void Tick(AudioClip clip, int done, int total)
+        {
+            if (clip == null) return;
+            float now = Time.unscaledTime;
+            if (lastTick >= 0f && (now - lastTick) * 1000f < MinTickMs) return;
+            lastTick = now;
+            if (voices == null || voices[0] == null)
+            {
+                var go = new GameObject("HeldTradeSound") { hideFlags = HideFlags.HideInHierarchy };
+                Object.DontDestroyOnLoad(go);
+                voices = new AudioSource[Voices];
+                for (int i = 0; i < Voices; i++)
+                {
+                    var s = go.AddComponent<AudioSource>();
+                    s.playOnAwake = false;
+                    s.spatialBlend = 0f;
+                    s.ignoreListenerPause = true;
+                    voices[i] = s;
+                }
+            }
+            var v = voices[nextVoice];
+            nextVoice = (nextVoice + 1) % Voices;
+            v.pitch = Pitch(done, total);
+            v.PlayOneShot(GoF2Remake.Modding.ModSounds.Get(clip), GoF2Remake.Data.Settings.SfxVolume);
         }
     }
 }

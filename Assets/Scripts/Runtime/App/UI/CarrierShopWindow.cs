@@ -420,7 +420,9 @@ namespace GoF2Remake.UI
             if (selected < 0 || selected >= rows.Count) return;
             var o = rows[selected].offer;
             string msg = CapitalShips.Buy(db, health, store, o, units, out int bought);
-            if (bought > 0) playUi?.Invoke(CombatAudio.Load()?.shopBuy);
+            // A held BUY: each unit's sound pitched up as the room fills (HeldTrade.Tick); a single press or Enter as before.
+            if (bought > 0 && (heldPointer >= 0 || heldKey)) HeldTrade.Tick(CombatAudio.Load()?.shopBuy, holdDone, holdTotal);
+            else if (bought > 0) playUi?.Invoke(CombatAudio.Load()?.shopBuy);
             else ReleaseArrow();   // nothing more to buy: a held arrow stops
             if (!string.IsNullOrEmpty(msg) && (bought == 0 || heldPointer < 0 && !heldKey)) message?.Invoke(msg);
             Rebuild();

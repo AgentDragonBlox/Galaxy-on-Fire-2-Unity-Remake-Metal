@@ -50,6 +50,18 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
+        public void ThePitchRisesWithTheStackAndIsCapped()
+        {
+            Assert.AreEqual(HeldTrade.StartPitch, HeldTrade.Pitch(1, 100), 1e-5f, "the press's unit starts low");
+            Assert.Less(HeldTrade.Pitch(1, 100), 1f);
+            Assert.Less(HeldTrade.Pitch(30, 100), HeldTrade.Pitch(70, 100));
+            Assert.AreEqual(HeldTrade.MaxPitch, HeldTrade.Pitch(100, 100), 1e-5f);
+            Assert.AreEqual(HeldTrade.MaxPitch, HeldTrade.Pitch(500, 100), 1e-5f, "capped");
+            Assert.AreEqual(HeldTrade.StartPitch, HeldTrade.Pitch(1, 1), 1e-5f, "a single unit");
+            Assert.LessOrEqual(HeldTrade.MaxPitch, 1.5f);
+        }
+
+        [Test]
         public void ATapTradesOne()
         {
             Assert.AreEqual(1, HeldTrade.Due(50f, 300));

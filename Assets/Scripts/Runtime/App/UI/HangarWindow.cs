@@ -1391,14 +1391,14 @@ namespace GoF2Remake.UI
 
         /// <summary>Left / right: sell / buy one unit of the selected shop item (Item::transaction). 'all' (a held arrow's repeat,
         /// HeldTrade): running out of credits after some units just stops, without the "not enough credits" message.</summary>
-        public void Trade(int direction, bool sound = true, int units = 1, bool all = false)
+        public bool Trade(int direction, bool sound = true, int units = 1, bool all = false)
         {
             if (selected != null && selected.kind == RowKind.Ingredient)
             {
                 if (direction > 0) AddIngredient(units); else ReleaseArrow();
-                return;
+                return false;
             }
-            if (selected == null || selected.kind != RowKind.ShopItem) return;
+            if (selected == null || selected.kind != RowKind.ShopItem) return false;
             bool changed = false;
             for (int n = 0; n < units; n++)
             {
@@ -1421,9 +1421,10 @@ namespace GoF2Remake.UI
                 }
                 changed = true;
             }
-            if (!changed) return;
+            if (!changed) return false;
             if (sound) menu.PlayClip(direction > 0 ? menu.shopBuy : menu.shopSell);
             Rebuild();
+            return true;
         }
 
         /// <summary>Enter / A / the action button: mount, demount or buy the selected ship; on a shop row buy one unit.</summary>
@@ -1630,8 +1631,12 @@ namespace GoF2Remake.UI
                 if (!holdBatch) { hangar.BeginBatch(); holdBatch = true; }
             }
             else if (selected != null && selected.kind == RowKind.Ingredient && direction > 0) holdTotal = hangar.CargoOf(selected.item);
-            Trade(direction);
+            // A shop row's unit sounds through HeldTrade's pitched voice, starting low (the repeats rise from here).
+            if (selected != null && selected.kind == RowKind.ShopItem) { if (Trade(direction, false)) TradeTick(direction); }
+            else Trade(direction);
         }
+
+        void TradeTick(int direction) => HeldTrade.Tick(direction > 0 ? menu.shopBuy : menu.shopSell, holdDone, holdTotal);
 
         bool holdBatch;
         VisualElement sellFill, buyFill;
@@ -1673,7 +1678,7 @@ namespace GoF2Remake.UI
             int dir = heldDirection;
             int units = HeldTrade.Step(ref heldMs, ref holdDone, holdTotal, dtMs);
             HeldTrade.SetFill(dir < 0 ? sellFill : buyFill, HeldTrade.Progress(heldMs));
-            if (units > 0) Trade(dir, false, units, true);
+            if (units > 0 && Trade(dir, false, units, true)) TradeTick(dir);   // each unit's button sound, pitched up
         }
     }
 }
