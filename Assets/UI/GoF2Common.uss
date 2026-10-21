@@ -1,7 +1,8 @@
 /* GoF2 remake: shared design tokens and base control styles (imported by GoF2Theme.tss).
    Palette from the original UI: steel-blue buttons, orange when pressed, cyan glow of the logo.
    :hover rules are scoped to .can-hover, which screen controllers set on their root only while a mouse is in use
-   (touch has no real hover: a sliding finger would highlight everything it passes). */
+   (touch has no real hover: a sliding finger would highlight everything it passes; the main and station menus also
+   drop it while the keys or a controller are used, InputMode.MousePointing, so a resting cursor lights no second row). */
 
 :root {
     --gof-cyan: #3EC8FF;

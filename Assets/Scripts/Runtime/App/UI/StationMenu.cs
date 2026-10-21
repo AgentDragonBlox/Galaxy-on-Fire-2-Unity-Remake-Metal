@@ -1684,9 +1684,13 @@ namespace GoF2Remake.UI
         void SetTouchMode(bool on)
         {
             touchMode = on;
-            root.EnableInClassList("can-hover", !on);
+            SyncHover();
             if (on && root.focusController?.focusedElement is VisualElement focused) focused.Blur();
         }
+
+        /// <summary>Hover highlights only while the mouse is the thing in use (InputMode.MousePointing), not under a resting
+        /// cursor while the keys or a controller move the selection.</summary>
+        void SyncHover() => root?.EnableInClassList("can-hover", !touchMode && InputMode.MousePointing);
 
         void OnPointerDown(PointerDownEvent e)
         {
@@ -2423,6 +2427,7 @@ namespace GoF2Remake.UI
         {
             if (root == null || level == null) return;
             if (builderView != null) { builderView.Update(); return; }   // the Mod Builder's hangar
+            SyncHover();
             // Release velocity: the turn per frame, smoothed (the original uses the last frame's dx). Modified: first thing, so
             // the hangar's window (Ship / Shop, open most of the time in the hangar) and the other early returns below no
             // longer skip it: a drag let go there always measured 0 and the ship never kept turning.

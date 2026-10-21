@@ -513,7 +513,9 @@ namespace GoF2Remake.UI
 
         void Update()
         {
-            if (root == null || GoF2Remake.Flight.GameControls.BlocksMenus) return;
+            if (root == null) return;
+            SyncHover();
+            if (GoF2Remake.Flight.GameControls.BlocksMenus) return;
 #if UNITY_WSA
             KeepKeyboardText();
 #endif
@@ -658,9 +660,12 @@ namespace GoF2Remake.UI
         {
             if (root == null || on == touchMode && root.ClassListContains("can-hover") != on) return;
             touchMode = on;
-            root.EnableInClassList("can-hover", !on);
+            SyncHover();
             if (on && root.focusController?.focusedElement is VisualElement focused) focused.Blur();
         }
+
+        /// <summary>Hover highlights only while the mouse is the thing in use (InputMode.MousePointing; see StationMenu).</summary>
+        void SyncHover() => root?.EnableInClassList("can-hover", !touchMode && InputMode.MousePointing);
 
         void OnPointerDown(PointerDownEvent e)
         {

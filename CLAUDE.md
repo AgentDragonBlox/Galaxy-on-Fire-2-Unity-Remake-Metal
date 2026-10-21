@@ -634,7 +634,10 @@ Research: `Reference/research/mining.md` (+ `Reference/tools/mining/mining_table
   - Input modes work like the flight HUD: touch; keyboard 1 / 2 / M / L / Esc (Launch shows its key: L / the controller's X glyph before its text); controller LB / RB / Y / X / B / Menu. The number keys are the PC version's "Menu button 1 - 9" (3356, its key table is still in the Android binary: a tap on `Globals::sub_menu_buttons`): on the main view 1 Hangar, 2 Lounge, 3 Map, 4 Missions, 5 Status; in the Space Lounge 1-9 (and the keypad's) pick its visitors in the list's order instead, numbered "1." on the rows with keys and mouse (remake, #75, `LoungePanel.NumberKey`); in the hangar window 1 / 2 / 3 = Ship / Shop (Store) / Blueprints (`HangarWindow::initialize`), 4 / 5 nothing; Q / E (LB / RB) cycle the tabs. No hint row on the main view (the buttons say it); toasts sit at the bottom, above the ticker.
   - Esc or B steps back: dialog, then lounge, then the system menu (Save game, Back to Main Menu).
   - The mouse takes the selection to the `station-button` it is over (`PointerOverEvent` on the root, like MainMenu's
-    `HookFocusSound`): a menu opened with the mouse focused its first entry, which stayed lit beside the hovered one.
+    `HookFocusSound`): a menu opened with the mouse focused its first entry, which stayed lit beside the hovered one. The
+    hover highlight itself (`.can-hover`) shows only while the mouse was the last input (`InputMode.MousePointing`, the
+    main menu too): a cursor resting over a row kept it lit while the keys / a controller moved the focus, two rows at
+    once at every station docked at (a player's report, 2026-10-18).
   - Music per race and station; ambience per screen as the FMOD cycle events (`CycleSound`): 122 Mainview, 95 Hangar while the hangar window is open (`StationLevel.SetHangarWindowOpen`, `ModStation::OnKeyPress`), 108 Lounge.
 - Missions (129, unlocks with the Map) and Status (169): see "Bar and freelance".
 - **System menu** (`StationMenu`, `SysPage` Main / Save / Load / Options): 30 Save game, 29 Load (the slot list), 28 New game (the main menu's campaign panel, `MainMenu.OpenPanelOnStart`), 31 Options (the `OptionControl` rows), 43 About (text 45), 522 Back to Main Menu.

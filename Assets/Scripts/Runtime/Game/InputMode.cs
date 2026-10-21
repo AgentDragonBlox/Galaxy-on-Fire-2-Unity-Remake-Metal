@@ -131,15 +131,18 @@ namespace GoF2Remake.UI
             {
                 case Touchscreen _:
                     kind = InputKind.Touch;
+                    MousePointing = false;
                     break;
                 case Gamepad _:
                     if (!HasControlAbove(e, device, StickThreshold)) return;
                     kind = InputKind.Gamepad;
+                    MousePointing = false;
                     UsedPad(device);
                     break;
                 case Keyboard keyboard:
                     if (!HasControlAbove(e, device, 0.5f)) return;
                     kind = InputKind.KeyboardMouse;
+                    MousePointing = false;
                     // Android's back button arrives as Escape: only another key shows a real keyboard.
                     if (!KeyboardSeen)
                         foreach (var c in e.EnumerateChangedControls(device, 0.5f))
@@ -148,8 +151,9 @@ namespace GoF2Remake.UI
                 case Mouse mouse:
                     // Touches on some platforms also arrive as a simulated mouse: ignore those.
                     if (Current == InputKind.Touch && Touchscreen.current != null && Touchscreen.current.primaryTouch.isInProgress) return;
-                    if (mouse.delta.ReadValueFromEvent(e, out Vector2 moved) && moved != Vector2.zero) lastMouseMove = Time.unscaledTime;
+                    if (mouse.delta.ReadValueFromEvent(e, out Vector2 moved) && moved != Vector2.zero) { lastMouseMove = Time.unscaledTime; MousePointing = true; }
                     if (!MouseUsed(e, mouse)) return;
+                    MousePointing = true;
                     kind = InputKind.KeyboardMouse;
                     break;
                 default:
@@ -167,6 +171,12 @@ namespace GoF2Remake.UI
         /// first: a list scrolled by the keys or a controller slides its rows under a resting cursor, and they took the focus
         /// (a player's report: scrolling up, the selection jumped back to the row under the cursor at the bottom).</summary>
         public static bool MouseMovedRecently => Time.unscaledTime - lastMouseMove < 0.15f;
+
+        /// <summary>The mouse was the last thing used (moved or clicked; a key, a controller or a touch since turns it off).
+        /// The menus show hover highlights (.can-hover) only then: a cursor resting over a row kept that row lit while the
+        /// keys or a controller moved the selection elsewhere, two rows highlighted at once, at every station docked at with
+        /// the cursor still there (a player's report, 2026-10-18).</summary>
+        public static bool MousePointing { get; private set; }
 
         /// <summary>Remake (a player's report): the mouse cursor shows only while the keyboard and mouse (or touch) are in use,
         /// not with a controller; a mouse move brings it back. Desktop only; a captured cursor (mouse steering) stays hidden.</summary>
