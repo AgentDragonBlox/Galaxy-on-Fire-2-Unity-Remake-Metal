@@ -7,7 +7,7 @@
 // enhancements" (escorts 3 + rank / 7, +1 Hard / Extreme, +2 carrier, hull x1.5, gun x1.3; turrets (500 + 50 rank) x
 // difficulty, gun x(1 + 0.1 rank), the Vossk battleship's x1.6; the battleship's hull x5, the carrier's and the Vossk
 // battleship's x8, "12 000 at rank 20 on Normal"; EMP x3 a freighter's; 8 s, x14; docking sets 5 / 8, Inflicts (5) and
-// H'Socs (9); the store: cells 10-15, rounds 5-10, gear 5 Vossk-made / 6 Terran tech 4+, 1-2 each, secondaries 10-20,
+// H'Socs (9); the store: cells 10-15, rounds 5-10, gear 5 Vossk-made / 6 Terran (home in a Terran system) tech 4+, 1-2 each, secondaries 10-20,
 // prices x1.25, up to 50 mounted; the loot: two tech 5+ items, 8-15 t rare goods, 5-10 cells, once an hour) and
 // "Fleet battles" (80 000 apart, wings of 4 + rank / 5, 30 000 + 3000 x rank). Hand calculation from those.
 
@@ -399,15 +399,26 @@ namespace GoF2Remake.Tests
         // ---- the resupply store ----------------------------------------------------------------------------------
 
         [Test]
-        public void RaceItemsByAttribute60()
+        public void RaceItemsByAttribute60AndHomeSystem()
         {
+            // The Vossk's: attr 60. The Terrans': not Vossk-made, home (attr 4, the cheapest system) in a Terran system.
             foreach (var it in Db.Items)
             {
                 bool vossk = it.Attr(60) == 1;
-                Assert.AreEqual(vossk, CapitalShips.RaceItem(it, 1), it.name);
-                Assert.AreEqual(!vossk, CapitalShips.RaceItem(it, 0), it.name);
+                bool terranHome = Db.Systems.Find(s => s.index == it.lowestPriceSystem)?.raceId == 0;
+                Assert.AreEqual(vossk, CapitalShips.RaceItem(Db, it, 1), it.name);
+                Assert.AreEqual(!vossk && terranHome, CapitalShips.RaceItem(Db, it, 0), it.name);
             }
-            Assert.IsFalse(CapitalShips.RaceItem(null, 0));
+            // The reported carrier stock: the Mamba EMP is Terran; the EMP Rocket Mk I (Midorian), the ReHeat o10 (Nivelian)
+            // and the Ridil / Tyrfing Blasters (home in K'ontrr, Vossk, but not Vossk-made) are nobody's here.
+            Assert.IsTrue(CapitalShips.RaceItem(Db, Db.Items.First(i => i.name == "Mamba EMP"), 0));
+            foreach (var n in new[] { "EMP Rocket Mk I", "ReHeat o10", "Ridil Blaster", "Tyrfing Blaster" })
+            {
+                var it = Db.Items.First(i => i.name == n);
+                Assert.IsFalse(CapitalShips.RaceItem(Db, it, 0), n);
+                Assert.IsFalse(CapitalShips.RaceItem(Db, it, 1), n);
+            }
+            Assert.IsFalse(CapitalShips.RaceItem(Db, null, 0));
             Assert.IsFalse(CapitalShips.IsBlueprintProduct(null));
             Assert.IsTrue(Db.Items.Any(CapitalShips.IsBlueprintProduct), "the blueprint products (items.json ingredients)");
         }
@@ -420,7 +431,7 @@ namespace GoF2Remake.Tests
             Random.InitState(7);
             var cellsSeen = new HashSet<int>();
             var ammoSeen = new HashSet<int>();
-            var terranMissile = Db.Items.First(it => it.TypeId == 1 && CapitalShips.RaceItem(it, 0) && !CapitalShips.IsBlueprintProduct(it));
+            var terranMissile = Db.Items.First(it => it.TypeId == 1 && CapitalShips.RaceItem(Db, it, 0) && !CapitalShips.IsBlueprintProduct(it));
             var vosskWeapon = Db.Items.First(it => it.TypeId <= 3 && it.Attr(60) == 1);
             var product = Db.Items.First(CapitalShips.IsBlueprintProduct);
             for (int i = 0; i < 300; i++)
@@ -462,6 +473,7 @@ namespace GoF2Remake.Tests
                 Assert.Greater(it.occurrence, 0);
                 Assert.IsFalse(CapitalShips.IsBlueprintProduct(it));
                 Assert.AreEqual(race == 1, it.Attr(60) == 1);
+                Assert.IsTrue(CapitalShips.RaceItem(Db, it, race), "its race's own item");
                 Assert.AreNotEqual(85, i);
                 Assert.That(i < 189 || i > 192, "no signature");
                 if (race == 0) Assert.GreaterOrEqual(it.techLevel, 4);

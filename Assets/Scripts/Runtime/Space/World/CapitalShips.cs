@@ -23,8 +23,9 @@
 //               the race trusts (standing 71+) flying one of its ships, or anyone with its signature; docked, a shop window
 //               like the hangar's (UI.CarrierShopWindow) sells the repair of hull and armor (unlimited), rounds for each
 //               mounted secondary of its race (up to 50; 5-10 in store per kind, none for a blueprint product), its race's
-//               gear (Store.Gear: the Vossk battleship 5 of the 17 Vossk-made items, attr 60; the carrier 6 of the other
-//               items of tech level 4+; 1-2 of each, 10-20 rounds of a secondary; into the hold) and energy cells (10-15 in
+//               gear (Store.Gear: the Vossk battleship 5 of the 17 Vossk-made items, attr 60; the carrier 6 of the Terran
+//               items of tech level 4+, RaceItem: not Vossk-made, home in a Terran system; 1-2 of each, 10-20 rounds of a
+//               secondary; into the hold) and energy cells (10-15 in
 //               store) at the station's prices x1.25; the store is the ship's for the visit (Store)
 //   fleet battle 3 % of the free-flight orbits in Terran and Vossk systems past step 103 (TrafficPlan.AddFleetBattle): a
 //               Terran carrier or battleship and the Vossk battleship side by side 80 000 units apart, each with its turrets
@@ -321,7 +322,7 @@ namespace GoF2Remake.World
             {
                 if (left.TryGetValue(item, out int n)) return n;
                 var it = db != null ? db.Item(item) : null;
-                n = it == null || IsBlueprintProduct(it) || (it.TypeId <= 3 && !RaceItem(it, race)) ? 0
+                n = it == null || IsBlueprintProduct(it) || (it.TypeId <= 3 && !RaceItem(db, it, race)) ? 0
                   : item == GalaxyMap.EnergyCellItem ? Random.Range(CellsMin, CellsMax + 1) : Random.Range(AmmoMin, AmmoMax + 1);
                 left[item] = n;
                 return n;
@@ -330,13 +331,13 @@ namespace GoF2Remake.World
             public void Take(Database db, int item, int n) => left[item] = Mathf.Max(0, Left(db, item) - n);
 
             /// <summary>The weapons and equipment it sells into the hold: the Vossk battleship VosskGear of the Vossk-made
-            /// items, the carrier TerranGear of the others (tech level 4+); 1-2 of each, 10-20 rounds of a secondary.</summary>
+            /// items, the carrier TerranGear of the Terran ones (tech level 4+); 1-2 of each, 10-20 rounds of a secondary.</summary>
             public List<int> Gear(Database db)
             {
                 if (gear != null) return gear;
                 gear = new List<int>();
                 if (db == null) return gear;
-                var pool = db.Items.FindAll(it => ArmoryItem(it, race));
+                var pool = db.Items.FindAll(it => ArmoryItem(db, it, race));
                 for (int k = 0; k < (race == 1 ? VosskGear : TerranGear) && pool.Count > 0; k++)
                 {
                     var it = pool[Random.Range(0, pool.Count)];
@@ -351,14 +352,24 @@ namespace GoF2Remake.World
         public static bool IsBlueprintProduct(ItemData it) => it != null && it.blueprint != null && it.blueprint.Count > 0;
 
         /// <summary>An item of 'race''s make: the Vossk's are the Vossk-made ones (attr 60, which the original sells only in
-        /// Vossk systems, Generator::getItemBuyList), the Terrans' every other.</summary>
-        public static bool RaceItem(ItemData it, int race) => it != null && (it.Attr(60) == 1) == (race == 1);
+        /// Vossk systems, Generator::getItemBuyList); the Terrans' the others whose home system (attr 4, lowestPriceSystem:
+        /// where it is cheapest and most stocked) is a Terran one. The original's data names no other maker; the user asked
+        /// for Terran items only at the carrier (every non-Vossk item before: Nivelian and Midorian ones too).</summary>
+        public static bool RaceItem(Database db, ItemData it, int race)
+        {
+            if (it == null) return false;
+            bool vosskMade = it.Attr(60) == 1;
+            if (race == 1) return vosskMade;   // the Vossk
+            if (vosskMade) return false;
+            var home = db?.Systems.Find(s => s.index == it.lowestPriceSystem);
+            return home != null && home.raceId == race;
+        }
 
         /// <summary>Gear a capital ship of 'race' may sell: a weapon or equipment of its make, priced and stocked somewhere
         /// (occurrence), saleable, no blueprint product, not the Khador Drive (85) or a signature (189-192); the Terrans'
         /// from tech level 4.</summary>
-        static bool ArmoryItem(ItemData it, int race) =>
-            it.TypeId <= 3 && it.maxPrice > 0 && it.occurrence > 0 && !IsBlueprintProduct(it) && RaceItem(it, race)
+        static bool ArmoryItem(Database db, ItemData it, int race) =>
+            it.TypeId <= 3 && it.maxPrice > 0 && it.occurrence > 0 && !IsBlueprintProduct(it) && RaceItem(db, it, race)
             && it.index != 85 && (it.index < 189 || it.index > 192) && (race == 1 || it.techLevel >= TerranGearTech)
             && Hangar.IsSaleable(it.index) && !Modding.ModContent.IsMissingItem(it.index) && Modding.ModUnlocks.ItemAvailable(it.index);
 
@@ -387,7 +398,7 @@ namespace GoF2Remake.World
                 int have = 0;
                 foreach (var x in Session.Equipment) if (x.item == e.item) have += Mathf.Max(0, x.amount);
                 int stock = store != null ? store.Left(db, e.item) : -1;
-                bool wrongRace = store != null && !RaceItem(it, store.race);
+                bool wrongRace = store != null && !RaceItem(db, it, store.race);
                 list.Add(new Offer { kind = OfferKind.Ammo, item = e.item, have = have, unitPrice = UnitPrice(db, e.item), stock = stock,
                                      notStocked = store != null && (IsBlueprintProduct(it) || wrongRace), wrongRace = wrongRace,
                                      room = Limit(Mathf.Max(0, AmmoCap - have), stock) });
