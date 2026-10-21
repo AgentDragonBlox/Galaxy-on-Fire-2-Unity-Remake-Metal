@@ -67,11 +67,11 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(1, HeldTrade.Due(50f, 300));
             Assert.AreEqual(1, HeldTrade.Due(5000f, 1));
             Assert.AreEqual(0, HeldTrade.Due(5000f, 0));
-            Assert.AreEqual(0f, HeldTrade.Progress(100f, 1, 4), "a click shows no fill");
-            Assert.AreEqual(0.25f, HeldTrade.Progress(200f, 1, 4), 1e-5f, "held, the fill is the share of the stack traded");
-            Assert.AreEqual(1f, HeldTrade.Progress(500f, 4, 4));
-            Assert.AreEqual(1f, HeldTrade.Progress(500f, 9, 4));
-            Assert.AreEqual(0f, HeldTrade.Progress(500f, 0, 0));
+            Assert.AreEqual(0f, HeldTrade.Progress(1, 4), "one unit (a click) shows no fill");
+            Assert.AreEqual(0.5f, HeldTrade.Progress(2, 4), 1e-5f, "from the second unit, the share of the stack traded");
+            Assert.AreEqual(1f, HeldTrade.Progress(4, 4));
+            Assert.AreEqual(1f, HeldTrade.Progress(9, 4));
+            Assert.AreEqual(0f, HeldTrade.Progress(0, 0));
         }
     }
 }

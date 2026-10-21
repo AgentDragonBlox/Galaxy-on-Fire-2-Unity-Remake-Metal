@@ -1677,7 +1677,7 @@ namespace GoF2Remake.UI
             if (!IsOpen || heldDirection == 0) return;
             int dir = heldDirection;
             int units = HeldTrade.Step(ref heldMs, ref holdDone, holdTotal, dtMs);
-            HeldTrade.SetFill(dir < 0 ? sellFill : buyFill, HeldTrade.Progress(heldMs, holdDone, holdTotal));
+            HeldTrade.SetFill(dir < 0 ? sellFill : buyFill, HeldTrade.Progress(holdDone, holdTotal));
             if (units > 0 && Trade(dir, false, units, true)) TradeTick(dir);   // each unit's button sound, pitched up
         }
     }
