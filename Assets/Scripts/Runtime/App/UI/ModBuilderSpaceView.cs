@@ -3,7 +3,7 @@
 // Stations (in their own orbit: the station at the centre, its planet and sun behind it) and Weapon fx (a firing range in the
 // builder's orbit: ModBuilderSpaceViewFx). The flight HUD hides and hands its Update over (FlightHud), the flight level holds
 // the player's ship still (SpaceLevel.HoldForBuilder) and the chase camera is off: this screen's camera orbits the station or
-// the range (drag turns, the middle button pans, the wheel zooms). The other kinds load the Station scene (ModBuilder.GoTo).
+// the range (drag turns, the middle button pans, the wheel zooms; on touch two fingers pinch and pan, TwoFingerTouch). The other kinds load the Station scene (ModBuilder.GoTo).
 // Stations: the project's stations.json (ProjectStation, Modding/README.md "Stations"): left the new stations and the changes
 // to others, right the name, its system (the game's, the project's or another mod's: a dependency), tech level, planet, the
 // look (a game station's, a .glb of its own or one of the game's models, its size and turn), what ships bump into, its
@@ -30,7 +30,8 @@ namespace GoF2Remake.UI
         // the orbit camera: the point it turns about, yaw / pitch (rad), distance (m)
         Vector3 pivot;
         float yaw = 0.7f, pitch = 0.25f, distance = 3000f, radius = 1000f;
-        bool dragging, panning;
+        bool dragging, panning, twoFingers;
+        readonly TwoFingerTouch touch2 = new TwoFingerTouch();
         Vector2 last;
         Vector2 pendingTurn;
 
@@ -161,7 +162,7 @@ namespace GoF2Remake.UI
                 float k = distance * 0.0012f;
                 pivot -= cam.right * d.x * k + cam.up * d.y * k;
             }
-            else if (dragging) pendingTurn += new Vector2(d.x, d.y);
+            else if (dragging && !twoFingers) pendingTurn += new Vector2(d.x, d.y);
         }
 
         void OnPointerUp(PointerUpEvent e)
@@ -192,6 +193,16 @@ namespace GoF2Remake.UI
                 }
             }
             if (kind == ModBuilder.Kind.WeaponFx) UpdateRange(dt);
+            // Touch: two fingers on the view pinch to zoom and move it (the first one went down on the view: not a panel).
+            twoFingers = touch2.Read(out float zoom, out var pan) && (dragging || panning);
+            if (twoFingers)
+            {
+                pendingTurn = Vector2.zero;
+                distance = Mathf.Clamp(distance * zoom, radius * 0.3f, radius * 12f);
+                var cam = level.mainCamera != null ? level.mainCamera.transform : null;
+                float k = distance * 0.0012f;
+                if (cam != null) pivot -= cam.right * pan.x * k + cam.up * pan.y * k;
+            }
             ApplyCamera(dt);
         }
 

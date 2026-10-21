@@ -1595,5 +1595,12 @@
  "kitExhaustColor": "Kolor wydechu",
  "kitExhaustColor2": "Drugi kolor",
  "mbTestStart": "Lot próbny: przed tobą piraci. Zadokuj na stacji (albo Esc > Wróć do Kreatora modów), aby wrócić.",
- "mpStartError": "Nie udało się rozpocząć sesji: {0}"
+ "mpStartError": "Nie udało się rozpocząć sesji: {0}",
+ "mbView": "Widok",
+ "mbViewFront": "Przód",
+ "mbViewBack": "Tył",
+ "mbViewLeft": "Lewo",
+ "mbViewRight": "Prawo",
+ "mbViewTop": "Góra",
+ "mbViewOrbit": "Orbita"
 }

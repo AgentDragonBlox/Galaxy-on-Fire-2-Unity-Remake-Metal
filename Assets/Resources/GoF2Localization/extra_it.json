@@ -1595,5 +1595,12 @@
  "kitExhaustColor": "Colore scarico",
  "kitExhaustColor2": "Secondo colore",
  "mbTestStart": "Volo di prova: pirati davanti. Attracca alla stazione (o Esc > Torna al Costruttore di mod) per tornare.",
- "mpStartError": "Impossibile avviare la sessione: {0}"
+ "mpStartError": "Impossibile avviare la sessione: {0}",
+ "mbView": "Vista",
+ "mbViewFront": "Davanti",
+ "mbViewBack": "Dietro",
+ "mbViewLeft": "Sinistra",
+ "mbViewRight": "Destra",
+ "mbViewTop": "Sopra",
+ "mbViewOrbit": "Orbita"
 }

@@ -1595,5 +1595,12 @@
  "kitExhaustColor": "لون العادم",
  "kitExhaustColor2": "اللون الثاني",
  "mbTestStart": "رحلة تجريبية: قراصنة أمامك. التحم بالمحطة (أو Esc > العودة إلى Mod Builder) للعودة.",
- "mpStartError": "تعذر بدء الجلسة: {0}"
+ "mpStartError": "تعذر بدء الجلسة: {0}",
+ "mbView": "العرض",
+ "mbViewFront": "أمام",
+ "mbViewBack": "خلف",
+ "mbViewLeft": "يسار",
+ "mbViewRight": "يمين",
+ "mbViewTop": "أعلى",
+ "mbViewOrbit": "مدار"
 }

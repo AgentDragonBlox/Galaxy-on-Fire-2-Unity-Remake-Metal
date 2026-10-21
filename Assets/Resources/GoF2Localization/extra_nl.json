@@ -1595,5 +1595,12 @@
  "kitExhaustColor": "Uitlaatkleur",
  "kitExhaustColor2": "Tweede kleur",
  "mbTestStart": "Testvlucht: piraten vooruit. Meer aan bij het station (of Esc > Terug naar de Mod Builder) om terug te gaan.",
- "mpStartError": "Kan de sessie niet starten: {0}"
+ "mpStartError": "Kan de sessie niet starten: {0}",
+ "mbView": "Aanzicht",
+ "mbViewFront": "Voor",
+ "mbViewBack": "Achter",
+ "mbViewLeft": "Links",
+ "mbViewRight": "Rechts",
+ "mbViewTop": "Boven",
+ "mbViewOrbit": "Baan"
 }

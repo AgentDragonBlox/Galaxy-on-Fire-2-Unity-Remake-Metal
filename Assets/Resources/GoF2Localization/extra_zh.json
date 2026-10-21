@@ -1595,5 +1595,12 @@
  "kitExhaustColor": "尾焰颜色",
  "kitExhaustColor2": "第二颜色",
  "mbTestStart": "试飞：前方有太空盗。停泊在太空站（或 Esc > 返回 Mod Builder）即可返回。",
- "mpStartError": "无法启动会话：{0}"
+ "mpStartError": "无法启动会话：{0}",
+ "mbView": "视角",
+ "mbViewFront": "前",
+ "mbViewBack": "后",
+ "mbViewLeft": "左",
+ "mbViewRight": "右",
+ "mbViewTop": "上",
+ "mbViewOrbit": "环绕"
 }

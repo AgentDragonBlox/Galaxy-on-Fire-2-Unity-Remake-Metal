@@ -64,7 +64,8 @@ namespace GoF2Remake.UI
         enum Drag { None, Gizmo, Camera, Pan }
         Drag drag;
         Vector2 last, downAt;
-        float travel, pinch = -1f;
+        float travel;
+        readonly TwoFingerTouch touch2 = new TwoFingerTouch();
         Vector2 fling;
         // The drag's turn not yet applied (1080p pixels): pointer moves come at the mouse's rate, not the frame's (0, 1 or 2
         // in a frame), so turning by each one as it came stepped unevenly and felt like dropped frames; the camera now
@@ -174,6 +175,19 @@ namespace GoF2Remake.UI
             engineSlider = Add(engines, new Slider(0f, 1f) { value = 0f, focusable = false }, "mbv-engines-slider");
             engineSlider.RegisterValueChangedCallback(e => { engineLevel = e.newValue; ApplyEngines(); });
             ApplyEngines();
+            // The views: the ship from the front, back, sides and above (ModelViewer.Angles, the AI tools' angles), centred.
+            Add(engines, new Label(T("mbView", "View").ToUpperInvariant()), "mbv-engines-title", "mbv-views-title", "gof-semibold");
+            var views = Add(engines, new VisualElement(), "mbv-views");
+            foreach (var (angle, key, english) in ViewButtons)
+            {
+                var b = Add(views, new Button(() => ShowAngle(angle)) { text = T(key, english).ToUpperInvariant(), focusable = false },
+                            "mbv-view-button", "gof-semibold");
+                b.RegisterCallback<PointerDownEvent>(_ => sound(true), TrickleDown.TrickleDown);
+            }
+            // Orbit: back around the ship's centre after a pan (the middle click's; touch had no way back from two fingers).
+            var orbit = Add(views, new Button(CentreOrbit) { text = T("mbViewOrbit", "Orbit").ToUpperInvariant(), focusable = false },
+                            "mbv-view-button", "gof-semibold");
+            orbit.RegisterCallback<PointerDownEvent>(_ => sound(true), TrickleDown.TrickleDown);
             testFly = Add(root, new Button(StartTestFlight) { text = T("mbTestFly", "Test fly").ToUpperInvariant() }, "mbv-testfly", "gof-semibold");
             testFly.RegisterCallback<PointerDownEvent>(_ => sound(true), TrickleDown.TrickleDown);
             FinishLayout();
@@ -1387,24 +1401,45 @@ namespace GoF2Remake.UI
             level.Inspect.Turn(d.x * 0.005f, d.y * 0.005f);
         }
 
+        // The view buttons: ModelViewer.Angles' name, the text's key and its English. No view from below: the orbit stays
+        // above the pad (HangarInspect), and "top" stops at its pitch limit, ~83 deg.
+        static readonly (string angle, string key, string english)[] ViewButtons =
+        {
+            ("front", "mbViewFront", "Front"), ("back", "mbViewBack", "Back"), ("left", "mbViewLeft", "Left"),
+            ("right", "mbViewRight", "Right"), ("top", "mbViewTop", "Top"),
+        };
+
+        /// <summary>The orbit camera looking at the ship from 'angle' (its own frame), the distance kept, the pan centred.</summary>
+        void ShowAngle(string angle)
+        {
+            if (boundTransform == null || !level.Inspect.Active) return;
+            var from = ModelViewer.Angles.First(a => a.name == angle).from;
+            pendingTurn = fling = Vector2.zero;
+            level.Inspect.ResetPan();
+            level.Inspect.SetView(boundTransform.TransformDirection(from.normalized), 0f);
+        }
+
+        /// <summary>The orbit back around the ship's centre (the pan undone), the angle and distance kept.</summary>
+        void CentreOrbit()
+        {
+            if (!level.Inspect.Active) return;
+            pendingTurn = fling = Vector2.zero;
+            level.Inspect.ResetPan();
+        }
+
         void UpdateCamera(float dt)
         {
             if (!InHangar || !ShipKind(kind)) return;
             if (!level.Inspect.Active && boundTransform != null && !level.PlayerFlying) level.BeginInspect(0.55f);
-            var ts = Touchscreen.current;
-            int down = 0;
-            if (ts != null) foreach (var t in ts.touches) if (t.press.isPressed) down++;
-            if (down >= 2)
+            // Touch: two fingers pinch to zoom and move the view (the middle button's pan; TwoFingerTouch).
+            if (touch2.Read(out float zoom, out var pan))
             {
-                Vector2 a = Vector2.zero, b = Vector2.zero; int n = 0;
-                foreach (var t in ts.touches) if (t.press.isPressed) { if (n == 0) a = t.position.ReadValue(); else if (n == 1) b = t.position.ReadValue(); n++; }
-                float span = (a - b).magnitude;
-                if (pinch > 1f && span > 1f) level.Inspect.Zoom(pinch / span);
-                pinch = span;
+                if (zoom != 1f) level.Inspect.Zoom(zoom);
+                if (pan != Vector2.zero) level.Inspect.Pan(pan);
                 if (drag == Drag.Camera) drag = Drag.None;
+                pendingTurn = fling = Vector2.zero;
                 return;
             }
-            pinch = -1f;
             if (pendingTurn != Vector2.zero)
             {
                 var step = pendingTurn * (1f - Mathf.Exp(-dt / OrbitEaseMs));

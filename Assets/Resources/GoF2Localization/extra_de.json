@@ -1595,5 +1595,12 @@
  "kitExhaustColor": "Strahlfarbe",
  "kitExhaustColor2": "Zweite Farbe",
  "mbTestStart": "Testflug: Piraten voraus. Dock an der Station an (oder Esc > Zurück zum Mod Builder), um zurückzukehren.",
- "mpStartError": "Die Sitzung konnte nicht gestartet werden: {0}"
+ "mpStartError": "Die Sitzung konnte nicht gestartet werden: {0}",
+ "mbView": "Ansicht",
+ "mbViewFront": "Vorne",
+ "mbViewBack": "Hinten",
+ "mbViewLeft": "Links",
+ "mbViewRight": "Rechts",
+ "mbViewTop": "Oben",
+ "mbViewOrbit": "Orbit"
 }

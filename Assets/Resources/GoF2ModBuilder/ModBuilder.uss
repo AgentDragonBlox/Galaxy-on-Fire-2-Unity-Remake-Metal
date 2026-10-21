@@ -558,6 +558,25 @@
     margin: 0;
 }
 
+/* The view buttons under the engines (ModBuilderView.ShowAngle). */
+.mbv-views-title {
+    margin-top: 6px;
+}
+
+.mbv-views {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: 4px 0 6px 0;
+}
+
+.mbv-view-button {
+    flex-grow: 1;
+    margin: 2px;
+    padding: 5px 6px;
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
 /* ---- bottom ---- */
 
 .mbv-testfly {

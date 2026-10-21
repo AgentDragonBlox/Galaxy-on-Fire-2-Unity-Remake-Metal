@@ -200,7 +200,7 @@ namespace GoF2Remake.World
 
         static bool Touch => GoF2Remake.UI.InputMode.Current == GoF2Remake.UI.InputKind.Touch;
         /// <summary>The balls and arrows larger with touch input.</summary>
-        static float TouchSize => Touch ? 1.5f : 1f;
+        static float TouchSize => Touch ? 1.25f : 1f;
 
         /// <summary>How far from a handle a pointer still picks it (screen pixels): 'pixels' at 1080 p, and with touch input at
         /// least a fingertip, 'touchInches' at the screen's dpi (48 px at 1080 p when the dpi is unknown): 16 px on a phone's

@@ -1595,5 +1595,12 @@
  "kitExhaustColor": "एग्ज़ॉस्ट का रंग",
  "kitExhaustColor2": "दूसरा रंग",
  "mbTestStart": "टेस्ट उड़ान: आगे डाकू हैं। लौटने के लिए स्टेशन पर डॉक करें (या Esc > Mod Builder पर वापस)।",
- "mpStartError": "सत्र शुरू नहीं हो सका: {0}"
+ "mpStartError": "सत्र शुरू नहीं हो सका: {0}",
+ "mbView": "दृश्य",
+ "mbViewFront": "सामने",
+ "mbViewBack": "पीछे",
+ "mbViewLeft": "बाएँ",
+ "mbViewRight": "दाएँ",
+ "mbViewTop": "ऊपर",
+ "mbViewOrbit": "कक्षा"
 }

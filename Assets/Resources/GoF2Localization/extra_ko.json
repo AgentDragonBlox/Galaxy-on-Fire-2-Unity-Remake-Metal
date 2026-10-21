@@ -1595,5 +1595,12 @@
  "kitExhaustColor": "배기 색상",
  "kitExhaustColor2": "두 번째 색상",
  "mbTestStart": "시험 비행: 전방에 해적. 스테이션에 도킹하면 (또는 Esc > Mod Builder로 돌아가기) 돌아갑니다.",
- "mpStartError": "세션을 시작할 수 없습니다: {0}"
+ "mpStartError": "세션을 시작할 수 없습니다: {0}",
+ "mbView": "보기",
+ "mbViewFront": "앞",
+ "mbViewBack": "뒤",
+ "mbViewLeft": "왼쪽",
+ "mbViewRight": "오른쪽",
+ "mbViewTop": "위",
+ "mbViewOrbit": "궤도"
 }

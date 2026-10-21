@@ -1595,5 +1595,12 @@
  "kitExhaustColor": "Couleur de l'échappement",
  "kitExhaustColor2": "Deuxième couleur",
  "mbTestStart": "Vol d'essai : pirates droit devant. Amarre-toi à la station (ou Échap > Retour au Mod Builder) pour revenir.",
- "mpStartError": "Impossible de lancer la session : {0}"
+ "mpStartError": "Impossible de lancer la session : {0}",
+ "mbView": "Vue",
+ "mbViewFront": "Avant",
+ "mbViewBack": "Arrière",
+ "mbViewLeft": "Gauche",
+ "mbViewRight": "Droite",
+ "mbViewTop": "Dessus",
+ "mbViewOrbit": "Orbite"
 }

@@ -1595,5 +1595,12 @@
  "kitExhaustColor": "Цвет выхлопа",
  "kitExhaustColor2": "Второй цвет",
  "mbTestStart": "Пробный полёт: впереди пираты. Пристыкуйтесь к станции (или Esc > Назад в конструктор модов), чтобы вернуться.",
- "mpStartError": "Не удалось начать сеанс: {0}"
+ "mpStartError": "Не удалось начать сеанс: {0}",
+ "mbView": "Вид",
+ "mbViewFront": "Спереди",
+ "mbViewBack": "Сзади",
+ "mbViewLeft": "Слева",
+ "mbViewRight": "Справа",
+ "mbViewTop": "Сверху",
+ "mbViewOrbit": "Орбита"
 }

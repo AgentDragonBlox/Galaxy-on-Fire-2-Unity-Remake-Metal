@@ -5,7 +5,7 @@
 // the camera's lens, the light and fog, a hangar's flights and parked ships, the markers (each from the model's own nodes or
 // placed here: click in the room, or "From the view" for a camera; their coordinates), and which of the project's stations
 // use it. The station scene shows the room (ModBuilder.PreviewInterior: StationLevel builds it in place of the station's,
-// in the hangar or the Space Lounge); a free camera orbits it (StationLevel.FreeCamera: drag turns, the middle button pans,
+// in the hangar or the Space Lounge); a free camera orbits it (StationLevel.FreeCamera: drag turns, the middle button or two fingers pan (a pinch zooms),
 // the wheel zooms) and the markers show as coloured balls with their names; "Game camera" shows the room through its
 // "camera" marker as the game will. A change rebuilds the room (the game reads the project, then the scene loads again).
 
@@ -35,7 +35,8 @@ namespace GoF2Remake.UI
         // the free camera: the point it orbits, yaw / pitch (rad), distance (m)
         Vector3 roomPivot;
         float roomYaw, roomPitch, roomDistance = 300f, roomRadius = 300f;
-        bool roomDragging, roomPanning;
+        bool roomDragging, roomPanning, roomTwoFingers;
+        readonly TwoFingerTouch roomTouch2 = new TwoFingerTouch();
         Vector2 roomLast;
         float roomTravel;
 
@@ -434,6 +435,16 @@ namespace GoF2Remake.UI
             var room = RoomTransform;
             if (r != null && room != null && roomColliders.Count == 0 && !reloading && !reloadPending) BeginInteriorView();   // the room came after the screen
             level.FreeCamera = r != null && room != null && !gameCamera && roomColliders.Count > 0;
+            // Touch: two fingers on the room pinch to zoom and move the camera (TwoFingerTouch); never a marker's click.
+            roomTwoFingers = roomTouch2.Read(out float zoom, out var pan) && (roomDragging || roomPanning) && level.FreeCamera;
+            if (roomTwoFingers)
+            {
+                roomTravel = 1000f;
+                roomDistance = Mathf.Clamp(roomDistance * zoom, 1f, roomRadius * 5f);
+                var view = level.MainCamera != null ? level.MainCamera.transform : null;
+                float k = roomDistance * 0.0012f;
+                if (view != null) roomPivot -= view.right * pan.x * k + view.up * pan.y * k;
+            }
             if (level.FreeCamera) ApplyRoomCamera();
             ReadRoomKeys(dt);
             // The markers: a ball each (its size by the room's), their names over them.
@@ -535,7 +546,7 @@ namespace GoF2Remake.UI
                 float k = roomDistance * 0.0012f;
                 roomPivot -= cam.right * delta.x * k + cam.up * delta.y * k;
             }
-            else if (roomDragging)
+            else if (roomDragging && !roomTwoFingers)
             {
                 var turn = Settings.OrbitTurn(delta);   // #121: the camera views' own inversion
                 roomYaw += turn.x * 0.005f;

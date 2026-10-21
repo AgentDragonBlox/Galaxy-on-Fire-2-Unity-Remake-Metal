@@ -1595,5 +1595,12 @@
  "kitExhaustColor": "Color del escape",
  "kitExhaustColor2": "Segundo color",
  "mbTestStart": "Vuelo de prueba: piratas delante. Acopla en la estación (o Esc > Volver al Mod Builder) para regresar.",
- "mpStartError": "No se pudo iniciar la sesión: {0}"
+ "mpStartError": "No se pudo iniciar la sesión: {0}",
+ "mbView": "Vista",
+ "mbViewFront": "Frente",
+ "mbViewBack": "Detrás",
+ "mbViewLeft": "Izquierda",
+ "mbViewRight": "Derecha",
+ "mbViewTop": "Arriba",
+ "mbViewOrbit": "Órbita"
 }

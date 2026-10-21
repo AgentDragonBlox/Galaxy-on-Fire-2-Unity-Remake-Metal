@@ -1595,5 +1595,12 @@
  "kitExhaustColor": "排気の色",
  "kitExhaustColor2": "第2の色",
  "mbTestStart": "テスト飛行：前方に海賊。ステーションにドッキングする（またはEsc > Mod Builderに戻る）と戻ります。",
- "mpStartError": "セッションを開始できませんでした: {0}"
+ "mpStartError": "セッションを開始できませんでした: {0}",
+ "mbView": "視点",
+ "mbViewFront": "前",
+ "mbViewBack": "後ろ",
+ "mbViewLeft": "左",
+ "mbViewRight": "右",
+ "mbViewTop": "上",
+ "mbViewOrbit": "周回"
 }
