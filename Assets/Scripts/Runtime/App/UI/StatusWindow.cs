@@ -76,6 +76,16 @@ namespace GoF2Remake.UI
 
         public bool IsOpen => root.ClassListContains("status-open");
 
+        /// <summary>Modified: the labels set while this window was built, read again from the table loaded now
+        /// (StationMenu.RefreshTexts on Localization.Changed). What Open / Build writes already reads it as it goes.</summary>
+        public void RefreshTexts()
+        {
+            close.text = Localization.Extra("hudBack", "BACK");
+            if (statusTab != null) statusTab.text = T(169).ToUpperInvariant();
+            if (medalsTab != null) medalsTab.text = T(168).ToUpperInvariant();
+            if (IsOpen) { Build(); ShowTab(showMedals); }
+        }
+
         public void Open()
         {
             root.AddToClassList("status-open");

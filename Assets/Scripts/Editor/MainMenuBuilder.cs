@@ -40,12 +40,9 @@ namespace GoF2Remake.EditorTools
             "TERRANFEMALE_MISSION_RADIO_WON_1", "TERRANMALE_MISSION_RADIO_START_5",
         };
 
-        static readonly (string code, string name)[] Languages =
-        {
-            ("en", "English"), ("de", "Deutsch"), ("fr", "Français"), ("es", "Español"),
-            ("it", "Italiano"), ("nl", "Nederlands"), ("pl", "Polski"), ("ru", "Русский"), ("pt", "Português (Brasil)"),
-            ("zh", "简体中文"), ("hi", "हिन्दी"),
-        };
+        // Modified: the one list both menus read (LanguageTables.Offered): the main menu's buttons here, the in-game
+        // Options' language row at runtime.
+        static (string code, string name)[] Languages => GoF2Remake.Data.LanguageTables.Offered;
 
         [MenuItem("GoF2/Scenes/Main Menu Scene", priority = 100)]
         public static void Build()

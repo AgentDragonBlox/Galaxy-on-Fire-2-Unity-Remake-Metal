@@ -516,6 +516,15 @@ namespace GoF2Remake.UI
                 difficulty.inGameOnly = true;
                 list.Add(difficulty);
             }
+            // Modified: the text language in a running game's menus too (the main menu has its own language buttons, which
+            // this row stands in for; the same list, LanguageTables.Offered). Loading the table raises Localization.Changed,
+            // which the station menu and the flight HUD re-label themselves on, so it applies without leaving the game.
+            var language = Choice("language", OptionPage.Language, () => Localization.Get(0), false,
+                () => LanguageTables.Offered.Select(l => l.name).ToArray(),
+                () => Array.IndexOf(LanguageTables.Offered.Select(l => l.code).ToArray(), Settings.Language) is var li && li >= 0 ? li : 0,
+                i => SetLanguage(LanguageTables.Offered[Mathf.Clamp(i, 0, LanguageTables.Offered.Length - 1)].code));
+            language.inGameOnly = true;
+            list.Add(language);
             // Remake: the testing tools (Cheats.Unlocked), also opened by F10, LB + RB or three fingers on the main menu.
             var debug = Toggle("debugTools", OptionPage.Gameplay, () => X("debugTools", "Debug tools"), () => Cheats.Unlocked, v => Cheats.Unlocked = v);
             debug.description = () => X("debugToolsHelp", "A Debug button in the main menu (the mission select) and a Debug page in the pause and station menus (cheats, items, spawns).");
@@ -567,6 +576,16 @@ namespace GoF2Remake.UI
 
         static OptionDef Toggle(string id, OptionPage page, Func<string> label, Func<bool> get, Action<bool> set) =>
             new OptionDef { id = id, page = page, kind = OptionKind.Toggle, label = label, getBool = get, setBool = set };
+
+        /// <summary>Modified: the language of the running game: the setting, then the table (Localization.Load raises
+        /// Changed, and loads the remake's own texts with it). The main menu does the same in its own buttons.</summary>
+        static void SetLanguage(string code)
+        {
+            if (code == Settings.Language && Localization.Language == code) return;
+            Settings.Language = code;
+            var table = LanguageTables.TableFor(code);
+            if (table != null) Localization.Load(code, table);
+        }
 
         static OptionDef Choice(string id, OptionPage page, Func<string> label, bool segmented, Func<string[]> choices, Func<int> get,
                                 Action<int> set, Func<string> description = null) =>

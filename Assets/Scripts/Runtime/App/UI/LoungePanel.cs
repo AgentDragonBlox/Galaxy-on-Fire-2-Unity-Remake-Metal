@@ -71,6 +71,14 @@ namespace GoF2Remake.UI
 
         // ---- visitors ---------------------------------------------------------------------------------------
 
+        /// <summary>Modified: the labels set while this window was built, read again from the table loaded now
+        /// (StationMenu.RefreshTexts on Localization.Changed). What Open / Build writes already reads it as it goes.</summary>
+        public void RefreshTexts()
+        {
+            if (chatClose != null) chatClose.text = Localization.Extra("hudBack", "BACK");
+            if (built) Build();   // the visitors' plates and roles; one never shown builds in the new language anyway
+        }
+
         void Build()
         {
             built = true;

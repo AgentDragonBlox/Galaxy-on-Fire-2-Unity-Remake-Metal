@@ -108,6 +108,7 @@ namespace GoF2Remake.UI
                 panelRenderer.panelSettings = runtimePanel;
             }
             InputMode.Changed += ApplyInputMode;
+            Localization.Changed += RefreshTexts;   // Modified: the in-game Options' language row applies at once
             if (level != null) level.ViewChanged += OnViewChanged;
         }
 
@@ -115,6 +116,7 @@ namespace GoF2Remake.UI
         {
             panelRenderer?.UnregisterUIReloadCallback(OnUIReload);
             InputMode.Changed -= ApplyInputMode;
+            Localization.Changed -= RefreshTexts;
             if (level != null) level.ViewChanged -= OnViewChanged;
         }
 
@@ -228,42 +230,7 @@ namespace GoF2Remake.UI
             saveBack = Bind("saveBack", () => ShowSystemPage(SysPage.Main));
             BuildSystemExtras();
 
-            var st = level != null ? level.Station : null;
-            string T(int id) => Localization.Get(id);
-            root.Q<Label>("stationTitle").text = st == null ? "" :
-                (st.index == 101 ? st.name : $"{st.name} {T(136)}").ToUpperInvariant();   // no suffix for station 101
-            root.Q<Label>("systemName").text = st == null ? "" : $"{st.systemName} {T(137)}";
-            // Multiplayer: the faction holding this station (NetFactions).
-            string holder = st == null ? "" : GoF2Remake.Multiplayer.NetFactionsClient.OwnerText(st.index);
-            if (holder.Length > 0) root.Q<Label>("systemName").text += $"  ·  {holder}";
-            root.Q<Label>("techLevel").text = st == null ? "" : $"{T(133)}: {st.techLevel}";
-            int race = level != null ? level.Layout.raceId : -1;
-            var raceLabel = root.Q<Label>("raceName");
-            raceLabel.text = race >= 0 && race < 4 ? T(406 + race) : "";
-            raceLabel.style.display = raceLabel.text.Length > 0 ? DisplayStyle.Flex : DisplayStyle.None;
-            ShowRaceIcon(raceLabel.parent, race, st != null ? st.index : -1);
-            hangarButton.text = T(167).ToUpperInvariant();
-            loungeButton.text = T(398).ToUpperInvariant();
-            mapButton.text = T(177).ToUpperInvariant();
-            missionsButton.text = T(129).ToUpperInvariant();
-            statusButton.text = T(169).ToUpperInvariant();
-            inspectButton.text = Localization.Extra("stationInspect", "INSPECT SHIP");
-            customizeButton.text = Localization.Extra("stationCustomize", "CUSTOMIZE SHIP");
-            launchButton.text = Localization.Extra("stationLaunch", "LAUNCH");
-            // Remake: its key on the button, L with keys and mouse, X with a controller (the root's input-* class picks one).
-            var launchKey = InputGlyph.Key("L");
-            launchKey.AddToClassList("launch-glyph--key");
-            var launchPad = InputGlyph.Pad(PadButton.X);
-            launchPad.AddToClassList("launch-glyph--pad");
-            InputGlyph.WithGlyphs(launchButton, launchKey, launchPad);
-            root.Q<Button>("loungeBack").text = Localization.Extra("hudBack", "BACK");
-            dialogNo.text = T(135).ToUpperInvariant();
-            root.Q<Button>("menuButton").text = Localization.Extra("hudMenu", "MENU");
-            root.Q<Label>("systemMenuTitle").text = T(172).ToUpperInvariant();       // Menu
-            saveGameButton.text = T(30).ToUpperInvariant();                          // Save game
-            mainMenuButton.text = Modding.ModBuilder.PlayTesting ? Localization.Extra("mbBackToBuilder", "Back to Mod Builder").ToUpperInvariant()
-                                : T(522).ToUpperInvariant();                       // Back to Main Menu
-            systemClose.text = saveBack.text = Localization.Extra("hudBack", "BACK");
+            RefreshTexts();
 
             HookDrag();
             root.RegisterCallback<PointerDownEvent>(OnPointerDown, TrickleDown.TrickleDown);
@@ -318,6 +285,65 @@ namespace GoF2Remake.UI
         }
 
         // ---- screens -----------------------------------------------------------------------------------
+
+        /// <summary>Modified: every text this document owns, read from the table loaded now. Called while building and again
+        /// on Localization.Changed, so the in-game Options' language row applies without leaving the station
+        /// (OptionsCatalog.SetLanguage). The windows built with this one re-label themselves the same way; the ones made
+        /// when they open (the star map, the Options page, the dialogs) already read the table as they are built.</summary>
+        public void RefreshTexts()
+        {
+            if (root == null) return;
+            var st = level != null ? level.Station : null;
+            string T(int id) => Localization.Get(id);
+            root.Q<Label>("stationTitle").text = st == null ? "" :
+                (st.index == 101 ? st.name : $"{st.name} {T(136)}").ToUpperInvariant();   // no suffix for station 101
+            root.Q<Label>("systemName").text = st == null ? "" : $"{st.systemName} {T(137)}";
+            // Multiplayer: the faction holding this station (NetFactions).
+            string holder = st == null ? "" : GoF2Remake.Multiplayer.NetFactionsClient.OwnerText(st.index);
+            if (holder.Length > 0) root.Q<Label>("systemName").text += $"  ·  {holder}";
+            root.Q<Label>("techLevel").text = st == null ? "" : $"{T(133)}: {st.techLevel}";
+            int race = level != null ? level.Layout.raceId : -1;
+            var raceLabel = root.Q<Label>("raceName");
+            raceLabel.text = race >= 0 && race < 4 ? T(406 + race) : "";
+            raceLabel.style.display = raceLabel.text.Length > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            ShowRaceIcon(raceLabel.parent, race, st != null ? st.index : -1);
+            hangarButton.text = T(167).ToUpperInvariant();
+            loungeButton.text = T(398).ToUpperInvariant();
+            mapButton.text = T(177).ToUpperInvariant();
+            missionsButton.text = T(129).ToUpperInvariant();
+            statusButton.text = T(169).ToUpperInvariant();
+            inspectButton.text = Localization.Extra("stationInspect", "INSPECT SHIP");
+            customizeButton.text = Localization.Extra("stationCustomize", "CUSTOMIZE SHIP");
+            // Remake: its key on the button, L with keys and mouse, X with a controller (the root's input-* class picks one).
+            // The glyphs are children of the button, which then holds its text in a Label of its own, so it is built again
+            // rather than relabelled: setting .text on a button with children leaves the old Label in place.
+            launchButton.Clear();
+            launchButton.text = Localization.Extra("stationLaunch", "LAUNCH");
+            var launchKey = InputGlyph.Key("L");
+            launchKey.AddToClassList("launch-glyph--key");
+            var launchPad = InputGlyph.Pad(PadButton.X);
+            launchPad.AddToClassList("launch-glyph--pad");
+            InputGlyph.WithGlyphs(launchButton, launchKey, launchPad);
+            root.Q<Button>("loungeBack").text = Localization.Extra("hudBack", "BACK");
+            dialogNo.text = T(135).ToUpperInvariant();
+            root.Q<Button>("menuButton").text = Localization.Extra("hudMenu", "MENU");
+            root.Q<Label>("systemMenuTitle").text = T(172).ToUpperInvariant();       // Menu
+            saveGameButton.text = T(30).ToUpperInvariant();                          // Save game
+            mainMenuButton.text = Modding.ModBuilder.PlayTesting ? Localization.Extra("mbBackToBuilder", "Back to Mod Builder").ToUpperInvariant()
+                                : T(522).ToUpperInvariant();                       // Back to Main Menu
+            systemClose.text = saveBack.text = Localization.Extra("hudBack", "BACK");
+            // The system menu's own entries (BuildSystemExtras names them as it builds them).
+            if (newGameButton != null) newGameButton.text = T(28).ToUpperInvariant();
+            if (loadGameButton != null) loadGameButton.text = T(29).ToUpperInvariant();
+            if (optionsButton != null) optionsButton.text = T(31).ToUpperInvariant();
+            if (aboutButton != null) aboutButton.text = T(43).ToUpperInvariant();
+            RefreshViewTitle();
+            hangarWindow?.RefreshTexts();
+            missions?.RefreshTexts();
+            status?.RefreshTexts();
+            lounge?.RefreshTexts();
+            BuildHints(InputMode.Current);
+        }
 
         void OnViewChanged()
         {
@@ -2862,6 +2888,10 @@ namespace GoF2Remake.UI
         static void ShowRaceIcon(VisualElement info, int race, int station = -1)
         {
             if (info == null) return;
+            // Called again (RefreshTexts on a language change): the first call moved the box's lines into the "info-lines"
+            // column, so a label's parent is that column now, not the box. Back to the box, or every call wrapped the column
+            // in another one with another emblem, squeezing the text into a narrower strip each time.
+            if (info.ClassListContains("info-lines") && info.parent != null) info = info.parent;
             var icon = info.Q("raceIcon");
             if (icon == null)
             {

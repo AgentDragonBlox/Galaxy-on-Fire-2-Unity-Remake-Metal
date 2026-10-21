@@ -4,7 +4,8 @@
 // the tabs Sound / Graphics / Controls / Gameplay / Language (only those with rows), one scrolling page of OptionsCatalog
 // rows per tab, then Back and Default settings (497) under them; Default settings asks first, in the footer's place,
 // whether to reset only the shown tab or every tab (or Cancel). Every option of the catalog is here, the in-game ones
-// (OptionDef.inGameOnly) too; the text language stays in the main menu (the HUDs would need rebuilding).
+// (OptionDef.inGameOnly) too, the text language among them: the station menu and the flight HUD re-label themselves on
+// Localization.Changed, so it applies without leaving the game (the main menu keeps its own language buttons).
 // The host drives the keys / controller: NavItems is what Up / Down walks (the tab row, the active tab's rows, Back,
 // Default settings); Q / E and LB / RB switch tabs (StepTab). Rows are focusable for a host that uses the panel's focus
 // (the station); the pause menu moves a highlight instead (Select).
@@ -136,7 +137,7 @@ namespace GoF2Remake.UI
             // Cancel (Esc / B too), so a stray press resets nothing.
             prompt = new VisualElement();
             prompt.AddToClassList("options-reset-prompt");
-            var question = new Label(OptionsCatalog.ResetQuestion) { pickingMode = PickingMode.Ignore };
+            question = new Label(OptionsCatalog.ResetQuestion) { pickingMode = PickingMode.Ignore };
             question.AddToClassList("options-reset-question");
             prompt.Add(question);
             CancelButton = PromptButton(Localization.Get(425).ToUpperInvariant(), () => CloseResetPrompt());   // Cancel
@@ -147,9 +148,29 @@ namespace GoF2Remake.UI
             footer.Add(prompt);
 
             SelectTab(0, false);
+            // Modified: the language row (OptionsCatalog "language") changes the table while this page is open: re-label it
+            // then. Only while it is on a panel, so the views the menus drop on leaving the page don't stay subscribed.
+            Root.RegisterCallback<AttachToPanelEvent>(_ => Localization.Changed += RefreshTexts);
+            Root.RegisterCallback<DetachFromPanelEvent>(_ => Localization.Changed -= RefreshTexts);
+        }
+
+        /// <summary>Modified: every text of the page from the table loaded now: the title, the tabs, the footer and the
+        /// defaults prompt, and each row (OptionControl.Refresh re-reads its label, values and description).</summary>
+        public void RefreshTexts()
+        {
+            title.text = T(31);
+            foreach (var tab in tabs) tab.button.text = OptionsCatalog.PageTitle(tab.page).ToUpperInvariant();
+            BackButton.text = "‹  " + T(170);
+            DefaultsButton.text = T(497);
+            question.text = OptionsCatalog.ResetQuestion;
+            CancelButton.text = Localization.Get(425).ToUpperInvariant();
+            ResetTabButton.text = OptionsCatalog.ResetTabLabel(tabs[TabIndex].page).ToUpperInvariant();
+            ResetAllButton.text = OptionsCatalog.ResetAllLabel.ToUpperInvariant();
+            RefreshAll();
         }
 
         readonly VisualElement prompt;
+        readonly Label question;
         public readonly Button CancelButton, ResetTabButton, ResetAllButton;
 
         Button PromptButton(string text, Action action)

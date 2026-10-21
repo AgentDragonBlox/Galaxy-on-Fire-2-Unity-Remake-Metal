@@ -62,6 +62,7 @@ namespace GoF2Remake.UI
         readonly VisualElement detailMods = ItemInfo.NewModBlock();   // a ship's Kaamo Club mods, under its description
         readonly Label detailName, detailSub, detailText, tradeStock, tradeCargo, tradeMounted, tradePrice, cargoLabel, creditsLabel, tradeStockLabel, tradeCargoLabel, sellLabel, buyLabel;
         readonly Button tabShip, tabShop, tabBlueprints, actionButton, actionButton2;
+        readonly Button closeButton;   // Modified: RefreshTexts relabels it (root is the constructor's, not a field)
         /// <summary>Tab 4: the blueprint whose ingredients are listed (-1 = the blueprint list).</summary>
         int editing = -1;
         /// <summary>Item+0x3c blueprintAmount: units moved from the hold but not committed yet, per ingredient.</summary>
@@ -151,7 +152,8 @@ namespace GoF2Remake.UI
             tabBlueprints.text = T(272);
             sellLabel = root.Q<Label>("sellLabel");
             buyLabel = root.Q<Label>("buyLabel");
-            root.Q<Button>("hangarClose").text = Localization.Extra("hudBack", "BACK");
+            closeButton = root.Q<Button>("hangarClose");
+            closeButton.text = Localization.Extra("hudBack", "BACK");
 
             // Modified: the main menu's click sound (the release) on the tabs.
             tabShip.clicked += () => { menu.PlayRelease(); SetTab(Tab.Ship); };
@@ -295,6 +297,25 @@ namespace GoF2Remake.UI
         }
 
         // ---- open / close ------------------------------------------------------------------------------------
+
+        /// <summary>Modified: the labels set while this window was built, read again from the table loaded now
+        /// (StationMenu.RefreshTexts on Localization.Changed). What Open / Rebuild writes already reads it as it goes.</summary>
+        public void RefreshTexts()
+        {
+            string T(int id) => Localization.Get(id).ToUpperInvariant();
+            tabShip.text = T(183);
+            tabShop.text = T(185);
+            tabBlueprints.text = T(272);
+            if (closeButton != null) closeButton.text = Localization.Extra("hudBack", "BACK");
+            if (detailDescTitle != null) detailDescTitle.text = Localization.Get(280).ToUpperInvariant();
+            if (IsOpen)
+            {
+                // Not SetTab: it commits pending trades and auto-equips (game actions, not a re-label). Rebuild only lays
+                // the rows out again, keeping the selection and the scroll.
+                tabShop.text = Localization.Get(hangar.Storage ? 186 : 185).ToUpperInvariant();   // "Store" at the owned club
+                Rebuild();
+            }
+        }
 
         public void Open()
         {

@@ -14,5 +14,24 @@ namespace GoF2Remake.Data
         public TextAsset[] tables;
 
         public static LanguageTables Load() => Resources.Load<LanguageTables>(ResourceName);
+
+        /// <summary>Modified: the languages the menus offer, in their order. The asset above references every text_*.json,
+        /// Japanese, Korean and Arabic included, which are not offered (not checked in game); the main menu's scene builder
+        /// writes its language buttons from this list and Options reads its language row from it, so the two agree.</summary>
+        public static readonly (string code, string name)[] Offered =
+        {
+            ("en", "English"), ("de", "Deutsch"), ("fr", "Français"), ("es", "Español"),
+            ("it", "Italiano"), ("nl", "Nederlands"), ("pl", "Polski"), ("ru", "Русский"), ("pt", "Português (Brasil)"),
+            ("zh", "简体中文"), ("hi", "हिन्दी"),
+        };
+
+        /// <summary>Modified: the text table for a language code (null when the asset has none).</summary>
+        public static TextAsset TableFor(string code)
+        {
+            var t = Load();
+            if (t == null || t.codes == null || t.tables == null) return null;
+            int i = System.Array.IndexOf(t.codes, code);
+            return i >= 0 && i < t.tables.Length ? t.tables[i] : null;
+        }
     }
 }

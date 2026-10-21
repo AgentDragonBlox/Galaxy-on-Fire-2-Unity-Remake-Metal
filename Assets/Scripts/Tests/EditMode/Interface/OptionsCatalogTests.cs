@@ -20,9 +20,11 @@ namespace GoF2Remake.Tests
     [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public class OptionsCatalogTests : SandboxTest
     {
-        /// <summary>Rows that aren't a Settings value: the game's difficulty (Session), the Debug tools (Cheats), the tilt
-        /// steering choice (calibrates the device when turned on), buttons.</summary>
-        static readonly HashSet<string> NotSettings = new HashSet<string> { "difficulty", "debugTools", "steering" };
+        /// <summary>Rows that aren't a Settings value, or that "Default settings" deliberately keeps: the game's difficulty
+        /// (Session), the Debug tools (Cheats), the tilt steering choice (calibrates the device when turned on), buttons,
+        /// and the text language (Settings.ResetToDefaults keeps it: a Defaults button should not put a player back into a
+        /// language they can't read).</summary>
+        static readonly HashSet<string> NotSettings = new HashSet<string> { "difficulty", "debugTools", "steering", "language" };
 
         DataUiTestKit.PrefsSnapshot prefs;
         DataUiTestKit.TextLanguage english;

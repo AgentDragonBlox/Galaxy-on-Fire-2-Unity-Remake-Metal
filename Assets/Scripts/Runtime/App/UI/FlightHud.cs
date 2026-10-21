@@ -127,6 +127,7 @@ namespace GoF2Remake.UI
                 panelRenderer.panelSettings = runtimePanel;
             }
             InputMode.Changed += ApplyInputMode;
+            Localization.Changed += RefreshTexts;   // Modified: the in-game Options' language row applies at once
             GameControls.Changed += ApplyInputMode;   // a rebound key: the hints show it
             Gun.LockShaken += OnLockShaken;
             ShipController.DampenersChanged += OnDampeners;
@@ -164,6 +165,7 @@ namespace GoF2Remake.UI
             if (health != null) health.GameOverStarted -= OnGameOver;
             panelRenderer?.UnregisterUIReloadCallback(OnUIReload);
             InputMode.Changed -= ApplyInputMode;
+            Localization.Changed -= RefreshTexts;
             GameControls.Changed -= ApplyInputMode;
             Gun.LockShaken -= OnLockShaken;
             ShipController.DampenersChanged -= OnDampeners;
@@ -298,10 +300,24 @@ namespace GoF2Remake.UI
             if (menuIcon != null) root.Q("autopilotMenuIcon").style.backgroundImage = new StyleBackground(menuIcon);
             BuildTouchControls();
 
-            root.Q<Label>("dockLabel").text = Localization.Extra("hudDock", "DOCK");
+            RefreshTexts();
 
             ApplyInputMode();
             UpdateLayout();
+        }
+
+        /// <summary>Modified: the few labels this HUD writes once while it is built, read again from the table loaded now
+        /// (Localization.Changed), so the in-game Options' language row applies in flight without leaving the level. Every
+        /// other text here is written as it is shown (the lock plate, HUD messages, the menu titles, the orbit information)
+        /// and already reads the table each time; the key hints are rebuilt with BuildHints.</summary>
+        public void RefreshTexts()
+        {
+            if (root == null) return;
+            if (jumpChargeLabel != null) jumpChargeLabel.text = Localization.Get(318).ToUpperInvariant();   // Drive charging
+            root.Q<Label>("gameOverTitle").text = Localization.Get(319).ToUpperInvariant();                // Game Over
+            root.Q<Label>("autopilotMenuTitle").text = Localization.Get(571).ToUpperInvariant();           // Autopilot
+            root.Q<Label>("dockLabel").text = Localization.Extra("hudDock", "DOCK");
+            BuildHints(InputMode.Current);
         }
 
         /// <summary>Radar::draw's faint radar ellipse (image 0x4c7, the top-left quarter, 657 x 491): drawn four times mirrored

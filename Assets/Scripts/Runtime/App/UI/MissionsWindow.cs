@@ -122,6 +122,23 @@ namespace GoF2Remake.UI
 
         public bool IsOpen => root.ClassListContains("missions-open");
 
+        /// <summary>Modified: the labels set while this window was built, read again from the table loaded now
+        /// (StationMenu.RefreshTexts on Localization.Changed). What Open / Fill writes already reads it as it goes.</summary>
+        public void RefreshTexts()
+        {
+            root.Q<Label>("missionsTitle").text = T(129).ToUpperInvariant();
+            root.Q<Label>("storyHeading").text = T(555).ToUpperInvariant();
+            root.Q<Label>("freelanceHeading").text = T(556).ToUpperInvariant();
+            close.text = Localization.Extra("hudBack", "BACK");
+            storyMap.text = freelanceMap.text = T(424).ToUpperInvariant();
+            discard.text = T(423).ToUpperInvariant();
+            missionsTab.text = T(129).ToUpperInvariant();
+            wantedTab.text = T(3219).ToUpperInvariant();
+            pirateTab.text = Localization.Extra("pirateBoardTab", "Pirate activity").ToUpperInvariant();
+            wantedMap.text = T(424).ToUpperInvariant();
+            if (IsOpen) Fill();
+        }
+
         public void Open()
         {
             root.AddToClassList("missions-open");
