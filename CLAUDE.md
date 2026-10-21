@@ -1621,8 +1621,10 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   `NetOrbit.HostileToLocalBySquad` counts the local player's own id). **Radio** (`/radio [players] <speaker> : <text>`):
   a line in the flight HUD's radio box (`Traffic.Say`, queued after the waiting ones), speakers as /dialog's; docked: a chat
   line. **Waypoints** (`/waypoint [players] <station x y z | off>`; Set / Clear Waypoint): `EventWaypoint`, a one-point
-  `Route` through `Navigation.SetRoute` (lockable "Waypoint", the autopilot), applied whenever the player is in that orbit,
-  cleared on reaching it and at the event's end; the On node's Player Arrives (`on near <station> <x y z> <metres>`) fires
+  `Route` through `Navigation.SetEventWaypoint` (lockable "Waypoint", on a bar mission graph its title, the autopilot menu's
+  entry), a slot of its own beside the campaign / freelance route (`SetRoute`), so both show and clearing one keeps the
+  other (a Discord report: the Pirate Hideout's waypoint replaced a lounge mission's and its Clear Waypoint removed both;
+  `NavigationWaypointTests`), applied whenever the player is in that orbit, cleared on reaching it and at the event's end; the On node's Player Arrives (`on near <station> <x y z> <metres>`) fires
   when a player alive in space comes that close (server-side, NetPlayer positions). Spawned objects get collision
   (`DebugSpawner.SpawnObject`: `station_pirates` the original's volumes 1002 unrotated, others a box around the model) and
   exist only in the games they were sent to: spawn scenery for `@a[orbit=...]` at fixed coordinates.
