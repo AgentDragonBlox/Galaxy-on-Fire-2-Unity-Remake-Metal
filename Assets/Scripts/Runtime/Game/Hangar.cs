@@ -166,6 +166,13 @@ namespace GoF2Remake.Data
 
         public int TypeOf(int item) => db.Item(item)?.TypeId ?? 4;
 
+        /// <summary>The units a mounted stack is worth in the hold or a store: a secondary its rounds (none when it is empty:
+        /// HangarWindow::demountItem), anything else one. Every place that moves mounted items off the ship goes through it
+        /// (a player's video: an AMR Extinctor fired empty, demounted into the hold as 1 t and mounted again, over and over;
+        /// #132 fixed the demount, the club's storage, a hull swap and the story's ship moves still made 1 of 0).</summary>
+        public static int UnitsOf(Database db, ItemStack e) =>
+            e == null ? 0 : (db?.Item(e.item)?.TypeId ?? 4) == 1 ? Mathf.Max(0, e.amount) : Mathf.Max(1, e.amount);
+
         /// <summary>Remake: the flown ship's equipment fitted to its slots on docking (StationLevel). A mod lowering a ship's
         /// slots, or a debug hull swap (PlayerHull), could leave more mounted than it has slots, and in flight each mounted
         /// weapon gets a gun (WeaponSystem reuses the mounts): what is past a type's slots goes to the hold, in slot order,
@@ -189,7 +196,7 @@ namespace GoF2Remake.Data
                     if (IsSaleable(e.item)) used[type]++;
                     keep.Add(e);
                 }
-                else { Shop.AddToCargo(e.item, Mathf.Max(1, e.amount)); moved++; }
+                else { int n = UnitsOf(db, e); if (n > 0) Shop.AddToCargo(e.item, n); moved++; }
             }
             if (moved > 0) Session.Equipment = keep;
             return moved;
@@ -427,7 +434,7 @@ namespace GoF2Remake.Data
             Session.Equipment.RemoveAt(equipmentIndex);
             // HangarWindow::demountItem: a secondary goes with its ammo, nothing when it is empty (#132: Max(1, ...) handed
             // out a free missile); other items as 1 unit.
-            int amount = TypeOf(e.item) == 1 ? e.amount : Mathf.Max(1, e.amount);
+            int amount = UnitsOf(db, e);
             if (amount > 0) AddToCargo(e.item, amount);
             SyncBuiltIn(db);   // a fitted item in a built-in one's place gone: the built-in one is back
         }
@@ -568,7 +575,7 @@ namespace GoF2Remake.Data
             {
                 int type = TypeOf(e.item);
                 if ((!dismount || !IsSaleable(e.item)) && (MountedOfType(type).Count < SlotCount(type) || BayTakes(db, ship, e.item, Session.Equipment))) Session.Equipment.Add(e);
-                else AddToCargo(e.item, Mathf.Max(1, e.amount));
+                else if (UnitsOf(db, e) > 0) AddToCargo(e.item, UnitsOf(db, e));
             }
             SyncBuiltIn(db);   // the new hull's own
         }

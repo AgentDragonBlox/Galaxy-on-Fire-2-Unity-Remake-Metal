@@ -366,7 +366,7 @@ namespace GoF2Remake.Data
                 if (type == 3) max += Hangar.BaySlot(db, ship, Session.Equipment);
                 if (Session.Equipment.FindAll(x => (db.Item(x.item)?.TypeId ?? 4) == type).Count < max || Hangar.BayTakes(db, ship, e.item, Session.Equipment))
                     Session.Equipment.Add(e);
-                else Shop.AddToCargo(e.item, Mathf.Max(1, e.amount));
+                else if (Hangar.UnitsOf(db, e) > 0) Shop.AddToCargo(e.item, Hangar.UnitsOf(db, e));
             }
             Hangar.SyncBuiltIn(db);
         }

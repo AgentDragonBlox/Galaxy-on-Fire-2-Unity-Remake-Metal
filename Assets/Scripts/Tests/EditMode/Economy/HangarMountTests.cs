@@ -137,6 +137,20 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
+        public void AnEmptySecondaryIsNothingOffTheShip()
+        {
+            // A player's video: an AMR Extinctor fired empty, demounted into the hold as 1 t, mounted again, over and over.
+            Session.Equipment[2].amount = 0;   // the 6 missiles, all fired
+            Assert.AreEqual(0, Hangar.UnitsOf(Db, Session.Equipment[2]));
+            Assert.AreEqual(1, Hangar.UnitsOf(Db, Session.Equipment[3]), "other items count one");
+            var h = Dis();
+            h.Demount(2);
+            Assert.AreEqual(0, h.CargoOf(36), "no round from an empty launcher");
+            KaamoClub.AddToStorage(new[] { new ItemStack(36, 0) });
+            Assert.IsFalse(Session.KaamoItems.Exists(s => s.item == 36), "nor in the club's storage");
+        }
+
+        [Test]
         public void BoughtMissilesJoinTheMountedStack()
         {
             Session.Cargo.Add(new ItemStack(36, 5));

@@ -91,7 +91,8 @@ namespace GoF2Remake.Data
             foreach (var e in items)
             {
                 if (e == null) continue;
-                int n = System.Math.Max(1, e.amount);
+                int n = Hangar.UnitsOf(Database.Shared, e);   // an empty secondary is nothing
+                if (n <= 0) continue;
                 var row = Session.KaamoItems.Find(s => s.item == e.item);
                 if (row != null) { row.amount += n; continue; }
                 int at = Session.KaamoItems.FindIndex(s => s.item > e.item);
