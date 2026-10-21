@@ -16,7 +16,7 @@ namespace GoF2Remake.UI
     public static class HeldTrade
     {
         public const float FirstRepeatMs = 200f, RepeatEveryMs = 120f, WholeStackMs = 2000f;
-        public const float StartPitch = 0.85f, MaxPitch = 1.5f, MinTickMs = 30f;
+        public const float StartPitch = 1f, MaxPitch = 1.5f, MinTickMs = 30f;
 
         /// <summary>The units traded by 'heldMs' of holding, the press's own unit included, of a stack of 'total'.</summary>
         public static int Due(float heldMs, int total)
