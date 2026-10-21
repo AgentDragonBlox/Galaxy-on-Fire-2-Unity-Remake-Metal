@@ -11,6 +11,8 @@
 // EnableTrails; NPC guns have none).
 // Projectiles, muzzle flashes and impacts fade by their `extra` (opacity) channel: without it an impact's big glow part
 // (radius ~3600 units, meant at 20 % and gone after 267 ms) stayed at full brightness and the impact looked far too big.
+// The camera-facing projectiles and the impacts also carry a CameraFacing: their owners stop calling UpdateVisuals while
+// the world is frozen (Action Freeze, a paused game), and turned round in the photo mode's orbit they were seen edge-on.
 
 using System.Collections.Generic;
 using GoF2Remake.Visuals;
@@ -62,6 +64,7 @@ namespace GoF2Remake.Flight
                     go.name = $"{fx.projectile.name} {i}";
                     StripForFx(go);
                     EnableFades(go);
+                    if (billboard) go.AddComponent<CameraFacing>();
                     go.SetActive(false);
                     projectiles[i] = go.transform;
                 }
@@ -100,6 +103,7 @@ namespace GoF2Remake.Flight
                     impacts[i] = Object.Instantiate(fx.impact, fxRoot);
                     StripForFx(impacts[i]);
                     EnableFades(impacts[i]);
+                    impacts[i].AddComponent<CameraFacing>();   // "_lookat" meshes
                     impacts[i].SetActive(false);
                 }
                 impactParts = new (PartAnimation[], Modding.ModFxPart[])[impactPool];

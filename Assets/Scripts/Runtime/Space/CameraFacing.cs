@@ -1,6 +1,7 @@
 // CameraFacing.cs
 // A pivot that takes the camera's rotation every frame (AEGeometry::setDirection(camera dir, camera up), like
 // Explosion::render does for an explosion's alpha billboard); the part inside keeps animating in its own local space.
+// Also on GunRig's camera-facing projectiles and impacts, so they keep facing it while the world is frozen (Action Freeze).
 
 using UnityEngine;
 
