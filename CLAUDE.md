@@ -688,7 +688,7 @@ Research: `Reference/research/mining.md` (+ `Reference/tools/mining/mining_table
   wrong shadow; the builder skips pack "mod"); the debug capital hulls get a soft oval of their bounds (the game's
   meshes are imported non-readable, so a build can't rasterise them). Verified in Play mode in the Terran,
   Nivelian, Vossk, Midorian and deep science hangars. The Graphics option **Hangar ship shadows** (`Settings.HangarShadows`:
-  Off / Player ship only / All ships, default All; performance complaints on phones): every hangar ship still gets its
+  Off / Player ship only / All ships, default Player ship only since 2026-10-21 (All before; performance complaints on phones)): every hangar ship still gets its
   `HangarShipShadow` (`Attach(..., player)`: `SpawnShip`'s "Player ship", the turntable's), the box is just hidden while the
   option doesn't allow it, so changing it docked applies at once; Off also gives the station camera's `requiresDepthOption`
   back its own value from before the first shadow (the depth texture is the bigger part of the cost), any other choice sets
@@ -1079,12 +1079,19 @@ jumping back to the bottom; the likely cause, not reproduced). Original options:
   (`ModImport.Pick`), `SaveFolderPicker.mm` (the save folder). Local network adapters by iOS name (`NetGame.AdapterName`:
   en0 Wi-Fi, bridge Hotspot, utun VPN; mobile data and AirDrop left out). Switching the active target to iOS adds a default
   iOS entry to every texture .meta (like UWP's): harmless, revert them before committing.
-- **Android Vulkan pre-transform off** (Player settings > Android > "Apply display rotation during rendering",
-  `PlayerSettings.vulkanEnablePreTransform`, off since 2026-10-14; a player's report): with it on, at render scale 100 %
-  without anti-aliasing part of the screen froze (the same symptom as #45's FSR at 100 %+: URP's final pass through an
-  intermediate texture doesn't get the pre-rotation, so it covers only part of the rotated back buffer); off, it didn't
-  happen. Off = Android rotates the landscape frame itself (free on most recent phones' display hardware, else a little GPU
-  composition); not measured here. `Bootstrap.ApplyUpscaling` still keeps FSR 1 below 100 % until that is checked on a phone.
+- **Android Vulkan pre-transform** (Player settings > Android > "Apply display rotation during rendering",
+  `PlayerSettings.vulkanEnablePreTransform`): on, with `PreTransformGuard` (Space, installed by `Bootstrap`): while it is in
+  use (`PreTransformGuard.Active`: Vulkan, `SystemInfo.supportsSwapChainPreTransform`, not
+  `QualitySettings.disableSwapChainPreTransform`) every base game camera drawing to the screen queues an empty render pass
+  with `requiresIntermediateTexture`, so URP never draws the scene straight to the pre-rotated back buffer; only its final
+  blit and the UI do. Straight to it (render scale 100 % without MSAA, FSR at 100 %+, the only cases where URP skips the
+  intermediate texture) part of the screen froze (a player's report, #45): the remake's screen-space shaders (the hangar
+  shadows reading the depth texture, the cloak / shield bubble refraction, the classic bloom, the bar flybys' pass) work in
+  unrotated coordinates, where URP's own (`DeclareDepthTexture`, `Shadows`) correct for the rotation. It was off from
+  2026-10-14 to 2026-10-21 for that: Android's compositor then rotates every frame, a full-screen GPU pass on phones whose
+  display hardware can't (a Dimensity 8350: a solid 60 fps in 2026.10.09's Terran hangar, 40-60 in 2026.10.18's, at 50 %
+  render scale). The guard costs a full-resolution blit at 100 % (below it, or with MSAA, URP blits anyway).
+  `Bootstrap.ApplyUpscaling` still keeps FSR 1 below 100 % (there is nothing to upscale at 100 %). Not yet run on a phone.
 - **UWP** (Universal Windows Platform, no build profile: `EditorUserBuildSettings.SwitchActiveBuildTarget(WSA, WSAPlayer)`
   first, then `BuildPipeline.BuildPlayer` to a folder; IL2CPP, x64, D3D): package `JoppieToppie.GoF2Remake`, Start menu
   name "GoF2 Remake", capabilities InternetClient / InternetClientServer / PrivateNetworkClientServer (multiplayer and

@@ -65,6 +65,7 @@ namespace GoF2Remake
             UwpDisplay.Install();                 // UWP: the display's real pixel size (a 4K TV, an Xbox), not its view pixels
 #endif
             Visuals.ClassicBloomPass.Install();   // the "Original" bloom option
+            Visuals.PreTransformGuard.Install();  // Android Vulkan: the scene never drawn straight to the pre-rotated back buffer
             HitchLogger.Install();                // development builds: frame hitches to hitches.log
             UI.ScreenshotKey.Install();           // F12: a screenshot to the pictures library
             UI.DiscordPresence.Install();         // desktop: Discord Rich Presence
@@ -156,8 +157,8 @@ namespace GoF2Remake
             UpscalerFramework.Apply(UpscalerId(upscaler), Settings.UpscalerQuality);
 #else
             // FSR 1 only below 100 % (#45: on Android FSR at 100 % or more left part of the screen frozen; at those scales
-            // there is nothing to upscale). The likely cause, Vulkan pre-transform, is off since 2026-10-14 (CLAUDE.md, "UI and
-            // platforms"); this guard stays until FSR at 100 % is checked on a phone.
+            // there is nothing to upscale). The cause was the scene drawn straight to the pre-rotated back buffer, which
+            // PreTransformGuard now prevents; this guard stays until FSR at 100 % is checked on a phone.
             urp.upscalingFilter = upscaler == Settings.UpscalerFsr && urp.renderScale < 0.999f ? UpscalingFilterSelection.FSR
                 : upscaler == Settings.UpscalerStp ? UpscalingFilterSelection.STP : UpscalingFilterSelection.Auto;
 #endif
