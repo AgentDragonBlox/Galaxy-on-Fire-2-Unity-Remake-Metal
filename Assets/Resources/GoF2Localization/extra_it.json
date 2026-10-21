@@ -244,6 +244,7 @@
  "hudMissile": "MISSILE",
  "hudRoll": "ROLLIO",
  "hudSelect": "SELEZIONA",
+ "hudNavigate": "NAVIGA",
  "hudSteer": "PILOTA",
  "hudStrafe": "SPOSTAMENTO",
  "hudSwitchSecondary": "CAMBIA",

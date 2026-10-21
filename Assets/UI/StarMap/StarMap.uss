@@ -168,34 +168,6 @@
 }
 
 /* The "i" window: one hint a line, its keys then its label, no boxes. */
-.map-hints-popup {
-    flex-direction: column;
-}
-
-.map-hints-popup .hint {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    margin: 3px 0;
-    padding: 0;
-    background-color: rgba(0, 0, 0, 0);
-    border-width: 0;
-}
-
-.map-hints-popup .hint-keys {
-    min-width: 150px;
-    justify-content: flex-end;
-    margin-right: 14px;
-}
-
-.map-hints-popup .hint-label {
-    margin: 0;
-    padding: 0;
-    font-size: 17px;
-    white-space: nowrap;
-    -unity-text-align: middle-left;
-}
-
 .system-header {
     position: absolute;
     left: 48px;

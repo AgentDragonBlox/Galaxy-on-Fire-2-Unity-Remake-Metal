@@ -240,6 +240,7 @@
  "hudMissile": "ミサイル",
  "hudRoll": "ロール",
  "hudSelect": "選択",
+ "hudNavigate": "移動",
  "hudSteer": "操縦",
  "hudStrafe": "平行移動",
  "hudSwitchSecondary": "切替",

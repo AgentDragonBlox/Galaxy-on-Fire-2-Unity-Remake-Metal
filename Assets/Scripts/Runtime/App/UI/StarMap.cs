@@ -1421,16 +1421,13 @@ namespace GoF2Remake.UI
             view.style.display = station ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        /// <summary>Modified: the "i" window's key hints: BuildHints' rows (keys, then the label), for the keyboard or the
-        /// controller in use (the keyboard's on touch).</summary>
+        /// <summary>Modified: the "i" window's key hints: the same rows as the hint bar (keys, then the label), for the
+        /// keyboard or the controller in use (the keyboard's on touch). It asks AddHints for them instead of pointing the
+        /// 'hints' field at its own box, which also re-ran the map buttons' own state.</summary>
         VisualElement HintsContent()
         {
-            var c = new VisualElement { pickingMode = PickingMode.Ignore };
-            c.AddToClassList("map-hints-popup");
-            var saved = hints;
-            hints = c;
-            try { BuildHints(InputMode.Current == InputKind.Gamepad ? InputKind.Gamepad : InputKind.KeyboardMouse); }
-            finally { hints = saved; }
+            var c = MenuKeys.Popup();
+            AddHints(c, InputMode.Current == InputKind.Gamepad ? InputKind.Gamepad : InputKind.KeyboardMouse);
             return c;
         }
 
@@ -1909,8 +1906,32 @@ namespace GoF2Remake.UI
 
         void BuildHints(InputKind kind)
         {
+            UpdateMapButtons();
             if (hints == null) return;
             hints.Clear();
+            AddHints(hints, kind);
+        }
+
+        /// <summary>Modified: the map's own buttons, not its hints: what the Full map / Close up button says and which of it,
+        /// the Key button and the Jump to the Void button show. Split out of BuildHints, which the "i" window used to re-run
+        /// only to collect the hint rows.</summary>
+        void UpdateMapButtons()
+        {
+            bool sys = systemView || zoomDir > 0;
+            if (zoomButton != null)
+            {
+                zoomButton.text = overview ? Localization.Extra("mapCloseUp", "CLOSE UP") : Localization.Extra("mapFullMap", "FULL MAP");
+                bool zoomShown = !sys && !revealing && builder == null;   // the builder's map: none of the map's own buttons
+                zoomButton.style.display = zoomShown ? DisplayStyle.Flex : DisplayStyle.None;
+                // Both push to the right edge: the Key button sits right after the Full map button while that shows.
+                keyButton.style.marginLeft = zoomShown ? new StyleLength(0f) : new StyleLength(StyleKeyword.Null);
+            }
+            if (voidButton != null) voidButton.style.display = askVoid && builder == null && !revealing ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        /// <summary>Modified: the hint rows for 'kind' into 'into' (the hint bar's box, or the "i" window's).</summary>
+        void AddHints(VisualElement into, InputKind kind)
+        {
             string X(string key, string english) => Localization.Extra(key, english);
             string select = X("hudSelect", "SELECT"), back = X("hudBack", "BACK"), confirm = X("hudConfirm", "CONFIRM");
             string zoom = X("mapZoomIn", "ZOOM IN"), moveText = X("mapMove", "MOVE"), turn = X("mapTurn", "TURN");
@@ -1919,53 +1940,44 @@ namespace GoF2Remake.UI
             {
                 if (kind == InputKind.KeyboardMouse)
                 {
-                    if (!dialogInfo) Hint(select, InputGlyph.Key("←"), InputGlyph.Key("→"));
-                    Hint(confirm, InputGlyph.Key("ENTER", true));
-                    Hint(back, InputGlyph.Key("ESC"));
+                    if (!dialogInfo) Hint(into, select, InputGlyph.Key("←"), InputGlyph.Key("→"));
+                    Hint(into, confirm, InputGlyph.Key("ENTER", true));
+                    Hint(into, back, InputGlyph.Key("ESC"));
                 }
                 else if (kind == InputKind.Gamepad)
                 {
-                    if (!dialogInfo) Hint(select, InputGlyph.Pad(PadButton.DPad));
-                    Hint(confirm, InputGlyph.Pad(PadButton.A));
-                    Hint(back, InputGlyph.Pad(PadButton.B));
+                    if (!dialogInfo) Hint(into, select, InputGlyph.Pad(PadButton.DPad));
+                    Hint(into, confirm, InputGlyph.Pad(PadButton.A));
+                    Hint(into, back, InputGlyph.Pad(PadButton.B));
                 }
                 return;
             }
             bool sys = systemView || zoomDir > 0;
             string fullMap = overview ? X("mapCloseUp", "CLOSE UP") : X("mapFullMap", "FULL MAP");
-            if (zoomButton != null)
-            {
-                zoomButton.text = fullMap;
-                bool zoomShown = !sys && !revealing && builder == null;   // the builder's map: none of the map's own buttons
-                zoomButton.style.display = zoomShown ? DisplayStyle.Flex : DisplayStyle.None;
-                // Both push to the right edge: the Key button sits right after the Full map button while that shows.
-                keyButton.style.marginLeft = zoomShown ? new StyleLength(0f) : new StyleLength(StyleKeyword.Null);
-            }
-            if (voidButton != null) voidButton.style.display = askVoid && builder == null && !revealing ? DisplayStyle.Flex : DisplayStyle.None;
             string toVoid = VoidButtonText;
             if (kind == InputKind.KeyboardMouse)
             {
-                Hint(select, InputGlyph.Key(sys ? "A" : "←"), InputGlyph.Key(sys ? "D" : "→"));
-                if (!overview) Hint(sys ? turn : moveText, InputGlyph.Key("W"), InputGlyph.Key("S"));
-                Hint(sys ? confirm : zoom, InputGlyph.Key("ENTER", true));
-                if (!sys) Hint(fullMap, InputGlyph.Key("Q"));
-                if (askVoid) Hint(toVoid, InputGlyph.Key("V"));
-                Hint(key, InputGlyph.Key("K"));
-                Hint(back, InputGlyph.Key("ESC"));
+                Hint(into, select, InputGlyph.Key(sys ? "A" : "←"), InputGlyph.Key(sys ? "D" : "→"));
+                if (!overview) Hint(into, sys ? turn : moveText, InputGlyph.Key("W"), InputGlyph.Key("S"));
+                Hint(into, sys ? confirm : zoom, InputGlyph.Key("ENTER", true));
+                if (!sys) Hint(into, fullMap, InputGlyph.Key("Q"));
+                if (askVoid) Hint(into, toVoid, InputGlyph.Key("V"));
+                Hint(into, key, InputGlyph.Key("K"));
+                Hint(into, back, InputGlyph.Key("ESC"));
             }
             else if (kind == InputKind.Gamepad)
             {
-                Hint(select, InputGlyph.Pad(PadButton.DPad));
-                if (!overview) Hint(sys ? turn : moveText, InputGlyph.Pad(PadButton.LeftStick));
-                Hint(sys ? confirm : zoom, InputGlyph.Pad(PadButton.A));
-                if (!sys) Hint(fullMap, InputGlyph.Pad(PadButton.X));
-                if (askVoid) Hint(toVoid, InputGlyph.Pad(PadButton.RightBumper));
-                Hint(key, InputGlyph.Pad(PadButton.Y));
-                Hint(back, InputGlyph.Pad(PadButton.B));
+                Hint(into, select, InputGlyph.Pad(PadButton.DPad));
+                if (!overview) Hint(into, sys ? turn : moveText, InputGlyph.Pad(PadButton.LeftStick));
+                Hint(into, sys ? confirm : zoom, InputGlyph.Pad(PadButton.A));
+                if (!sys) Hint(into, fullMap, InputGlyph.Pad(PadButton.X));
+                if (askVoid) Hint(into, toVoid, InputGlyph.Pad(PadButton.RightBumper));
+                Hint(into, key, InputGlyph.Pad(PadButton.Y));
+                Hint(into, back, InputGlyph.Pad(PadButton.B));
             }
         }
 
-        void Hint(string label, params VisualElement[] glyphs)
+        static void Hint(VisualElement into, string label, params VisualElement[] glyphs)
         {
             var h = new VisualElement { pickingMode = PickingMode.Ignore };
             h.AddToClassList("hint");
@@ -1978,7 +1990,7 @@ namespace GoF2Remake.UI
             l.AddToClassList("hint-label");
             l.AddToClassList("gof-semibold");
             h.Add(l);
-            hints.Add(h);
+            into.Add(h);
         }
 
         void Play(AudioClip clip)

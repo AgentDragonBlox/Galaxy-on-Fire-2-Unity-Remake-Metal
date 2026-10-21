@@ -1,8 +1,8 @@
 // TextMarquee.cs
 // Modified: a one-line label inside a clipping box: centred and still when it fits; else it slides to its end and back,
-// holding a moment at each end (the options' drop-downs do the same: ChoiceRow.Marquee), starting again from its first
-// letter whenever it was hidden. The label is placed by hand (absolute, its text's own width): laid out by its box, it was
-// squeezed to it. Used by the Debug page's item grids (CheatsCatalog).
+// holding a moment at each end, starting again from its first letter whenever it was hidden or its text changed. The label
+// is placed by hand (absolute, its text's own width): laid out by its box, it was squeezed to it. Used by the Debug page's
+// item grids (CheatsCatalog) and by the options' drop-downs (ChoiceRow).
 
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -24,16 +24,30 @@ namespace GoF2Remake.UI
             label.style.whiteSpace = WhiteSpace.NoWrap;
             label.style.unityTextAlign = TextAnchor.MiddleLeft;
             label.style.transitionDuration = new StyleList<TimeValue>(new System.Collections.Generic.List<TimeValue> { new TimeValue(0f) });
-            float ms = 0f;
+            float ms = 0f, textW = 0f;
             bool sliding = false;
+            string measured = null;
+
+            // MeasureTextSize lays the text out, so it runs only when the text changes (a grid of item cells measured every
+            // one of them 30 times a second) or when the box was laid out again (a font size with it: .ui-large).
+            bool Measure()
+            {
+                string t = label.text ?? "";
+                if (t == measured) return true;
+                float w = label.MeasureTextSize(t, 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined).x;
+                if (float.IsNaN(w)) return false;
+                measured = t;
+                textW = w;
+                ms = 0f;   // a new text starts sliding from its beginning
+                label.style.width = textW + 2f;
+                return true;
+            }
+
             void Tick()
             {
                 if (!Shown(clip)) { ms = 0f; if (sliding) label.style.left = 0f; return; }
                 float clipW = clip.layout.width;
-                if (float.IsNaN(clipW) || clipW <= 0f) return;
-                float textW = label.MeasureTextSize(label.text ?? "", 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined).x;
-                if (float.IsNaN(textW)) return;
-                label.style.width = textW + 2f;
+                if (float.IsNaN(clipW) || clipW <= 0f || !Measure()) return;
                 float over = textW + 2f - clipW;
                 sliding = over > 1f;
                 if (!sliding) { label.style.left = (clipW - textW - 2f) * 0.5f; ms = 0f; return; }
@@ -46,8 +60,9 @@ namespace GoF2Remake.UI
                 else x = 1f - (t - HoldMs) / travel;
                 label.style.left = -over * Mathf.SmoothStep(0f, 1f, x);
             }
+
             label.schedule.Execute(Tick).Every(TickMs);
-            clip.RegisterCallback<GeometryChangedEvent>(_ => Tick());
+            clip.RegisterCallback<GeometryChangedEvent>(_ => { measured = null; Tick(); });   // placed at once, not a tick later
         }
 
         static bool Shown(VisualElement e)

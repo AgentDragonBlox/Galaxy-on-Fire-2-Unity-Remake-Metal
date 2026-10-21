@@ -8,7 +8,6 @@
 // reflowed when the content made room for it).
 // Skipped: horizontal views, the hangar list (its own bar) and a view with the class "gof-no-scroll-bar".
 
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -17,7 +16,7 @@ namespace GoF2Remake.UI
     public sealed class ScrollBars
     {
         const string Watched = "gof-scroll-bars-watched", Attached = "gof-scroll-bar-host", OptOut = "gof-no-scroll-bar";
-        const long ScanMs = 500, UpdateMs = 16;
+        const long ScanMs = 500, SafetyMs = 200;
 
         /// <summary>Gives the document's vertical scroll views a scrollbar, now and as new ones appear.</summary>
         public static void Watch(VisualElement root)
@@ -28,15 +27,7 @@ namespace GoF2Remake.UI
             root.schedule.Execute(() => Scan(root)).Every(ScanMs);
         }
 
-        static readonly List<ScrollView> found = new List<ScrollView>();
-
-        static void Scan(VisualElement root)
-        {
-            found.Clear();
-            root.Query<ScrollView>().ToList(found);
-            foreach (var sv in found) Attach(sv);
-            found.Clear();
-        }
+        static void Scan(VisualElement root) => root.Query<ScrollView>().ForEach(Attach);
 
         /// <summary>One scroll view's bar (once).</summary>
         public static void Attach(ScrollView sv)
@@ -69,7 +60,16 @@ namespace GoF2Remake.UI
             bar.RegisterCallback<PointerMoveEvent>(OnMove);
             bar.RegisterCallback<PointerUpEvent>(OnUp);
             bar.RegisterCallback<PointerCaptureOutEvent>(_ => { pointer = -1; thumb.RemoveFromClassList("gof-scroll-bar-thumb--dragging"); });
-            sv.schedule.Execute(UpdateBar).Every(UpdateMs);   // the view's own schedule: the bar can be cleared away with its parent's children
+            // The bar follows the view instead of a tick of its own: its size and place only change when the view is laid out,
+            // its content grows or shrinks, or it is scrolled. A 60 Hz tick per view read the layout of every scroll view in
+            // the document for ever, the flight HUD's included (ScrollBars.Watch is installed on it).
+            view.RegisterCallback<GeometryChangedEvent>(_ => UpdateBar());
+            view.contentViewport.RegisterCallback<GeometryChangedEvent>(_ => UpdateBar());
+            view.contentContainer.RegisterCallback<GeometryChangedEvent>(_ => UpdateBar());
+            view.verticalScroller.valueChanged += _ => UpdateBar();
+            // A slow safety tick on top: the bar lives in the view's parent, which may clear its children without the view
+            // itself being laid out again (UpdateBar puts it back). 5 Hz, not the 60 Hz this used to run at.
+            sv.schedule.Execute(UpdateBar).Every(SafetyMs);
         }
 
         float ScrollMax => Mathf.Max(0f, view.contentContainer.layout.height - view.contentViewport.layout.height);

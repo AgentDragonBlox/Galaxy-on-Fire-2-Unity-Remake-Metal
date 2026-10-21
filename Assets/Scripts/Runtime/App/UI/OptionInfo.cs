@@ -27,6 +27,9 @@ namespace GoF2Remake.UI
         static IVisualElementScheduledItem follow;
         static bool windowIsText;
 
+        /// <summary>A description window is open (Esc / B close it first).</summary>
+        public static bool IsOpen => owner != null;
+
         /// <summary>The icon for one option; 'text' is read each time the window opens (a choice can change it).</summary>
         public static VisualElement Icon(Func<string> text) => Icon(text, null, null);
 
@@ -45,17 +48,19 @@ namespace GoF2Remake.UI
             var tex = texture != null ? texture : iconTexture;
             if (tex != null) icon.style.backgroundImage = new StyleBackground(tex);
 
-            IVisualElementScheduledItem pending = null;
+            // One scheduled item, resumed: Execute(...) registers a new one on the icon every time and Pause only stops it,
+            // so a mouse sweeping back and forth over a page's icons left a dead item on each for the panel to walk.
+            IVisualElementScheduledItem pending = icon.schedule.Execute(() => Show(icon, text, content));
+            pending.Pause();
             icon.RegisterCallback<PointerEnterEvent>(e =>
             {
                 if (e.pointerType == PointerType.touch) return;
-                pending?.Pause();
-                pending = icon.schedule.Execute(() => Show(icon, text, content)).StartingIn(HoverDelayMs);
+                pending.ExecuteLater(HoverDelayMs);
             });
             icon.RegisterCallback<PointerLeaveEvent>(e =>
             {
                 if (e.pointerType == PointerType.touch) return;
-                pending?.Pause();
+                pending.Pause();
                 if (owner == icon) Hide();
             });
             // The icon sits on the row's control: its presses mustn't flip a toggle or start a drag scroll. Modified: a press
@@ -63,13 +68,13 @@ namespace GoF2Remake.UI
             icon.RegisterCallback<PointerDownEvent>(e =>
             {
                 e.StopPropagation();
-                pending?.Pause();
+                pending.Pause();
                 if (owner == icon) Hide();
                 else Show(icon, text, content);
             });
             icon.RegisterCallback<PointerUpEvent>(e => e.StopPropagation());
             icon.RegisterCallback<ClickEvent>(e => e.StopPropagation());
-            icon.RegisterCallback<DetachFromPanelEvent>(_ => { pending?.Pause(); if (owner == icon) Hide(); });
+            icon.RegisterCallback<DetachFromPanelEvent>(_ => { pending.Pause(); if (owner == icon) Hide(); });
             return icon;
         }
 

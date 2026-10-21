@@ -974,7 +974,11 @@ namespace GoF2Remake.UI
 
         void Back()
         {
-            if (infoWindow != null && infoWindow.IsOpen) { Play(buttonRelease); infoWindow.Close(); }
+            // An option's open drop-down or an "i" / "?" window closes first, as in the main menu (MainMenu.EscBack): both are
+            // laid over the whole document, so a page closed under one left it drawing over the next.
+            if (ChoicePopup.IsOpen) { Play(buttonRelease); ChoicePopup.Close(); }
+            else if (OptionInfo.IsOpen) { Play(buttonRelease); OptionInfo.Hide(); }
+            else if (infoWindow != null && infoWindow.IsOpen) { Play(buttonRelease); infoWindow.Close(); }
             else if (MultiplayerWindow.IsOpenAny) { Play(buttonRelease); MultiplayerWindow.CloseAny(); }   // multiplayer: the faction window
             else if (DialogOpen)
             {

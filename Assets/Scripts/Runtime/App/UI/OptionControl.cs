@@ -119,10 +119,13 @@ namespace GoF2Remake.UI
 
         void UpdateSliderLabel()
         {
-            // Modified: the name alone; the value in its box (it was "Name: value").
-            slider.label = def.label();
+            // Modified: the name alone; the value in its box (it was "Name: value"). Without the box (BuildSliderBox found
+            // no "unity-base-slider__input" to insert it into, e.g. a Unity version that renamed it) the label keeps the old
+            // "Name: value", so the value is never simply missing.
             float v = slider.value;
-            if (sliderValue != null) sliderValue.text = def.format != null ? def.format(v) : Mathf.RoundToInt(v).ToString();
+            string shown = def.format != null ? def.format(v) : Mathf.RoundToInt(v).ToString();
+            slider.label = sliderValue != null ? def.label() : $"{def.label()}: {shown}";
+            if (sliderValue != null) sliderValue.text = shown;
             if (muteIcon != null)
             {
                 bool muted = v <= slider.lowValue + 0.0001f;

@@ -244,6 +244,7 @@
  "hudMissile": "RAKETE",
  "hudRoll": "ROLLEN",
  "hudSelect": "AUSWÄHLEN",
+ "hudNavigate": "NAVIGIEREN",
  "hudSteer": "STEUERN",
  "hudStrafe": "SEITWÄRTS",
  "hudSwitchSecondary": "WECHSELN",

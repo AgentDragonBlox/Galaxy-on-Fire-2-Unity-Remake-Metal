@@ -683,7 +683,11 @@ namespace GoF2Remake.UI
                 if ((kb != null && (kb.escapeKey.wasPressedThisFrame || kb.backspaceKey.wasPressedThisFrame))
                     || (pad != null && (pad.buttonEast.wasPressedThisFrame || pad.startButton.wasPressedThisFrame)))
                 {
-                    if (!options.CloseResetPrompt()) Show(Page.Main);   // back closes the defaults prompt first
+                    // An option's open drop-down or its "?" window closes first, as in the main menu (MainMenu.EscBack):
+                    // both are laid over the whole document, so a page closed under one left it drawing over the next.
+                    if (ChoicePopup.IsOpen) ChoicePopup.Close();
+                    else if (OptionInfo.IsOpen) OptionInfo.Hide();
+                    else if (!options.CloseResetPrompt()) Show(Page.Main);   // back closes the defaults prompt first
                     return;
                 }
                 TickOptions(kb, pad);

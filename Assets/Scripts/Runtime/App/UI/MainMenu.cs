@@ -661,16 +661,15 @@ namespace GoF2Remake.UI
 
         /// <summary>Modified: the top-right "i" window: the keys for the input in use: Up / Down navigate, Enter select, Esc
         /// back (the D-pad, A and B on a controller); on the Options panel also left / right (a value) and Q / E, LB / RB (the
-        /// tabs). The labels from the localized footer line ("↑ ↓  NAVIGATE     ENTER  SELECT     ESC  BACK": its words
-        /// between the keys), else the English.</summary>
+        /// tabs). Its three labels are Extra keys of their own; they used to be cut out of the localized footer line
+        /// ("↑ ↓  NAVIGATE     ENTER  SELECT     ESC  BACK") by splitting it on runs of spaces, which fell back to the
+        /// English word by word as soon as a translation spaced that line differently.</summary>
         VisualElement KeysContent()
         {
             var c = MenuKeys.Popup();
-            string line = Localization.Extra("hint", "↑ ↓  NAVIGATE     ENTER  SELECT     ESC  " + Localization.Get(170).ToUpperInvariant());
-            var parts = System.Text.RegularExpressions.Regex.Split(line.Trim(), @"\s{2,}");
-            string nav = parts.Length == 6 ? parts[1] : "NAVIGATE";
-            string select = parts.Length == 6 ? parts[3] : Localization.Extra("hudSelect", "SELECT");
-            string back = parts.Length == 6 ? parts[5] : Localization.Get(170).ToUpperInvariant();
+            string nav = Localization.Extra("hudNavigate", "NAVIGATE");
+            string select = Localization.Extra("hudSelect", "SELECT");
+            string back = Localization.Extra("hudBack", Localization.Get(170).ToUpperInvariant());
             bool options = panels.TryGetValue("optionsPanel", out var optionsPanel) && openPanel == optionsPanel;
             string change = Localization.Extra("hudChangeValue", "CHANGE VALUE"), tabs = Localization.Extra("hudSwitchTab", "SWITCH TAB");
             if (InputMode.Current == InputKind.Gamepad)

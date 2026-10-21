@@ -244,6 +244,7 @@
  "hudMissile": "РАКЕТА",
  "hudRoll": "КРЕН",
  "hudSelect": "ВЫБРАТЬ",
+ "hudNavigate": "ВЫБОР",
  "hudSteer": "УПРАВЛЕНИЕ",
  "hudStrafe": "СМЕЩЕНИЕ",
  "hudSwitchSecondary": "СМЕНИТЬ",

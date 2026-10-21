@@ -244,6 +244,7 @@
  "hudMissile": "MÍSSIL",
  "hudRoll": "GIRAR",
  "hudSelect": "SELECIONAR",
+ "hudNavigate": "NAVEGAR",
  "hudSteer": "PILOTAR",
  "hudStrafe": "DESLOCAR",
  "hudSwitchSecondary": "TROCAR",

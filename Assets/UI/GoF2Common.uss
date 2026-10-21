@@ -201,8 +201,7 @@
     color: var(--gof-text);
 }
 
-.choice-segments,
-.choice-stepper {
+.choice-segments {
     flex-grow: 1;
     flex-direction: row;
     align-items: center;
@@ -244,22 +243,6 @@
     border-bottom-color: var(--gof-amber);
 }
 
-.choice-arrow {
-    width: 40px;
-    min-height: 36px;
-    font-size: 22px;
-    -unity-text-align: middle-center;
-    color: var(--gof-cyan);
-    background-color: rgba(255, 255, 255, 0.04);
-    border-width: 0;
-    border-radius: 0;
-    transition-duration: 0.15s;
-}
-
-.can-hover .choice-arrow:hover {
-    color: #FFFFFF;
-    background-color: var(--gof-cyan-faint);
-}
 
 .choice-value {
     flex-grow: 1;
@@ -833,10 +816,6 @@
     min-height: 42px;
 }
 
-.debug-card .choice-arrow {
-    min-height: 42px;
-    width: 48px;
-}
 
 .layout-phone .debug-card .choice-label,
 .layout-phone .debug-card .choice-value,
@@ -849,10 +828,6 @@
     min-height: 48px;
 }
 
-.layout-phone .debug-card .choice-arrow {
-    min-height: 48px;
-    width: 56px;
-}
 
 /* The Give items page's icon grid under the Item stepper (CheatsCatalog.ItemPicker): a tap / click picks. */
 .debug-item-grid {
@@ -1066,15 +1041,10 @@
 
 .ui-large .choice-label,
 .ui-large .choice-value,
-.ui-large .choice-arrow,
 .ui-large .option-item .option-button {
     font-size: 25px;
 }
 
-.ui-large .choice-arrow {
-    min-width: 56px;
-    min-height: 56px;
-}
 
 .ui-large .option-item .option-button {
     min-height: 60px;
@@ -1379,10 +1349,6 @@
     background-color: rgba(255, 166, 48, 0.24);
 }
 
-.input-gamepad .choice-row:focus .choice-arrow {
-    color: var(--gof-amber);
-    background-color: rgba(255, 166, 48, 0.18);
-}
 
 .input-gamepad .tab-button:focus,
 .input-gamepad .tab-button.options-selected,

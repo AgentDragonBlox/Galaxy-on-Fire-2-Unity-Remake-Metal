@@ -240,6 +240,7 @@
   "hudMissile": "导弹",
   "hudRoll": "翻滚",
   "hudSelect": "选择",
+  "hudNavigate": "导航",
   "hudSteer": "操控",
   "hudStrafe": "平移",
   "hudSwitchSecondary": "切换",
