@@ -3006,7 +3006,7 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   real file-picker run, controller use of the gizmo. Touch (2026-10-18): with touch input the gizmo's balls and arrows are 1.25x larger (1.5x until 2026-10-21) and picked within a fingertip (`ModBuilderGizmo.Reach`: 0.17 / 0.12 inch at `Screen.dpi`; 16 / 12 px at 1080 p were about a millimetre on a phone), the arrows from 45 % of their length so a tap on the ball moves the ball; the number fields (IntegerField / FloatField) take a tap's focus like text fields (`TextFieldKeys.InTextField`: the menus' touch handling had taken it away, so they couldn't be typed into on Android). Two fingers (2026-10-21, `UI.TwoFingerTouch`) pinch to zoom and move the
   camera in the hangar, space and room views, the middle button's pan (a phone could only turn them); under the Engines
   slider View buttons Front / Back / Left / Right / Top turn the hangar orbit to the ship's own sides (`ModBuilderView.ShowAngle`,
-  `ModelViewer.Angles`, the pan centred, the distance kept; Top at the orbit's ~83 deg limit, no view from below the pad) and
+  `ModelViewer.Angles`, the pan centred, the distance kept; Top at the orbit's ~83 deg limit from a little behind, the nose up on screen, no view from below the pad) and
   Orbit puts the orbit back around the ship's centre after a pan (`CentreOrbit`, the middle click's `ResetPan`).
   **Its other kinds** (2026-10-15): the kinds are `ModBuilder.Kind` (12) and each is edited where it lives in the game
   (`ModBuilder.PlaceOf`: Ships / Items / Skins / Blueprints / Campaign in the hangar, Characters / Quests / Audio in the Space

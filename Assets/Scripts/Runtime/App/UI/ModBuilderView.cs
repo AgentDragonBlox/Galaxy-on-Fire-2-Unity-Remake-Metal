@@ -1414,6 +1414,9 @@ namespace GoF2Remake.UI
         {
             if (boundTransform == null || !level.Inspect.Active) return;
             var from = ModelViewer.Angles.First(a => a.name == angle).from;
+            // Top: from a little behind, so the orbit's turn puts the nose at the top of the screen (straight down left the
+            // turn to whatever the overhead direction gave: the ship lay at an angle).
+            if (angle == "top") from = new Vector3(0f, 1f, -0.1f);
             pendingTurn = fling = Vector2.zero;
             level.Inspect.ResetPan();
             level.Inspect.SetView(boundTransform.TransformDirection(from.normalized), 0f);
