@@ -282,6 +282,9 @@ namespace GoF2Remake.Flight
             // (Discord report, 2026-10-17: no zoom on a controller).
             float zoom = GameControls.Throttle.ReadValue<float>();
             if (Mathf.Abs(zoom) > 0.01f) distance -= zoom * 150f * frames;
+            // Modified: up and down turned the other way round in free look, for the mouse, a finger and the right stick alike
+            // (the Invert orbit Y option still flips it back).
+            delta.y = -delta.y;
             delta = GoF2Remake.Data.Settings.OrbitTurn(delta);   // #121: the camera views' own inversion
             px += delta.x;
             py = Mathf.Clamp(py + delta.y, -200f, 200f);
