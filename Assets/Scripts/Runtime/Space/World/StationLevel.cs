@@ -402,6 +402,44 @@ namespace GoF2Remake.World
             for (int i = 0; i < 3; i++) { driftSign[i] = Random.Range(0, 20) < 10; NextDriftLeg(i, Base(i)); }
         }
 
+        int captureSavedIndex = -1, captureSavedRace;
+        Modding.ModInteriors.Room captureSavedCustom;
+
+        /// <summary>Modified: HangarCubemapCapture's "every hangar" (an editor tool, Play mode): the hangar room built again as
+        /// hangar 'index' (0..3 the races', 7 / 8 the Valkyrie's) with its lighting for 'raceId' (ambient, fog), the
+        /// player's ship on its pad. RestoreHangar puts the station's own back.</summary>
+        public void RebuildHangarAs(int index, int raceId)
+        {
+            if (index < 0 || index >= StationTables.HangarRoom.Length || StationTables.HangarRoom[index] == null) return;
+            if (captureSavedIndex < 0) { captureSavedIndex = HangarIndex; captureSavedRace = Layout.raceId; captureSavedCustom = customHangar; }
+            if (View != StationView.Hangar) SetView(StationView.Hangar);
+            RebuildHangar(index, null, raceId);
+        }
+
+        /// <summary>Modified: the station's own hangar again after RebuildHangarAs.</summary>
+        public void RestoreHangar()
+        {
+            if (captureSavedIndex < 0) return;
+            RebuildHangar(captureSavedIndex, captureSavedCustom, captureSavedRace);
+            captureSavedIndex = -1;
+            captureSavedCustom = null;
+        }
+
+        void RebuildHangar(int index, Modding.ModInteriors.Room custom, int raceId)
+        {
+            traffic = null;
+            parkedShips.Clear();
+            if (hangarRoot != null) { hangarRoot.gameObject.SetActive(false); Destroy(hangarRoot.gameObject); }
+            HangarIndex = index;
+            customHangar = custom;
+            BuildHangar();
+            hangarRoot.gameObject.SetActive(View == StationView.Hangar);
+            int race = Layout.raceId;
+            Layout.raceId = raceId;
+            ApplyHangarLighting();
+            Layout.raceId = race;
+        }
+
         /// <summary>CutScene::replacePlayerShip 0xa53b4: after buying a ship, the new one on the turntable at its own height
         /// (the camera keeps the pivot of the ship the hangar was entered with).</summary>
         public void ReplacePlayerShip(int index)
