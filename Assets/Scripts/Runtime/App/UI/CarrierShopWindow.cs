@@ -491,7 +491,7 @@ namespace GoF2Remake.UI
             {
                 // Remake (HeldTrade): unit by unit, faster and faster, all there was room for in two seconds while BUY fills.
                 int units = HeldTrade.Step(ref heldMs, ref holdDone, holdTotal, dtMs);
-                HeldTrade.SetFill(buyFill, HeldTrade.Progress(holdDone, holdTotal));
+                HeldTrade.SetFill(buyFill, HeldTrade.Progress(heldMs, holdDone, holdTotal));
                 if (units > 0) Buy(units);
             }
         }

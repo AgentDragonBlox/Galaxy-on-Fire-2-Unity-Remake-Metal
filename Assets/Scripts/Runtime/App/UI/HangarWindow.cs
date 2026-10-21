@@ -1631,12 +1631,8 @@ namespace GoF2Remake.UI
                 if (!holdBatch) { hangar.BeginBatch(); holdBatch = true; }
             }
             else if (selected != null && selected.kind == RowKind.Ingredient && direction > 0) holdTotal = hangar.CargoOf(selected.item);
-            // A shop row's unit sounds through HeldTrade's pitched voice (the repeats rise from here); the fill starts with it.
-            if (selected != null && selected.kind == RowKind.ShopItem)
-            {
-                if (Trade(direction, false)) TradeTick(direction);
-                if (heldDirection != 0 && holdTotal > 1) HeldTrade.SetFill(direction < 0 ? sellFill : buyFill, HeldTrade.Progress(holdDone, holdTotal));
-            }
+            // A shop row's unit sounds through HeldTrade's pitched voice (the repeats rise from here); the fill waits for the hold.
+            if (selected != null && selected.kind == RowKind.ShopItem) { if (Trade(direction, false)) TradeTick(direction); }
             else Trade(direction);
         }
 
@@ -1681,7 +1677,7 @@ namespace GoF2Remake.UI
             if (!IsOpen || heldDirection == 0) return;
             int dir = heldDirection;
             int units = HeldTrade.Step(ref heldMs, ref holdDone, holdTotal, dtMs);
-            HeldTrade.SetFill(dir < 0 ? sellFill : buyFill, HeldTrade.Progress(holdDone, holdTotal));
+            HeldTrade.SetFill(dir < 0 ? sellFill : buyFill, HeldTrade.Progress(heldMs, holdDone, holdTotal));
             if (units > 0 && Trade(dir, false, units, true)) TradeTick(dir);   // each unit's button sound, pitched up
         }
     }
