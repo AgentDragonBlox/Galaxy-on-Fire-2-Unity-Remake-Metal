@@ -2462,7 +2462,7 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   / Hide System (`EventSystemAction`) set `Session.SystemShown` (saved as `systemShown`, a mod's system by its key), which
   wins over the condition until reset (`GalaxyMap.SetShown`). `GalaxyMap.Visibility` returns the effective map: a copy of
   `Session.SystemVisible` (the revealed state, what is saved) with those applied (`GalaxyMap.Forced`), so a hidden system
-  that comes back is as revealed as it was; routes, jumps, the lounge and the Wanted board follow it. The star map keeps its
+  that comes back is as revealed as it was; a placeholder system (`ModWorld.IsMissingSystem`: past the original 34 and no mod that is on adds it, "?" at -1000 on every axis) is never shown, revealed or not, also on the builder's map (it zoomed the overview out to frame it, with no mod installed too: the registry keeps the numbers); routes, jumps, the lounge and the Wanted board follow it. The star map keeps its
   own copy and always shows the player's own system. A player in a system hidden on purpose (`GalaxyMap.ForcedHidden`) gets
   a HUD message and 4 s of game time later a stream-out arrival at `GalaxyMap.FallbackStation` (the nearest system on the
   map along the gate routes: its gate station, else its first; else the station last docked at, else the first visible

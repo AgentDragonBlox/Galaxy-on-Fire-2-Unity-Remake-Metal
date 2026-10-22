@@ -192,7 +192,9 @@ namespace GoF2Remake.Modding
         /// <summary>The mod that adds the system (null: an original one, or a placeholder).</summary>
         public static ModInfo SystemOwner(int i) { EnsureMapping(); return systemAt.TryGetValue(i, out var d) ? d.mod : null; }
         public static bool IsModStation(int i) { EnsureMapping(); return stationAt.ContainsKey(i); }
-        public static bool IsMissingSystem(int i) { EnsureMapping(); return missingSystems.ContainsKey(i); }
+        /// <summary>A placeholder system (Apply): past the original table and no mod that is on adds it, whether the registry
+        /// names a mod that is off or gone, or it only fills a gap in the numbering.</summary>
+        public static bool IsMissingSystem(int i) { EnsureMapping(); return originalSystems >= 0 && i >= originalSystems && !systemAt.ContainsKey(i); }
         public static bool IsMissingStation(int i) { EnsureMapping(); return missingStations.ContainsKey(i); }
         public static int SystemIndexOf(string key) { EnsureMapping(); return systemIndex.TryGetValue(key, out int i) ? i : -1; }
         /// <summary>A mod's system's key ("mod_id:id"), null for an original one.</summary>

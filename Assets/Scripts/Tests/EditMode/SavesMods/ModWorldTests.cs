@@ -2,7 +2,7 @@
 // Feature: CLAUDE.md "Mods (remake-only)" > Systems and stations / Station models, planets, suns / Skies, and the example
 // Modding/Examples/frontier_systems (ModWorld.cs): new systems after the original 34 and stations after the 135 (at most 7
 // per system), "looksLike" = the original station whose model and collision it uses, jumpgate routes both ways, a gate
-// station (the named one, else the first), overrides, placeholders for a mod that is off. Expected values from the
+// station (the named one, else the first), overrides, placeholders for a mod that is off (never on the map, revealed or not). Expected values from the
 // example's systems.json / stations.json (Kepler: Terran, security 2, sky 4, position 8 / 27 / 83, gates to 4 and 17,
 // gate station rho_freeport; Kepler Prime tech 7, planet 12, looks like 40, a 50000-unit model; Rho Freeport tech 4,
 // planet 6, looks like 41, the Nivelian interior; sun colour 1 / 0.8 / 0.55; skybox nebula, star layer 1, brightness 0.8).
@@ -201,6 +201,29 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(-1, db.Stations[135].system);
             Assert.IsTrue(ModWorld.IsMissingSystem(34));
             Assert.IsTrue(ModWorld.IsMissingStation(135));
+        }
+
+        [Test]
+        public void ARevealedSystemOfAModTurnedOffIsntOnTheMap()
+        {
+            // The placeholder lies at -1000 on every axis: shown, the map's overview zoomed out to frame it.
+            var saved = Session.SystemVisible;
+            try
+            {
+                var db = World("[ { 'id': 'a', 'system': 't_world:home', 'name': 'A' } ]");
+                Session.SystemVisible = null;
+                GalaxyMap.Visibility(db);
+                Session.SystemVisible[34] = true;
+                Assert.IsTrue(GalaxyMap.IsVisible(db, 34), "the mod's system, revealed");
+
+                ModManager.SetEnabled("t_world", false);
+                db = Database.Load();
+                Assert.IsTrue(ModWorld.IsMissingSystem(34));
+                Assert.IsFalse(GalaxyMap.IsVisible(db, 34), "its placeholder");
+                Assert.IsTrue(Session.SystemVisible[34], "still revealed for when the mod is back");
+                Assert.IsFalse(ModWorld.IsMissingSystem(33), "an original system");
+            }
+            finally { Session.SystemVisible = saved; }
         }
 
         string WorldError(string file, string json)

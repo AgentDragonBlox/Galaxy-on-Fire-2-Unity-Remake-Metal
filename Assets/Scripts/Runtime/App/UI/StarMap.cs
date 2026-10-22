@@ -406,8 +406,9 @@ namespace GoF2Remake.UI
                 if (currentSystem >= 0 && currentSystem < visible.Length) visible[currentSystem] = true;
                 if (builder != null)
                 {
-                    // The Mod Builder's map: every system, under the builder's panels, without the map's own header / footer.
-                    for (int i = 0; i < visible.Length; i++) visible[i] = true;
+                    // The Mod Builder's map: every system, under the builder's panels, without the map's own header / footer. Not
+                    // the placeholders of mods that are off ("?", far out at -1000 on every axis): the map zoomed out to frame it.
+                    for (int i = 0; i < visible.Length; i++) visible[i] = !Modding.ModWorld.IsMissingSystem(i);
                     // Under the station UI's panel (the shared asset's order): panelSettings is the runtime copy by now, 20 above
                     // it, so "its order - 1" kept the map over the builder's panels.
                     if (runtimePanel != null) runtimePanel.sortingOrder = baseSortingOrder - 1;
