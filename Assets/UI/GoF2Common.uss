@@ -1269,6 +1269,30 @@
     padding-left: var(--space-xxl);
 }
 
+/* A waiting Button: the spinner in the row before its text, not over it. */
+.gof-busy-button {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.gof-busy-button > .gof-busy {
+    position: relative;
+    left: auto;
+    top: auto;
+    flex-shrink: 0;
+    margin: 0 var(--space-s) 0 0;
+}
+
+/* A waiting Button's own text, moved into this Label while the spinner is in it (UiBusy.Mark takes the button's font,
+   colour and letter spacing over). */
+.gof-busy-text {
+    margin: 0;
+    padding: 0;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
 /* ---- Toasts (docs/UI-DESIGN.md "Notices"): a short message that needs no answer, on the panel colour with the amber
    bar on its left; it fades in and out (the owner toggles .gof-toast--shown). --------------------------------------- */
 .gof-toast {

@@ -47,14 +47,44 @@ namespace GoF2Remake.UI
             p.Stroke();
         }
 
-        /// <summary>The spinner before 'label''s text while 'on' (a Label or a Button; it keeps its own text and style).</summary>
+        /// <summary>The spinner before 'label''s text while 'on' (a Label or a Button; it keeps its own text and style).
+        /// A Button's text moves into a child Label meanwhile and back after: a Button measures its own text only while it
+        /// has no children, so with the spinner in it it shrank to a letter's width and its text stood on end (the Mod
+        /// Builder's and the Mod Browser's Import while the file picker was open).</summary>
         public static void Mark(TextElement label, bool on)
         {
             if (label == null) return;
             var spinner = label.Q(className: "gof-busy");
-            label.EnableInClassList("gof-busy-label", on);
-            if (on && spinner == null) label.Add(Spinner());
-            else if (!on) spinner?.RemoveFromHierarchy();
+            // A Button lays the spinner out beside its text (.gof-busy-button): the label's room is a left padding, which
+            // a button's own padding overrides, so the spinner lay over the text.
+            bool isButton = label is Button;
+            label.EnableInClassList(isButton ? "gof-busy-button" : "gof-busy-label", on);
+            if (on && spinner == null)
+            {
+                if (label is Button button && button.childCount == 0 && !string.IsNullOrEmpty(button.text))
+                {
+                    var text = new Label(button.text) { pickingMode = PickingMode.Ignore };
+                    text.AddToClassList("gof-busy-text");
+                    var look = button.resolvedStyle;
+                    text.style.fontSize = look.fontSize;
+                    text.style.color = look.color;
+                    text.style.letterSpacing = look.letterSpacing;
+                    text.style.unityFontStyleAndWeight = look.unityFontStyleAndWeight;
+                    text.style.unityFontDefinition = look.unityFontDefinition;
+                    button.text = "";
+                    button.Add(text);
+                }
+                label.Insert(0, Spinner());
+            }
+            else if (!on)
+            {
+                spinner?.RemoveFromHierarchy();
+                if (label is Button button && label.Q<Label>(className: "gof-busy-text") is Label text)
+                {
+                    text.RemoveFromHierarchy();
+                    button.text = text.text;
+                }
+            }
         }
     }
 }
