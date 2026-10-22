@@ -4,7 +4,8 @@
 // a valid .glb (metres, V flipped); an original-game mod's zip made into a project (OriginalModImport): a ship's hull as an
 // override at its own length with the mod's textures as its hull textures (the normal map's RGB, its alpha the smoothness),
 // copies of the hull left out, other textures as skins (a normal map with its metallic / smoothness), the rest named unused.
-// Expected values from the files built here: a quad (2 triangles) with a child triangle; a box 4 x 2 x 10 game units.
+// Expected values from the files built here: a quad (2 triangles) with a child triangle; a box 4 x 2 x 10 game units; a quad
+// of two triangles with three vertices each written with four (identical vertices joined).
 
 using System.Collections.Generic;
 using System.IO;
@@ -114,6 +115,13 @@ namespace GoF2Remake.Tests
             int binStart = 20 + jsonLength + 8;
             float v2 = System.BitConverter.ToSingle(glb, binStart + (int)view["byteOffset"] + 2 * 8 + 4);
             Assert.AreEqual(0.75f, v2, 1e-6f);
+            // A quad given as two triangles of three vertices each is written with its four.
+            var split = (new[] { new Vector3(0, 0, 0), new Vector3(20, 0, 0), new Vector3(20, 0, 40), new Vector3(0, 0, 0), new Vector3(20, 0, 40), new Vector3(0, 0, 40) },
+                         new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 1) },
+                         new[] { 0, 1, 2, 3, 4, 5 });
+            var splitGlb = AemImport.ToGlb(AemImport.Read(Aem(split), out _), "split");
+            var splitJson = JObject.Parse(Encoding.UTF8.GetString(splitGlb, 20, System.BitConverter.ToInt32(splitGlb, 12)));
+            Assert.AreEqual(4, (int)splitJson["accessors"][(int)splitJson["meshes"][0]["primitives"][0]["attributes"]["POSITION"]]["count"]);
             Assert.IsNull(AemImport.Read(Encoding.ASCII.GetBytes("not a model at all"), out string bad));
             Assert.IsNotNull(bad);
         }

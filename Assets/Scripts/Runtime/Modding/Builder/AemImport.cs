@@ -44,6 +44,31 @@ namespace GoF2Remake.Modding
             /// <summary>Its length along the nose (z), game units: a ship's modelLength.</summary>
             public float Length => Bounds.size.z;
             public int Triangles => indices.Count / 3;
+
+            /// <summary>A copy with its identical vertices (position, normal and UV alike) joined: the game's files often
+            /// give every triangle its own three, which made the .glb five times as large and left nothing for the
+            /// Mod Builder's polygon reduction to remove.</summary>
+            public Model Welded()
+            {
+                var o = new Model { hasNormals = hasNormals, hasUvs = hasUvs, parts = parts };
+                var first = new Dictionary<(Vector3, Vector3, Vector2), int>(positions.Count);
+                var map = new int[positions.Count];
+                for (int i = 0; i < positions.Count; i++)
+                {
+                    var key = (positions[i], hasNormals ? normals[i] : default, hasUvs ? uvs[i] : default);
+                    if (!first.TryGetValue(key, out int f))
+                    {
+                        f = o.positions.Count;
+                        first[key] = f;
+                        o.positions.Add(positions[i]);
+                        if (hasNormals) o.normals.Add(normals[i]);
+                        if (hasUvs) o.uvs.Add(uvs[i]);
+                    }
+                    map[i] = f;
+                }
+                foreach (int i in indices) o.indices.Add(map[i]);
+                return o;
+            }
         }
 
         /// <summary>The file starts like an .aem.</summary>
@@ -183,6 +208,7 @@ namespace GoF2Remake.Modding
         /// positions in metres, normals and UVs when the .aem has them, 32-bit indices.</summary>
         public static byte[] ToGlb(Model m, string name)
         {
+            m = m.Welded();
             int nv = m.positions.Count;
             var bin = new MemoryStream();
             var w = new BinaryWriter(bin);

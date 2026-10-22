@@ -2,7 +2,8 @@
 // Feature: CLAUDE.md "Mods" > Optimize models and textures (the Mod Builder's Optimize window, 2026-10-22): a model's embedded
 // textures scaled down to the size picked and stored as JPEG unless they use their alpha; the polygon reduction
 // (MeshSimplifier) keeping every vertex where it was and never removing a seam; the GLB written again stays a valid file;
-// a project's own image file keeps its format; nothing that wouldn't get smaller is touched.
+// a project's own image file keeps its format; nothing that wouldn't get smaller is touched; a model giving every triangle
+// its own three vertices (the game's .aem files) is joined first, so it is cut like a shared one.
 // Expected values: a 2048 px noise texture at 1K (1024 x 1024); a closed 32 x 16 sphere (960 triangles) cut to a quarter.
 
 using System.Collections.Generic;
@@ -128,10 +129,12 @@ namespace GoF2Remake.Tests
             return png;
         }
 
-        /// <summary>A GLB with the sphere (positions, normals, indices in views of their own) and one embedded PNG.</summary>
-        static byte[] Glb(byte[] png)
+        /// <summary>A GLB with the sphere (positions, normals, indices in views of their own) and one embedded PNG; 'split':
+        /// every triangle with three vertices of its own.</summary>
+        static byte[] Glb(byte[] png, bool split = false)
         {
             var (pos, idx) = Sphere(32, 16);
+            if (split) { pos = idx.Select(i => pos[i]).ToArray(); idx = Enumerable.Range(0, idx.Length).ToArray(); }
             var bin = new MemoryStream();
             void Align() { while (bin.Length % 4 != 0) bin.WriteByte(0); }
             var views = new JArray();
@@ -240,6 +243,30 @@ namespace GoF2Remake.Tests
                 Assert.Less(v, verts);
             }
             Assert.AreEqual(r.trianglesAfter, ModOptimizer.CountTriangles(Path.Combine(folder, "models/ball.glb")));
+        }
+
+        [Test]
+        public void AModelWithThreeVerticesPerTriangleIsJoinedAndCut()
+        {
+            File.WriteAllBytes(Path.Combine(folder, "models/split.glb"), Glb(NoisePng(8, false), split: true));
+            var job = new ModOptimizer(folder, new[] { "models/split.glb" }, new ModOptimizer.Options { maxSize = 4096, triangles = 0.25f });
+            Run(job);
+            var r = job.Results.Single();
+            Assert.IsNull(r.error);
+            Assert.AreEqual(960, r.trianglesBefore);
+            Assert.LessOrEqual(r.trianglesAfter, 260, "cut to about a quarter: no point is a seam once joined");
+            var (root, _) = Read(File.ReadAllBytes(Path.Combine(folder, "models/split.glb")));
+            Assert.LessOrEqual((int)root["accessors"][0]["count"], Sphere(32, 16).pos.Length);
+
+            // With every triangle kept the joining alone still makes it smaller.
+            File.WriteAllBytes(Path.Combine(folder, "models/split.glb"), Glb(NoisePng(8, false), split: true));
+            job = new ModOptimizer(folder, new[] { "models/split.glb" }, new ModOptimizer.Options { maxSize = 4096, triangles = 1f });
+            Run(job);
+            r = job.Results.Single();
+            Assert.Less(r.after, r.before);
+            Assert.AreEqual(960, r.trianglesAfter);
+            (root, _) = Read(File.ReadAllBytes(Path.Combine(folder, "models/split.glb")));
+            Assert.AreEqual(Sphere(32, 16).pos.Length, (int)root["accessors"][0]["count"]);
         }
 
         [Test]

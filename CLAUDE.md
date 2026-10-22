@@ -3304,7 +3304,10 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   primitive without morph targets, its unused vertices dropped when it owns its attributes (`ReducePrimitive`, POSITION
   min / max recomputed, other min / max removed, 16- or 32-bit indices), a view another accessor reads left for a new one,
   views nothing reads shrunk to 4 bytes; not for Draco / meshopt / quantized models. The GLB written again with every
-  bufferView packed in order (ModGlbImages' layout rules); a result that isn't smaller leaves the file alone. History: a
+  bufferView packed in order (ModGlbImages' layout rules); a result that isn't smaller leaves the file alone. Vertices alike in every attribute are joined first, at any
+  triangle setting (`ModOptimizer.Weld`; the simplifier counts only the vertices a triangle uses as a seam): a model
+  with three vertices per triangle (an .aem import, which `AemImport.Model.Welded` now joins itself too) was all seams
+  and lost nothing; the Narn now 79 865 -> 19 965 triangles at 25 %, 8.6 -> 0.7 MB. History: a
   commit before and the reload after, so Undo puts the originals back (checked). Measured on SR2_Normandy.glb (nine 4096 px
   PNGs, 18 856 triangles): 61.7 MB -> 2.7 MB at 1K in 2.5 s; at 50 % triangles 15 436 (its many seams locked). WebP / KTX2
   aren't offered: neither Unity's decoders nor the mods' loaders read them, and the game compresses every texture to DXT /

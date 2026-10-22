@@ -24,7 +24,10 @@ namespace GoF2Remake.Modding
             if (ratio >= 1f || triCount < 4 || positions.Length == 0) return (int[])indices.Clone();
 
             int n = positions.Length;
-            // The position groups: copies of one point (a seam) share a group and its quadric.
+            // The position groups: copies of one point (a seam) share a group and its quadric. Only the vertices a triangle
+            // uses count: copies nothing points at (a model whose identical vertices were joined) are no seam.
+            var used = new bool[n];
+            foreach (int i in indices) if (i >= 0 && i < n) used[i] = true;
             var group = new int[n];
             var groupOf = new Dictionary<Vector3, int>();
             var groupSize = new List<int>();
@@ -32,7 +35,7 @@ namespace GoF2Remake.Modding
             {
                 if (!groupOf.TryGetValue(positions[i], out int g)) { g = groupSize.Count; groupOf[positions[i]] = g; groupSize.Add(0); }
                 group[i] = g;
-                groupSize[g]++;
+                if (used[i]) groupSize[g]++;
             }
 
             var tri = new int[triCount * 3];

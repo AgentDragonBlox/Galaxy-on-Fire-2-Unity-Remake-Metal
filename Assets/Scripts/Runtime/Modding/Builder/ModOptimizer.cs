@@ -329,7 +329,7 @@ namespace GoF2Remake.Modding
                 bool changed = false;
                 foreach (var kv in w.byView)
                     if (kv.Value.result != null) { w.viewData[kv.Key] = kv.Value.result; changed = true; }
-                if (options.triangles < 1f && ReduceGeometry(w)) changed = true;
+                if (ReduceGeometry(w)) changed = true;
                 output = changed ? Rebuild(w) : null;
             }
             if (output == null || output.Length >= w.bytes.Length) return;   // nothing smaller: the file stays
@@ -374,8 +374,9 @@ namespace GoF2Remake.Modding
         static int Comps(string type) =>
             type == "SCALAR" ? 1 : type == "VEC2" ? 2 : type == "VEC3" ? 3 : type == "VEC4" ? 4 : type == "MAT2" ? 4 : type == "MAT3" ? 9 : type == "MAT4" ? 16 : 0;
 
-        /// <summary>Every indexed triangle primitive with float positions cut to the options' share of its triangles; its
-        /// unused vertices dropped when it owns its attributes. False when nothing changed.</summary>
+        /// <summary>Every indexed triangle primitive with float positions: its identical vertices joined (Weld) and cut to the
+        /// options' share of its triangles; its unused vertices dropped when it owns its attributes. False when nothing
+        /// changed.</summary>
         bool ReduceGeometry(Work w)
         {
             if (Mentions(w.root, "draco") || Mentions(w.root, "quantization")) return false;
@@ -398,7 +399,7 @@ namespace GoF2Remake.Modding
                     foreach (var p in prims.OfType<JObject>())
                     {
                         int before = 0, after = ReducePrimitive(w, p, users, ref before);
-                        if (after >= 0 && after < before) changed = true;
+                        if (after >= 0) changed = true;   // -1: left alone; else welded and / or cut
                         total += after >= 0 ? after : before;
                     }
             if (!changed) return false;
@@ -429,20 +430,23 @@ namespace GoF2Remake.Modding
                 int o = idxAcc.offset + i * idxAcc.stride;
                 indices[i] = idxAcc.compType == 5125 ? (int)BitConverter.ToUInt32(bytes, o) : idxAcc.compType == 5123 ? BitConverter.ToUInt16(bytes, o) : bytes[o];
             }
-            var reduced = MeshSimplifier.Simplify(positions, indices, options.triangles);
-            if (reduced.Length >= indices.Length) return -1;
-
-            // The vertices still used, in their old order, when every attribute is this primitive's alone.
             var attrAccs = new List<(string name, Accessor acc)>();
-            bool own = true;
+            bool own = true, readable = true;
             foreach (var a in attrs.Properties())
             {
                 var acc = ReadAccessor(w, (int?)a.Value ?? -1);
-                if (acc == null || acc.count != posAcc.count) { own = false; break; }
+                if (acc == null || acc.count != posAcc.count) { own = false; readable = false; break; }
                 users.TryGetValue(acc.index, out int u);
                 if (u != 1) own = false;
                 attrAccs.Add((a.Name, acc));
             }
+            // Vertices alike in every attribute joined first: a model written with three vertices per triangle (the
+            // game's .aem files, many exports) is otherwise all seams to the simplifier, which then removes nothing.
+            bool welded = readable && Weld(bytes, attrAccs.Select(a => a.acc).ToList(), indices);
+            var reduced = options.triangles < 1f ? MeshSimplifier.Simplify(positions, indices, options.triangles) : (int[])indices.Clone();
+            if (reduced.Length >= idxAcc.count && !(welded && own)) return -1;
+
+            // The vertices still used, in their old order, when every attribute is this primitive's alone.
             int[] remap = null;
             int kept = posAcc.count;
             if (own)
@@ -475,6 +479,42 @@ namespace GoF2Remake.Modding
             idxAcc.json.Remove("max");
             PutAccessor(w, idxAcc, idx, reduced.Length, ElementArrayBuffer, users.TryGetValue(idxAcc.index, out int iu) && iu == 1);
             return reduced.Length / 3;
+        }
+
+        /// <summary>Points every index at the first vertex whose every attribute has the same bytes; true when any moved.</summary>
+        static bool Weld(byte[] bytes, List<Accessor> accs, int[] indices)
+        {
+            int count = accs[0].count, size = accs.Sum(a => a.ElementSize);
+            var first = new Dictionary<VertexKey, int>(count);
+            var canon = new int[count];
+            bool any = false;
+            for (int i = 0; i < count; i++)
+            {
+                var key = new byte[size];
+                int k = 0;
+                foreach (var a in accs) { Buffer.BlockCopy(bytes, a.offset + i * a.stride, key, k, a.ElementSize); k += a.ElementSize; }
+                var vk = new VertexKey(key);
+                if (first.TryGetValue(vk, out int f)) { canon[i] = f; any = true; }
+                else { first[vk] = i; canon[i] = i; }
+            }
+            if (!any) return false;
+            for (int i = 0; i < indices.Length; i++)
+                if (indices[i] >= 0 && indices[i] < count) indices[i] = canon[indices[i]];
+            return true;
+        }
+
+        readonly struct VertexKey : IEquatable<VertexKey>
+        {
+            readonly byte[] data;
+            readonly int hash;
+            public VertexKey(byte[] data)
+            {
+                this.data = data;
+                unchecked { int h = (int)2166136261; foreach (byte b in data) h = (h ^ b) * 16777619; hash = h; }
+            }
+            public bool Equals(VertexKey o) => hash == o.hash && data.AsSpan().SequenceEqual(o.data);
+            public override bool Equals(object o) => o is VertexKey v && Equals(v);
+            public override int GetHashCode() => hash;
         }
 
         /// <summary>The accessor's new data in a bufferView: its own view rewritten when nothing else reads that view, else a new
