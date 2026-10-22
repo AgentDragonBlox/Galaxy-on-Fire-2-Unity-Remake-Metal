@@ -3286,6 +3286,10 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   `mbv-button-label`); `ScrollBars` puts the bar at the viewport's edge and `.gof-scroll-bar` centres itself with
   `translate: -50%` (subtracting the snapped half width each layout fed back into the next: the bar's width flickered by a
   pixel twice a second).
+- **The builder translated** (2026-10-22): its 875 `Localization.Extra` texts in all 13 `extra_<lang>.json` (the kinds,
+  panels, pickers, tooltips, the AI tools page; races by each table's own names: Russian Земляне / Восски / Нивелийцы /
+  Мидорианцы / Войд, Chinese Terran人 ..., Japanese テラ人 ..., Korean and Hindi in English). Checked in Play mode in German
+  (the kinds strip overflows into its More button) and Japanese (the OS font fallback).
 - **Optimize models and textures** (remake, 2026-10-22, the user's request: a 61.7 MB ship model had been made 4 MB by hand
   before; `Modding.ModOptimizer` + `MeshSimplifier`, the window `UI.ModBuilderScreenOptimize`: the Menu's entry and the Ship
   tab's **Optimize…** beside the model): the project's `.glb` models and image files (`Candidates`: not templates/ or

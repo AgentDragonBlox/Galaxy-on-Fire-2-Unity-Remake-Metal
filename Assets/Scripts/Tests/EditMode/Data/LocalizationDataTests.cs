@@ -135,13 +135,35 @@ namespace GoF2Remake.Tests
             return sources = sb.ToString();
         }
 
+        static List<string> builtPrefixes, builtSuffixes;
+
+        /// <summary>The literal starts ("mbKind" + kind) and ends (key + "Desc") the code joins keys from: the Mod Builder
+        /// names its race, slot-type, room and part texts by a prefix and the name.</summary>
+        static void BuiltKeyParts(out List<string> prefixes, out List<string> suffixes)
+        {
+            if (builtPrefixes == null)
+            {
+                string src = Sources();
+                builtPrefixes = System.Text.RegularExpressions.Regex.Matches(src, "\"([A-Za-z_]{3,})\"\\s*\\+")
+                    .Cast<System.Text.RegularExpressions.Match>().Select(m => m.Groups[1].Value).Distinct().ToList();
+                builtSuffixes = System.Text.RegularExpressions.Regex.Matches(src, "\\+\\s*\"([A-Z][A-Za-z]{2,})\"")
+                    .Cast<System.Text.RegularExpressions.Match>().Select(m => m.Groups[1].Value).Distinct().ToList();
+            }
+            prefixes = builtPrefixes;
+            suffixes = builtSuffixes;
+        }
+
         [TestCaseSource(nameof(ExtraFiles))]
         public void ExtraTableHasNoKeyTheCodeDoesNotUse(string file)
         {
             // As of 2026-10-14 every table carries 7 stale keys (exportSavesHelp, exportSavesHelpFolder, importSavesHelp,
             // importSavesHelpFolder, modsTitle, mpGuest, resupplyAmmoFull).
             string src = Sources();
-            var unused = Extra(file).Keys.Where(k => src.IndexOf("\"" + k + "\"", System.StringComparison.Ordinal) < 0).OrderBy(k => k).ToList();
+            BuiltKeyParts(out var prefixes, out var suffixes);
+            var unused = Extra(file).Keys.Where(k => src.IndexOf("\"" + k + "\"", System.StringComparison.Ordinal) < 0
+                                                   && !prefixes.Any(p => k.Length > p.Length && k.StartsWith(p, System.StringComparison.Ordinal))
+                                                   && !suffixes.Any(s => k.Length > s.Length && k.EndsWith(s, System.StringComparison.Ordinal)))
+                                     .OrderBy(k => k).ToList();
             Assert.IsEmpty(unused, $"{file}: keys no code asks for");
         }
 
