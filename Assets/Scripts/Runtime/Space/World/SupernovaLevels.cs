@@ -1573,7 +1573,10 @@ namespace GoF2Remake.World
         void Tick144(float dtMs)
         {
             if (helper != null) helper.transform.position += ToUnity(new Vector3(1, 0, -1).normalized * 5f * dtMs) - ToUnity(Vector3.zero);
-            cam.SetDolly(new Vector3(0.28f, 0f, 0.28f));   // TargetFollowCamera::translate(0.28 dt, -, 0.28 dt) every frame
+            // TargetFollowCamera::translate(0, 0.05 dt, 0.28 dt) every frame (0x162efa: r1 = 0, the 0.05 / 0.28 at 0x162df0;
+            // Ghidra shows it as (0.28 dt, -, 0.28)). Read as (0.28, 0, 0.28) the camera flew through the fleet and left it
+            // behind while the view followed the helper (a player's report: the shot ended on empty space).
+            cam.SetDolly(new Vector3(0f, 0.05f, 0.28f));
             switch (Step)
             {
                 case 1: Step = 2; break;

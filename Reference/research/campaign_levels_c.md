@@ -398,7 +398,8 @@ itself is the generic wanted system (not documented here); where the kill advanc
   (-3250, 500, -5000), (0, -300, -5000), (3250, 500, -5000), (6500, 500, -5000), (-6500, -400, -5000), (0, -400, -5000),
   (6500, -400, -5000).
 - Ctor: helper at (30000, 10000, 160000) moving along (1, 0, -1) at 5 u/ms, player hidden/frozen/inactive, HUD off, camera
-  at Harval + (-4600, 1000, -4300) following the helper.
+  at Harval + (-4600, 1000, -4300) following the helper; process moves the camera by (0, 0.05, 0.28) dt per frame
+  (`TargetFollowCamera::translate` at 0x162efa, r1 = 0; the decompile shows it as (0.28 dt, ?, 0.28)).
 - Process: state 1 -> 2 at once; 2 -> 3 when radio 3 is over; state 3: each Specter has a 10 % chance per frame to cloak
   (20 000 ms), Specters accelerate (move t*0.05 per frame), Harval follows after 4000 ms; at 7001 ms:
   `nextCampaignMission`, same station re-entered, module 2 (the 0x91 attack starts).

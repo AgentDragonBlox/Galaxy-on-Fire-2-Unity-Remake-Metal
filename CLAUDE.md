@@ -492,7 +492,7 @@ against the FEV's LGCY data, see "Sound").
   the big blast 0x8c3, the beam 0x8c7, the supernova 0x8c8); 158's opening (Harval rides a helper from 50 000 toward the sun to
   (9000, 0, -13000) at 2.5 u/ms, shown from 25 s, exhaust off 20-34 s, state 2 at 34 s coasting to 300 units per frame, the
   player rolls dt / 2000 (axis lost, remake pick), then faces Harval); 145 (Harval's Shesha x2, the Specters fire from state 2,
-  record 23 at the array); 144 (camera drift 0.28 u/ms, instant cloaks); 135 (every 75 s only the dead pirates come back, no
+  record 23 at the array); 144 (camera drift (0, 0.05, 0.28) u/ms, `translate` at 0x162efa, which Ghidra garbles; instant cloaks); 135 (every 75 s only the dead pirates come back, no
   cargo; 2 -> 3 on that tick); 102 (a Specter whose target died takes the first living dropship, else the player; instant cloaks);
   91 (the wreck's 0x8e9 LOOP, and with 8 aboard after 180 s 0x8ea and its `_wrecked_anim` played once, unverified); 154 (the
   fighters creep 0.5 u/ms in state 1; turret view / free look / Liberator off, the auto turret off until control returns); 89 /
