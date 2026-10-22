@@ -1,6 +1,7 @@
 // ModBuilderViewCharacters.cs
 // The Mod Builder's Characters kind (part of ModBuilderView): the project's characters.json (ProjectCharacter,
 // Modding/README.md "Characters"), edited in the station's Space Lounge (ModBuilderView.SelectKind). Left: the characters with their portraits, a new one from a PNG portrait, Remove.
+// A game character is replaced from its own portrait and name (ReplaceGameCharacter), which the modder then changes.
 // Right: the portrait as a conversation shows it (UI.Portrait.ShowCharacter: the game's dark backdrop under it and its
 // scanline overlay, the "frame", over it), the name, the portrait file, race, gender, mirrored / frame / background, and the story character it stands in for
 // ("replaces": that speaker's portrait everywhere, and its name in the conversation headers), picked from the story's
@@ -34,6 +35,7 @@ namespace GoF2Remake.UI
             characterList = scroll;
             var add = Act(left, T("mbNewCharacter", "+ New character from a portrait…"), NewCharacter, "mbv-add");   // any image ImageImport reads
             add.SetEnabled(ModImport.Available);
+            Act(left, T("mbReplaceCharacter", "+ Replace a game character…"), ReplaceGameCharacter, "mbv-add");
             Act(left, T("mbRemoveCharacter", "Remove character"), AskRemoveCharacter, "mbv-danger", "mbv-remove");
 
             var page = Add(right, new ScrollView(ScrollViewMode.Vertical), "mbv-right-scroll");
@@ -132,7 +134,13 @@ namespace GoF2Remake.UI
             Heading(characterPage, T("mbStandsInForOptional", "Stands in for (optional)"));
             var srow = Add(characterPage, new VisualElement(), "mbv-row");
             Add(srow, new Label(c.Replaces != null ? SpeakerLabel(c.Replaces) : T("mbNobody", "Nobody")), "mbv-inline-label");
-            Act(srow, T("mbChoose", "Choose…"), () => PickSpeaker(c));
+            Act(srow, T("mbChoose", "Choose…"), () => PickSpeaker((value, _, _) =>
+            {
+                c.Replaces = value;
+                CharacterEdited();
+                RebuildCharacters();
+                BuildCharacterPage();
+            }));
             if (c.Replaces != null) Act(srow, "✕", () => { c.Replaces = null; CharacterEdited(); RebuildCharacters(); BuildCharacterPage(); }, "mbv-step");
             Note(characterPage, T("mbStandsInNote", "Nobody: your own character. A story character: replaces their portrait and name."));
         }
@@ -159,6 +167,36 @@ namespace GoF2Remake.UI
             BuildCharacterPage();
         });
 
+        /// <summary>A character that replaces a story character, made from the speaker's own portrait (Portrait.RenderSpeaker)
+        /// and name: it works at once, and the modder changes the picture, the name or both. A speaker the project already
+        /// replaces just selects that character.</summary>
+        void ReplaceGameCharacter() => PickSpeaker((value, speaker, name) =>
+        {
+            var existing = Project.Characters.FirstOrDefault(o => o.Replaces == value);
+            if (existing != null)
+            {
+                currentCharacter = existing;
+                Status(string.Format(T("mbAlreadyReplaced", "{0} is already replaced by {1}."), name, existing.Name ?? existing.Id), false);
+                RebuildCharacters();
+                BuildCharacterPage();
+                return;
+            }
+            var picture = Portrait.RenderSpeaker(speaker);
+            if (picture == null) { Status(T("mbNoSpeakerPortrait", "The game's portraits couldn't be read."), true); return; }
+            string tmp = System.IO.Path.Combine(Application.temporaryCachePath, "speaker_portrait.png");
+            try { System.IO.File.WriteAllBytes(tmp, picture.EncodeToPNG()); }
+            finally { UnityEngine.Object.Destroy(picture); }
+            string id = Project.CharacterIdFor(name);
+            var c = Project.AddCharacter(name, Project.AddFile(tmp, "portraits", id, ".png"));
+            c.Replaces = value;
+            currentCharacter = c;
+            SaveNow();
+            RequestReload(false);
+            RebuildCharacters();
+            BuildCharacterPage();
+            Status(string.Format(T("mbReplacingCharacter", "{0} starts from the game's portrait: choose your own picture or change the name."), name), false);
+        });
+
         void AskRemoveCharacter()
         {
             var c = currentCharacter;
@@ -178,9 +216,9 @@ namespace GoF2Remake.UI
         static string SpeakerLabel(string replaces) =>
             int.TryParse(replaces, out int n) && n >= 0 && n < StoryTable.SpeakerCount ? StoryTable.OriginalSpeakerName(n) : replaces;
 
-        /// <summary>The story's speakers with their portraits; the pick is written by name when no other speaker has it, else
-        /// by number.</summary>
-        void PickSpeaker(ProjectCharacter c)
+        /// <summary>The story's speakers with their portraits; 'chosen' gets the "replaces" value (by name when no other
+        /// speaker has it, else by number), the speaker's number and its name.</summary>
+        void PickSpeaker(Action<string, int, string> chosen)
         {
             modal.Clear();
             var boxEl = Add(modal, new VisualElement(), "mbv-modal-box", "mbv-modal-box--list", "mbv-panel");
@@ -201,10 +239,7 @@ namespace GoF2Remake.UI
                 {
                     sound(false);
                     CloseModal();
-                    c.Replaces = value;
-                    CharacterEdited();
-                    RebuildCharacters();
-                    BuildCharacterPage();
+                    chosen(value, speaker, n);
                 }) { focusable = false };
                 tile.AddToClassList("mbv-tile");
                 tile.AddToClassList("mbv-speaker-tile");

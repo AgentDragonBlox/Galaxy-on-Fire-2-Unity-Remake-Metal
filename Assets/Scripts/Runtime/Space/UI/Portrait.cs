@@ -52,6 +52,36 @@ namespace GoF2Remake.UI
             }
         }
 
+        /// <summary>A story speaker's own portrait layers (without the game's backdrop and scanlines, which a character draws
+        /// itself) as one picture of 'scale' x 160 x 200, transparent around the figure: the Mod Builder's starting portrait
+        /// for a character that replaces the speaker. Null when the story assets are missing. Main thread.</summary>
+        public static Texture2D RenderSpeaker(int speaker, int scale = 2)
+        {
+            var assets = StoryAssets.Load();
+            if (assets == null) return null;
+            int w = 160 * scale, h = 200 * scale;
+            var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            var previous = RenderTexture.active;
+            RenderTexture.active = rt;
+            GL.Clear(true, true, Color.clear);
+            GL.PushMatrix();
+            GL.LoadPixelMatrix(0, 160, 200, 0);   // the box's units, y down like the UI's
+            foreach (var l in StoryTable.PortraitLayers(speaker))
+            {
+                var (tex, imageHeight) = assets.Part(l.key);
+                if (tex == null) continue;
+                float top = l.anchor == 32 ? l.y - imageHeight : l.y;
+                Graphics.DrawTexture(new Rect(0, top, tex.width, tex.height), tex);
+            }
+            GL.PopMatrix();
+            var result = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            result.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            result.Apply();
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(rt);
+            return result;
+        }
+
         /// <summary>A mod's character (ModCharacters): its PNG covering the 160 x 200 box (its top kept), the game's background
         /// under it and frame over it unless the character turns them off; mirrored as asked or as the character says.</summary>
         public static void ShowCharacter(VisualElement box, Modding.ModCharacters.Def character, bool mirrored)
