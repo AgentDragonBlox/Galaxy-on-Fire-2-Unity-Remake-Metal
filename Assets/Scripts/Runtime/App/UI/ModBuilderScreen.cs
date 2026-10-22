@@ -175,8 +175,55 @@ namespace GoF2Remake.UI
             b.AddToClassList("mbv-button");
             foreach (var c in classes) b.AddToClassList(c);
             b.focusable = false;   // keys are the builder's shortcuts, not button presses
+            DrawSign(b);
             parent.Add(b);
             return b;
+        }
+
+        // The signs' colours: --gof-cyan on the add buttons, --gof-text on the steppers, white under the pointer.
+        static readonly Color SignCyan = new Color32(62, 200, 255, 255), SignText = new Color32(216, 236, 247, 255);
+
+        /// <summary>The add buttons' "+" ("+ New ship from .glb") and the steppers' lone "+" / "−" drawn as anti-aliased
+        /// strokes (Painter2D, like PadGlyph's symbols): Serpentine's glyphs are small and sit low beside the capitals, and
+        /// bars made of elements snapped to whole pixels unevenly at the interface's scale (a 1 px across, 2 px upright
+        /// at 1.19 units a pixel). The sign is a Label still holding its character, kept invisible, so the button's text
+        /// reads the same to the AI tools (McpInput.TextOf); the rest of the label moves into a child Label, since a Button
+        /// measures its own text only while it has no children.</summary>
+        static void DrawSign(Button b)
+        {
+            string t = b.text ?? "";
+            bool lone = t == "+" || t == "−" || t == "-";
+            if (!lone && !t.StartsWith("+ ")) return;
+            b.text = "";
+            b.AddToClassList(lone ? "mbv-sign-only" : "mbv-with-sign");
+            var sign = new Label(lone ? t : "+") { pickingMode = PickingMode.Ignore };
+            sign.AddToClassList("mbv-sign");
+            bool plus = t != "−" && t != "-", hot = false;
+            sign.generateVisualContent += ctx =>
+            {
+                var r = sign.contentRect;
+                if (r.width <= 0f || r.height <= 0f) return;
+                var p = ctx.painter2D;
+                p.lineWidth = Mathf.Max(1.5f, r.height / 6f);
+                p.lineCap = LineCap.Butt;
+                p.strokeColor = hot ? Color.white : lone ? SignText : SignCyan;
+                p.BeginPath();
+                p.MoveTo(new Vector2(0f, r.height * 0.5f));
+                p.LineTo(new Vector2(r.width, r.height * 0.5f));
+                if (plus)
+                {
+                    p.MoveTo(new Vector2(r.width * 0.5f, 0f));
+                    p.LineTo(new Vector2(r.width * 0.5f, r.height));
+                }
+                p.Stroke();
+            };
+            b.RegisterCallback<PointerEnterEvent>(_ => { hot = b.enabledInHierarchy; sign.MarkDirtyRepaint(); });
+            b.RegisterCallback<PointerLeaveEvent>(_ => { hot = false; sign.MarkDirtyRepaint(); });
+            b.Add(sign);
+            if (lone) return;
+            var label = new Label(t.Substring(2).TrimStart()) { pickingMode = PickingMode.Ignore };
+            label.AddToClassList("mbv-button-label");
+            b.Add(label);
         }
 
         protected Button TopButton(VisualElement parent, string text, Action onClick, string extra = null)

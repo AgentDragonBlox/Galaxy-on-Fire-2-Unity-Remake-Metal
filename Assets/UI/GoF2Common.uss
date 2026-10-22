@@ -614,6 +614,7 @@
 .gof-scroll-bar {
     position: absolute;
     width: 12px;
+    translate: -50% 0;   /* centred on the left ScrollBars sets (its track 8 units right of the view) */
 }
 
 .gof-scroll-bar-track {

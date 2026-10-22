@@ -11,6 +11,8 @@
 // new-game options and the campaign (ProjectGame.cs) and the quests made in the builder (events/<name>.gof2quest,
 // ProjectQuest). Its audio is plain files: music/, sounds/ and voices/ (AudioFiles). What other mods it uses is its
 // manifest's "dependencies" (AddDependency: ModRefs adds one when another mod's content is picked).
+// A project can also start from a mod made elsewhere (an installed one, a downloaded .zip): CopyMod copies its files as
+// they are and keeps its id, so Export replaces the installed copy; what the builder doesn't edit stays as it was.
 // Plain C#.
 
 using System;
@@ -147,6 +149,7 @@ namespace GoF2Remake.Modding
                 Directory.CreateDirectory(Root);
                 foreach (var dir in Directory.GetDirectories(Root))
                 {
+                    if (Path.GetFileName(dir).StartsWith(".")) continue;   // an import being copied (CopyMod)
                     if (!File.Exists(Path.Combine(dir, ModManifest.FileName))) continue;
                     var p = Load(dir);
                     if (p != null) l.Add(p);
@@ -168,9 +171,11 @@ namespace GoF2Remake.Modding
             return id;
         }
 
-        /// <summary>The id this project's name gives: its slug, numbered ("_2") when another project or mod has that.</summary>
+        /// <summary>The id this project's name gives: its slug, numbered ("_2") when another project or mod has that. An
+        /// imported mod (KeepsId) keeps its own whatever it is called.</summary>
         public string IdFromName(string name)
         {
+            if (KeepsId) return Id;
             string id = Slug(name), unique = id;
             for (int i = 2; IdRefusal(unique) != null && i < 1000; i++) unique = $"{id}_{i}";
             return unique;
@@ -393,6 +398,11 @@ namespace GoF2Remake.Modding
             return null;
         }
 
+        /// <summary>A mod made elsewhere (CopyMod, builder.json "keepId"): its id doesn't follow the name. Saves and
+        /// multiplayer sessions name its content by "id:name", so a new id would take its ships and items out of them, and
+        /// other mods may depend on it.</summary>
+        public bool KeepsId => builder["keepId"] is JValue v && v.Type == JTokenType.Boolean && (bool)v;
+
         /// <summary>The ids this project had before (builder.json "previousIds"): an export replaces a mod installed under one.</summary>
         public List<string> PreviousIds =>
             builder["previousIds"] is JArray a ? a.Select(t => t.ToString()).ToList() : new List<string>();
@@ -435,6 +445,54 @@ namespace GoF2Remake.Modding
                 return Load(folder);
             }
             catch (Exception e) { error = e.Message; Debug.LogWarning($"Mod Builder: changing {old}'s id failed: {e.Message}"); return null; }
+        }
+
+        // ---- import -------------------------------------------------------------------------------------------
+
+        /// <summary>The project of the mod 'id', or null (the projects page asks before replacing it).</summary>
+        public static ModProject WithId(string id) =>
+            List().FirstOrDefault(p => string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>A mod made elsewhere as a project: every file of 'src' (an installed mod, a downloaded .zip; a zip's top
+        /// folder left out, ModSource) copied as it is under 'root' (ModProject.Root, read on the main thread), in a folder
+        /// named after the mod's id 'id', or into 'replaceFolder' (the project of that id, removed only once the copy is
+        /// complete). The mod keeps its id, so the project's Export replaces the installed copy. No Unity calls: runs on a
+        /// worker thread (a mod of models and textures is hundreds of MB). Returns the project's folder for Load, or null
+        /// with the error.</summary>
+        public static string CopyMod(ModSource src, string root, string id, string replaceFolder, out string error)
+        {
+            error = null;
+            string tmp = Path.Combine(root, "." + id + ".import");
+            try
+            {
+                if (Directory.Exists(tmp)) Directory.Delete(tmp, true);
+                Directory.CreateDirectory(tmp);
+                string inside = Path.GetFullPath(tmp) + Path.DirectorySeparatorChar;
+                foreach (string rel in src.Files)
+                {
+                    if (string.Equals(rel, BuilderFile, StringComparison.OrdinalIgnoreCase)) continue;   // the builder's own
+                    string dst = Path.GetFullPath(Path.Combine(tmp, rel));
+                    if (!dst.StartsWith(inside, StringComparison.OrdinalIgnoreCase)) continue;   // an archive's "../" path
+                    Directory.CreateDirectory(Path.GetDirectoryName(dst));
+                    File.WriteAllBytes(dst, src.ReadBytes(rel));
+                }
+                // Its id stays its own (KeepsId); the rest of builder.json the builder fills in as it is used.
+                File.WriteAllText(Path.Combine(tmp, BuilderFile), new JObject { ["keepId"] = true }.ToString(Formatting.Indented));
+                string target = replaceFolder ?? Path.Combine(root, id);
+                for (int i = 2; replaceFolder == null && Directory.Exists(target); i++) target = Path.Combine(root, $"{id}_{i}");
+                if (replaceFolder != null && Directory.Exists(replaceFolder)) Directory.Delete(replaceFolder, true);
+                Directory.Move(tmp, target);
+                Directory.SetLastWriteTimeUtc(target, DateTime.UtcNow);   // the newest project: the list's top
+                Debug.Log($"Mod Builder: imported the mod \"{id}\" from {src.Location} into {target}");
+                return target;
+            }
+            catch (Exception e)
+            {
+                error = e.Message;
+                Debug.LogWarning($"Mod Builder: importing {id} from {src.Location} failed: {e.Message}");
+                try { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); } catch { }
+                return null;
+            }
         }
 
         /// <summary>Deletes the project's folder.</summary>

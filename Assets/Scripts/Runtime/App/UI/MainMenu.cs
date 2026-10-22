@@ -417,6 +417,12 @@ namespace GoF2Remake.UI
                 // The Mod Builder's projects (remake, Modding.ModBuilder): opening one starts its hangar behind the fade.
                 modProjects = new ModBuilderProjects(modHost, Back, HookFocusSound, () => Play(buttonRelease), OpenModProject, ShowDialog, ShowNotice);
                 panels[Modding.ModBuilder.ProjectsPanel] = modProjects.Panel;
+                // The Mod Browser's Edit in Mod Builder: the Mod Builder's page, making a project of that mod.
+                modBrowser.EditInBuilder = mod =>
+                {
+                    OpenPanel(Modding.ModBuilder.ProjectsPanel);
+                    modProjects.ImportInstalled(mod);
+                };
                 panels["modsHubPanel"] = BuildModsHub(modHost);
             }
             SetupMultiplayerPanel();
@@ -981,7 +987,11 @@ namespace GoF2Remake.UI
             if (openPanel == panels["economyPanel"]) { OpenPanel("difficultyPanel"); return; }
             if (openPanel == panels["difficultyPanel"]) { OpenPanel(pendingStartIndex >= 0 && panels.ContainsKey("debugPanel") ? "debugPanel" : "campaignPanel"); return; }
             // The Mod Browser and the Mod Builder go back to the Mods hub.
-            if (panels.TryGetValue(Modding.ModBuilder.ProjectsPanel, out var mbp) && openPanel == mbp) modProjects?.Close();
+            if (panels.TryGetValue(Modding.ModBuilder.ProjectsPanel, out var mbp) && openPanel == mbp)
+            {
+                if (modProjects != null && modProjects.CancelImport()) return;   // the import list: the projects again
+                modProjects?.Close();
+            }
             if (panels.ContainsKey("modsHubPanel") && (openPanel == panels["modsPanel"] || openPanel == mbp))
             {
                 var from = openPanel == mbp ? modsHubBuilder : modsHubBrowser;

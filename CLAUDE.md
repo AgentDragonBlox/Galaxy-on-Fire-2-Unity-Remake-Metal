@@ -3268,6 +3268,22 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
 - Orbit drags (remake, players' request): a vertical drag takes the camera down / up the other way round (a drag up tips the
   ship up) in Inspect ship, Action Freeze (`PhotoMode`, the original's y flip dropped) and the Mod Builder; keys and sticks
   unchanged.
+- **Mods into the builder** (remake, 2026-10-22, the user's request: a downloaded mod as a project): the projects page's
+  Import (`ModBuilderProjects.ToggleImport`: "From a file…" (`ModImport.Pick`, a zip read through `ModImport.Inspect` /
+  `ZipSource`) and every installed mod, "has a project" on those whose id a project already has) and the Mod Browser's
+  "Edit in Mod Builder" (`ModBrowser.EditInBuilder`, `ModBuilderProjects.ImportInstalled`). `ModProject.CopyMod` (worker
+  thread, polled from the panel's scheduler) copies the mod's files (`ModSource.Files`; never its builder.json or a path
+  out of the folder) into `ModProjects/.<id>.import`, then moves it into place (a project of that id is replaced after the
+  menu's question, else `<id>_N`); `List` skips dot folders. builder.json `keepId` (`ModProject.KeepsId`): the project's id
+  stays the mod's whatever its name (`IdFromName`), so Export replaces the installed mod. Esc / B closes the import list
+  first (`CancelImport`). Tests in `ModBuilderKindsTests`.
+- **Builder screen fixes** (2026-10-22): the view panel, the Test fly button, the placing hint and the quest graph carry
+  `SafeArea.EdgeClass` (`KeepClear` gave them margins every 500 ms: they sat off their places on wide windows); a button
+  text starting "+ " (or a lone + / − stepper) gets its sign drawn by Painter2D (`ModBuilderScreen.DrawSign`: the font's
+  + snapped to unequal 1 / 2 px bars at the UI's non-integer scale; cyan for adding, white on hover, the rest of the text in
+  `mbv-button-label`); `ScrollBars` puts the bar at the viewport's edge and `.gof-scroll-bar` centres itself with
+  `translate: -50%` (subtracting the snapped half width each layout fed back into the next: the bar's width flickered by a
+  pixel twice a second).
 - **Image formats** (`ImageImport`): every mod image (ModMaterials' `Texture` and background `PreloadTexture`, so skins,
   portraits, icons, hull textures, planets / suns / skies; ModInfo's preview; ModTextures' file list) and the Mod Builder's
   pickers (which store a picked image as PNG) read PNG / JPG by Unity's decoders and TGA (plain / RLE), BMP (8 / 24 / 32-bit),

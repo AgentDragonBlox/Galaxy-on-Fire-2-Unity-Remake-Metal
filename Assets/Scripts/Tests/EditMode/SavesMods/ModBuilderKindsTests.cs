@@ -7,11 +7,15 @@
 // game's rooms gets that room's markers from the game's tables (StationLevel.GameRoomMarkers).
 // Expected values: the formats in Modding/README.md; the Terran hangar's tables (StationTables: 2 parked pads, the flights'
 // gate at (0, 55, -549)); the Terran bar's 7 visitor spots.
+// A mod made elsewhere becomes a project (ModProject.CopyMod: an installed folder mod, a downloaded zip with a top
+// folder): its files as they are, its own id (so Export replaces the installed copy), fields the builder doesn't know
+// kept through a save; an existing project of that id is replaced in its folder; an archive's "../" path goes nowhere.
 
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using GoF2Remake.Events;
 using GoF2Remake.Modding;
 using Newtonsoft.Json.Linq;
@@ -237,6 +241,61 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(7, bar.Keys.Count(k => k.StartsWith("visitor_")));
             Assert.IsTrue(bar.ContainsKey("camera") && bar.ContainsKey("camera_target"));
             Assert.IsNull(World.StationLevel.GameRoomMarkers("station_078_midorian"));
+        }
+
+        [Test]
+        public void AnInstalledModBecomesAProjectWithItsOwnIdAndFiles()
+        {
+            WriteMod("downloaded", "dl_mod", "2.1", "",
+                ("ships.json", "[ { 'override': 10, 'armor': 300, 'madeUpField': 7 } ]"),
+                ("events/q.gof2event", "graph text"),
+                ("textures/ship.png", "png"));
+            ModManager.Scan();
+            var mod = Installed("dl_mod");
+            string folder = ModProject.CopyMod(mod.Source, ModProject.Root, mod.Id, null, out string error);
+            Assert.IsNotNull(folder, error);
+            var p = ModProject.Load(folder);
+            Assert.IsNull(p.LoadError);
+            Assert.AreEqual("dl_mod", p.Id, "the mod's own id");
+            Assert.AreEqual("dl_mod", p.InstalledMod?.Id, "its export replaces the installed copy");
+            Assert.AreEqual("2.1", p.Version);
+            Assert.IsTrue(p.KeepsId);
+            Assert.AreEqual("dl_mod", p.IdFromName("A Better Name"), "its id doesn't follow a new name: saves name its content by it");
+            Assert.IsFalse(ModProject.Create("Own work", "tests").KeepsId, "a project made in the builder still follows its name");
+            Assert.AreEqual(1, p.Ships.Count);
+            Assert.IsTrue(File.Exists(Path.Combine(folder, "events", "q.gof2event")), "a file the builder doesn't edit");
+            Assert.IsTrue(File.Exists(Path.Combine(folder, "textures", "ship.png")));
+            p.Save();
+            var ships = (JArray)JToken.Parse(File.ReadAllText(Path.Combine(folder, "ships.json")));
+            Assert.AreEqual(7, (int)ships[0]["madeUpField"], "a field the builder doesn't know survives a save");
+            Assert.AreEqual(folder, ModProject.WithId("dl_mod")?.Folder);
+            Assert.IsFalse(Directory.GetDirectories(ModProject.Root).Any(d => Path.GetFileName(d).StartsWith(".")),
+                           "no half-made import folder is left");
+        }
+
+        [Test]
+        public void AZipModReplacesTheProjectOfItsIdAndKeepsInsideTheProject()
+        {
+            var old = ModProject.Create("Pack mod", "tests");   // id pack_mod
+            old.AddItemOverride(12);
+            old.Save();
+            string zipPath = Path.Combine(GamePaths.Data, "download", "pack.zip");
+            Directory.CreateDirectory(Path.GetDirectoryName(zipPath));
+            WriteZip(zipPath, false,
+                ("pack/mod.json", Encoding.UTF8.GetBytes(Manifest("pack_mod", "3.0"))),
+                ("pack/items.json", Encoding.UTF8.GetBytes(Q("[ { 'override': 14, 'name': 'Zipped' } ]"))),
+                ("pack/../../evil.txt", Encoding.UTF8.GetBytes("outside")));
+            string folder;
+            string error;
+            using (var src = new ZipSource(zipPath))
+                folder = ModProject.CopyMod(src, ModProject.Root, "pack_mod", old.Folder, out error);
+            Assert.AreEqual(old.Folder, folder, error);
+            var p = ModProject.Load(folder);
+            Assert.AreEqual("3.0", p.Version, "the zip's copy took the project's place");
+            Assert.AreEqual(1, p.Items.Count);
+            Assert.AreEqual(14, p.Items[0].Original, "the old project's item went with it");
+            Assert.IsFalse(Directory.GetFiles(GamePaths.Data, "evil.txt", SearchOption.AllDirectories).Any(),
+                           "an archive's ../ path is not written");
         }
     }
 }

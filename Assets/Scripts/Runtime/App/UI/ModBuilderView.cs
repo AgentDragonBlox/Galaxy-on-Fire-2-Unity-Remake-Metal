@@ -165,12 +165,15 @@ namespace GoF2Remake.UI
             BuildSystemsPanels(leftGroups[(int)ModBuilder.Kind.Systems], rightGroups[(int)ModBuilder.Kind.Systems]);
 
             // ---- bottom ----
-            placeHint = Add(root, new Label { pickingMode = PickingMode.Ignore }, "mbv-place-hint");
+            placeHint = Add(root, new Label { pickingMode = PickingMode.Ignore }, "mbv-place-hint", SafeArea.EdgeClass);
             // The engines: the turntable ship's engine glow and exhaust as in flight, a slider from off through the throttle to
             // a boost at its right end.
             // The view panel (the user's request, 2026-10-22: tidier and toggleable): a header that folds it to one bar (kept for
             // the next runs, PlayerPrefs mb_view_panel), then the engines and the camera as two sections.
-            var engines = uiEngines = Add(root, new VisualElement(), "mbv-engines", "mbv-panel");
+            // SafeArea.EdgeClass (with the hint and Test fly): inside the interface's band like the side panels beside it
+            // (Interface width 21:9 on a wider screen, the edge margin, a notch); without it the VIEW panel lay over the
+            // ships list and Test fly reached past the right panel.
+            var engines = uiEngines = Add(root, new VisualElement(), "mbv-engines", "mbv-panel", SafeArea.EdgeClass);
             var head = Add(engines, new Button { focusable = false }, "mbv-view-head");
             Add(head, new Label(T("mbView", "View").ToUpperInvariant()) { pickingMode = PickingMode.Ignore }, "mbv-view-head-title", "gof-semibold");
             var fold = Add(head, new Label { pickingMode = PickingMode.Ignore }, "mbv-view-head-fold");
@@ -210,7 +213,8 @@ namespace GoF2Remake.UI
                             "mbv-view-button", "gof-semibold");
             orbit.tooltip = T("mbViewOrbitHint", "Back around the ship's centre after a pan");
             orbit.RegisterCallback<PointerDownEvent>(_ => sound(true), TrickleDown.TrickleDown);
-            testFly = Add(root, new Button(StartTestFlight) { text = T("mbTestFly", "Test fly").ToUpperInvariant() }, "mbv-testfly", "gof-semibold");
+            testFly = Add(root, new Button(StartTestFlight) { text = T("mbTestFly", "Test fly").ToUpperInvariant() }, "mbv-testfly", "gof-semibold",
+                          SafeArea.EdgeClass);
             testFly.RegisterCallback<PointerDownEvent>(_ => sound(true), TrickleDown.TrickleDown);
             FinishLayout();
             // Over everything while the panels fly in or out: nothing takes a click meanwhile.

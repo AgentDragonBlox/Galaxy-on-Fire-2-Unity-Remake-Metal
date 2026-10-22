@@ -6,6 +6,10 @@
 // the Space Lounge, the star map or space), the mods it depends on,
 // and Open in hangar, Export as mod (zips it into the Mods folder, asks before replacing an installed mod with its id),
 // Open folder (desktop) and Delete (asks).
+// Import mod (players' request: edit a downloaded mod): the list shows the installed mods instead (and From a file...
+// for a downloaded .zip); a pick makes a project of the mod (ModProject.CopyMod on a worker thread: its files as they
+// are, its own id kept, so Export replaces the installed copy), asking first when a project of it exists. The Mod
+// Browser's Edit in Mod Builder starts the same import (ImportInstalled).
 // Plain C#: MainMenu creates it in its panel host and hands it its sound, focus, dialog hooks and the opening of a project
 // (Modding.ModBuilder.Begin, then the Station scene behind the menu's fade).
 
@@ -34,7 +38,8 @@ namespace GoF2Remake.UI
         readonly VisualElement detail, content;
         readonly TextField newName, nameField, authorField, versionField, descField;
         readonly Label idHint;
-        readonly Button openButton, exportButton, deleteButton;
+        readonly Button openButton, exportButton, deleteButton, createButton, importButton;
+        bool importing, importBusy;   // the list shows the mods to import / a copy is running
         List<ModProject> projects = new List<ModProject>();
         ModProject selected;
         bool filling;
@@ -92,9 +97,10 @@ namespace GoF2Remake.UI
             {
                 if (e.keyCode != KeyCode.Return && e.keyCode != KeyCode.KeypadEnter) return;
                 e.StopPropagation();
-                Create();
+                if (!importing) Create();   // while the import list shows the field only searches it
             }, TrickleDown.TrickleDown);
-            ActionButton(newRow, T("mbCreate", "Create"), Create, "mb-create");
+            createButton = ActionButton(newRow, T("mbCreate", "Create"), Create, "mb-create");
+            importButton = ActionButton(newRow, T("modsImport", "Import mod"), ToggleImport, "mb-create");
             list = Add(left, new ScrollView(ScrollViewMode.Vertical), "mods-list");
             list.verticalScrollerVisibility = ScrollerVisibility.Hidden;
             list.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
@@ -227,6 +233,7 @@ namespace GoF2Remake.UI
 
         void RebuildRows()
         {
+            if (importing) { RebuildImportRows(); return; }
             list.Clear();
             var shown = projects.Where(Matches).ToList();
             foreach (var p in shown)
@@ -411,6 +418,159 @@ namespace GoF2Remake.UI
             selected = p;
             RebuildRows();
             Refresh();
+        }
+
+        // ---- import ------------------------------------------------------------------------------------------
+
+        /// <summary>Import mod: the list shows the mods to make a project of instead of the projects, the button reads
+        /// Cancel; again (or Esc / Back, CancelImport) the projects come back.</summary>
+        void ToggleImport()
+        {
+            if (importBusy) return;
+            importing = !importing;
+            importButton.text = (importing ? T("kbCancel", "Cancel") : T("modsImport", "Import mod")).ToUpperInvariant();
+            createButton.SetEnabled(!importing);
+            RebuildRows();
+        }
+
+        /// <summary>Back while the import list shows: the projects again (true); false = nothing to undo here.</summary>
+        public bool CancelImport()
+        {
+            if (!importing || importBusy) return false;
+            ToggleImport();
+            return true;
+        }
+
+        /// <summary>The import list: From a file... (where there is a file picker), then every installed mod the search
+        /// field matches, marked when a project of it exists.</summary>
+        void RebuildImportRows()
+        {
+            list.Clear();
+            if (ModImport.Available)
+                ImportRow(null, T("mbImportFile", "From a file..."), T("mbImportFileSub", "A mod you downloaded (.zip)"), PickFile);
+            int mods = 0;
+            foreach (var m in ModManager.Installed)
+            {
+                if (m.Manifest == null || !MatchesMod(m)) continue;
+                var mod = m;
+                string sub = "v" + m.Manifest.version + (string.IsNullOrEmpty(m.Manifest.author) ? "" : "  ·  " + m.Manifest.author)
+                           + (projects.Any(p => string.Equals(p.Id, m.Id, StringComparison.OrdinalIgnoreCase))
+                              ? "  ·  " + T("mbImportHasProject", "has a project") : "");
+                ImportRow(m.Preview, m.Name, sub, () => ImportInstalled(mod));
+                mods++;
+            }
+            empty.text = ModManager.Installed.Count == 0
+                ? (ModImport.Available ? T("mbImportNone", "No mods installed: pick a downloaded .zip with From a file.")
+                                       : T("mbImportNoneNoPicker", "No mods installed: put one into your Mods folder first."))
+                : T("mbImportNoMatch", "No installed mod matches.");
+            empty.style.display = mods == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            count.text = T("mbImportPick", "Pick a mod to import");
+            note.text = T("mbImportNote", "The mod's files are copied into a new project. It keeps its id: Export as mod replaces the installed copy.");
+        }
+
+        bool MatchesMod(ModInfo m)
+        {
+            string q = newName?.value?.Trim();
+            if (string.IsNullOrEmpty(q)) return true;
+            string hay = $"{m.Name} {m.Id} {m.Manifest?.author}";
+            foreach (var w in q.Split((char[])null, StringSplitOptions.RemoveEmptyEntries))
+                if (hay.IndexOf(w, StringComparison.OrdinalIgnoreCase) < 0) return false;
+            return true;
+        }
+
+        void ImportRow(Texture2D picture, string name, string sub, Action pick)
+        {
+            var row = new Button(() => { if (importBusy) return; click(); pick(); });
+            row.AddToClassList("mods-row");
+            var thumb = Add(row, new VisualElement { pickingMode = PickingMode.Ignore }, "mods-thumb", "mb-thumb");
+            if (picture != null) thumb.style.backgroundImage = new StyleBackground(picture);
+            var text = Add(row, new VisualElement { pickingMode = PickingMode.Ignore }, "mods-row-text");
+            Add(text, new Label(name) { pickingMode = PickingMode.Ignore }, "mods-row-name");
+            Add(text, new Label(sub) { pickingMode = PickingMode.Ignore }, "mods-row-sub");
+            hookFocus(row);
+            list.Add(row);
+        }
+
+        /// <summary>An installed mod as a project (the import list's rows, the Mod Browser's Edit in Mod Builder).</summary>
+        public void ImportInstalled(ModInfo mod)
+        {
+            if (mod?.Manifest == null || mod.Source == null || importBusy) return;
+            StartImport(mod.Manifest, () => mod.Source, null);
+        }
+
+        /// <summary>From a file...: the system's picker (ModImport.Pick, polled until it answers), the file read as a mod.</summary>
+        void PickFile()
+        {
+            string heading = T("modsImport", "Import mod");
+            importBusy = true;
+            UiBusy.Mark(importButton, true);
+            var poll = ModImport.Pick();
+            ModImport.Picked picked = null;
+            Panel.schedule.Execute(() =>
+            {
+                picked = poll();
+                if (picked == null) return;
+                importBusy = false;
+                UiBusy.Mark(importButton, false);
+                if (picked.cancelled) return;
+                if (picked.error != null) { notice(heading, string.Format(T("mbImportFailed", "The mod couldn't be imported: {0}"), picked.error)); return; }
+                var manifest = ModImport.Inspect(picked.path, out string error);
+                if (manifest == null)
+                {
+                    ModImport.Discard(picked.path);
+                    notice(heading, string.Format(T("mbImportFailed", "The mod couldn't be imported: {0}"), error));
+                    return;
+                }
+                string path = picked.path;
+                ZipSource zip = null;
+                StartImport(manifest, () => zip = new ZipSource(path), () => { zip?.Dispose(); ModImport.Discard(path); });
+            }).Every(200).Until(() => picked != null);
+        }
+
+        /// <summary>Asks first when a project of the mod exists (it is replaced), then copies the mod's files on a worker
+        /// thread (ModProject.CopyMod) and selects the new project. 'open' gives the mod's files, 'done' cleans up after.</summary>
+        void StartImport(ModManifest manifest, Func<ModSource> open, Action done)
+        {
+            string heading = T("modsImport", "Import mod");
+            var existing = projects.FirstOrDefault(p => string.Equals(p.Id, manifest.id, StringComparison.OrdinalIgnoreCase));
+            void Run()
+            {
+                ModSource src;
+                try { src = open(); }
+                catch (Exception e) { done?.Invoke(); notice(heading, string.Format(T("mbImportFailed", "The mod couldn't be imported: {0}"), e.Message)); return; }
+                if (existing != null && existing == selected) { SaveIfDirty(); selected = null; }
+                importBusy = true;
+                UiBusy.Mark(importButton, true);   // a mod of models and textures takes a while (docs/UI-DESIGN.md "Waiting")
+                string root = ModProject.Root, id = manifest.id, replace = existing?.Folder, error = null, folder = null;
+                var copy = System.Threading.Tasks.Task.Run(() => folder = ModProject.CopyMod(src, root, id, replace, out error));
+                bool finished = false;
+                Panel.schedule.Execute(() =>
+                {
+                    if (!copy.IsCompleted) return;
+                    finished = true;
+                    importBusy = false;
+                    UiBusy.Mark(importButton, false);
+                    done?.Invoke();
+                    if (folder == null)
+                    {
+                        notice(heading, string.Format(T("mbImportFailed", "The mod couldn't be imported: {0}"), error ?? copy.Exception?.GetBaseException().Message));
+                        return;
+                    }
+                    projects = ModProject.List();
+                    selected = projects.FirstOrDefault(p => string.Equals(System.IO.Path.GetFullPath(p.Folder), System.IO.Path.GetFullPath(folder),
+                                                                          StringComparison.OrdinalIgnoreCase)) ?? projects.FirstOrDefault();
+                    if (importing) ToggleImport(); else RebuildRows();
+                    Refresh();
+                    string text = string.Format(T("mbImported", "\"{0}\" is a project now. The builder edits what it knows (ships, items, characters...); its other files stay as they are. Export as mod installs it, replacing an installed copy."), manifest.Name);
+                    if (selected?.LoadError != null)
+                        text += "\n\n" + string.Format(T("mbImportedBroken", "Some of it can't be read, so the project can't be opened until it is fixed in its folder: {0}"), selected.LoadError);
+                    notice(heading, text);
+                }).Every(100).Until(() => finished);
+            }
+            if (existing != null)
+                ask(heading, string.Format(T("mbImportReplace", "There is a project of \"{0}\" already (\"{1}\"). Replace it with this copy of the mod? Its changes are lost."),
+                                           manifest.Name, existing.Name), Run);
+            else Run();
         }
 
         void Export()

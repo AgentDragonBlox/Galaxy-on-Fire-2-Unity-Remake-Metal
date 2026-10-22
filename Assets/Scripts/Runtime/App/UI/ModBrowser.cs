@@ -28,7 +28,10 @@ namespace GoF2Remake.UI
         readonly Label count, empty, note;
         readonly VisualElement preview, detail;
         readonly Label name, meta, description, problems;
-        readonly Button toggle, earlier, later, delete;
+        readonly Button toggle, earlier, later, delete, edit;
+        /// <summary>Edit in Mod Builder: the selected mod as a Mod Builder project (MainMenu: ModBuilderProjects.ImportInstalled);
+        /// the button shows only when this is set.</summary>
+        public Action<ModInfo> EditInBuilder;
         readonly Action<string, string, Action> ask;
         readonly Action<string, string> notice;
         bool importing;
@@ -95,6 +98,11 @@ namespace GoF2Remake.UI
             Add(toggle, InputGlyph.Pad(PadButton.X), "mods-pad-x");   // X / square, in the style of the controller in use
             earlier = ActionButton(actions, T("modsEarlier", "Earlier"), () => Move(-1));
             later = ActionButton(actions, T("modsLater", "Later"), () => Move(1));
+            edit = ActionButton(actions, T("modsEditInBuilder", "Edit in Mod Builder"), () =>
+            {
+                var mod = selected != null ? ModManager.Find(selected) : null;
+                if (mod != null) EditInBuilder?.Invoke(mod);
+            });
             delete = ActionButton(actions, T("modsDelete", "Delete"), AskDelete, "mods-delete");
 
             var footer = Add(Panel, new VisualElement(), "mods-footer");
@@ -244,6 +252,8 @@ namespace GoF2Remake.UI
             toggle.text = (isOn ? T("modsTurnOff", "Turn off") : T("modsTurnOn", "Turn on")).ToUpperInvariant();
             toggle.SetEnabled(!mod.Broken || isOn);
             delete.SetEnabled(mod.Source != null);
+            edit.style.display = EditInBuilder != null ? DisplayStyle.Flex : DisplayStyle.None;
+            edit.SetEnabled(mod.Manifest != null && mod.Source != null);
             toggle.EnableInClassList("mods-toggle--on", isOn);
             var ids = ModManager.Installed.Where(m => ModManager.IsEnabled(m.Id)).Select(m => m.Id).ToList();
             int i = ids.IndexOf(mod.Id);

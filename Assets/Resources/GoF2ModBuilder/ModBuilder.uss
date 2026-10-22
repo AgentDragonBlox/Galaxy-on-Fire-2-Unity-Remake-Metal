@@ -195,6 +195,41 @@
     opacity: 0.35;
 }
 
+/* The add buttons' "+" and the steppers' "+" / "−" (ModBuilderScreen.DrawSign: strokes drawn with Painter2D):
+   Serpentine's glyphs are small and sit low beside the capitals. The sign is a Label still holding its character (the
+   AI tools read the buttons' texts), the character itself invisible. */
+.mbv-with-sign {
+    flex-direction: row;
+    align-items: center;
+}
+
+.mbv-sign-only {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.mbv-sign {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    margin: 0 10px 0 0;
+    padding: 0;
+    font-size: 1px;
+    color: rgba(0, 0, 0, 0);
+}
+
+.mbv-sign-only > .mbv-sign {
+    margin: 0;
+}
+
+.mbv-button-label {
+    flex-shrink: 1;
+    margin: 0;
+    padding: 0;
+    -unity-text-align: middle-left;
+}
+
 .mbv-danger {
     border-color: rgba(230, 80, 60, 0.6);
 }

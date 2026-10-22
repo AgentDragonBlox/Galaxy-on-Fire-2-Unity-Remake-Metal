@@ -82,6 +82,7 @@ namespace GoF2Remake.UI
             help.AddToClassList("mbg-help");
             help.pickingMode = PickingMode.Ignore;
             graph.Add(help);
+            graph.AddToClassList(SafeArea.EdgeClass);   // between the side panels, inside the interface band as they are
             root.Add(graph);
         }
 
