@@ -22,6 +22,10 @@ namespace GoF2Remake.UI
         public string id;
         public OptionPage page;
         public OptionKind kind;
+        /// <summary>A volume slider: a speaker before its value mutes it. Its own flag, not the page: a row built by hand
+        /// (the photo panel, the Debug page) leaves the page at its default, Sound, and every slider there had the
+        /// speaker.</summary>
+        public bool volume;
         public Func<string> label;
         public Func<string> description;   // optional line under the row
         public Func<UnityEngine.UIElements.VisualElement> extra;   // optional element under the row (not focusable)
@@ -612,7 +616,8 @@ namespace GoF2Remake.UI
 
         static OptionDef Slider(string id, OptionPage page, Func<string> label, float min, float max, Func<float> get, Action<float> set,
                                 Func<float, string> format) =>
-            new OptionDef { id = id, page = page, kind = OptionKind.Slider, label = label, min = min, max = max, get = get, set = set, format = format };
+            new OptionDef { id = id, page = page, kind = OptionKind.Slider, label = label, min = min, max = max, get = get, set = set, format = format,
+                            volume = page == OptionPage.Sound };   // the Sound page's sliders are the volumes
 
         /// <summary>A Gameplay option that is the session's rule in multiplayer (NetRules): its row hides for a player in
         /// someone else's session (the host or the server decides; a player host changes it for everyone).</summary>

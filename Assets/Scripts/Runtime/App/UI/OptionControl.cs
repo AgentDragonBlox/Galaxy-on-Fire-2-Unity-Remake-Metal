@@ -46,7 +46,7 @@ namespace GoF2Remake.UI
                     slider = new Slider(d.min, d.max);
                     slider.RegisterValueChangedCallback(e => { d.set(e.newValue); UpdateSliderLabel(); Changed?.Invoke(); });
                     Field = slider;
-                    BuildSliderBox(d.page == OptionPage.Sound);
+                    BuildSliderBox(d.volume);
                     break;
                 case OptionKind.Toggle:
                     toggle = new Toggle();
@@ -143,7 +143,7 @@ namespace GoF2Remake.UI
             }
         }
 
-        /// <summary>The slider's parts: the value box (and the Sound page's speaker) before the bar.</summary>
+        /// <summary>The slider's parts: the value box (and a volume's speaker, OptionDef.volume) before the bar.</summary>
         void BuildSliderBox(bool sound)
         {
             slider.AddToClassList("option-slider");

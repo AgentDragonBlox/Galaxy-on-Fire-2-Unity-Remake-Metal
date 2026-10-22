@@ -255,6 +255,15 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
+        public void OnlyTheVolumesHaveASpeaker()
+        {
+            // OptionDef.volume, not the page: a row built by hand (the photo panel) leaves the page at Sound, its default.
+            var volumes = OptionsCatalog.All().Where(o => o.volume).Select(o => o.id).OrderBy(x => x).ToList();
+            CollectionAssert.AreEqual(new[] { "master", "music", "sfx", "voice" }, volumes);
+            Assert.IsFalse(new OptionDef { kind = OptionKind.Slider }.volume, "a slider built by hand has none");
+        }
+
+        [Test]
         public void PageTitles()
         {
             Assert.AreEqual(Localization.Get(502), OptionsCatalog.PageTitle(OptionPage.Graphics));
