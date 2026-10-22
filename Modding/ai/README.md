@@ -43,16 +43,19 @@ shows the commands to connect, with Copy buttons:
 
 Give the assistant the skill as well (above): the server knows the game, the skill explains the formats. Its tools:
 `builder_status`, `search_content` (the game's, your project's and other mods' items, ships, systems, stations,
-characters, quests, music, rooms), `list_entries` / `get_entries` / `put_entry` / `delete_entry` (the project's entries in
+characters, quests, music, rooms, and the game's sound effects and voice lines to replace), `list_entries` / `get_entries` / `put_entry` / `delete_entry` (the project's entries in
 the mod files' own JSON; `patch_entry` changes part of one, e.g. one line of a quest, leaving the rest and its graph layout
-as they are), `list_files` / `read_file` / `write_file` (portraits, textures, models, audio inside the project),
+as they are), `list_files` / `read_file` / `write_file` (portraits, textures, models, audio inside the project; a game
+`.aem` model is converted to `.glb`),
 `compile_quest`, `validate`, `get_quest_schema`, `play_test` / `end_play_test`, `get_log`, `screenshot`, `undo` / `redo`,
 `show_kind`. To see its work: `view_model` (any model, a game one, your ship with its hardpoints tagged, a station or a .glb,
 drawn from any side into one image without touching the screen), `view_texture` / `list_textures` (textures as images, normal
 maps decoded), `select_entry` and `view` (an entry on the builder's screen, its camera aimed from a side, with a screenshot,
 optionally without the panels). To work the builder: `hardpoint` (hardpoints placed onto the hull from a side, snapped,
 mirrored, removed), `engines`, `test_fly` / `end_test_fly`, `weapon_range`, `switch_hangar`, and the projects:
-`list_projects`, `create_project`, `open_project`, `export_mod`; `loadout` (the test flight's weapons and cheats),
+`list_projects`, `create_project`, `open_project`, `import_mod` (an installed mod as a project), `export_mod`; `optimize`
+(big models and textures made smaller), `replace_game_character` (a story character replaced, starting from its own
+portrait); `loadout` (the test flight's weapons and cheats),
 `room_marker` (a room's pad, camera and other markers put on its surfaces). And to play your mod: during a play test or test
 flight `press` (game actions and keys), `steer` and `ui_buttons` / `ui_click` (the buttons on screen by their text), so the
 assistant can launch, talk, dock and play a quest through, watching with screenshots. Every change is an undo step in the builder, and the **AI

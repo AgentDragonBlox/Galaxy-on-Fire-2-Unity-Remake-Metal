@@ -459,7 +459,10 @@ namespace GoF2Remake.UI
             "last one back). To see your work: view_model draws any model (game, project ship with its hardpoints, station, .glb) " +
             "from any side, view_texture / list_textures show textures, select_entry and view put an entry on the builder's screen " +
             "and aim its camera (with a screenshot); hardpoint places hardpoints onto the hull from a side. Also test_fly, " +
-            "weapon_range, engines, switch_hangar, and the projects (list_projects, create_project, open_project, export_mod). ";
+            "weapon_range, engines, switch_hangar, and the projects (list_projects, create_project, open_project, import_mod, export_mod). " +
+            "Audio: search_content kinds music / sound / voice give the game's track, sound and voice line names a file of the " +
+            "same name replaces (voices per language in voices/<code>/); any other name is new. A story character is replaced " +
+            "with replace_game_character; the game's .aem models convert on write_file; optimize shrinks big models and textures. ";
 
         /// <summary>The instructions' line on the permission mode (builder_status says the current one).</summary>
         static string PermissionNote(Permissions p) => p switch

@@ -487,11 +487,17 @@ edit the wrong step; `get_entries` with `path` reads one part), `delete_entry`, 
 graph), `view` (the builder's camera from front / back / left / right / top / bottom / threequarter / rear, zoom, with a
 screenshot, `clean` hides the panels), `hardpoint` (op list / add / snap / select / mirror / delete; add puts a point where a
 line from a side meets the hull: use it instead of guessing coordinates, then check with view_model), `engines`, `test_fly` /
-`end_test_fly`, `weapon_range`, `switch_hangar`, `list_projects`, `create_project`, `open_project`, `export_mod`, `loadout`
-(the test loadout and cheats), `room_marker` (a room's markers placed by a ray from inside it: the pad `toward` "down"),
+`end_test_fly`, `weapon_range`, `switch_hangar`, `list_projects`, `create_project`, `open_project`, `import_mod` (an
+installed mod as a project), `export_mod`, `loadout` (the test loadout and cheats), `optimize` (big models and textures made
+smaller; `list` first), `replace_game_character` (a character standing in for a story speaker, from its own portrait and
+name), `room_marker` (a room's markers placed by a ray from inside it: the pad `toward` "down"),
 `view` with `map` (the star map on a system); and during a play test or test flight `press` (actions such as action,
 autopilotMenu, fastForward, boost, firePrimary, or keys such as enter, escape, 1-8), `steer`, `ui_buttons` / `ui_click` (a
-button by its text): play a quest through to check it (ui_click a conversation's Next / Close and Launch; the autopilot menu
+button by its text). Audio: `search_content` kinds `music`, `sound` and `voice` give the game's track, sound and voice line
+names (a voice line with its speaker and English line); a `music/`, `sounds/` or `voices/` file of that name replaces it
+(the story's lines too; `voices/<code>/` for one language: en, de, fr, es, it, nl, pl, ru, pt, zh, hi), any other name is a
+new one. `write_file` of a `models/<name>.aem` (the game's own model format) converts it to `.glb` and gives its length
+for `modelLength`. Play a quest through to check it (ui_click a conversation's Next / Close and Launch; the autopilot menu
 plus a number key and a held fastForward dock you), watching with the screenshots they answer with. Then work
 in the live project instead of giving the user files: look things up, put entries, `validate` (fix every error), look at
 what you made (`view_model`, `view_texture`, `select_entry` + `view`), `play_test` a quest and check it with `screenshot` /

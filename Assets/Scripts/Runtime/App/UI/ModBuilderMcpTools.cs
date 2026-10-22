@@ -8,7 +8,8 @@
 //   list_files / read_file / write_file   the project's files (images, models, audio, texts) inside its folder only
 //   compile_quest / validate / get_quest_schema   the game's own checks: QuestFile, EventRunner, the mod loaders
 //   play_test / end_play_test   ModBuilderPlay; get_log, screenshot; undo / redo; show_kind
-//   (seeing and driving the builder: ModBuilderMcpVision)
+//   (seeing and driving the builder: ModBuilderMcpVision; the game's sounds and voice lines, .aem models, optimize,
+//   import_mod, replace_game_character: ModBuilderMcpContent)
 
 using System;
 using System.Collections.Generic;
@@ -49,7 +50,7 @@ namespace GoF2Remake.UI
         static readonly string[] KindNames = Kinds.Select(k => k.kind).ToArray();
         static readonly string[] RefKinds = { "item", "ship", "system", "station", "character", "quest", "music", "interior" };
         static readonly string[] FileFolders = { "models", "textures", "icons", "portraits", "fx", "sky", "cards", "music", "sounds", "voices", "text", "events", "templates" };
-        static readonly string[] FileExtensions = { ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".dds", ".aei", ".glb", ".ogg", ".wav", ".mp3", ".json", ".gof2event", ".gof2quest", ".txt", ".md" };
+        static readonly string[] FileExtensions = { ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".dds", ".aei", ".glb", ".aem", ".ogg", ".wav", ".mp3", ".json", ".gof2event", ".gof2quest", ".txt", ".md" };
         static readonly string[] TextExtensions = { ".json", ".gof2event", ".gof2quest", ".txt", ".md" };
 
         static JObject Enum(params string[] values) => new JObject { ["type"] = "string", ["enum"] = new JArray(values) };
@@ -72,7 +73,7 @@ namespace GoF2Remake.UI
         // ---- the table ------------------------------------------------------------------------------------------
 
         static List<Tool> tools;
-        static List<Tool> Tools => tools ??= MakeTools().Concat(VisionTools()).ToList();
+        static List<Tool> Tools => tools ??= MakeTools().Concat(VisionTools()).Concat(ContentTools()).ToList();
 
         static List<Tool> MakeTools() => new List<Tool>
         {
@@ -85,8 +86,8 @@ namespace GoF2Remake.UI
             new Tool
             {
                 name = "search_content", title = "Search the game's and the mods' content", readOnly = true,
-                description = "Finds content to refer to: the game's, this project's own and every other installed mod's (using another mod's makes it a dependency when the project is validated). 'value' is what the mod files and quests use (a game number, or a key \"mod_id:id\"). Kinds: item, ship, system, station, character (speakers too), quest, music, interior.",
-                input = Input(("kind", Enum(RefKinds), "what to search", true), ("query", "string", "words that must all appear (empty: all)", false),
+                description = "Finds content to refer to: the game's, this project's own and every other installed mod's (using another mod's makes it a dependency when the project is validated). 'value' is what the mod files and quests use (a game number, or a key \"mod_id:id\"). Kinds: item, ship, system, station, character (speakers too), quest, music (the game's tracks a music/<name> replaces, and new ones), interior, sound (the game's sound effects a sounds/<name> replaces, and the project's new ones a quest's Sound step plays) and voice (the game's voice lines with their speaker and English line: voices/<clip> or voices/<language>/<clip> named like one replaces it, the story's included; and the project's own lines).",
+                input = Input(("kind", Enum(RefKinds.Concat(AudioRefKinds).ToArray()), "what to search", true), ("query", "string", "words that must all appear (empty: all)", false),
                               ("limit", "integer", "at most this many (default 40)", false)),
                 run = SearchContent,
             },
@@ -152,7 +153,8 @@ namespace GoF2Remake.UI
             new Tool
             {
                 name = "write_file", title = "Write a file",
-                description = "Writes a file into the project (folders: models, textures, icons, portraits, fx, sky, cards, music, sounds, voices, text, events; images png / jpg / tga / bmp / dds, models .glb, audio ogg / wav / mp3, texts json / txt). Give 'text' for a text file or 'base64' for a binary one. A texture named like a game texture (textures/<name>.png) replaces it; voices/<clip>.ogg is a voice line; music/<name>.ogg a track. Entries (ships.json...) go through put_entry instead.",
+                description = "Writes a file into the project (folders: models, textures, icons, portraits, fx, sky, cards, music, sounds, voices, text, events; images png / jpg / tga / bmp / dds / aei, models .glb or the game's own .aem (converted to .glb: the answer gives the .glb's path and its length for modelLength), audio ogg / wav / mp3, texts json / txt). Give 'text' for a text file or 'base64' for a binary one. " +
+                              "A texture named like a game texture (textures/<name>.png) replaces it everywhere, textures/<assembly>/<name>.png on that model only, textures/ships/<ship id>/<name>.png on a new ship of the project that uses a game model (\"gof2:...\") alone. music/<name>.ogg named like a game track (search_content kind music) replaces it, any other name is a new track. sounds/<name>.ogg named like a game sound (kind sound) replaces it everywhere, any other name is a new sound for a quest's Sound step. voices/<clip>.ogg is a voice line in every language, voices/<language>/<clip>.ogg in one (en, de, fr, es, it, nl, pl, ru, pt, zh, hi); named like a game line (kind voice) it replaces that line, the story's included. Entries (ships.json...) go through put_entry instead.",
                 input = Input(("path", "string", "its path in the project, e.g. portraits/vega.png", true), ("text", "string", "a text file's content", false),
                               ("base64", "string", "a binary file's content", false)),
                 run = WriteFile, timeoutSeconds = 60f, ask = a => $"write the file {Str(a, "path")} into the project",
@@ -270,7 +272,23 @@ namespace GoF2Remake.UI
         {
             string kind = Str(a, "kind");
             int k = Array.IndexOf(RefKinds, kind);
-            if (k < 0) throw new ArgumentException("kind: one of " + string.Join(", ", RefKinds));
+            if (k < 0 && Array.IndexOf(AudioRefKinds, kind) >= 0)
+            {
+                var aw = (Str(a, "query") ?? "").ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                int alimit = Mathf.Clamp(Int(a, "limit", 40), 1, 500);
+                var afound = new JArray();
+                int atotal = 0;
+                foreach (var (value, name, about) in AudioRefs(kind))
+                {
+                    string hay = $"{value} {name} {about}".ToLowerInvariant();
+                    if (aw.Any(w => !hay.Contains(w))) continue;
+                    atotal++;
+                    if (afound.Count < alimit) afound.Add(new JObject { ["value"] = value, ["name"] = name, ["about"] = about });
+                }
+                c.Json(new JObject { ["kind"] = kind, ["found"] = atotal, ["shown"] = afound.Count, ["results"] = afound }, $"{kind} \"{Str(a, "query")}\": {atotal}");
+                return;
+            }
+            if (k < 0) throw new ArgumentException("kind: one of " + string.Join(", ", RefKinds.Concat(AudioRefKinds)));
             var refKind = (RefKind)k;
             var words = (Str(a, "query") ?? "").ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             int limit = Mathf.Clamp(Int(a, "limit", 40), 1, 500);
@@ -612,6 +630,7 @@ namespace GoF2Remake.UI
             else { c.Fail("Give 'text' or 'base64'."); return; }
             if (bytes.Length > 64 * 1024 * 1024) { c.Fail("Over 64 MB."); return; }
             string ext = Path.GetExtension(full).ToLowerInvariant();
+            if (ext == ".aem") { WriteAem(c, screen, rel, bytes); return; }   // the game's own model: kept as .glb
             if (ext == ".glb" && (bytes.Length < 4 || bytes[0] != 'g' || bytes[1] != 'l' || bytes[2] != 'T' || bytes[3] != 'F')) { c.Fail("Not a glTF binary (.glb)."); return; }
             if (ext == ".json" || ext == ".gof2event")
             {

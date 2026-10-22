@@ -3396,6 +3396,15 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   by a ray; the map centred on a system; a test flight steered (boost, fire), its autopilot menu opened and Dis picked by number
   keys, docked on held fast-forward; a quest played through by input alone (the conversation clicked away, Launch clicked, the
   orbit reached, the radio, the autopilot docking, its reward paid). Not yet: a real Claude client connected.
+  Brought up to date with the builder's later kinds (2026-10-22, `ModBuilderMcpContent`): `search_content` kinds `sound`
+  (Resources/GoF2ModBuilder/SoundNames, what a `sounds/<name>` replaces, and the project's new sounds) and `voice` (the
+  story's pages and radio, the voice table and `StoryAssets.VoiceNames`, with speaker and English line, and the project's
+  lines per language); `write_file` of a `models/<name>.aem` converts it with `AemImport` and answers the `.glb` and its
+  length; `optimize` (`ModOptimizer`, run a step a frame through `Call.Wait`, a `History.Commit` first, `ModLodCache.Forget`
+  after; `list` reads only); `import_mod` (`ModProject.CopyMod` on a worker thread, `replace` / `open`); and
+  `replace_game_character` (`Portrait.RenderSpeaker`, as the Characters kind). Verified with curl in Play mode: both
+  searches, a character replacing Gunant, an optimized normal map (2.1 -> 0.87 MB), an .aem quad converted, an installed
+  mod imported, and three undos putting it all back.
 - **Leaving Play mode inside the builder** (Editor `ModBuilderPlayModeReset`, `ModBuilder.CloseAfterPlayMode`): Play mode runs
   without a domain reload and the builder's statics reset only when Play starts again, so after stopping Play mode with a
   project open it stayed the active mod and saving stayed refused: edit-mode tests run then saw its ships (65 instead of 64)
