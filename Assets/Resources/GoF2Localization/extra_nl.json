@@ -210,6 +210,8 @@
  "hangarShadows": "Scheepsschaduwen in de hangar",
  "hangarShadowsAll": "Alle schepen",
  "hangarShadowsPlayer": "Alleen het eigen schip",
+ "lods": "Detailniveaus",
+ "lodsHelp": "Verre schepen, stations en andere objecten worden met minder driehoeken getekend, voor een soepelere framerate. Uit: elk model in volledig detail.",
  "haptics": "Trillen",
  "hapticsHelp": "Controllergerommel bij treffers, explosies, schoten, boosts, sprongen en mijnbouw.",
  "hapticsHelpMobile": "Telefoontrilling en controllergerommel bij treffers, explosies, boosts, sprongen en mijnbouw.",

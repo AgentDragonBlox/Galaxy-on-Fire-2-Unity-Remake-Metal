@@ -194,6 +194,8 @@
   "hangarShadows": "机库飞船阴影",
   "hangarShadowsAll": "所有飞船",
   "hangarShadowsPlayer": "仅玩家飞船",
+  "lods": "细节层次",
+  "lodsHelp": "远处的飞船、空间站和其他物体以更少的三角形绘制，使帧率更流畅。关闭：所有模型均以完整细节显示。",
   "haptics": "振动",
   "hardcoreOff": "关闭",
   "hardcoreOn": "永久死亡",

@@ -210,6 +210,8 @@
  "hangarShadows": "Schiffsschatten im Hangar",
  "hangarShadowsAll": "Alle Schiffe",
  "hangarShadowsPlayer": "Nur das eigene Schiff",
+ "lods": "Detailstufen",
+ "lodsHelp": "Weit entfernte Schiffe, Stationen und andere Objekte werden mit weniger Dreiecken gezeichnet, für eine flüssigere Bildrate. Aus: jedes Modell in voller Detailstufe.",
  "haptics": "Vibration",
  "hapticsHelp": "Controller-Rumble bei Treffern, Explosionen, Schüssen, Boosts, Sprüngen und Bergbau.",
  "hapticsHelpMobile": "Handyvibration und Controller-Rumble bei Treffern, Explosionen, Boosts, Sprüngen und Bergbau.",

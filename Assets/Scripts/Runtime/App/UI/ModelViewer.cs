@@ -109,7 +109,7 @@ namespace GoF2Remake.UI
                         foreach (var parts in new[] { asm.playerVariantParts, asm.npcVariantParts })
                             if (parts != null) foreach (var p in parts) if (p != null) p.SetActive(false);
                 }
-                if (!isInstance) foreach (var lg in go.GetComponentsInChildren<LODGroup>(true)) lg.ForceLOD(0);
+                if (!isInstance) { GoF2Remake.Visuals.AutoLods.FullDetail(go); foreach (var lg in go.GetComponentsInChildren<LODGroup>(true)) lg.ForceLOD(0); }
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true))
                     if (r is TrailRenderer || r is ParticleSystemRenderer || r is LineRenderer) r.enabled = false;
                 foreach (var t in go.GetComponentsInChildren<Transform>(true)) { oldLayers.Add((t.gameObject, t.gameObject.layer)); t.gameObject.layer = Layer; }

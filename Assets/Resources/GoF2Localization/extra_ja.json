@@ -206,6 +206,8 @@
  "hangarShadows": "格納庫の船の影",
  "hangarShadowsAll": "すべての船",
  "hangarShadowsPlayer": "自分の船のみ",
+ "lods": "詳細度（LOD）",
+ "lodsHelp": "遠くの船、ステーション、その他の物体を少ない三角形で描画し、フレームレートを滑らかにします。オフ：すべてのモデルを最高の詳細度で表示します。",
  "haptics": "振動",
  "hapticsHelp": "被弾・爆発・射撃・ブースト・ジャンプ・採掘でコントローラーが振動。",
  "hapticsHelpMobile": "被弾・爆発・ブースト・ジャンプ・採掘で端末とコントローラーが振動。",

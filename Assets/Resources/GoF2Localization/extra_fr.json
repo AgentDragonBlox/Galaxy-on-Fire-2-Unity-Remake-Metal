@@ -210,6 +210,8 @@
  "hangarShadows": "Ombres des vaisseaux dans le hangar",
  "hangarShadowsAll": "Tous les vaisseaux",
  "hangarShadowsPlayer": "Seulement le vaisseau du joueur",
+ "lods": "Niveaux de détail",
+ "lodsHelp": "Les vaisseaux, stations et autres objets lointains sont dessinés avec moins de triangles, pour une fréquence d'images plus fluide. Désactivé : chaque modèle en détail complet.",
  "haptics": "Vibration",
  "hapticsHelp": "Vibration de la manette : impacts, explosions, tirs, boosts, sauts et minage.",
  "hapticsHelpMobile": "Vibration du téléphone et de la manette : impacts, explosions, boosts, sauts et minage.",

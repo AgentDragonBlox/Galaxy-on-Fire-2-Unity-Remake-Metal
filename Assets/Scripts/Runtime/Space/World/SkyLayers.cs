@@ -120,6 +120,7 @@ namespace GoF2Remake.World
                 r.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
                 r.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
             }
+            GoF2Remake.Visuals.AutoLods.FullDetail(go);   // no made levels: the LODGroup goes off
             foreach (var lg in go.GetComponentsInChildren<LODGroup>(true)) lg.enabled = false;
             foreach (var anim in go.GetComponentsInChildren<PartAnimation>(true))
             {

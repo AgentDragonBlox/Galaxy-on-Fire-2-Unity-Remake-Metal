@@ -123,6 +123,11 @@ namespace GoF2Remake.Data
         /// ship (default). Off also drops the station camera's depth texture they read.</summary>
         public static int HangarShadows { get => Mathf.Clamp(Mathf.RoundToInt(Get("hangarShadows", HangarShadowsPlayer)), 0, 2); set => Set("hangarShadows", Mathf.Clamp(value, 0, 2)); }
         public const int HangarShadowsOff = 0, HangarShadowsPlayer = 1, HangarShadowsAll = 2;
+        /// <summary>Remake: levels of detail (AutoLods): far objects drawn with fewer triangles, the original's LOD meshes
+        /// and the ones made from the models (the game's prebaked, the mods' at run time). Off: every model at full detail
+        /// (LOD 0, as the original binary's AEGeometry::updateLod). On by default on phones (Android, iOS), off on PC,
+        /// Linux and UWP.</summary>
+        public static bool Lods { get => GetBool("lods", Application.isMobilePlatform); set => SetBool("lods", value); }
         /// <summary>Remake: the hangar view's depth of field on the player's ship (StationLevel); off by default on phones.</summary>
         public static bool HangarDepthOfField { get => GetBool("hangarDof", false); set => SetBool("hangarDof", value); }   // off by default (2026-10)
 
@@ -440,7 +445,7 @@ namespace GoF2Remake.Data
         public static readonly string[] GraphicsKeys =
         {
             "displayMode", "resolutionWidth", "resolutionHeight", "frameRate", "quality", "renderScale", "upscaler", "upscalerQuality",
-            "msaa", "brightness", "bloom", "bloomStyle", "hangarShadows", "hangarDof", "lensFlare", "npcPlayerEngines", "fov",
+            "msaa", "brightness", "bloom", "bloomStyle", "hangarShadows", "lods", "hangarDof", "lensFlare", "npcPlayerEngines", "fov",
             "cameraShake", "originalChaseCamera", "uiWidth", "uiMargin", "showFps", "fpsPosition",
         };
         public static readonly string[] ControlsKeys =

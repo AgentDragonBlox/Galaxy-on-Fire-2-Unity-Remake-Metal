@@ -729,6 +729,7 @@ namespace GoF2Remake.World
             if (prefab == null) { Debug.LogWarning($"StationLevel: no assembled prefab '{assembly}'"); return null; }
             var go = Instantiate(prefab, unityPos, rot, parent);
             go.name = label;
+            GoF2Remake.Visuals.AutoLods.FullDetail(go);
             foreach (var lod in go.GetComponentsInChildren<LODGroup>()) lod.ForceLOD(0);   // close-up room: full detail
             return go;
         }

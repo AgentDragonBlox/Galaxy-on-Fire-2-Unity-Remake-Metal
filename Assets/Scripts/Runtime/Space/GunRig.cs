@@ -183,6 +183,7 @@ namespace GoF2Remake.Flight
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 r.receiveShadows = false;
             }
+            GoF2Remake.Visuals.AutoLods.FullDetail(go);   // no made levels: the LODGroup goes off
             foreach (var lg in go.GetComponentsInChildren<LODGroup>(true)) lg.enabled = false;
         }
 

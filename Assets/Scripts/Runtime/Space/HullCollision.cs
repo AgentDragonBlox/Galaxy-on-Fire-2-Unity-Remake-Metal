@@ -103,7 +103,11 @@ namespace GoF2Remake.Flight
                 foreach (var g in model.GetComponentsInChildren<LODGroup>(true))
                 {
                     var lods = g.GetLODs();
-                    for (int i = 1; i < lods.Length; i++) lowLods.AddRange(lods[i].renderers);
+                    // Only what the lower levels alone show: a mesh kept in every level (AutoLods' levels of a mod hull keep
+                    // its small parts) is LOD 0's too.
+                    var first = lods.Length > 0 ? new HashSet<Renderer>(lods[0].renderers) : new HashSet<Renderer>();
+                    for (int i = 1; i < lods.Length; i++)
+                        foreach (var r in lods[i].renderers) if (r != null && !first.Contains(r)) lowLods.Add(r);
                 }
                 var meshes = new List<MeshFilter>();
                 foreach (var mf in model.GetComponentsInChildren<MeshFilter>(true)) if (IsHullMesh(mf)) meshes.Add(mf);

@@ -206,6 +206,8 @@
  "hangarShadows": "격납고 함선 그림자",
  "hangarShadowsAll": "모든 함선",
  "hangarShadowsPlayer": "플레이어 함선만",
+ "lods": "세부 수준(LOD)",
+ "lodsHelp": "멀리 있는 함선, 정거장 및 기타 물체를 더 적은 삼각형으로 그려 프레임 속도를 부드럽게 합니다. 끄기: 모든 모델을 최대 세부 수준으로 표시합니다.",
  "haptics": "진동",
  "hapticsHelp": "피격, 폭발, 사격, 부스트, 점프, 채굴 시 컨트롤러 진동.",
  "hapticsHelpMobile": "피격, 폭발, 부스트, 점프, 채굴 시 휴대폰과 컨트롤러 진동.",

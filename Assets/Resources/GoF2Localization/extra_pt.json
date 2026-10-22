@@ -210,6 +210,8 @@
  "hangarShadows": "Sombras das naves no hangar",
  "hangarShadowsAll": "Todas as naves",
  "hangarShadowsPlayer": "Só a nave do jogador",
+ "lods": "Níveis de detalhe",
+ "lodsHelp": "Naves, estações e outros objetos distantes são desenhados com menos triângulos, para uma taxa de quadros mais fluida. Desligado: todos os modelos com detalhe total.",
  "haptics": "Vibração",
  "hapticsHelp": "Vibração do controle em impactos, explosões, tiros, turbos, saltos e mineração.",
  "hapticsHelpMobile": "Vibração do celular e do controle em impactos, explosões, turbos, saltos e mineração.",

@@ -141,6 +141,7 @@ namespace GoF2Remake.UI
             stage.transform.position = stagePosition;
             var go = Object.Instantiate(prefab, stage.transform, false);
             go.GetComponent<AssembledObject>()?.SetPlayerVariant(true);
+            GoF2Remake.Visuals.AutoLods.FullDetail(go);
             foreach (var lg in go.GetComponentsInChildren<LODGroup>(true)) lg.ForceLOD(0);
             foreach (var t in go.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = PreviewLayer;
             UsePreviewAdditive(go);

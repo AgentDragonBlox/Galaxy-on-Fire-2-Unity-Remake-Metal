@@ -42,6 +42,7 @@ namespace GoF2Remake.Modding
             asm.origin = $"mod {mod.Id}";
             asm.lodDistancesGameUnits = new float[0];
             asm.lastVisibleDistanceGameUnits = CullDistance;
+            AutoLods.MarkRuntime(root, mod.Id);   // levels of detail made from the hull at run time (ModLodCache)
 
             model.name = "hull";
             model.transform.SetParent(root.transform, false);

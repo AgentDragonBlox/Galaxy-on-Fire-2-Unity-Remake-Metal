@@ -155,7 +155,11 @@ namespace GoF2Remake.UI
             if (errors.Count > 0) summary += "\n✖ " + string.Join("\n✖ ", errors.Take(3).Select(r => $"{r.path}: {r.error}"));
             optimizeSummary = any ? summary : T("mbOptNothing", "Nothing got smaller: the files are as they were.");
             Status(optimizeSummary, errors.Count > 0);
-            if (any) RequestReload(false);
+            if (any)
+            {
+                Visuals.ModLodCache.Forget(Project.Id);   // the levels of detail are made again from the optimized models
+                RequestReload(false);
+            }
             if (ModalOpen && optimizeProgress != null) ShowOptimize(optimizeFocus);
         }
 

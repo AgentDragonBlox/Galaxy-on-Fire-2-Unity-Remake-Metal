@@ -259,6 +259,7 @@ namespace GoF2Remake.Modding
             asm.origin = $"mod {s.mod.Id}";
             asm.lodDistancesGameUnits = new float[0];
             asm.lastVisibleDistanceGameUnits = 0f;   // always visible
+            AutoLods.MarkRuntime(root, s.mod.Id);   // levels of detail made from the hull at run time (ModLodCache)
             asm.playerVariantParts = new GameObject[0];
             asm.npcVariantParts = new GameObject[0];
             asm.conditionalParts = new GameObject[0];

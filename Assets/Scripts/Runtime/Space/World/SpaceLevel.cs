@@ -780,6 +780,7 @@ namespace GoF2Remake.World
             if (ctrl.visualModel != null) Destroy(ctrl.visualModel.gameObject);
             var model = Instantiate(prefab, root.transform, false);
             model.GetComponent<AssembledObject>()?.SetPlayerVariant(true);
+            GoF2Remake.Visuals.AutoLods.FullDetail(model);   // the player's own ship: full detail
             foreach (var lg in model.GetComponentsInChildren<LODGroup>(true)) lg.ForceLOD(0);
             PlayerHull.PrepareModel(db, model);   // the Void ship at its full size
             // Remake mods: the exhaust style of the ship's build (ModExhausts; before the exhaust particles, which it replaces).
@@ -872,6 +873,7 @@ namespace GoF2Remake.World
                 model.GetComponent<AssembledObject>()?.SetPlayerVariant(true);
                 // AEGeometry::updateLod always picks LOD 0 in this binary: the player's ship keeps full detail, or its
                 // lights (LOD 0 only) popped in as a cutscene camera closed in.
+                GoF2Remake.Visuals.AutoLods.FullDetail(model);
                 foreach (var lg in model.GetComponentsInChildren<LODGroup>(true)) lg.ForceLOD(0);
                 PlayerHull.PrepareModel(db, model);   // remake debug: the Void ship at its full size
                 // Remake mods: the exhaust style of the ship's build (ModExhausts; the exhaust particles are attached below).

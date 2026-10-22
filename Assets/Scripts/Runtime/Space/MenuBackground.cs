@@ -68,7 +68,7 @@ namespace GoF2Remake.Visuals
             OrbitBuilder.SetupLights(Layout, sunLight, planetLight);
 
             Station = OrbitBuilder.SpawnStation(db, Layout, transform);
-            if (Station != null) foreach (var lg in Station.GetComponentsInChildren<LODGroup>()) lg.enabled = false;
+            if (Station != null) { GoF2Remake.Visuals.AutoLods.FullDetail(Station); foreach (var lg in Station.GetComponentsInChildren<LODGroup>()) lg.enabled = false; }
             var gate = OrbitBuilder.SpawnJumpgate(db, Layout, transform);
             OrbitBuilder.AddObstacles(Layout, Station, gate);
             SpawnStatics();

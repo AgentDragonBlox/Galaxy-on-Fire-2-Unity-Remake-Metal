@@ -266,6 +266,10 @@ namespace GoF2Remake.UI
             list.Add(Choice("hangarShadows", OptionPage.Graphics, () => X("hangarShadows", "Hangar ship shadows"), true,
                 () => new[] { X("off", "Off"), X("hangarShadowsPlayer", "Player ship only"), X("hangarShadowsAll", "All ships") },
                 () => Settings.HangarShadows, i => Settings.HangarShadows = i));
+            // Remake: levels of detail (AutoLods); on by default on phones.
+            var lods = Toggle("lods", OptionPage.Graphics, () => X("lods", "Levels of detail"), () => Settings.Lods, v => Settings.Lods = v);
+            lods.description = () => X("lodsHelp", "Faraway ships, stations and other objects are drawn with fewer triangles, for a smoother frame rate. Off: every model at full detail.");
+            list.Add(lods);
             var hangarDof = Toggle("hangarDof", OptionPage.Graphics, () => X("hangarDof", "Hangar depth of field"),
                 () => Settings.HangarDepthOfField, v => Settings.HangarDepthOfField = v);
             hangarDof.description = () => X("hangarDofHelp", "In the hangar your ship stays sharp and the room behind it blurs.");

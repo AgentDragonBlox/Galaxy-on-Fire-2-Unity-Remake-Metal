@@ -528,6 +528,7 @@ namespace GoF2Remake.World
                     {
                         var go = Object.Instantiate(prefab);
                         go.name = SceneryPrefix + hull.sceneryAssembly;
+                        GoF2Remake.Visuals.AutoLods.FullDetail(go);
                         foreach (var lg in go.GetComponentsInChildren<LODGroup>(true)) lg.ForceLOD(0);
                         Place(go.transform, pos, rot);
                     }

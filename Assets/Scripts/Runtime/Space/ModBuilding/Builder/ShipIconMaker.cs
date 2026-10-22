@@ -46,6 +46,7 @@ namespace GoF2Remake.Modding
                     foreach (var parts in new[] { asm.playerVariantParts, asm.npcVariantParts })
                         if (parts != null) foreach (var p in parts) if (p != null) p.SetActive(false);
                 }
+                GoF2Remake.Visuals.AutoLods.FullDetail(go);
                 foreach (var lg in go.GetComponentsInChildren<LODGroup>(true)) lg.ForceLOD(0);
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true))
                     if (r is TrailRenderer || r is ParticleSystemRenderer || r is LineRenderer) r.enabled = false;

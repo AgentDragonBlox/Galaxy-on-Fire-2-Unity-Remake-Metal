@@ -210,6 +210,8 @@
  "hangarShadows": "Cienie statków w hangarze",
  "hangarShadowsAll": "Wszystkie statki",
  "hangarShadowsPlayer": "Tylko statek gracza",
+ "lods": "Poziomy szczegółowości",
+ "lodsHelp": "Odległe statki, stacje i inne obiekty są rysowane z mniejszą liczbą trójkątów, dla płynniejszej liczby klatek. Wyłączone: każdy model w pełnej szczegółowości.",
  "haptics": "Wibracje",
  "hapticsHelp": "Wibracje pada przy trafieniach, wybuchach, strzałach, dopalaczu, skokach i wydobyciu.",
  "hapticsHelpMobile": "Wibracje telefonu i pada przy trafieniach, wybuchach, dopalaczu, skokach i wydobyciu.",
