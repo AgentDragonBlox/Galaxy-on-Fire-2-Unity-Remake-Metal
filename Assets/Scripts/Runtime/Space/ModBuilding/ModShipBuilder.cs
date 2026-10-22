@@ -62,6 +62,12 @@ namespace GoF2Remake.Modding
                     if (assigned.Length != count) System.Array.Resize(ref assigned, count);
                     for (int s = 0; s < count; s++) { var m = MaterialFor(specs, mats, r.name, s, assigned[s] != null ? assigned[s].name : null); if (m != null) assigned[s] = m; }
                     r.sharedMaterials = assigned;
+                    // A normal map from ships.json on a mesh without tangents (a model with no normal texture of its own:
+                    // glTFast makes tangents only for those, e.g. an imported .aem's): Unity's, from its UVs, or the map
+                    // shades nothing right.
+                    if (mesh != null && mesh.isReadable && (mesh.tangents == null || mesh.tangents.Length == 0) && mesh.uv != null && mesh.uv.Length > 0
+                        && System.Array.Exists(assigned, a => a != null && a.HasProperty("_BumpMap") && a.GetTexture("_BumpMap") != null))
+                        mesh.RecalculateTangents();
                 }
             foreach (var r in renderers) { r.shadowCastingMode = ShadowCastingMode.On; r.receiveShadows = true; }
             // "engine" materials glow only while the engines run (a parked ship's nozzles dark; EngineMaterialGlow).

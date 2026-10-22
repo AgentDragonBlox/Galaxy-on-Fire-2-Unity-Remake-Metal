@@ -340,9 +340,7 @@ namespace GoF2Remake.UI
                     TurretEdited();
                 }, index => Database.Shared.Item(index) is ItemData d && d.categoryId != 8 && d.categoryId != 35)));
             if (ModImport.Available)
-                Act(row, T("mbOwnGlb", "Your .glb…"), () => PickFile(T("mbPickTurret", "Choose a turret model"), "glTF binary model", "glb",
-                    new byte[] { (byte)'g', (byte)'l', (byte)'T', (byte)'F' },
-                    T("mbNotGlb", "That isn't a .glb model. In Blender: File > Export > glTF 2.0, glTF Binary."), path =>
+                Act(row, T("mbOwnGlb", "Your .glb…"), () => PickGlb(T("mbPickTurret", "Choose a turret model"), path =>
                     {
                         string old = it.TurretModel;
                         it.TurretModel = Project.AddFile(path, "models", (it.IsOverride ? "item_" + it.OverrideIndex : it.LocalId) + "_turret", ".glb");

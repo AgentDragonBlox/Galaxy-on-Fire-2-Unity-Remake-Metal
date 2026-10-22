@@ -728,9 +728,32 @@ namespace GoF2Remake.UI
                 use(picked.path);
             });
 
-        /// <summary>A .glb model (glTF binary).</summary>
-        protected void PickGlb(string title, Action<string> use) => PickFile(title, "glTF binary model", "glb", new byte[] { (byte)'g', (byte)'l', (byte)'T', (byte)'F' },
-            T("mbNotGlb", "That isn't a .glb model. In Blender: File > Export > glTF 2.0, glTF Binary."), use);
+        /// <summary>A model: a .glb (glTF binary) as it is, or the game's own .aem (an original-game mod's), converted to a .glb
+        /// first (Modding.AemImport); 'use' gets a .glb file. After an .aem, pickedAemLength is its length along the nose
+        /// (game units: a ship's modelLength, so it keeps the size it had in the game), else 0.</summary>
+        protected void PickGlb(string title, Action<string> use) =>
+            PickRaw(title, T("mbModelFilter", "Models (.glb, .aem)"), new[] { "glb", "aem" }, picked =>
+            {
+                pickedAemLength = 0f;
+                var head = new byte[8];
+                using (var f = System.IO.File.OpenRead(picked.path)) f.Read(head, 0, head.Length);
+                if (head[0] == 'g' && head[1] == 'l' && head[2] == 'T' && head[3] == 'F') { use(picked.path); return; }
+                if (!AemImport.Is(head))
+                {
+                    Status(T("mbNotModel", "That isn't a .glb or .aem model. In Blender: File > Export > glTF 2.0, glTF Binary."), true);
+                    return;
+                }
+                var model = AemImport.Read(System.IO.File.ReadAllBytes(picked.path), out string error);
+                if (model == null) { Status(string.Format(T("mbPickFailed", "The file couldn't be read: {0}"), error), true); return; }
+                string glb = System.IO.Path.Combine(Application.temporaryCachePath, "aem_" + Guid.NewGuid().ToString("N") + ".glb");
+                System.IO.File.WriteAllBytes(glb, AemImport.ToGlb(model, System.IO.Path.GetFileNameWithoutExtension(picked.name ?? "model")));
+                pickedAemLength = model.Length;
+                try { use(glb); }
+                finally { try { System.IO.File.Delete(glb); } catch { } }
+            });
+
+        /// <summary>The last picked model's length when it was an .aem (game units), else 0 (PickGlb).</summary>
+        protected float pickedAemLength;
 
         /// <summary>The picker for an image (ImageImport: PNG, JPG, TGA, BMP, DDS, the game's .aei): 'use' gets it as a PNG
         /// (a temporary file, copied into the project by 'use').</summary>

@@ -514,6 +514,8 @@ namespace GoF2Remake.UI
                 UiBusy.Mark(importButton, false);
                 if (picked.cancelled) return;
                 if (picked.error != null) { notice(heading, string.Format(T("mbImportFailed", "The mod couldn't be imported: {0}"), picked.error)); return; }
+                // A mod for the original game (its .aem / .aei files, no mod.json): made into a project of its own.
+                if (OriginalModImport.Looks(picked.path)) { StartOriginalImport(picked.path, picked.name); return; }
                 var manifest = ModImport.Inspect(picked.path, out string error);
                 if (manifest == null)
                 {
@@ -525,6 +527,62 @@ namespace GoF2Remake.UI
                 ZipSource zip = null;
                 StartImport(manifest, () => zip = new ZipSource(path), () => { zip?.Dispose(); ModImport.Discard(path); });
             }).Every(200).Until(() => picked != null);
+        }
+
+        /// <summary>An original-game mod's zip as a new project (OriginalModImport, on a worker thread): the ships whose hull it
+        /// replaces as overrides with that model and its textures, the other textures as skins; then what became of it.</summary>
+        void StartOriginalImport(string path, string fileName)
+        {
+            string heading = T("modsImport", "Import mod");
+            string name = System.IO.Path.GetFileNameWithoutExtension(fileName ?? path);
+            ModProject project;
+            try { project = ModProject.Create(string.IsNullOrWhiteSpace(name) ? "Original mod" : name, ""); }
+            catch (Exception e) { ModImport.Discard(path); notice(heading, string.Format(T("mbImportFailed", "The mod couldn't be imported: {0}"), e.Message)); return; }
+            var db = Database.Shared;
+            var ships = OriginalModImport.ShipsByModel(db);
+            importBusy = true;
+            UiBusy.Mark(importButton, true);
+            OriginalModImport.Result result = null;
+            var work = System.Threading.Tasks.Task.Run(() => result = OriginalModImport.Import(path, project, db, ships));
+            bool finished = false;
+            Panel.schedule.Execute(() =>
+            {
+                if (!work.IsCompleted) return;
+                finished = true;
+                importBusy = false;
+                UiBusy.Mark(importButton, false);
+                ModImport.Discard(path);
+                if (result == null || result.project == null)
+                {
+                    notice(heading, string.Format(T("mbImportFailed", "The mod couldn't be imported: {0}"), result?.error ?? work.Exception?.GetBaseException().Message));
+                    projects = ModProject.List();
+                    RebuildRows();
+                    return;
+                }
+                projects = ModProject.List();
+                selected = projects.FirstOrDefault(p => string.Equals(System.IO.Path.GetFullPath(p.Folder), System.IO.Path.GetFullPath(result.project.Folder),
+                                                                      StringComparison.OrdinalIgnoreCase)) ?? projects.FirstOrDefault();
+                if (importing) ToggleImport(); else RebuildRows();
+                Refresh();
+                notice(heading, OriginalImportReport(result, project.Name));
+            }).Every(100).Until(() => finished);
+        }
+
+        /// <summary>What the import made of an original-game mod's files.</summary>
+        static string OriginalImportReport(OriginalModImport.Result r, string name)
+        {
+            var lines = new List<string> { string.Format(T("mbOgDone", "\"{0}\" is a project now, made from a mod for the original game:"), name) };
+            foreach (var (ship, file, triangles, textured) in r.hulls)
+                lines.Add("• " + string.Format(T("mbOgShip", "{0}: a new hull from {1} ({2} triangles)"), GameNames.Ship(ship), System.IO.Path.GetFileName(file),
+                                                triangles.ToString("N0")) + (textured ? "" : " " + T("mbOgNoTexture", "(no texture in the mod: choose its hull textures in the builder)")));
+            if (r.skins.Count > 0) lines.Add("• " + string.Format(T("mbOgSkins", "{0} textures replacing the game's of the same name"), r.skins.Count));
+            if (r.hullCopies > 0) lines.Add("• " + string.Format(T("mbOgCopies", "{0} copies of a hull left out (the new hull is the whole ship)"), r.hullCopies));
+            if (r.unused.Count > 0)
+                lines.Add("• " + string.Format(T("mbOgUnused", "Not used: {0}"), string.Join(", ", r.unused.Take(6).Select(System.IO.Path.GetFileName))
+                                                + (r.unused.Count > 6 ? $" (+{r.unused.Count - 6})" : "")));
+            if (r.hulls.Count == 0 && r.skins.Count == 0) lines.Add(T("mbOgNothing", "Nothing in it the builder can use yet: no game ship's .aem and no .aei texture."));
+            else lines.Add(T("mbOgOptimize", "Its textures are large: Menu > Optimize models and textures makes the mod a smaller download."));
+            return string.Join("\n", lines);
         }
 
         /// <summary>Asks first when a project of the mod exists (it is replaced), then copies the mod's files on a worker

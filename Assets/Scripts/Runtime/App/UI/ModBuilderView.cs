@@ -131,7 +131,7 @@ namespace GoF2Remake.UI
             new DragScroll(shipScroll);
             shipList = shipScroll;
             Action importAction = ModImport.Available ? ImportModel : null;
-            var newShip = Act(left, T("mbNewShip", "+ New ship from .glb"), () => importAction?.Invoke(), "mbv-add");
+            var newShip = Act(left, T("mbNewShipModel", "+ New ship from .glb / .aem"), () => importAction?.Invoke(), "mbv-add");
             newShip.SetEnabled(ModImport.Available);
             Act(left, T("mbNewShipGame", "+ New ship on a game model"), () => PickGameShip(T("mbNewShipGameTitle", "New ship on a game model"), NewShipOnGameModel), "mbv-add");
             Act(left, T("mbNewShipKit", "+ New ship from a kit"), NewShipFromKit, "mbv-add");
@@ -983,6 +983,7 @@ namespace GoF2Remake.UI
             string id = Project.ShipIdFor(name);
             string model = Project.AddModel(path, id);
             var s = Project.AddNewShip(id, Pretty(name) == "New" ? T("mbNewShipName", "New ship") : Pretty(name), model);
+            if (pickedAemLength > 0f) s.ModelLength = pickedAemLength;   // the game's own model: the size it had there
             ModBuilder.Ship = s;
             Project.LastShip = s.Ref;
             gizmo.Selected = -1;
@@ -996,7 +997,8 @@ namespace GoF2Remake.UI
         {
             string baseName = s.IsOverride ? "ship_" + s.OverrideIndex : s.LocalId;
             s.Model = Project.AddModel(path, baseName);
-            if (s.IsOverride && s.ModelLength <= 0f) s.ModelLength = 1000f;
+            if (pickedAemLength > 0f) s.ModelLength = pickedAemLength;   // the game's own model: the size it had there
+            else if (s.IsOverride && s.ModelLength <= 0f) s.ModelLength = 1000f;
             RequestReload(false);
             BuildShipPage();
             Status(T("mbLoadingModel", "Loading the model…"), false);

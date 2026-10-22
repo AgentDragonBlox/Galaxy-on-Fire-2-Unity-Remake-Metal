@@ -38,6 +38,15 @@ model) makes a big download small: every texture inside your `.glb` models scale
 (a PNG where it uses transparency), your own image files scaled down in their own format, and, if you like, a model's
 triangles cut to 75, 50 or 25 % (its seams and open edges are kept, so textures don't tear); a 61.7 MB model with nine 4K
 PNGs came to 2.7 MB at 1K. Undo puts the original files back. **Export as mod** puts the finished project into your Mods folder.
+
+**Mods for the original game** (the game's own `.aem` models and `.aei` textures, usually in `MESHES/` and `TEXTURES/`
+folders, named like the files they replace): the projects page's **Import mod > From a file...** makes a project of such a
+zip. A game ship's hull (`ship_016_nivelian.aem`) becomes a change to that ship with the new model at the length it had in
+the game, so the ship's hardpoints still fit; its `_diffuse` and `_normal_specular` textures become the hull's textures
+(the specular map as its smoothness). Any other `.aei` replaces the game's texture of that name, so a mod that only
+changes textures becomes a skin. The ship's other parts (`_lod_1`, `_engine_add`, `_lights_add`...) aren't used: the new
+model is the whole ship. Every model picker in the builder also takes a single `.aem`, and every texture picker an `.aei`.
+
 Every entry's page has **Edit as JSON…**: the entry's fields as this guide lists them, also the ones the builder has no field
 for (a ship's per-mesh `materials`, throttle and extra glows, a station's collision `volumes`, a room's `gateSpan`). The
 Menu has **Mod details** (website, credits, the Mods screen's picture) and **Translations** (every name and description of

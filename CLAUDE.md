@@ -3309,6 +3309,24 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   PNGs, 18 856 triangles): 61.7 MB -> 2.7 MB at 1K in 2.5 s; at 50 % triangles 15 436 (its many seams locked). WebP / KTX2
   aren't offered: neither Unity's decoders nor the mods' loaders read them, and the game compresses every texture to DXT /
   ETC2 on load (ModTextureEncoder) whatever the file was. Tests `ModOptimizerTests`.
+- **Original-game mods in the builder** (remake, 2026-10-22, the user's request with Kinzer's Narn Bin'Tak dreadnought for
+  ship 16): `Modding.AemImport` reads the game's `.aem` (the C# of `Reference/tools/asset_conversion/aem.py`: AEMesh /
+  V2-V5, every part and child joined in its rest pose, animations dropped) and writes a `.glb` (one mesh, material "hull",
+  the engine's (x, y, z) as glTF's: glTFast's x mirror gives the remake's ship-relative (-x, y, z); metres; V flipped: the
+  game samples memory row 0 at v = 0; 32-bit indices). `ModBuilderScreen.PickGlb`, every model picker (ships, items'
+  turrets, stations, fx, rooms, kit parts), takes `.aem` too and converts it first; a ship's `modelLength` becomes the
+  `.aem`'s own length (`pickedAemLength`). `Modding.OriginalModImport`: a zip with `.aem` / `.aei` and no mod.json
+  (`Looks`) is made into a project from the projects page's Import > From a file... (`ModBuilderProjects.
+  StartOriginalImport`, a worker thread; the Mod Browser's Import points there): a ship whose assembly name
+  (`ShipsByModel`, not 13-15) has a `<name>.aem` becomes an override with that model at its length (its stats and
+  hardpoints copied) and the `<name>_diffuse` / `_normal_specular` `.aei` as its hull textures (RGB normal map; the alpha,
+  the game's specular, as the smoothness: `split_spec.py`'s rule); its other `.aem` parts are left out (copies of the hull
+  counted apart: the community's mods fill the glow / LOD slots with the hull); any other `.aei` is a skin under its own
+  name (`ModTextures`; a `_normal_specular` one with its `_metallic_smoothness`); other `.aem` files are reported unused.
+  `ModShipBuilder` now makes tangents (`RecalculateTangents`) for a readable mesh without them under a ships.json normal
+  map (glTFast makes them only for a glTF normal texture, so these maps shaded wrong). Checked in Play mode with the Narn
+  zip (79 865 triangles, ~100 m, 2048 px textures): the project, the report, the textured hull on the turntable, nose
+  forward. Tests `OriginalModImportTests`. Not yet: a station's or weapon's `.aem` as its replacement.
 - **Image formats** (`ImageImport`): every mod image (ModMaterials' `Texture` and background `PreloadTexture`, so skins,
   portraits, icons, hull textures, planets / suns / skies; ModInfo's preview; ModTextures' file list) and the Mod Builder's
   pickers (which store a picked image as PNG) read PNG / JPG by Unity's decoders and TGA (plain / RLE), BMP (8 / 24 / 32-bit),

@@ -305,6 +305,13 @@ namespace GoF2Remake.UI
             string title = T("modsImport", "Import mod");
             if (p.cancelled) return;
             if (p.error != null) { notice(title, string.Format(T("modsImportFailed", "The mod couldn't be imported: {0}"), p.error)); return; }
+            // A mod for the original game (.aem / .aei, no mod.json) is no mod of the remake's: the Mod Builder makes one of it.
+            if (OriginalModImport.Looks(p.path))
+            {
+                ModImport.Discard(p.path);
+                notice(title, T("modsImportOriginal", "That's a mod for the original game (its .aem / .aei files). The Mod Builder makes a mod of it: Mod Builder > Import mod > From a file..."));
+                return;
+            }
             var manifest = ModImport.Inspect(p.path, out string error);
             if (manifest == null)
             {
