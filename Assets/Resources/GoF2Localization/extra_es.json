@@ -2727,6 +2727,7 @@
  "mbOptTrianglesNote": "Las costuras y los bordes abiertos se conservan, así que un modelo con muchos conserva más triángulos de los pedidos.",
  "mbOptNoFiles": "El proyecto aún no tiene modelos ni imágenes.",
  "mbOptTriangleCount": "{0} triángulos",
+ "mbOptModSize": "Mod completo: {0}",
  "mbOptGo": "Optimizar",
  "mbOptDone": "Optimizado: {0} → {1}.",
  "mbOptTrianglesDone": "Triángulos: {0} → {1}.",

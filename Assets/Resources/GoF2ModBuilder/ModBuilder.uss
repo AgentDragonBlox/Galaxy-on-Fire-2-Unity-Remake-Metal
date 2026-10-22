@@ -278,6 +278,14 @@
     white-space: normal;
 }
 
+/* The Optimize window's "Whole mod: N MB". */
+.mbv-mod-size {
+    margin: 0 0 var(--space-s) 0;
+    font-size: var(--text-body);
+    color: var(--gof-text);
+    -unity-font-style: bold;
+}
+
 .mbv-inline-label {
     flex-grow: 1;
     flex-shrink: 1;

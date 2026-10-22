@@ -511,6 +511,25 @@ namespace GoF2Remake.Modding
             ModManager.Installed.FirstOrDefault(m => string.Equals(m.Id, Id, StringComparison.OrdinalIgnoreCase))
             ?? ModManager.Installed.FirstOrDefault(m => m.Id != null && PreviousIds.Contains(m.Id, StringComparer.OrdinalIgnoreCase));
 
+        /// <summary>The files Export puts into the mod (full path, path in the mod): not builder.json, the skin templates or a
+        /// .tmp file.</summary>
+        public IEnumerable<(string path, string rel)> ExportedFiles()
+        {
+            foreach (var f in Directory.GetFiles(Folder, "*", SearchOption.AllDirectories))
+            {
+                string rel = f.Substring(Folder.Length).TrimStart('/', '\\').Replace('\\', '/');
+                if (rel == BuilderFile || rel.EndsWith(".tmp") || rel.StartsWith(TemplatesFolder + "/")) continue;
+                yield return (f, rel);
+            }
+        }
+
+        /// <summary>The mod's size: its exported files together, before the zip compresses them (bytes; 0 when unreadable).</summary>
+        public long ModSize()
+        {
+            try { return ExportedFiles().Sum(f => new FileInfo(f.path).Length); }
+            catch (Exception) { return 0; }
+        }
+
         /// <summary>Zips the mod's files (not builder.json) into the Mods folder as "<name>.zip" (the project's name as it is
         /// now), replacing an installed mod with its id in its own folder (it keeps its on / off and load order), or one under
         /// an id it had before (ChangeId; the new id is turned on when that was). Returns the zip's path, or null with the
@@ -530,10 +549,8 @@ namespace GoF2Remake.Modding
                 Directory.CreateDirectory(folder);
                 string target = Path.Combine(folder, ZipName(folder)), tmp = target + ".tmp";
                 using (var zip = new ZipArchive(File.Create(tmp), ZipArchiveMode.Create))
-                    foreach (var f in Directory.GetFiles(Folder, "*", SearchOption.AllDirectories))
+                    foreach (var (f, rel) in ExportedFiles())
                     {
-                        string rel = f.Substring(Folder.Length).TrimStart('/', '\\').Replace('\\', '/');
-                        if (rel == BuilderFile || rel.EndsWith(".tmp") || rel.StartsWith(TemplatesFolder + "/")) continue;   // not the skin templates
                         var e = zip.CreateEntry(rel, System.IO.Compression.CompressionLevel.Optimal);
                         using var dst = e.Open();
                         using var src = File.OpenRead(f);

@@ -2727,6 +2727,7 @@
  "mbOptTrianglesNote": "接缝和开放边会保留，所以接缝多的模型会保留比选择更多的三角面。",
  "mbOptNoFiles": "项目里还没有模型或图片。",
  "mbOptTriangleCount": "{0} 个三角面",
+ "mbOptModSize": "整个模组：{0}",
  "mbOptGo": "优化",
  "mbOptDone": "已优化：{0} → {1}。",
  "mbOptTrianglesDone": "三角面：{0} → {1}。",

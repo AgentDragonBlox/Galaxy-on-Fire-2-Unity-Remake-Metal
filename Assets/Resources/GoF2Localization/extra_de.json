@@ -2727,6 +2727,7 @@
  "mbOptTrianglesNote": "Nähte und offene Kanten bleiben erhalten, ein Modell mit vielen davon behält also mehr Dreiecke als gewählt.",
  "mbOptNoFiles": "Das Projekt hat noch keine Modelle oder Bilder.",
  "mbOptTriangleCount": "{0} Dreiecke",
+ "mbOptModSize": "Ganze Mod: {0}",
  "mbOptGo": "Optimieren",
  "mbOptDone": "Optimiert: {0} → {1}.",
  "mbOptTrianglesDone": "Dreiecke: {0} → {1}.",

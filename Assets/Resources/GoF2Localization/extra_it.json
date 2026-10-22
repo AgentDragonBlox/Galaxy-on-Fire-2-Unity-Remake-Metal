@@ -2727,6 +2727,7 @@
  "mbOptTrianglesNote": "Le cuciture e i bordi aperti restano, quindi un modello che ne ha molti mantiene più triangoli di quelli chiesti.",
  "mbOptNoFiles": "Il progetto non ha ancora modelli o immagini.",
  "mbOptTriangleCount": "{0} triangoli",
+ "mbOptModSize": "Mod intera: {0}",
  "mbOptGo": "Ottimizza",
  "mbOptDone": "Ottimizzato: {0} → {1}.",
  "mbOptTrianglesDone": "Triangoli: {0} → {1}.",

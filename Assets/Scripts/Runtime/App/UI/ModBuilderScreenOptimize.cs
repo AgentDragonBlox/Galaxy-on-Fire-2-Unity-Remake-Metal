@@ -60,6 +60,7 @@ namespace GoF2Remake.UI
             var box = Add(modal, new VisualElement(), "mbv-modal-box", "mbv-modal-box--list", "mbv-panel");
             Heading(box, T("mbOptimize", "Optimize models and textures"));
             Note(box, T("mbOptimizeNote", "Makes the mod smaller and quicker to load: the textures are scaled down and stored as JPEG unless they use transparency, and a model can lose triangles. Undo puts the files back."));
+            Add(box, new Label(string.Format(T("mbOptModSize", "Whole mod: {0}"), Megabytes(Project.ModSize()))), "mbv-mod-size");
 
             int size = OptPref("mb_opt_size", 0, ModOptimizer.Sizes.Length);
             int quality = OptPref("mb_opt_quality", 1, ModOptimizer.Qualities.Length);

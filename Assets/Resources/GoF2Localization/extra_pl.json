@@ -2727,6 +2727,7 @@
  "mbOptTrianglesNote": "Szwy i otwarte krawędzie zostają, więc model z wieloma z nich zachowa więcej trójkątów niż wybrano.",
  "mbOptNoFiles": "Projekt nie ma jeszcze modeli ani obrazów.",
  "mbOptTriangleCount": "Trójkąty: {0}",
+ "mbOptModSize": "Cały mod: {0}",
  "mbOptGo": "Optymalizuj",
  "mbOptDone": "Zoptymalizowano: {0} → {1}.",
  "mbOptTrianglesDone": "Trójkąty: {0} → {1}.",

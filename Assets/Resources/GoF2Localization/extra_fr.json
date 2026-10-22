@@ -2727,6 +2727,7 @@
  "mbOptTrianglesNote": "Les coutures et les bords ouverts sont conservés : un modèle qui en a beaucoup garde plus de triangles que demandé.",
  "mbOptNoFiles": "Le projet n'a encore ni modèle ni image.",
  "mbOptTriangleCount": "{0} triangles",
+ "mbOptModSize": "Mod entier : {0}",
  "mbOptGo": "Optimiser",
  "mbOptDone": "Optimisé : {0} → {1}.",
  "mbOptTrianglesDone": "Triangles : {0} → {1}.",

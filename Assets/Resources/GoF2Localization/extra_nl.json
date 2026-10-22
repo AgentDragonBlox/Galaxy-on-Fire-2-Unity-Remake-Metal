@@ -2727,6 +2727,7 @@
  "mbOptTrianglesNote": "Naden en open randen blijven, dus een model met veel daarvan houdt meer driehoeken dan gevraagd.",
  "mbOptNoFiles": "Het project heeft nog geen modellen of afbeeldingen.",
  "mbOptTriangleCount": "{0} driehoeken",
+ "mbOptModSize": "Hele mod: {0}",
  "mbOptGo": "Optimaliseren",
  "mbOptDone": "Geoptimaliseerd: {0} → {1}.",
  "mbOptTrianglesDone": "Driehoeken: {0} → {1}.",

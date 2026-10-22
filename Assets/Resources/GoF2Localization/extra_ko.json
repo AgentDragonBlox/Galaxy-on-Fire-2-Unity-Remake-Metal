@@ -2727,6 +2727,7 @@
  "mbOptTrianglesNote": "이음매와 열린 모서리는 유지되므로, 그런 곳이 많은 모델은 선택보다 더 많은 삼각형이 남습니다.",
  "mbOptNoFiles": "프로젝트에 아직 모델이나 이미지가 없습니다.",
  "mbOptTriangleCount": "삼각형 {0}개",
+ "mbOptModSize": "모드 전체: {0}",
  "mbOptGo": "최적화",
  "mbOptDone": "최적화됨: {0} → {1}.",
  "mbOptTrianglesDone": "삼각형: {0} → {1}.",
