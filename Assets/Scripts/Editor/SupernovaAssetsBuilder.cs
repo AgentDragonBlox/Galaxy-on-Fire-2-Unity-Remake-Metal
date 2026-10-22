@@ -40,6 +40,8 @@ namespace GoF2Remake.EditorTools
             a.katashunMusic = Clip("DLC2_MUSIC/GOF2SN_CS_126_Trunt1_02.ogg");
             a.mission102 = Clip("DLC2_MUSIC/GOF2_Mission_102_CutScene.ogg");
             a.mission102Loop = Clip("DLC2_MUSIC/GOF2_Mission_102_CutScene_Loop.ogg");
+            a.challengeSounds = new AudioClip[10];
+            for (int i = 0; i < 10; i++) a.challengeSounds[i] = Clip($"SVMODE/SV_Mode_{i + 1:00}.ogg");
             a.mission102Loop2 = Clip("DLC2_MUSIC/GOF2_Mission_102_CutScene_Loop_2.ogg");
             a.supernovaIntroSky = AssetDatabase.LoadAssetAtPath<Material>($"{Root}/Skyboxes/skybox_005.mat");
             a.sunExplosionRing = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/supernova/fx/sn_sun_explosion_ring_anim_add.prefab");

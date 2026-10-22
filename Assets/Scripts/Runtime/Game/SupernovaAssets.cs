@@ -39,6 +39,11 @@ namespace GoF2Remake.Data
         public AudioClip mission102Loop;   // 0x8c1 (2241) GOF2_Mission_102_CutScene_Loop
         public AudioClip mission102Loop2;  // 0x8c2 (2242) GOF2_Mission_102_CutScene_Loop_2: a mission's target orbit from 0x6a
 
+        [Header("Supernova Challenge")]
+        // 2283-2292 SV_Mode_01..10 (group SURVIVALMODE): registered by BuildResourceList but never played in the Android build;
+        // the remake's combo steps (01..09) and combo bonus (10) (supernova_challenge.md 6.3, SupernovaChallenge).
+        public AudioClip[] challengeSounds;
+
         [Header("Sky")]
         public Material supernovaIntroSky;  // Level::createSpace at index 89: skybox_005 instead of the supernova sky
         // StarSystem::switchSunForSupernovaIntro (89): the ring mesh 0x2df1 with texture 0x2df3, the core mesh 0x2df2 with 0x2df4.

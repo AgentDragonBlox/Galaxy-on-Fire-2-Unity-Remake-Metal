@@ -1240,6 +1240,64 @@
 /* ---- top readout (Hud::draw, Hud+0x3d4 at the top right): the time limit or the cargo hold, the volatile bar, the
    mission's second line; plates cut by Build HUD Images (hud_*) --------------------------------------------------- */
 
+/* The Supernova Challenge (ChallengeView, Hud::drawChallengeModeScore): the score at the top centre, the combo row under
+   it; the lock plate and the HUD messages move under both. */
+.challenge-hud {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+.hud-fps .challenge-hud {
+    top: 28px;
+}
+
+.challenge-score,
+.challenge-combo,
+.challenge-combo-count,
+.challenge-bonus {
+    flex-direction: row;
+    align-items: center;
+}
+
+.challenge-combo {
+    margin-top: 4px;
+}
+
+.challenge-combo-count {
+    transform-origin: left;
+}
+
+.challenge-bonus {
+    margin-left: 24px;
+}
+
+.hud-challenge .lock-plate {
+    top: 90px;
+}
+
+.hud-challenge .hud-messages {
+    top: 76px;
+}
+
+.hud-challenge .hud-messages--low {
+    top: 140px;
+}
+
+.hud-fps.hud-challenge .lock-plate {
+    top: 114px;
+}
+
+.hud-fps.hud-challenge .hud-messages {
+    top: 100px;
+}
+
+.hud-fps.hud-challenge .hud-messages--low {
+    top: 164px;
+}
+
 .hud-readout {
     position: absolute;
     right: 40px;

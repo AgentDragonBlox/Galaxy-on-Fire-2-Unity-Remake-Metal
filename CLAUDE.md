@@ -35,7 +35,8 @@ Assets/
                      the flight level and the menu background), SpaceLevel, Backdrop, SpaceDust,
                      SystemJump (jumpgate / Khador travel), Traffic + NpcShip (NPC ships), Wormhole (the Void's wormhole);
                      story: StorySpace, CampaignLevel, IntroCutscenes (0 / 1), MainCampaignLevels (14-42),
-                     ValkyrieLevels (48-81), SupernovaLevels (87-158), GasCloudField, NpcCloak;
+                     ValkyrieLevels (48-81), SupernovaLevels (87-158), ShuttleRoutes (their NPC shuttles), ChallengeOrbit (the
+                     Supernova Challenge), GasCloudField, NpcCloak;
                      docked station: StationLevel + StationTables; SpaceHooks (what the levels need from Net / App)
     Net/Multiplayer/ GoF2.Net: multiplayer (see "Multiplayer")
     Net/Events/      the event graphs (single player quests / bar missions and multiplayer events alike):
@@ -265,7 +266,7 @@ Research: `Reference/research/autopilot_travel.md` (+ `Reference/tools/autopilot
 - **Autopilot menu** (`Hud::initHudMenu(3)`): the touch autopilot button, Q or the controller's View button while nothing else flies the ship (1-8 pick an entry; with keys and mouse the entries read "1." to "8.", like the PC version's numbered menus; remake: Q / E / V / K do nothing during a level's cutscene, #46); the game pauses (`Time.timeScale` 0). Entries: "Destination: X" (programmed station), Asteroid field (the field centre; like the original the autopilot keeps flying there until switched off), "<name> Station", Jumpgate (gate orbit only). Pick = "Target: X" + sound 28 + autopilot.
 - **Quick menu** (`Hud::initHudMenu(0)`, "Menu" 172): the touch quick menu button, E (the PC version's "Actions") or the controller's D-pad left; refused only while mining, so it opens on the autopilot too (`MGame::OnTouchEnd` key 4). Entries in its order: 266 **Secondary weapons** with any secondary mounted (its list `initHudMenu(1)`: "<name> (<amount>)", a pick selects it), 306 Wingmen, the cloak (the item's name), 1359 Khador Drive, and (remake) the time extender (the item's name; half-transparent while recharging), so one key reaches every device. V / K open Wingmen / Khador Drive directly.
 - **Fast-forward** (hold the touch button, Tab, or controller Y) while the autopilot, an asteroid approach or an object docking's approach runs, the target is >= 20000 units (1 km) away and no hostile ship is around: `Time.timeScale` = 5 for the whole game; stops on release, arrival or when the autopilot ends. Multiplayer (remake): the shared world can't run 5x for one player, so the held button is a **cruise mode** under the same rules (`Navigation.Cruise`, `CruiseFactor`): only the player's forward movement up to x5 (`ShipController`'s step, `Mining`'s approach; turns, timers and the camera at their own pace), eased in over 3 s (smoothstep) and out over 1.2 s (`CruiseFactor`), the HUD hint "CRUISE" (Extra `hudCruise`); it looks and sounds like a boost (`FlightModel.CruiseVisual`, eased over 400 ms, in `BoostVisualPercent`: the FOV, exhaust, engine glows and mod flames, the other players' copies; `LooksBoosting`: the camera / controller rumble, the boost sound's start and stop; without a booster item 71's boost sound, `PlayerEngine.cruiseClip`: a new pilot's Betty has none), while `IsBoosting` (missile evasion, the recharge, volatile goods) stays the real boost's.
-- **Menu order** (`Hud::initHudMenu(3)`): outside the alien orbit Asteroid field, Station, Jumpgate, 573 **Waypoint** (a player route not finished: the autopilot follows the route, "Target: Waypoint"), "Destination: X"; then every named docking target (also in the alien orbit). The original's only restriction is no menu in mission type 0xb7 (the unreachable challenge).
+- **Menu order** (`Hud::initHudMenu(3)`): outside the alien orbit Asteroid field, Station, Jumpgate, 573 **Waypoint** (a player route not finished: the autopilot follows the route, "Target: Waypoint"), "Destination: X"; then every named docking target (also in the alien orbit). The original's only restriction is no menu in mission type 0xb7 (the Supernova Challenge, see "Supernova add-on").
 
 ## Star map and system travel
 
@@ -484,6 +485,38 @@ against the FEV's LGCY data, see "Sound").
   drop-off), 102 (the Rhinos, the carrier jump), 105, 125 (hack a container), 135 (titanium into the plant), 139 (both hacks,
   the prism), 142, 145, 154 (the hack against the 91 s limit), 157 -> 158, Harval's missiles, a criminal in orbit with its
   rockets, the Most Wanted tab, the 116 and 148 bar scenes, the chapter call and the complaint. Not played through as a player.
+- **Supernova Challenge** (mission type 0xb7, `Reference/research/supernova_challenge.md`; rules `Data.SupernovaChallenge`, the
+  orbit `World.ChallengeOrbit`, the HUD `UI.ChallengeView`): unreachable in the Android build (nothing started it, its score
+  and combo were never written); the remake offers it under the campaign cards (`MainMenu`'s `challengeButton`: 293, the
+  highscore 294 and best kills 176, else 298's first paragraph; a click asks 298 "Start Supernova Challenge?").
+  `SupernovaChallenge.Start` = `MenuTouchWindow::startSupernovaChallenge`: `Session.ResetNewGame`, campaign index 0x98 (no
+  step side effects: an empty story mission), Normal and the Android economy (remake: one highscore table), ship 46 Blue
+  Fyre with 231 / 230 / 231, 73, 54, 59, 83, 206, 75, 76 and Patala x5 (x10 on a restart), 220 kills (rank 9), Luur (111),
+  the hints marked shown; straight into `Space` (no launch camera). The orbit (`createMission`'s 0xb7 branch): 8 Specters
+  (hull 250, always enemy, no loot) at (-55000, 0, -35000) +- 20000, the burning platform (3208) and a Terran carrier as
+  race-10, untargetable scenery, 4 unarmed Rhinos shuttling carrier -> (30000, 1000, 40000) -> platform on their pads
+  (`ShuttleRoutes`, the 94 / 102 shuttle code moved out of `SupernovaLevels`); every 7500 ms each Specter whose explosion is
+  over comes back 50 000-80 000 units from the player (`updateMissionOrbit`); the player starts at (-30000, 5000, -100000)
+  facing the Specters' point (remake pick); `SpaceLevel` keeps it passive (no traffic or wingmen), refuses jumps and the
+  gate; music 2242 (`Traffic.CalmClip`, then the Specter battle tracks); gamma 1/s x 0.4 with the Gamma Shield II. The round
+  is 181 000 ms (the HUD timer, `HudReadout`). Not in the challenge: the autopilot menu, its touch button and hint
+  (`Navigation.CanOpenMenu`, `NavigationView`, `FlightHud`), the pause menu's Missions / Cargo hold, saving (`SaveGame.Save` /
+  `AutoSave`), the asteroid lock (`Mining.UpdateLock`: the Blue Fyre has no drill, "No drill installed." came up at every
+  rock). Scoring (remake: the Android code has only `Hud::drawChallengeModeScore`'s drawing): 1000 per Specter the player
+  destroys; a kill restarts the combo timer at 7100 ms and raises the combo while it runs; run out, a combo pays the
+  original's `combo x 1000 x (1 + 0.05 combo)` (shown beside the count in its last 3000 ms, blinking 50 ms in 100; the count
+  pops by 1 + (timer - 7000) x 0.01); the round's end pays a running combo. HUD: 7 digits (`GoF2Hud/challenge_digit_0..9`,
+  images 6000-6009 of `gof2_challenge_interface_ipad_large`, **Build HUD Images**) tinted 0x77CCFF at the top centre, under
+  them `challenge_combo` (6010, "COMBOx") with the count and the bonus; `.hud-challenge` moves the lock plate and HUD
+  messages under them. Sounds (`SupernovaAssets.challengeSounds`: SV_Mode_01..10, events 2283-2292, never played by the
+  original): the combo's steps 01..09, the bonus 10, at the events' volume 0.42658. The end (time out after 1.5 s, death at
+  the game over's 7 s): the score is final, a question (`Traffic.Ask`) "Your score / Kills / Highscore or New Highscore! /
+  Play again?" (296 / 176 / 294 / 295 / 300); Yes restarts (`Start(true)`), No goes to the main menu. Highscore and best
+  kills in PlayerPrefs `challenge_highscore` / `_kills`. Remake pick: the Specters fire their ordinary guns (rank 9, x0.7):
+  `assignGuns` forces 0xb7's NPC damage to 1 and the Specters' x0.7 truncates it to 0, a harmless round. Tests
+  `SupernovaChallengeTests`. Verified in Play mode: the menu entry and dialog, the orbit (8 Specters, 4 Rhinos and their
+  fighter turrets, the scenery), music, the HUD's score / combo / bonus, the time-out's question with a new highscore, Yes
+  (round 2, Patala x10), a death's question, No to the menu with the highscore shown. Not played through by hand.
 - Object docking approach: reached within PlayerEgo+0x1d8 = 0x578 (1400) units; remake: a ship circling the point (its turning
   circle ~2500 units across) starts the ease-in after 4 s within 4000 units.
 - Sky layers: looping animations skip their one-off first keys (`PartAnimation.loopStartMs`: flares 1000 ms, storms 33 ms);

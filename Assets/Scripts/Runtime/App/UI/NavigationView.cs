@@ -369,6 +369,8 @@ namespace GoF2Remake.UI
                 Image(fastForward, fastForwardPressed && (nav.FastForward || nav.Cruise) ? fastForwardOn : fastForwardOff);
             }
             Image(autopilotButton, active || nav != null && nav.MenuOpen ? autopilotOn : autopilotOff);
+            // Hud::draw ~0x1926f6: the Supernova Challenge (0xb7) leaves the autopilot button out (its menu isn't offered).
+            autopilotButton.style.visibility = SupernovaChallenge.Active && !active ? Visibility.Hidden : Visibility.Visible;
         }
 
         // By the translate, not left / top: the markers move every frame, and left / top ran the panel's layout each time.

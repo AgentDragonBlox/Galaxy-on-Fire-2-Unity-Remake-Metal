@@ -296,7 +296,7 @@ namespace GoF2Remake.World
                 var s = c.SpawnShip(3, NpcTables.RandomFighter(3), new Vector3(0, 2000 * i, 3000), false,
                                     sp => { sp.alwaysFriend = true; sp.noLoot = true; });
                 s.SetOnlyEnemy(null);
-                shuttles.Add(new Shuttle { ship = s, points = new[] { Vector3.zero, new Vector3(20000, -3000, 30000), new Vector3(30000, -5000, 40000) },
+                shuttles.Add(new ShuttleRoutes.Shuttle { ship = s, points = new[] { Vector3.zero, new Vector3(20000, -3000, 30000), new Vector3(30000, -5000, 40000) },
                                            dockMs = new[] { 12000f, 0f, 12000f }, dropOff = 2, perUnitMs = 1500f, leg = i,
                                            dockAt = new[] { burning?.transform, null, freighter?.transform }, dockSets = new[] { 6, 0, 4 } });
             }
@@ -363,7 +363,7 @@ namespace GoF2Remake.World
             {
                 var s = c.SpawnShip(0, 51, starts[i], false, sp => { sp.alwaysFriend = true; sp.noLoot = true; });
                 s.SetOnlyEnemy(null);
-                shuttles.Add(new Shuttle { ship = s, points = stops, dockMs = new[] { 20000f, 0f, 20000f }, dropOff = 0, perUnitMs = 200f, leg = i % 3, rhino = true,
+                shuttles.Add(new ShuttleRoutes.Shuttle { ship = s, points = stops, dockMs = new[] { 20000f, 0f, 20000f }, dropOff = 0, perUnitMs = 200f, leg = i % 3, rhino = true,
                                            dockAt = new[] { carrier?.transform, null, tadram }, dockSets = new[] { 5, 0, 10 } });
             }
             for (int i = 0; i < 4; i++) Specter(new Vector3(1e6f, 1e6f, 1e6f), false, s => s.asleep = true).CloakingPossible = false;
@@ -833,7 +833,7 @@ namespace GoF2Remake.World
                 Ship.ExternalSpeedMetersPerSecond = playerSpeed * 1000f * M;
             }
             if (loading) return;
-            UpdateShuttles(dtMs);
+            shuttles.Update(dtMs, Unload);
             if (index != built && c.Cutscene && !ScriptOwnsAdvance) LeaveCutscene();
             switch (built)
             {
@@ -2106,209 +2106,32 @@ namespace GoF2Remake.World
         }
         float cloakMs;
 
-        // ---- the shuttles of 94 / 102 (Route docking targets and times, PlayerFighter case 9) ------------------------
+        // ---- the shuttles of 94 / 102 (ShuttleRoutes) -----------------------------------------------------------------
 
-        class Shuttle
-        {
-            public NpcShip ship;
-            public Vector3[] points;   // game units
-            public float[] dockMs;
-            public int dropOff, leg;
-            public float perUnitMs, waitMs, tickMs;
-            public bool rhino, waiting;
-            // The object each leg docks at (null = a plain waypoint) and its SpacePoints set (PlayerFighter states 7-9).
-            public Transform[] dockAt;
-            public int[] dockSets;
-            public int dockPhase;            // 0 flying to the approach point, 1 easing onto the pad, 2 docked
-            public bool once, finished;      // once: the route ends at its last point (154's freighter), no loop
-            public int taken = -1;           // the docking point index taken on dockAt[leg]
-            public Vector3 approachLocal, pivotLocal, fromPos;
-            public Quaternion localRot, fromRot;
-            public float easeMs;
-        }
-        readonly List<Shuttle> shuttles = new List<Shuttle>();
-
-        /// <summary>PlayerFighter states 7 / 8 (game/PlayerFighter.c 2779-2890): the nearest free approach point (type 1), reached
-        /// within 2000 units; then the docking point nearest it, eased onto like the player's (approachDockingPoint: nose = the
-        /// point's direction, up = from the docking point to the approach point, stopping the ship's height short of it,
-        /// DAT_00254820 = StationTables.ShipY) over 2000 ms (assumed: the NPC's ease time was lost in the decompile); state 9
-        /// docked, the exhaust off. Returns true once docked.</summary>
-        bool ShuttleDocking(Shuttle sh, Transform obj, float dtMs)
-        {
-            var s = sh.ship;
-            var points = SpacePoints.Set(sh.dockSets[sh.leg]);
-            if (sh.taken < 0)
-            {
-                // Pick the nearest free approach point and the docking point nearest it.
-                float best = float.MaxValue;
-                int pick = -1;
-                for (int i = 0; i < points.Count; i++)
-                {
-                    if (points[i].type != SpacePoints.Approach || SpacePoints.IsTaken(obj, i)) continue;
-                    float d = (obj.TransformPoint(SpacePoints.ToLocal(points[i].engine)) - s.transform.position).sqrMagnitude;
-                    if (d < best) { best = d; pick = i; }
-                }
-                if (pick < 0) return false;   // every pad busy: hold here (the waypoint logic below keeps it flying)
-                var a = SpacePoints.ToLocal(points[pick].engine);
-                best = float.MaxValue;
-                int dock = -1;
-                for (int i = 0; i < points.Count; i++)
-                {
-                    if (points[i].type != SpacePoints.Dock) continue;
-                    float d = (SpacePoints.ToLocal(points[i].engine) - a).sqrMagnitude;
-                    if (d < best) { best = d; dock = i; }
-                }
-                if (dock < 0) return false;
-                sh.taken = pick;
-                SpacePoints.Take(obj, pick);
-                var dLocal = SpacePoints.ToLocal(points[dock].engine);
-                var up = a - dLocal;
-                up = up.sqrMagnitude > 1e-8f ? up.normalized : Vector3.up;
-                var nose = SpacePoints.DirToLocal(points[dock].dir);
-                sh.approachLocal = a;
-                sh.pivotLocal = dLocal + up * (StationTables.ShipY(s.Spec.ship) * M);
-                sh.localRot = Quaternion.LookRotation(nose.sqrMagnitude > 1e-6f ? nose : Vector3.forward, up);
-                sh.dockPhase = 0;
-            }
-            if (sh.dockPhase == 0)
-            {
-                var to = obj.TransformPoint(sh.approachLocal) - s.transform.position;
-                if (to.magnitude / M > 2000f)
-                {
-                    s.scriptedSpeed = 2f;
-                    s.transform.rotation = Quaternion.RotateTowards(s.transform.rotation, Quaternion.LookRotation(to.normalized, Vector3.up), 0.05f * dtMs);
-                    return false;
-                }
-                sh.dockPhase = 1;
-                sh.easeMs = 0f;
-                sh.fromPos = s.transform.position;
-                sh.fromRot = s.transform.rotation;
-            }
-            if (sh.dockPhase == 1)
-            {
-                s.scriptedSpeed = 0f;
-                sh.easeMs += dtMs;
-                float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(sh.easeMs / 2000f));
-                s.transform.SetPositionAndRotation(Vector3.Lerp(sh.fromPos, obj.TransformPoint(sh.pivotLocal), t),
-                                                   Quaternion.Slerp(sh.fromRot, obj.rotation * sh.localRot, t));
-                if (t < 1f) return false;
-                sh.dockPhase = 2;
-                s.SetExhaust(false);
-            }
-            // Docked: stay on the pad (the object may move).
-            s.scriptedSpeed = 0f;
-            s.transform.SetPositionAndRotation(obj.TransformPoint(sh.pivotLocal), obj.rotation * sh.localRot);
-            return true;
-        }
-
-        /// <summary>Every pad of the leg's object taken: hover 5000 units further out than the nearest approach point.</summary>
-        void HoldOffPads(Shuttle sh, Transform obj, float dtMs)
-        {
-            var s = sh.ship;
-            var points = SpacePoints.Set(sh.dockSets[sh.leg]);
-            Vector3 hold = obj.position;
-            float best = float.MaxValue;
-            for (int i = 0; i < points.Count; i++)
-            {
-                if (points[i].type != SpacePoints.Approach) continue;
-                var a = obj.TransformPoint(SpacePoints.ToLocal(points[i].engine));
-                float d = (a - s.transform.position).sqrMagnitude;
-                if (d >= best) continue;
-                best = d;
-                var outward = a - obj.position;
-                hold = a + (outward.sqrMagnitude > 1e-6f ? outward.normalized : Vector3.up) * (5000f * M);
-            }
-            var to = hold - s.transform.position;
-            if (to.magnitude / M < 1500f) { s.scriptedSpeed = 0f; return; }
-            s.scriptedSpeed = 2f;
-            s.transform.rotation = Quaternion.RotateTowards(s.transform.rotation, Quaternion.LookRotation(to.normalized, Vector3.up), 0.05f * dtMs);
-        }
-
-        /// <summary>On to the next leg; a route that runs once (154's freighter) holds at its last point.</summary>
-        static void NextLeg(Shuttle sh)
-        {
-            if (sh.once && sh.leg == sh.points.Length - 1) { sh.finished = true; sh.ship.scriptedSpeed = 0f; return; }
-            sh.leg = (sh.leg + 1) % sh.points.Length;
-        }
+        readonly ShuttleRoutes shuttles = new ShuttleRoutes();
 
         /// <summary>154: Hans' route (createCampaignMission 0x9a, Route(int*, Array*, int*, 9)): (-10000, 1000, 15000), docked on
         /// Valkyrie's pad (docking set 7, the waypoint's parameter 10000 = the stay), back to (-10000, 1000, 15000). A player's
         /// report: he flew into the battlestation's centre and the camera stared at its hull.</summary>
         void StartHansRoute(NpcShip hans, NpcShip valkyrie)
         {
-            if (hansRoute != null) { ShuttleUndock(hansRoute); hansRoute.leg = 0; hansRoute.waiting = hansRoute.finished = false; return; }
+            if (hansRoute != null) { shuttles.Undock(hansRoute); hansRoute.leg = 0; hansRoute.waiting = hansRoute.finished = false; return; }
             var wp = new Vector3(-10000, 1000, 15000);
-            hansRoute = new Shuttle { ship = hans, points = new[] { wp, Vector3.zero, wp }, dockMs = new[] { 0f, 10000f, 0f }, dropOff = -1, once = true,
+            hansRoute = new ShuttleRoutes.Shuttle { ship = hans, points = new[] { wp, Vector3.zero, wp }, dockMs = new[] { 0f, 10000f, 0f }, dropOff = -1, once = true,
                                       dockAt = new[] { null, valkyrie.transform, null }, dockSets = new[] { 0, 7, 0 } };
             shuttles.Add(hansRoute);
         }
-        Shuttle hansRoute;
+        ShuttleRoutes.Shuttle hansRoute;
 
-        /// <summary>Leaving a pad: the point is free again, the exhaust on; the ship flies off nose first.</summary>
-        void ShuttleUndock(Shuttle sh)
+        /// <summary>94 / 102: at the drop-off the evacuees go aboard the freighter / carrier (1 per 1500 ms, the Rhinos 1 per
+        /// 200 ms). At 94 they stop unloading once the rest fits the player's cabins (the player brings the last load).</summary>
+        void Unload(ShuttleRoutes.Shuttle sh, float dtMs)
         {
-            var obj = sh.dockAt != null && sh.leg < sh.dockAt.Length ? sh.dockAt[sh.leg] : null;
-            if (obj != null && sh.taken >= 0) SpacePoints.Free(obj, sh.taken);
-            if (sh.taken >= 0) sh.ship.SetExhaust(true);
-            sh.taken = -1;
-            sh.dockPhase = 0;
-        }
-
-        /// <summary>The loops station -> waypoint -> drop-off with their docking times; at the drop-off the evacuees go aboard
-        /// the freighter / carrier (1 per 1500 ms, the Rhinos 1 per 200 ms). At 94 they stop unloading once the rest fits
-        /// the player's cabins (the player brings the last load).</summary>
-        void UpdateShuttles(float dtMs)
-        {
-            foreach (var sh in shuttles)
-            {
-                var s = sh.ship;
-                if (s == null || !s.Target.Alive || s.Gone || sh.finished) continue;
-                var target = sh.points[sh.leg];
-                if (sh.waiting)
-                {
-                    s.scriptedSpeed = 0f;
-                    sh.waitMs += dtMs;
-                    if (sh.leg == sh.dropOff && Story.Mission.type == StoryType.Passengers)
-                    {
-                        sh.tickMs += dtMs;
-                        int cabins = Freelance.MaxPassengers(level.Database);
-                        bool stop = !sh.rhino && Story.Mission.value <= cabins;
-                        while (sh.tickMs >= sh.perUnitMs) { sh.tickMs -= sh.perUnitMs; if (!stop && Story.Mission.value > 0) Story.Mission.value--; }
-                    }
-                    if (sh.waitMs < sh.dockMs[sh.leg]) continue;
-                    sh.waiting = false;
-                    ShuttleUndock(sh);
-                    NextLeg(sh);
-                    continue;
-                }
-                // A leg at an object: its pads (the original's docking route waypoint), not the object's centre.
-                var dockObj = sh.dockAt != null && sh.leg < sh.dockAt.Length ? sh.dockAt[sh.leg] : null;
-                if (dockObj != null)
-                {
-                    if (ShuttleDocking(sh, dockObj, dtMs))
-                    {
-                        sh.waiting = sh.dockMs[sh.leg] > 0f;
-                        sh.waitMs = sh.tickMs = 0f;
-                        if (!sh.waiting) { ShuttleUndock(sh); NextLeg(sh); }
-                    }
-                    if (sh.taken >= 0) continue;
-                    // Remake: no free pad (another ship or the player on it): wait 5000 units out from the nearest one (it
-                    // fell through to the object's centre and "docked" inside the hull, at 102 inside Tadram).
-                    HoldOffPads(sh, dockObj, dtMs);
-                    continue;
-                }
-                var to = ToUnity(target) - s.transform.position;
-                if (to.magnitude / M < 2500f)
-                {
-                    sh.waiting = sh.dockMs[sh.leg] > 0f;
-                    sh.waitMs = sh.tickMs = 0f;
-                    if (!sh.waiting) NextLeg(sh);
-                    continue;
-                }
-                s.scriptedSpeed = 2f;
-                var want = Quaternion.LookRotation(to.normalized, Vector3.up);
-                s.transform.rotation = Quaternion.RotateTowards(s.transform.rotation, want, 0.05f * dtMs);
-            }
+            if (sh.leg != sh.dropOff || Story.Mission.type != StoryType.Passengers) return;
+            sh.tickMs += dtMs;
+            int cabins = Freelance.MaxPassengers(level.Database);
+            bool stop = !sh.rhino && Story.Mission.value <= cabins;
+            while (sh.tickMs >= sh.perUnitMs) { sh.tickMs -= sh.perUnitMs; if (!stop && Story.Mission.value > 0) Story.Mission.value--; }
         }
     }
 }

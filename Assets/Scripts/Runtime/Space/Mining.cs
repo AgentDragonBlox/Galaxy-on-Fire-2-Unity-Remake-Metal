@@ -208,7 +208,9 @@ namespace GoF2Remake.Flight
         /// <summary>Radar::draw, asteroid part: box around the crosshair, nearest in 3D, lock timer.</summary>
         void UpdateLock(float dtMs)
         {
-            if (GoF2Remake.World.SpaceHooks.InArena) return;   // no mining in an arena match
+            // No mining in an arena match, nor in the Supernova Challenge (remake: the Blue Fyre has no drill, and the
+            // asteroid lock's "No drill installed." came up at every rock in the fight).
+            if (GoF2Remake.World.SpaceHooks.InArena || SupernovaChallenge.Active) return;
             var cam = Camera.main;
             // Remake, beam mode: while the beam holds an asteroid the lock follows it in a wider box (the ship turns and the
             // rock spins; the crosshair box alone dropped it at every wobble).

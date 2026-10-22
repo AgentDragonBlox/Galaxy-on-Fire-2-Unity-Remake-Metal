@@ -399,7 +399,10 @@ namespace GoF2Remake.Flight
         }
 
         /// <summary>MGame::OnTouchEnd, autopilot button: only while nothing else flies the ship; pauses the game.</summary>
-        public bool CanOpenMenu => !Autopilot && !Jumping && !paused && (mining == null || mining.State == Mining.Phase.Idle) && (Docking == null || !Docking.Busy);
+        /// <summary>MGame::OnTouchEnd's autopilot button: not in the Supernova Challenge (mission type 0xb7: Hud::initHudMenu(3)
+        /// isn't opened and Hud::draw leaves the button out).</summary>
+        public bool CanOpenMenu => !Autopilot && !Jumping && !paused && (mining == null || mining.State == Mining.Phase.Idle) && (Docking == null || !Docking.Busy)
+                                   && !SupernovaChallenge.Active;
         /// <summary>MGame::OnTouchEnd, quick menu button (key 4): refused only while mining (PlayerEgo::isMining), so it opens
         /// on the autopilot and docked at an object too (remake: not while jumping, easing in or out of a docking or hacking;
         /// docked it was refused until a player's report at 135's mining plant).</summary>

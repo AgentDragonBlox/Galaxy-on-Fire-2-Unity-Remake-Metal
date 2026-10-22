@@ -16,7 +16,8 @@ namespace GoF2Remake.EditorTools
         public const string OutDir = ImportSettings.Root + "/Resources/GoF2Hud";
         const string AtlasDir = ImportSettings.Root + "/Textures/textures/";
         const string Main = "gof2_interface_iphone4.png", Ipad = "gof2_interface2_ipad_large.png", Low = "gof2_interface.png",
-                     Logos = "gof2_logos_ipad2.png", Ipad3 = "gof2_interface3_ipad_large.png", Items = "gof2_items_ipad_large.png";
+                     Logos = "gof2_logos_ipad2.png", Ipad3 = "gof2_interface3_ipad_large.png", Items = "gof2_items_ipad_large.png",
+                     Challenge = "gof2_challenge_interface_ipad_large.png";
 
         // atlas, name, x, y, w, h, frames (0 = single image), wrap (marquee strips repeat)
         static readonly (string atlas, string name, int x, int y, int w, int h, int frames, bool repeat)[] Images =
@@ -50,6 +51,18 @@ namespace GoF2Remake.EditorTools
             (Ipad, "gate_icon", 1776, 17, 26, 26, 0, false),
             (Ipad, "wormhole_icon", 355, 1578, 58, 58, 0, false),       // 0x450 the wormhole off the centre (Radar::draw)
             (Logos, "ending_logo", 0, 0, 452, 156, 0, false),           // 0x1b5a the ending's logo (dialogue_cutscenes.md 3.4)
+            // Hud::drawChallengeModeScore (supernova_challenge.md 6.2): the Supernova Challenge's digits 0-9 (images 6000-6009) and "COMBOx" (6010).
+            (Challenge, "challenge_digit_0", 173, 89, 84, 88, 0, false),
+            (Challenge, "challenge_digit_1", 1, 179, 84, 88, 0, false),
+            (Challenge, "challenge_digit_2", 1, 89, 84, 88, 0, false),
+            (Challenge, "challenge_digit_3", 1, 359, 84, 88, 0, false),
+            (Challenge, "challenge_digit_4", 87, 89, 84, 88, 0, false),
+            (Challenge, "challenge_digit_5", 87, 179, 84, 88, 0, false),
+            (Challenge, "challenge_digit_6", 1, 269, 84, 88, 0, false),
+            (Challenge, "challenge_digit_7", 87, 269, 84, 88, 0, false),
+            (Challenge, "challenge_digit_8", 87, 359, 84, 88, 0, false),
+            (Challenge, "challenge_digit_9", 259, 89, 84, 88, 0, false),
+            (Challenge, "challenge_combo", 1, 1, 471, 86, 0, false),
             (Ipad, "autopilot", 1, 515, 109, 109, 0, false),
             (Ipad, "autopilot_on", 1097, 782, 109, 109, 0, false),
             (Ipad, "fastforward", 1120, 1295, 109, 109, 0, false),

@@ -1040,7 +1040,8 @@ namespace GoF2Remake.World
             if (SupernovaCalm)
             {
                 bool target = Story.TargetStation == StationIndex
-                              || (Session.FreelanceMission != null && Session.FreelanceMission.type != MissionType.Empty && Session.FreelanceMission.target == StationIndex);
+                              || (Session.FreelanceMission != null && Session.FreelanceMission.type != MissionType.Empty && Session.FreelanceMission.target == StationIndex)
+                              || (SupernovaChallenge.Active && StationIndex == SupernovaChallenge.Station);   // 0xb7's mission targets Luur: 2242
                 return target ? (Session.CampaignMission < 0x6a ? sn?.mission102Loop : sn?.mission102Loop2) : sn?.gammaRayMusic;
             }
             if (StationIndex == 10 || StationIndex == 100) return assets.deepScienceMusic;

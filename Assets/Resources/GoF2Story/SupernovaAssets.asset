@@ -37,6 +37,17 @@ MonoBehaviour:
   mission102: {fileID: 8300000, guid: 973ad118e8c0f3e48904244380a1c9e3, type: 3}
   mission102Loop: {fileID: 8300000, guid: 87eb9ac16298f3347adce5e021a3180c, type: 3}
   mission102Loop2: {fileID: 8300000, guid: 93921772b9768214691df7e94727af87, type: 3}
+  challengeSounds:
+  - {fileID: 8300000, guid: cca33677c9d2bc54d83d7528327e2e9d, type: 3}
+  - {fileID: 8300000, guid: 92fdca55e30af1e4d873f0a1506073a4, type: 3}
+  - {fileID: 8300000, guid: e350d54c575ef44498c0181c87820342, type: 3}
+  - {fileID: 8300000, guid: 9fbbe41d65da1b64692b819a76a0f389, type: 3}
+  - {fileID: 8300000, guid: 017e8819d610b004eb6d039f159e16fc, type: 3}
+  - {fileID: 8300000, guid: fa890a0b203b57247aa6fc6c5454414d, type: 3}
+  - {fileID: 8300000, guid: 86ae1b45d30b6394590e40f3c7d1038f, type: 3}
+  - {fileID: 8300000, guid: ecdaa1e545fbd624f92c63659ecfd730, type: 3}
+  - {fileID: 8300000, guid: 82aca7065a6623747bb14c7aa799ebe1, type: 3}
+  - {fileID: 8300000, guid: 3d39d092f39f4d947876e18145d6dbbb, type: 3}
   supernovaIntroSky: {fileID: 2100000, guid: 722d643405cba4f42b450528e2ddcccf, type: 2}
   sunExplosionRing: {fileID: 8968706735544862828, guid: 4ab4ba07bfe284e46b0b2dfac8389f21, type: 3}
   sunExplosionCore: {fileID: 4559662340832685978, guid: 7d3af0640ab0db0408d132a95dd58ba5, type: 3}

@@ -210,7 +210,8 @@ namespace GoF2Remake.UI
                     Item(T(41), Close);
                     // MenuTouchWindow mode 1: Missions from campaign 16, the cargo hold from 2. The original leaves Missions
                     // out in the alien orbit; the remake keeps it (the objective is needed there too).
-                    int cm = Session.WorldIndex;
+                    // MenuTouchWindow::MenuTouchWindow 0x14816c: neither in the Supernova Challenge (mission type 0xb7).
+                    int cm = SupernovaChallenge.Active ? 0 : Session.WorldIndex;
                     if (cm >= 16) Item(T(129), () => Show(Page.Missions));
                     if (cm >= 2) Item(T(166), () => Show(Page.Cargo));
                     Item(T(31), () => Show(Page.Options));

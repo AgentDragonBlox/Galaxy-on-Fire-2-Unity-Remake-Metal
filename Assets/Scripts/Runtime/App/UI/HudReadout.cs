@@ -1,6 +1,7 @@
 // HudReadout.cs
 // Hud::draw 0x190d08's top readout (Hud+0x3d4, the top right; LAB_00191910 / LAB_00191994):
-//   a time limit running (a campaign level's, not at 0x2a; Junk removal's)   the clock plate 0x4c5 with "m:ss"
+//   a time limit running (a campaign level's, not at 0x2a; Junk removal's; the Supernova Challenge's round)   the clock
+//                                         plate 0x4c5 with "m:ss"
 //   story type 0xb8 (passengers)          the passengers plate 0x1f43 "aboard / cabins" (at 0x66 in 113's orbit and at 0x8b
 //                                         in 131's the cargo plate instead), under it 0x1f42 with the mission's remainder
 //   story type 0xae (goods delivered)     the goods plate 0x1f61 "in the hold / free", under it 0x1f60 the amount still due
@@ -90,8 +91,10 @@ namespace GoF2Remake.UI
             var freelance = level.FreelanceOrbit;
             if (freelance != null && !freelance.DialogueOpen) left = freelance.TimeLeftMs;
             else if (freelance == null && level.Campaign != null && Session.CampaignMission != 0x2a) left = level.Campaign.TimeLeftMs;
+            bool challenge = level.Challenge != null;   // the Supernova Challenge's round, down to 0:00
+            if (challenge) left = SupernovaChallenge.TimeLeftMs;
             var mission = level.Campaign != null && !Session.FreePlay ? Story.Mission : null;
-            if (left > 0f)
+            if (left > 0f || challenge)
             {
                 int sec = Mathf.CeilToInt(left / 1000f);
                 image = "hud_timer";

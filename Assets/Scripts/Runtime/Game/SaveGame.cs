@@ -159,6 +159,7 @@ namespace GoF2Remake.Data
             // after its connection went, while its game is still loaded).
             if (NetSession.SessionGame) return false;
             if (Modding.ModManager.BuilderOpen) return false;   // the Mod Builder's throwaway game
+            if (SupernovaChallenge.Active) return false;   // the Supernova Challenge's throwaway game (it never docks)
             // Hardcore: only the auto-save (no slot to go back to after a death).
             if (Session.Hardcore && slot != AutoSaveSlot) return false;
             var s = Capture();
@@ -221,7 +222,7 @@ namespace GoF2Remake.Data
         {
             // Multiplayer: a server that keeps profiles gets the docked game instead (NetProfileClient; a no-op without).
             if (NetSession.SessionGame) { GameHooks.ProfileUpload?.Invoke(); return; }
-            if (Session.PlaySeconds <= 0f || Modding.ModManager.BuilderOpen) return;
+            if (Session.PlaySeconds <= 0f || Modding.ModManager.BuilderOpen || SupernovaChallenge.Active) return;
             Save(AutoSaveSlot);
         }
 

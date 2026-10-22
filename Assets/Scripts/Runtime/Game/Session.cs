@@ -501,6 +501,7 @@ namespace GoF2Remake.Data
             StreamOutAfterCutscene = false;
             LastFreighterHull = -1;
             EndingPending = false;
+            SupernovaChallenge.End();   // a new game or a load ends the challenge (its Start sets it again after)
             Unsaleable = new HashSet<int>();
             FreePlay = false;
             CompletedWorld = false;

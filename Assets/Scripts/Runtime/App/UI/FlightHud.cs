@@ -223,6 +223,7 @@ namespace GoF2Remake.UI
             HookPress(dockPrompt, null, Interact);
             miningView = new MiningView(root);
             readout = new HudReadout(safeArea);
+            challengeView = new ChallengeView(safeArea);   // the Supernova Challenge's score and combo
             hackingView = new HackingView(root);
             transferCounter = new Label { pickingMode = PickingMode.Ignore };
             transferCounter.AddToClassList("transfer-counter");
@@ -673,7 +674,7 @@ namespace GoF2Remake.UI
                 if (FirstAuto() != null) Hint(Localization.Get(37).ToUpperInvariant(), GameControls.AutoTurret);
                 if (HasManualTurret()) Hint(T("hudTurretView", "TURRET VIEW"), GameControls.Camera);
                 CockpitHint(pad);
-                Hint(Localization.Get(571).ToUpperInvariant(), GameControls.AutopilotMenu);
+                if (!SupernovaChallenge.Active) Hint(Localization.Get(571).ToUpperInvariant(), GameControls.AutopilotMenu);   // no autopilot menu there (0xb7)
                 if (nav != null && nav.MenuEntries(true).Count > 0) Hint(T("hudActions", "ACTIONS"), GameControls.ActionsMenu);
                 Hint(T("hudMenu", "MENU"), menuKey);
                 return;
@@ -695,7 +696,7 @@ namespace GoF2Remake.UI
             if (FirstAuto() != null) Hint(Localization.Get(37).ToUpperInvariant(), GameControls.AutoTurret);
             if (HasManualTurret()) Hint(T("hudTurretView", "TURRET VIEW"), GameControls.Camera);
             CockpitHint(pad);
-            Hint(Localization.Get(571).ToUpperInvariant(), GameControls.AutopilotMenu);
+            if (!SupernovaChallenge.Active) Hint(Localization.Get(571).ToUpperInvariant(), GameControls.AutopilotMenu);   // no autopilot menu there (0xb7)
             if (nav != null && nav.MenuEntries(true).Count > 0) Hint(T("hudActions", "ACTIONS"), GameControls.ActionsMenu);
             Hint(T("hudMenu", "MENU"), menuKey);
         }
@@ -903,6 +904,9 @@ namespace GoF2Remake.UI
 
             if (volatileCargo == null && level != null && level.Player != null) volatileCargo = level.Player.GetComponent<VolatileCargo>();
             readout?.Update(level, true, volatileCargo != null ? volatileCargo.Force : 0f);
+            bool challenge = level != null && level.Challenge != null;
+            challengeView?.Update(challenge);
+            root.EnableInClassList("hud-challenge", challenge);   // the top plates move under the score
             if (carrierShop != null && carrierShop.IsOpen)
             {
                 // The docking ended another way (the carrier destroyed, a level script): the window goes without an undock.
@@ -1545,6 +1549,7 @@ namespace GoF2Remake.UI
         /// <summary>Hud::draw's top readout: the time limit (Junk removal, a campaign level's LevelScript+0), else the cargo
         /// hold, the volatile bar and the mission counters (HudReadout).</summary>
         HudReadout readout;
+        ChallengeView challengeView;
         VolatileCargo volatileCargo;
         void OnCombatMessage(string text, int colour) => miningView?.ShowMessage(text, colour);
 
@@ -1561,6 +1566,11 @@ namespace GoF2Remake.UI
                 SaveGame.DeleteRun(Session.RunId);
                 hardcoreDead = true;
                 gameOverText.text = Localization.Extra("hardcoreDead", "Hardcore: your pilot is lost and the saves are deleted. Tap for the main menu.");
+                return;
+            }
+            if (level != null && level.Challenge != null)   // the Supernova Challenge: the round's end asks "Play again?" (ChallengeOrbit)
+            {
+                gameOverText.text = "";
                 return;
             }
             if (Modding.ModBuilder.TestFlying || Modding.ModBuilder.PlayTesting)   // a Mod Builder test flight / play test: back to the builder
@@ -1597,6 +1607,7 @@ namespace GoF2Remake.UI
             if (gameOverMs < 7000f) return;
             gameOverMs = -1f;
             if (hardcoreDead) { BackToMenu(); return; }   // hardcore: nothing to load
+            if (level != null && level.Challenge != null) { gameOverMs = 7000f; return; }   // the challenge's question answers it
             if (Modding.ModBuilder.TestFlying) { Modding.ModBuilder.EndTestFlight(false); return; }
             if (Modding.ModBuilder.PlayTesting) { ModBuilderPlay.End(); return; }
             // Multiplayer: back at the station last docked at (like single player's auto-save), repaired (docking repairs),

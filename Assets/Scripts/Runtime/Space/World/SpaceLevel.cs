@@ -90,6 +90,8 @@ namespace GoF2Remake.World
         public FreelanceOrbit FreelanceOrbit { get; private set; }
         /// <summary>The Kaamo Club's pirate siege (station 108 before it's freed), null elsewhere.</summary>
         public KaamoSiege Siege { get; private set; }
+        /// <summary>The Supernova Challenge's orbit (SupernovaChallenge), else null.</summary>
+        public ChallengeOrbit Challenge { get; private set; }
         /// <summary>The ship's turrets, in mount order (remake: more than one on a custom ship with several turret mounts).</summary>
         public System.Collections.Generic.IReadOnlyList<PlayerTurret> Turrets => turrets;
         readonly System.Collections.Generic.List<PlayerTurret> turrets = new System.Collections.Generic.List<PlayerTurret>();
@@ -312,6 +314,8 @@ namespace GoF2Remake.World
             // Remake: a Mod Builder test flight (Modding.ModBuilder): a quiet orbit with its own pirates (ModBuilderRange).
             // The builder's own work in space (Stations, Weapon fx: ModBuilder.InSpace) too, with nothing flying at all.
             bool builderTest = Modding.ModBuilder.TestFlying || Modding.ModBuilder.InSpace;
+            // The Supernova Challenge (mission type 0xb7, SupernovaChallenge): its own Specters and scenery, no traffic.
+            bool challenge = SupernovaChallenge.Active && !storyOrbit && arena == null && !builderTest && !GoF2Remake.Data.NetSession.Active;
             // Level::assignGuns reads the level mission (Status+400): a campaign level or a freelance mission's type.
             NpcTables.InCampaignLevel = storyOrbit;
             NpcTables.LevelFreelanceType = freelanceOrbit ? Freelance.Mission.type : -1;
@@ -320,7 +324,7 @@ namespace GoF2Remake.World
             // ships (NetOrbit) and take them over if it leaves, never building new ones.
             // An arena: no NPCs, or with the Void fighters the alien orbit's own (run by the first player in the match's orbit).
             NetAuthority = GoF2Remake.Data.NetSession.Active && (arena == null || arena.voids) && GoF2Remake.World.SpaceHooks.IsOrbitEmpty(NetOrbitId);
-            ownPassive = storyOrbit || freelanceOrbit || siege || questOrbit || builderTest || (arena != null && !arena.voids);
+            ownPassive = storyOrbit || freelanceOrbit || siege || questOrbit || builderTest || challenge || (arena != null && !arena.voids);
             Traffic.LevelMissionActive = () => (storyOrbit && Story.IsLevelMission(station)) || (missionHere && Freelance.IsMissionOrbit(station));
             Traffic.Setup(db, Layout, Health.Target, Station, ownPassive || (GoF2Remake.Data.NetSession.Active && !NetAuthority), Wormhole);
             Traffic.LaunchCameraRunning = () => !LaunchCameraOver;
@@ -383,6 +387,11 @@ namespace GoF2Remake.World
                 if (GoF2Remake.Data.NetSession.Active && KaamoSiege.OtherRunsHere(station)) Siege.SetupFollower(this, Traffic);   // one siege per orbit
                 else Siege.Setup(this, Traffic);
             }
+            else if (challenge)
+            {
+                Challenge = new GameObject("Supernova Challenge").AddComponent<ChallengeOrbit>();
+                Challenge.Setup(this, Traffic);
+            }
             // Multiplayer: an Informer mission's spy is this player's when another player built the orbit's traffic (theirs
             // has it only for their own mission) and no squadmate here has one already.
             if (GoF2Remake.Data.NetSession.Active && !NetAuthority && !storyOrbit && arena == null && Freelance.Active && Freelance.Mission.type == MissionType.Informer
@@ -395,13 +404,13 @@ namespace GoF2Remake.World
                 Traffic.ConvoyDone += () => { Navigation.SetAutopilot(null); Navigation.SetRoute(null); };
             }
             // Level::createWingmen: after the mission's ships (Challenge: unarmed).
-            if (arena == null && !builderTest) Traffic.SpawnWingmen(Player.transform, FreelanceOrbit != null && FreelanceOrbit.Type == MissionType.Challenge);
+            if (arena == null && !builderTest && !challenge) Traffic.SpawnWingmen(Player.transform, FreelanceOrbit != null && FreelanceOrbit.Type == MissionType.Challenge);
             Navigation.HasWingmen = () => Traffic != null && Traffic.LivingWingmen.Count > 0;
             StorySpace = gameObject.AddComponent<StorySpace>();
             StorySpace.Setup(this, Campaign);
             Hints = gameObject.AddComponent<FlightHints>();
             Hints.Setup(this);
-            Navigation.JumpsBlocked = () => GoF2Remake.World.SpaceHooks.InArena || builderTest || !Story.PlanetJumpsAllowed || Story.BlocksJumps(Layout.stationIndex, IsStoryOrbit) || (Siege != null && Siege.Active)
+            Navigation.JumpsBlocked = () => GoF2Remake.World.SpaceHooks.InArena || builderTest || challenge || !Story.PlanetJumpsAllowed || Story.BlocksJumps(Layout.stationIndex, IsStoryOrbit) || (Siege != null && Siege.Active)
                                             || FreelanceBlocks   // a freelance mission's orbit (#32)
                                             || GoF2Remake.World.SpaceHooks.NoJumps   // an event's Restrict Travel
                                             || (!Session.FreePlay && Story.Index == 65 && Layout.stationIndex == 100)   // escorting Khador (MGame::UseKhadorDrive)
@@ -415,7 +424,7 @@ namespace GoF2Remake.World
             Navigation.SetWormhole(Wormhole);
             Navigation.PlanetJumpRefused = st => StorySpace != null && StorySpace.RefusePlanetJump(st);
             // MGame::dockEvent refuses the gate on the same mission check as docking: the story's level missions too.
-            SystemJump.GateBlocked = () => builderTest || Story.BlocksJumps(Layout.stationIndex, IsStoryOrbit) || FreelanceBlocks
+            SystemJump.GateBlocked = () => builderTest || challenge || Story.BlocksJumps(Layout.stationIndex, IsStoryOrbit) || FreelanceBlocks
                                            || (Siege != null && Siege.Active) || GoF2Remake.World.SpaceHooks.NoJumps;
             Radar = Player.gameObject.AddComponent<CombatRadar>();
             Radar.Setup(db, Player, Navigation, Mining, Weapons, Health, Traffic);

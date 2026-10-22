@@ -439,6 +439,9 @@ namespace GoF2Remake.UI
             Bind("kaamoToggle", () => { KaamoFromStart = !KaamoFromStart; RefreshKaamoToggle(); });
             Bind("hardcoreToggle", () => { hardcoreNext = !hardcoreNext; RefreshHardcoreToggle(); });
             Bind("ngPlusToggle", () => { newGamePlus = !newGamePlus && ngPlusSave != null; RefreshNgPlus(false); });
+            // The Supernova Challenge (293, SupernovaChallenge): its description (298) asks "Start Supernova Challenge?".
+            Bind("challengeButton", () => ShowDialog(Localization.Get(293), Localization.Get(298).Replace("\r\n", "\n"),
+                                                     () => StartCoroutine(Leave(SupernovaChallenge.Start(false)))));
             Bind("dialogYes", ConfirmDialog);
             Bind("dialogNo", () => { var a = dialogNo; CloseDialog(); a?.Invoke(); });
             Bind("dialogAlt", () => { var a = dialogAlt; CloseDialog(); a?.Invoke(); });
@@ -961,7 +964,7 @@ namespace GoF2Remake.UI
             SetFocusable(mainButtons, false);
             RefreshUpdateButton();
             p.schedule.Execute(() => FocusFirst(p)).ExecuteLater(30);
-            if (name == "campaignPanel") { RefreshNgPlus(true); RefreshModCampaigns(); }
+            if (name == "campaignPanel") { RefreshNgPlus(true); RefreshModCampaigns(); RefreshChallenge(); }
             if (name == "modsPanel") modBrowser?.Open();
             if (name == Modding.ModBuilder.ProjectsPanel) modProjects?.Open();
             if (name == "multiplayerPanel")
@@ -1062,6 +1065,23 @@ namespace GoF2Remake.UI
             if (desc != null)
                 desc.text = Localization.Extra("hardcoreDesc",
                     "One life: saves only on docking; if your ship is destroyed, this game's saves are deleted.");
+        }
+
+        /// <summary>The Supernova Challenge's entry under the campaign cards (the remake's: the original offered it nowhere,
+        /// supernova_challenge.md 1): its name (293) and the highscore (294) with the best kills (176), else the
+        /// description's first paragraph (298).</summary>
+        void RefreshChallenge()
+        {
+            var label = root.Q<Label>("challengeLabel");
+            if (label != null) label.text = Localization.Get(293).ToUpperInvariant();
+            var desc = root.Q<Label>("challengeDesc");
+            if (desc == null) return;
+            int best = SupernovaChallenge.Highscore;
+            string intro = Localization.Get(298).Replace("\r\n", "\n");
+            int cut = intro.IndexOf("\n\n", System.StringComparison.Ordinal);
+            desc.text = best > 0
+                ? $"{Localization.Get(294)}: {SupernovaChallenge.Digits(best)}  ·  {Localization.Get(176)}: {SupernovaChallenge.BestKills}"
+                : cut > 0 ? intro.Substring(0, cut) : intro;
         }
 
         // Remake (GitHub #4, NewGamePlus): with a finished game in the save slots, the campaign panel offers New Game+.
