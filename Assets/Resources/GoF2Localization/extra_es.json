@@ -2493,6 +2493,7 @@
  "mbLooseListNote": "{0} cadena(s) de pasos sin conectar solo están en la vista de grafo.",
  "mbMadeInUnity": "Hecho en el Unity Editor",
  "mbMaxPilotsFull": "Pilotos: como máximo",
+ "mbOfferChance": "Bares que la ofrecen (%)",
  "mbMinPilots": "Pilotos: al menos",
  "mbNeutral": "Neutral",
  "mbNewEvent": "+ Evento nuevo",
@@ -2774,5 +2775,10 @@
  "mbOgUnused": "Sin usar: {0}",
  "mbOgNothing": "Nada dentro que el builder pueda usar aún: ni .aem de una nave del juego ni textura .aei.",
  "mbOgOptimize": "Sus texturas son grandes: Menú > Optimizar modelos y texturas hace el mod más ligero de descargar.",
- "modsImportOriginal": "Eso es un mod para el juego original (sus archivos .aem / .aei). El Mod Builder hace un mod con él: Mod Builder > Importar mod > Desde un archivo..."
+ "modsImportOriginal": "Eso es un mod para el juego original (sus archivos .aem / .aei). El Mod Builder hace un mod con él: Mod Builder > Importar mod > Desde un archivo...",
+ "mpEventMissionTakenBy": "Otro escuadrón ya está en esta misión.",
+ "mbTakers": "Quién puede aceptarla",
+ "mbTakersUniverse": "Un escuadrón en todo el universo",
+ "mbTakersStation": "Un escuadrón por estación",
+ "mbTakersAny": "Cualquier número de escuadrones"
 }

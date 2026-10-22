@@ -2493,6 +2493,7 @@
  "mbLooseListNote": "{0} chaîne(s) d'étapes reliées à rien n'apparaissent que dans la vue graphe.",
  "mbMadeInUnity": "Fait dans l'Unity Editor",
  "mbMaxPilotsFull": "Pilotes : au plus",
+ "mbOfferChance": "Bars qui la proposent (%)",
  "mbMinPilots": "Pilotes : au moins",
  "mbNeutral": "Neutre",
  "mbNewEvent": "+ Nouvel événement",
@@ -2774,5 +2775,10 @@
  "mbOgUnused": "Non utilisé : {0}",
  "mbOgNothing": "Rien dedans que le builder sache encore utiliser : ni .aem d'un vaisseau du jeu ni texture .aei.",
  "mbOgOptimize": "Ses textures sont lourdes : Menu > Optimiser les modèles et les textures rend le mod plus léger à télécharger.",
- "modsImportOriginal": "C'est un mod pour le jeu original (ses fichiers .aem / .aei). Le Mod Builder en fait un mod : Mod Builder > Importer un mod > Depuis un fichier..."
+ "modsImportOriginal": "C'est un mod pour le jeu original (ses fichiers .aem / .aei). Le Mod Builder en fait un mod : Mod Builder > Importer un mod > Depuis un fichier...",
+ "mpEventMissionTakenBy": "Une autre escouade est déjà sur cette mission.",
+ "mbTakers": "Qui peut l'accepter",
+ "mbTakersUniverse": "Une escouade dans tout l'univers",
+ "mbTakersStation": "Une escouade par station",
+ "mbTakersAny": "N'importe quel nombre d'escouades"
 }

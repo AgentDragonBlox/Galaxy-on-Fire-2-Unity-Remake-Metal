@@ -10,6 +10,13 @@
 // Every team member then holds it (Active: the Missions window shows it, the pause menu's too); the others than the one who
 // took it get the mission card (EventScreen.ShowMissionCard: the mission, who took it, the client, the reward). The event's
 // Mission Complete / Mission Failed nodes end it (the reward split across the team), so does the team leaving the session.
+// Not every bar offers one: its "mission chance" (the Start node's Offer chance, default 35 %) decides per station, for 30
+// minutes (Offered: the same answer for everyone docking there and for a player docking again, so re-docking doesn't roll it
+// anew); a station whose mission was taken doesn't offer it again until 30 minutes after that (Taken), so a team can't take
+// the same job over and over ("mission takers": one squad in the universe, the default, offers it nowhere while a team is on
+// it and a visitor still showing it refuses (EventRunner.StartMission); one per station only takes it out of that bar; any
+// number never takes it out). When the run ends the team's games show the client's message like a freelance mission's
+// (Finished: 373-377 + 216 on success, 384-388 + 392 on failure, the client's face and voice).
 // Single player (no session) offers them the same way, one pilot only: the run is the player's one mission (next to no
 // freelance mission), lasts across scenes and saves (Session.GraphQuests, EventRunner' checkpoints), shows in the Missions
 // window's Freelance panel with Discard, and a success counts like a freelance mission's (missions +1, standing +5).
@@ -42,6 +49,17 @@ namespace GoF2Remake.Events
             public string entry = "";   // the offer as the server sent it (single player keeps it in the save)
         }
 
+        /// <summary>How long a station's roll for a mission lasts, and how long a taken mission stays gone from its bar (s).</summary>
+        public const float OfferSeconds = 1800f;
+
+        // Server: per mission and station, whether its bar offers it, until when (EventHost.Now) and the offer as sent (the
+        // same visitor, a generated client's name and face too, for everyone docking there meanwhile).
+        static readonly Dictionary<(string mission, int station), (bool offered, float until, string entry)> rolls =
+            new Dictionary<(string, int), (bool, float, string)>();
+
+        // This game: the offers whose visitor the player has talked to (their plate then names the mission, LoungeChat.Plate).
+        static readonly HashSet<(string mission, int station)> talked = new HashSet<(string, int)>();
+
         static int offersStation = -1;
         static Func<Agent, bool> addVisitor;
         static readonly Dictionary<Agent, Offer> byAgent = new Dictionary<Agent, Offer>();
@@ -50,7 +68,37 @@ namespace GoF2Remake.Events
         public static Offer Active { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { offersStation = -1; addVisitor = null; byAgent.Clear(); Active = null; }
+        static void ResetStatics() { offersStation = -1; addVisitor = null; byAgent.Clear(); Active = null; rolls.Clear(); talked.Clear(); }
+
+        /// <summary>EventRunner.Reset (a new session, the server going): every station rolls its offers anew.</summary>
+        internal static void ResetOffers() => rolls.Clear();
+
+        /// <summary>Server: whether 'station''s bar offers 'm' now (its chance, decided for OfferSeconds per station).</summary>
+        internal static bool Offered(EventRunner.MissionInfo m, int station) => OfferEntry(m, station) != null;
+
+        /// <summary>Server: the offer 'station''s bar makes of 'm' now (Entry, kept with the roll), null: none.</summary>
+        static string OfferEntry(EventRunner.MissionInfo m, int station)
+        {
+            float now = EventHost.Now;
+            var key = (m.name, station);
+            if (!rolls.TryGetValue(key, out var roll) || now >= roll.until)
+            {
+                bool offered = m.chance >= 100 || (m.chance > 0 && UnityEngine.Random.Range(0, 100) < m.chance);
+                roll = (offered, now + OfferSeconds, offered ? Entry(m, station) : null);
+                rolls[key] = roll;
+            }
+            return roll.offered ? roll.entry : null;
+        }
+
+        /// <summary>Server: 'm' was taken at 'station': its bar doesn't offer it again for OfferSeconds.</summary>
+        internal static void Taken(string name, int station) => rolls[(name, station)] = (false, EventHost.Now + OfferSeconds, null);
+
+        /// <summary>LoungeChat: the player talked to an offer's visitor.</summary>
+        public static void MarkTalked(Agent a)
+        {
+            var o = OfferOf(a);
+            if (o != null) talked.Add((o.name, o.station));
+        }
 
         static string X(string key, string english) => Localization.Extra(key, english);
         static bool InSession => NetGame.Active && NetState.Instance != null && NetState.Instance.IsSpawned;
@@ -102,6 +150,7 @@ namespace GoF2Remake.Events
                     portrait = o.face ?? AgentGenerator.CreatePortrait(true, 0),
                 };
                 if (Active != null && Active.name == o.name) agent.accepted = true;
+                agent.known = talked.Contains((o.name, station));
                 if (addVisitor(agent)) byAgent[agent] = o;
             }
         }
@@ -159,11 +208,12 @@ namespace GoF2Remake.Events
         static void AcceptLocal(Offer o)
         {
             var info = EventRunner.MissionGraphs().Find(m => m.name == o.name);
-            if (info == null) { EventHost.NoticeTo(LocalPilot.Instance, X("mpEventMissionGone", "That mission isn't offered here any more.")); return; }
+            if (info == null || !Offered(info, o.station)) { EventHost.NoticeTo(LocalPilot.Instance, X("mpEventMissionGone", "That mission isn't offered here any more.")); return; }
             var record = new GraphQuestState { name = o.name, kind = GraphQuestState.KindMission, title = o.title, station = o.station, offer = o.entry };
             Session.GraphQuests.Add(record);
             string why = EventRunner.StartMission(o.name, new HashSet<ulong> { 0 }, o.station, LocalPilot.Instance, record);
             if (why != null) { Session.GraphQuests.Remove(record); EventHost.NoticeTo(LocalPilot.Instance, why); return; }
+            Taken(o.name, o.station);
             OnStarted(o.entry + US + o.station.ToString(CultureInfo.InvariantCulture) + US + LocalPilot.Instance.DisplayName);
         }
 
@@ -193,14 +243,19 @@ namespace GoF2Remake.Events
             }
         }
 
-        /// <summary>NetState: the team's mission ended (completed, failed, or the event stopped).</summary>
+        /// <summary>How a mission's run ended: its Mission Complete, its Mission Failed (or the team leaving its orbits), or
+        /// anything else (Discard, /event stop, the session going), which shows no message.</summary>
+        public enum Outcome { Stopped = 0, Success = 1, Failure = 2 }
+
+        /// <summary>NetState: the team's mission ended ("name US outcome").</summary>
         internal static void OnEnded(string name)
         {
             int cut = name.IndexOf(US);
-            bool success = cut >= 0 && name.Substring(cut + 1) == "1";
+            var outcome = cut >= 0 && int.TryParse(name.Substring(cut + 1), out int n) ? (Outcome)n : Outcome.Stopped;
             if (cut >= 0) name = name.Substring(0, cut);
             if (Active == null || Active.name != name) return;
-            if (success)
+            var ended = Active;
+            if (outcome == Outcome.Success)
             {
                 // Like a freelance mission's (Freelance.Succeed): missions completed +1, standing +5 toward the client's race.
                 Session.FreelanceCompleted++;
@@ -208,6 +263,24 @@ namespace GoF2Remake.Events
             }
             Active = null;
             foreach (var a in byAgent.Keys) a.accepted = false;
+            if (outcome != Outcome.Stopped) Finished(ended, outcome == Outcome.Success);
+        }
+
+        /// <summary>The client's message at the end, like a freelance mission's (Freelance.SuccessText / FailureText,
+        /// DialogueWindow::loadContent modes 1 / 2): one of 373-377 + 216 or 384-388 + 392, with the client's face and voice.</summary>
+        static void Finished(Offer o, bool success)
+        {
+            int textId = success ? 373 + UnityEngine.Random.Range(0, 5) : 384 + UnityEngine.Random.Range(0, 5);
+            string text = Localization.Get(textId) + "\n\n" + Localization.Get(success ? 216 : 392);
+            var line = new DialogueLine { speaker = -1, text = text, textId = textId, agentName = o.clientName };
+            if (o.character != null) line.character = o.character;
+            else if (o.face == null && o.speakerId >= 0) line.speaker = o.speakerId;
+            else
+            {
+                line.agentPortrait = o.face;
+                line.voice = GenericVoice.For(textId, o.race, o.male, o.face);
+            }
+            EventScreen.QueueDialog(new List<DialogueLine> { line }, null, true);   // the run is over: kept when the events stop
         }
 
         /// <summary>The Missions window's text for the active one (its offer and reward).</summary>
@@ -285,7 +358,10 @@ namespace GoF2Remake.Events
             var list = new List<string>();
             foreach (var m in EventRunner.MissionGraphs())
                 // Single player: the mods' and the Events folder's graphs for one pilot (the built-ins are multiplayer examples).
-                if ((m.stations.Count == 0 || m.stations.Contains(station)) && (!singlePlayer || (m.minPlayers <= 1 && !m.builtIn))) list.Add(Entry(m, station));
+                if ((m.stations.Count == 0 || m.stations.Contains(station)) && (!singlePlayer || (m.minPlayers <= 1 && !m.builtIn))
+                    && (m.takers != EventMissionTakers.OneInUniverse || !EventRunner.MissionTaken(m.name))   // one squad in the universe
+                    && OfferEntry(m, station) is string entry)
+                    list.Add(entry);
             return string.Join(GS.ToString(), list);
         }
 
@@ -296,7 +372,8 @@ namespace GoF2Remake.Events
             if (p == null || !NetGuard.DockedAt(client, station)) return;
             void Refuse(string why) => EventHost.NoticeTo(p, why);
             var info = EventRunner.MissionGraphs().Find(m => m.name == name);
-            if (info == null || (info.stations.Count > 0 && !info.stations.Contains(station))) { Refuse(X("mpEventMissionGone", "That mission isn't offered here any more.")); return; }
+            if (info == null || (info.stations.Count > 0 && !info.stations.Contains(station)) || !Offered(info, station))
+            { Refuse(X("mpEventMissionGone", "That mission isn't offered here any more.")); return; }
             var team = new HashSet<ulong> { client };
             var members = new List<IPilot> { p };
             if (p.SquadId != 0)
@@ -308,16 +385,18 @@ namespace GoF2Remake.Events
             { Refuse(string.Format(X("mpEventMissionCount", "This mission takes {0} to {1} pilots."), info.minPlayers, info.maxPlayers)); return; }
             string why = EventRunner.StartMission(name, team, station, p);
             if (why != null) { Refuse(why); return; }
+            if (info.takers != EventMissionTakers.Anyone) Taken(name, station);
             string payload = Entry(info, station) + US + station.ToString(CultureInfo.InvariantCulture) + US + p.DisplayName;
             foreach (var q in members) EventHost.EventMission(q.OwnerClientId, true, payload);
         }
 
-        /// <summary>Server, EventRunner (the run ended): the team's games drop it.</summary>
-        internal static void Ended(HashSet<ulong> team, string name, bool success)
+        /// <summary>Server, EventRunner (the run ended): the team's games drop it (and show the client's message).</summary>
+        internal static void Ended(HashSet<ulong> team, string name, Outcome outcome)
         {
             if (team == null || !EventHost.ServerReady) return;
+            string payload = name + US + ((int)outcome).ToString(CultureInfo.InvariantCulture);
             foreach (ulong id in team)
-                if (EventHost.Find(id) != null) EventHost.EventMission(id, false, name + US + (success ? "1" : "0"));
+                if (EventHost.Find(id) != null) EventHost.EventMission(id, false, payload);
         }
     }
 }

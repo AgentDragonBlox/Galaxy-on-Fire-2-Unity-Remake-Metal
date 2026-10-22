@@ -2493,6 +2493,7 @@
  "mbLooseListNote": "{0} 条未连接的步骤链只在图视图中可见。",
  "mbMadeInUnity": "在 Unity Editor 中制作",
  "mbMaxPilotsFull": "飞行员：最多",
+ "mbOfferChance": "提供它的酒吧（%）",
  "mbMinPilots": "飞行员：至少",
  "mbNeutral": "中立",
  "mbNewEvent": "+ 新事件",
@@ -2774,5 +2775,10 @@
  "mbOgUnused": "未使用：{0}",
  "mbOgNothing": "其中没有构建器目前能用的内容：没有游戏飞船的 .aem，也没有 .aei 贴图。",
  "mbOgOptimize": "贴图较大：菜单 > 优化模型和贴图可让模组下载更小。",
- "modsImportOriginal": "这是原版游戏的模组（.aem / .aei 文件）。模组构建器可以把它做成模组：模组构建器 > 导入模组 > 从文件..."
+ "modsImportOriginal": "这是原版游戏的模组（.aem / .aei 文件）。模组构建器可以把它做成模组：模组构建器 > 导入模组 > 从文件...",
+ "mpEventMissionTakenBy": "另一支小队已在执行此任务。",
+ "mbTakers": "谁可以接取",
+ "mbTakersUniverse": "全宇宙仅一支小队",
+ "mbTakersStation": "每个空间站一支小队",
+ "mbTakersAny": "任意数量的小队"
 }

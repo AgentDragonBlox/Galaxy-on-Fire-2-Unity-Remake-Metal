@@ -30,6 +30,9 @@ namespace GoF2Remake.Events
     /// <summary>The Start node's kind: an event (/event; a bar mission when it has a Mission title, as before), a bar
     /// mission, or a quest (single player, like the story: starts by itself, lasts across saves).</summary>
     public enum EventKind { Event, BarMission, Quest }
+    /// <summary>A bar mission's Who can take it: one squad at a time in the whole universe, one per station (other stations'
+    /// bars still offer it), or any number of squads (several at one station too).</summary>
+    public enum EventMissionTakers { OneInUniverse, OnePerStation, Anyone }
     public enum EventMathOp { Add, Subtract, Multiply, Divide, Modulo, Min, Max }
     public enum EventCompareOp { Equal, NotEqual, Less, LessOrEqual, Greater, GreaterOrEqual }
     public enum EventLogicOp { And, Or }
@@ -213,6 +216,11 @@ namespace GoF2Remake.Events
                     if (!start.values.ContainsKey("MinPlayers")) min = 1;
                     if (!start.values.ContainsKey("MaxPlayers")) max = Math.Max(min, 4);
                     Raw($"mission players {min} {max}");
+                    if (start.values.ContainsKey("MissionChance"))
+                        Raw("mission chance " + Math.Max(0, Math.Min(100, (int)Math.Round(Num(start, "MissionChance")))));
+                    var takers = (EventMissionTakers)(int.TryParse(Get(start, "MissionTakers", false), out int takersValue) ? takersValue : 0);
+                    if (takers == EventMissionTakers.OnePerStation) Raw("mission takers station");
+                    else if (takers == EventMissionTakers.Anyone) Raw("mission takers any");
                     string stations = Clean(start, Get(start, "MissionStations", false));
                     if (stations.Length > 0)
                     {

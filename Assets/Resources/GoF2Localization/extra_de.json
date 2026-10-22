@@ -2493,6 +2493,7 @@
  "mbLooseListNote": "{0} Kette(n) von Schritten ohne Verbindung gibt es nur in der Graph-Ansicht.",
  "mbMadeInUnity": "Im Unity Editor erstellt",
  "mbMaxPilotsFull": "Piloten: höchstens",
+ "mbOfferChance": "Bars, die sie anbieten (%)",
  "mbMinPilots": "Piloten: mindestens",
  "mbNeutral": "Neutral",
  "mbNewEvent": "+ Neues Event",
@@ -2774,5 +2775,10 @@
  "mbOgUnused": "Nicht verwendet: {0}",
  "mbOgNothing": "Nichts darin kann der Builder bisher verwenden: kein .aem eines Spielschiffs und keine .aei-Textur.",
  "mbOgOptimize": "Die Texturen sind groß: Menü > Modelle und Texturen optimieren macht die Mod zu einem kleineren Download.",
- "modsImportOriginal": "Das ist eine Mod für das Originalspiel (ihre .aem- / .aei-Dateien). Der Mod Builder macht eine Mod daraus: Mod Builder > Mod importieren > Aus einer Datei..."
+ "modsImportOriginal": "Das ist eine Mod für das Originalspiel (ihre .aem- / .aei-Dateien). Der Mod Builder macht eine Mod daraus: Mod Builder > Mod importieren > Aus einer Datei...",
+ "mpEventMissionTakenBy": "Eine andere Staffel ist schon an diesem Auftrag.",
+ "mbTakers": "Wer sie annehmen kann",
+ "mbTakersUniverse": "Eine Staffel im ganzen Universum",
+ "mbTakersStation": "Eine Staffel pro Station",
+ "mbTakersAny": "Beliebig viele Staffeln"
 }

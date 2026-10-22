@@ -2493,6 +2493,7 @@
  "mbLooseListNote": "{0} cadeia(s) de passos soltas só aparecem na visão de grafo.",
  "mbMadeInUnity": "Feito no Unity Editor",
  "mbMaxPilotsFull": "Pilotos: no máximo",
+ "mbOfferChance": "Bares que a oferecem (%)",
  "mbMinPilots": "Pilotos: no mínimo",
  "mbNeutral": "Neutro",
  "mbNewEvent": "+ Novo evento",
@@ -2774,5 +2775,10 @@
  "mbOgUnused": "Não usados: {0}",
  "mbOgNothing": "Nada nele que o builder já saiba usar: nenhum .aem de uma nave do jogo e nenhuma textura .aei.",
  "mbOgOptimize": "As texturas são grandes: Menu > Otimizar modelos e texturas deixa o mod menor para baixar.",
- "modsImportOriginal": "Isso é um mod para o jogo original (seus arquivos .aem / .aei). O Mod Builder faz um mod dele: Mod Builder > Importar mod > De um arquivo..."
+ "modsImportOriginal": "Isso é um mod para o jogo original (seus arquivos .aem / .aei). O Mod Builder faz um mod dele: Mod Builder > Importar mod > De um arquivo...",
+ "mpEventMissionTakenBy": "Outro esquadrão já está nesta missão.",
+ "mbTakers": "Quem pode aceitá-la",
+ "mbTakersUniverse": "Um esquadrão no universo inteiro",
+ "mbTakersStation": "Um esquadrão por estação",
+ "mbTakersAny": "Qualquer número de esquadrões"
 }

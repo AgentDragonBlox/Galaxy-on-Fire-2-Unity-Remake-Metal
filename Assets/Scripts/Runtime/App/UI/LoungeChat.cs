@@ -88,6 +88,7 @@ namespace GoF2Remake.Data
             {
                 var o = EventMissions.OfferOf(a);
                 a.known = true;
+                EventMissions.MarkTalked(a);   // the visitor is made anew at the next docking
                 closing = a.accepted || o == null;
                 Text = closing ? T(858) : T(750 + Random.Range(0, 6)) + " " + EventMissions.ChatText(o) + "\n" + T(841 + Random.Range(0, 3));
                 SetChoices();
@@ -644,8 +645,8 @@ namespace GoF2Remake.Data
         /// agents, the role (the mission type, 306 Wingmen, 305 Merchant, 884 Diplomat).</summary>
         public static (string name, string role) Plate(Agent a)
         {
-            if (a.offer == AgentOffer.EventMission) return (a.name, EventMissions.OfferOf(a)?.title ?? "");   // always says what it offers
             if (!a.known && !a.IsStory) return (T(406 + a.race), "");
+            if (a.offer == AgentOffer.EventMission) return (a.name, EventMissions.OfferOf(a)?.title ?? "");   // once talked to, like a mission agent
             if (!a.known) return (a.name, "");
             string role = a.HasMission ? a.mission.Name : a.offer == AgentOffer.Wingmen ? T(306)
                         : a.offer == AgentOffer.SellItem || a.offer == AgentOffer.SellShip ? T(305)

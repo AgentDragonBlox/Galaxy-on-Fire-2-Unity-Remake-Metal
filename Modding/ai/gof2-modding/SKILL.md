@@ -457,7 +457,9 @@ required). `override` changes originals (name, techLevel, looks, music...).
 
 Prefer these over event graphs: plain JSON, no Unity Editor, and the Mod Builder opens them as a node graph.
 `events/<name>.gof2quest` (the file name is its name: letters, digits, `_`): `{ "format": "gof2quest", "title", "kind":
-"quest" | "mission" | "event", "startsWhen", "reward", "offer", "client", "stations", "players", "variables": [{ name, value,
+"quest" | "mission" | "event", "startsWhen", "reward", "offer", "client", "stations", "players", "chance" (a bar mission: % of
+its stations' bars offering it, default 35, 100 = always), "takers" ("universe" default: one squad at a time anywhere;
+"station": one per station; "any": any number), "variables": [{ name, value,
 setting }], "steps": [...] }`. Every step type, field and default is in `quests.md` (the same as `quest.schema.json`), made
 from the game's own table: read it before writing a quest. In short: story steps (`dialog` pages, `radio`, `objective`,
 `title`), flow and blocks (`wait`, `waituntil`, `if` then / else, `while`, `repeat`, `parallel`, `every`, `on` <trigger> (also
@@ -511,7 +513,7 @@ what they asked you to). "The player said no" means stop and ask them what they 
 
 Made as `.gof2event` node graphs in the Unity Editor (the remake's project: Assets > Create > GoF2 > Event Graph), saved
 to the mod's `events/` folder; the file name is the graph's name. The Start node's Kind: **Quest** (starts by itself when
-"Starts when" holds), **Bar Mission** (offered by a lounge visitor; Offered at, Client, Reward) or **Event** (multiplayer).
+"Starts when" holds), **Bar Mission** (offered by a lounge visitor; Offered at, Offer chance % (default 35), Who can take it, Client, Reward) or **Event** (multiplayer).
 Nodes include Dialog, Radio, Spawn (named ships), Wait / Wait Until, On (docked, entered orbit, destroyed, cleared, near a
 point), Set Waypoint, Set Objective, Checkpoint, Quest Orbit, Give Item, Reward, Mission Complete / Failed, Start Quest, ship
 orders (Fly To, Fly Route, Follow, Attack, Ship Action), cutscene nodes (Start Cutscene, Camera Shot, Fade, End Cutscene),

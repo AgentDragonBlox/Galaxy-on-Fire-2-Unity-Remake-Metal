@@ -79,7 +79,8 @@ namespace GoF2Remake.EditorTools
     {
         public const string Description = "Description", MissionTitle = "MissionTitle", MissionOffer = "MissionOffer",
             MissionClient = "MissionClient", MissionReward = "MissionReward", MissionStations = "MissionStations",
-            MinPlayers = "MinPlayers", MaxPlayers = "MaxPlayers", Kind = "Kind", StartsWhen = "StartsWhen";
+            MinPlayers = "MinPlayers", MaxPlayers = "MaxPlayers", Kind = "Kind", StartsWhen = "StartsWhen", MissionChance = "MissionChance",
+            MissionTakers = "MissionTakers";
         protected override bool HasIn => false;
 
         protected override void OnDefineOptions(IOptionDefinitionContext context)
@@ -105,6 +106,12 @@ namespace GoF2Remake.EditorTools
                 "across the team.").Delayed().Build();
             context.AddOption<string>(MissionStations).WithDisplayName("Offered at").WithTooltip("Stations whose bars offer it " +
                 "(numbers or names, commas between). Empty: every station.").Delayed().Build();
+            context.AddOption<float>(MissionChance).WithDisplayName("Offer chance %").WithDefaultValue(35f).WithTooltip("How many of those " +
+                "stations' bars offer it, in percent. Each station decides for 30 minutes (docking again doesn't roll it anew), and once " +
+                "a team takes it there it isn't offered there again for 30 minutes. 100: every bar, always.").Delayed().Build();
+            context.AddOption<EventMissionTakers>(MissionTakers).WithDisplayName("Who can take it").WithTooltip("One In Universe: while a " +
+                "squad is on it, no bar anywhere offers it to another squad. One Per Station: a squad taking it at a station takes it out of " +
+                "that bar for 30 minutes; other stations still offer it. Anyone: any number of squads, at the same station too.").Build();
             context.AddOption<float>(MinPlayers).WithDisplayName("Min pilots").WithDefaultValue(1f).WithTooltip("The squad needs at least this many pilots.").Delayed().Build();
             context.AddOption<float>(MaxPlayers).WithDisplayName("Max pilots").WithDefaultValue(4f).WithTooltip("And at most this many.").Delayed().Build();
         }

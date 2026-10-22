@@ -2493,6 +2493,7 @@
  "mbLooseListNote": "未接続のステップの列 {0} 本はグラフ表示でのみ見えます。",
  "mbMadeInUnity": "Unity Editor で作成",
  "mbMaxPilotsFull": "パイロット：最大",
+ "mbOfferChance": "提供する酒場（%）",
  "mbMinPilots": "パイロット：最小",
  "mbNeutral": "中立",
  "mbNewEvent": "+ 新しいイベント",
@@ -2774,5 +2775,10 @@
  "mbOgUnused": "未使用：{0}",
  "mbOgNothing": "ビルダーがまだ使えるものがありません：ゲームの船の .aem も .aei テクスチャもありません。",
  "mbOgOptimize": "テクスチャが大きいです：メニュー > モデルとテクスチャを最適化 で MOD のダウンロードが小さくなります。",
- "modsImportOriginal": "オリジナル版用の MOD です（.aem / .aei ファイル）。MOD ビルダーで MOD にできます：MOD ビルダー > MOD をインポート > ファイルから..."
+ "modsImportOriginal": "オリジナル版用の MOD です（.aem / .aei ファイル）。MOD ビルダーで MOD にできます：MOD ビルダー > MOD をインポート > ファイルから...",
+ "mpEventMissionTakenBy": "別の分隊がすでにこの任務を受けています。",
+ "mbTakers": "受けられる者",
+ "mbTakersUniverse": "宇宙全体で1分隊",
+ "mbTakersStation": "ステーションごとに1分隊",
+ "mbTakersAny": "分隊数の制限なし"
 }

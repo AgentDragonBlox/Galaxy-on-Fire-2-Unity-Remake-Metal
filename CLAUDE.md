@@ -2054,8 +2054,18 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   /music; hosting and /event waves after the refactor.
 - **Event graph bar missions** (`EventMissions`): an event graph whose Start node has a Mission title (its Mission
   settings: offer text, client (a story character or "race name" like /dialog's speakers; empty: someone of the station's
-  race), reward, offered at (stations; empty: every one), min / max pilots; compiled to `mission <key> <value>` lines) is
-  offered in the multiplayer Space Lounges: the docking game asks the server (`NetState.RequestEventOffers`, from
+  race), reward, offered at (stations; empty: every one), min / max pilots, offer chance % (`mission chance`, default 35,
+  `MissionInfo.DefaultChance`; players' report 2026-10-23: the Pirate Hideout sat in every bar and could be taken again at
+  once); compiled to `mission <key> <value>` lines) is offered in the multiplayer Space Lounges (not every bar: the server
+  rolls each mission per station for 30 minutes, `EventMissions.Offered` / `OfferEntry`, keeping the offer, so re-docking
+  rolls nothing and a generated client keeps its face; Who can take it, `mission takers universe | station | any`
+  (`EventMissionTakers`): one squad in the universe, the default (offered nowhere while a team is on it and
+  `EventRunner.StartMission` refuses a second, `MissionTaken`, Extra `mpEventMissionTakenBy`), one per station (taken out of
+  that bar for 30 minutes, `Taken`; the universe mode does that too), or any number (never taken out); the
+  visitor's plate names the mission only once talked to, like a freelance agent's, `LoungeChat.Plate`,
+  `EventMissions.MarkTalked`; the end sends `Outcome` Success / Failure / Stopped and the team's games show the client's
+  freelance-style message for the first two, 373-377 + 216 or 384-388 + 392 with the client's face and voice,
+  `EventMissions.Finished`): the docking game asks the server (`NetState.RequestEventOffers`, from
   `StationLevel.BuildBar`) and each offer becomes a visitor on a free slot (`StationLevel.AddVisitor`; `LoungePanel` rebuilds its
   plates; `AgentOffer.EventMission` = 11 in `LoungeChat`: the offer, the reward, the pilots; Okay checks the whole squad docked
   here and the pilot count, confirms, `NetState.AcceptEventMission`). The server checks again and runs the event for that team

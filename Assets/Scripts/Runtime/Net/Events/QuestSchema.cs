@@ -208,6 +208,8 @@ namespace GoF2Remake.Events
                     ["offer"] = Text("a bar mission: what the visitor says"),
                     ["client"] = Str("a bar mission's client: a story character, \"mod_id:character\", \"vossk K'ekki\"; empty: someone of the station's race"),
                     ["stations"] = new JObject { ["type"] = "array", ["items"] = Ref("a station"), ["description"] = "a bar mission is offered at (empty: everywhere)" },
+                    ["chance"] = new JObject { ["type"] = "integer", ["minimum"] = 0, ["maximum"] = 100, ["description"] = "a bar mission: the percentage of its stations' bars offering it (default 35; each station decides for 30 minutes and drops it for 30 once taken; 100: always)" },
+                    ["takers"] = new JObject { ["type"] = "string", ["enum"] = new JArray("universe", "station", "any"), ["description"] = "a bar mission: who can take it: universe (default) one squad at a time anywhere, offered nowhere meanwhile; station: one per station, other stations still offer it; any: any number of squads, at one station too" },
                     ["players"] = new JObject { ["type"] = "array", ["minItems"] = 2, ["maxItems"] = 2, ["items"] = new JObject { ["type"] = "integer" }, ["description"] = "a bar mission's pilots [min, max] (multiplayer)" },
                     ["variables"] = new JObject
                     {

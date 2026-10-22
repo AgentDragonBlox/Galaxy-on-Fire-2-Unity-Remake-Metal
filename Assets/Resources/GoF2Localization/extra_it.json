@@ -2493,6 +2493,7 @@
  "mbLooseListNote": "{0} catena/e di passi non collegate si vedono solo nella vista a grafo.",
  "mbMadeInUnity": "Fatto nell'Unity Editor",
  "mbMaxPilotsFull": "Piloti: al massimo",
+ "mbOfferChance": "Bar che la offrono (%)",
  "mbMinPilots": "Piloti: almeno",
  "mbNeutral": "Neutrale",
  "mbNewEvent": "+ Nuovo evento",
@@ -2774,5 +2775,10 @@
  "mbOgUnused": "Non usati: {0}",
  "mbOgNothing": "Niente al suo interno che il builder sappia già usare: nessun .aem di una nave del gioco e nessuna texture .aei.",
  "mbOgOptimize": "Le texture sono grandi: Menu > Ottimizza modelli e texture rende la mod più leggera da scaricare.",
- "modsImportOriginal": "È una mod per il gioco originale (i suoi file .aem / .aei). Il Mod Builder ne fa una mod: Mod Builder > Importa mod > Da un file..."
+ "modsImportOriginal": "È una mod per il gioco originale (i suoi file .aem / .aei). Il Mod Builder ne fa una mod: Mod Builder > Importa mod > Da un file...",
+ "mpEventMissionTakenBy": "Un'altra squadra è già in questa missione.",
+ "mbTakers": "Chi può accettarla",
+ "mbTakersUniverse": "Una squadra in tutto l'universo",
+ "mbTakersStation": "Una squadra per stazione",
+ "mbTakersAny": "Qualsiasi numero di squadre"
 }

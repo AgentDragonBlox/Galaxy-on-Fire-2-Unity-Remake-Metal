@@ -2493,6 +2493,7 @@
  "mbLooseListNote": "Niepołączone łańcuchy kroków ({0}) widać tylko w widoku grafu.",
  "mbMadeInUnity": "Zrobione w Unity Editor",
  "mbMaxPilotsFull": "Piloci: najwyżej",
+ "mbOfferChance": "Bary, które ją oferują (%)",
  "mbMinPilots": "Piloci: co najmniej",
  "mbNeutral": "Neutralny",
  "mbNewEvent": "+ Nowe wydarzenie",
@@ -2774,5 +2775,10 @@
  "mbOgUnused": "Nieużyte: {0}",
  "mbOgNothing": "Nie ma w nim nic, czego builder już używa: ani .aem statku z gry, ani tekstury .aei.",
  "mbOgOptimize": "Tekstury są duże: Menu > Optymalizuj modele i tekstury zmniejsza moda do pobrania.",
- "modsImportOriginal": "To mod do oryginalnej gry (jego pliki .aem / .aei). Mod Builder zrobi z niego moda: Mod Builder > Importuj moda > Z pliku..."
+ "modsImportOriginal": "To mod do oryginalnej gry (jego pliki .aem / .aei). Mod Builder zrobi z niego moda: Mod Builder > Importuj moda > Z pliku...",
+ "mpEventMissionTakenBy": "Inna eskadra wykonuje już tę misję.",
+ "mbTakers": "Kto może ją przyjąć",
+ "mbTakersUniverse": "Jedna eskadra w całym wszechświecie",
+ "mbTakersStation": "Jedna eskadra na stację",
+ "mbTakersAny": "Dowolna liczba eskadr"
 }

@@ -1115,6 +1115,18 @@ namespace GoF2Remake.UI
             int min = players != null && players.Count > 0 ? (int)players[0] : 1, max = players != null && players.Count > 1 ? (int)players[1] : 4;
             Int(questPage, T("mbMinPilots", "Pilots: at least"), min, 1, 16, v => { q.Set("players", new JArray(v, Math.Max(v, max))); QuestEdited(); });
             Int(questPage, T("mbMaxPilotsFull", "Pilots: at most"), max, 1, 16, v => { q.Set("players", new JArray(Math.Min(min, v), v)); QuestEdited(); });
+            int chance = q.Get("chance") is JValue cv && (cv.Type == JTokenType.Integer || cv.Type == JTokenType.Float) ? (int)Math.Round((double)cv) : EventRunner.MissionInfo.DefaultChance;
+            Int(questPage, T("mbOfferChance", "Bars offering it (%)"), chance, 0, 100, v => { q.Set("chance", v); QuestEdited(); });
+            string takers = q.Get("takers")?.ToString() ?? "";
+            var takerNames = new[] { T("mbTakersUniverse", "One squad in the universe"), T("mbTakersStation", "One squad per station"), T("mbTakersAny", "Any number of squads") };
+            int takerIndex = takers == "station" ? 1 : takers == "any" ? 2 : 0;
+            Caption(questPage, T("mbTakers", "Who can take it"));
+            var takerRow = Row(questPage);
+            for (int k = 0; k < 3; k++)
+            {
+                string value = k == 1 ? "station" : k == 2 ? "any" : null;
+                FlagButton(takerRow, takerNames[k], k == takerIndex, _ => { q.Set("takers", value); QuestEdited(true); });
+            }
         }
 
         /// <summary>A track for a Music step: the game's (the event words) or a mod's.</summary>

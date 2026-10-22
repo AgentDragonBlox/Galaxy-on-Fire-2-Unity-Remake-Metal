@@ -1409,7 +1409,13 @@ The file name (without `.gof2event`) is the graph's name; keep it one word. The 
   failing a story mission: "Mission failed!", then the last save is loaded.
 - **Bar Mission** is offered by a visitor in the Space Lounges (**Offered at**: station names or numbers, empty = every
   station; **Client**: a story character like `Keith`, one of your [characters](#characters) or a race and a name like `vossk K'ekki`, empty = someone of the
-  station's race). In single player it is the player's one mission, like the game's freelance missions: it shows in the
+  station's race). **Offer chance %** (default 35) is how many of those stations' bars offer it: each station decides for 30
+  minutes, so docking again doesn't roll it anew, and once someone takes it there that bar doesn't offer it again for 30
+  minutes; 100 = every bar, always. **Who can take it** (multiplayer): **One In Universe** (the default: while a squad is
+  on it no bar anywhere offers it), **One Per Station** (taking it takes it out of that bar for 30 minutes, other stations
+  still offer it) or **Anyone** (any number of squads, at the same station too). The visitor's plate names the mission only once you have talked to them. When it ends
+  with **Mission Complete** or **Mission Failed** the client sends their message, like the game's own freelance missions.
+  In single player it is the player's one mission, like the game's freelance missions: it shows in the
   Missions window's Freelance panel with **Discard**, and a success counts like a freelance mission. In multiplayer the squad
   takes it together.
 - **Event** is a multiplayer game mode started by an admin's `/event`.

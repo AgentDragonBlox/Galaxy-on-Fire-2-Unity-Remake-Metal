@@ -115,6 +115,10 @@ namespace GoF2Remake.Events
                     if (o["players"] is JArray pl && pl.Count >= 2) { min = Math.Max(1, (int)pl[0]); max = Math.Max(min, (int)pl[1]); }
                     Line($"mission players {min} {max}");
                     var stations = Refs(o["stations"]);
+                    if (o["chance"] is JValue ch && (ch.Type == JTokenType.Integer || ch.Type == JTokenType.Float))
+                        Line("mission chance " + Math.Max(0, Math.Min(100, (int)Math.Round((double)ch))));
+                    string takers = Str(o, "takers").ToLowerInvariant();
+                    if (takers == "station" || takers == "any") Line("mission takers " + takers);
                     if (stations.Count > 0) Line("mission stations " + string.Join(", ", stations));
                 }
                 foreach (var v in (o["variables"] as JArray ?? new JArray()).OfType<JObject>())
@@ -586,6 +590,8 @@ namespace GoF2Remake.Events
                                 break;
                             }
                             case "stations":
+                            case "chance": if (int.TryParse(v.TrimEnd('%'), out int pc)) o["chance"] = pc; break;
+                            case "takers": if (v == "station" || v == "any") o["takers"] = v; break;
                                 o["stations"] = new JArray(v.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).Select(x => int.TryParse(x, out int i) ? (JToken)i : x));
                                 break;
                         }

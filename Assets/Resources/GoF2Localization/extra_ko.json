@@ -2493,6 +2493,7 @@
  "mbLooseListNote": "연결되지 않은 단계 묶음 {0}개는 그래프 보기에서만 보입니다.",
  "mbMadeInUnity": "Unity Editor에서 제작",
  "mbMaxPilotsFull": "파일럿: 최대",
+ "mbOfferChance": "제공하는 바 (%)",
  "mbMinPilots": "파일럿: 최소",
  "mbNeutral": "중립",
  "mbNewEvent": "+ 새 이벤트",
@@ -2774,5 +2775,10 @@
  "mbOgUnused": "사용 안 함: {0}",
  "mbOgNothing": "빌더가 아직 쓸 수 있는 것이 없습니다: 게임 함선의 .aem도 .aei 텍스처도 없습니다.",
  "mbOgOptimize": "텍스처가 큽니다: 메뉴 > 모델과 텍스처 최적화로 모드 다운로드를 줄일 수 있습니다.",
- "modsImportOriginal": "원작 게임용 모드입니다(.aem / .aei 파일). 모드 빌더가 모드로 만들어 줍니다: 모드 빌더 > 모드 가져오기 > 파일에서..."
+ "modsImportOriginal": "원작 게임용 모드입니다(.aem / .aei 파일). 모드 빌더가 모드로 만들어 줍니다: 모드 빌더 > 모드 가져오기 > 파일에서...",
+ "mpEventMissionTakenBy": "다른 분대가 이미 이 임무를 수행 중입니다.",
+ "mbTakers": "수락할 수 있는 대상",
+ "mbTakersUniverse": "우주 전체에서 한 분대",
+ "mbTakersStation": "정거장마다 한 분대",
+ "mbTakersAny": "분대 수 제한 없음"
 }

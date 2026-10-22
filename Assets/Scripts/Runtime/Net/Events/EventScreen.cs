@@ -26,6 +26,7 @@
 using GoF2Remake.Data;
 using GoF2Remake.UI;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -47,7 +48,8 @@ namespace GoF2Remake.Events
         float titleStart, titleEnd = -1f, timerEnd = -1f;
         string titleText = "", subtitleText = "", timerText = "";
         bool pending;
-        static readonly Queue<(List<DialogueLine> pages, System.Action closed)> dialogs = new Queue<(List<DialogueLine>, System.Action)>();
+        // 'lasting': kept when the events stop (a bar mission's end message, queued as its run ends).
+        static readonly Queue<(List<DialogueLine> pages, System.Action closed, bool lasting)> dialogs = new Queue<(List<DialogueLine>, System.Action, bool)>();
         VisualElement rewardBox, rewardItems;
         Label rewardTitle, rewardCredits;
         float rewardStart = -1f;
@@ -144,10 +146,12 @@ namespace GoF2Remake.Events
             return Time.unscaledTime - voiceWait > 3f;
         }
 
-        public static void QueueDialog(List<DialogueLine> pages, System.Action closed = null)
+        /// <summary>A conversation in the scene's dialogue window, after the ones queued before. 'lasting': it stays queued when
+        /// the events stop (else they take their conversations with them).</summary>
+        public static void QueueDialog(List<DialogueLine> pages, System.Action closed = null, bool lasting = false)
         {
             if (pages == null || pages.Count == 0 || Get() == null) { closed?.Invoke(); return; }
-            if (dialogs.Count < 10) dialogs.Enqueue((pages, closed));
+            if (dialogs.Count < 10) dialogs.Enqueue((pages, closed, lasting));
         }
 
         /// <summary>The reward box (Layout::showMissionRewardMessage): 'title' (null = 216 "Mission accomplished!"), "+ credits"
@@ -880,12 +884,24 @@ namespace GoF2Remake.Events
         void Update()
         {
             if (title == null) return;
-            if (!EventHost.ScreensActive && (titleEnd >= 0f || timerEnd >= 0f || rewardStart >= 0f)) { titleEnd = timerEnd = rewardStart = -1f; pending = true; }
-            if (!EventHost.ScreensActive) dialogs.Clear();
+            // The events stopping takes their screens along: in a session (it ended) all of them, in single player only the
+            // countdown, since a mission's Complete / Failed shows its title and reward box in the frame its run ends.
+            if (!EventHost.ScreensActive && (timerEnd >= 0f || (!EventHost.Local && (titleEnd >= 0f || rewardStart >= 0f))))
+            {
+                timerEnd = -1f;
+                if (!EventHost.Local) titleEnd = rewardStart = -1f;
+                pending = true;
+            }
+            if (!EventHost.ScreensActive && dialogs.Count > 0)
+            {
+                var keep = dialogs.Where(d => d.lasting).ToList();
+                dialogs.Clear();
+                foreach (var d in keep) dialogs.Enqueue(d);
+            }
             var view = UiHooks.LatestDialogue;
             if (dialogs.Count > 0 && view != null && view.Usable && !view.IsOpen && !World.SpaceHooks.StarMapOpen && VoicesReady(dialogs.Peek().pages))
             {
-                var (pages, closed) = dialogs.Dequeue();
+                var (pages, closed, _) = dialogs.Dequeue();
                 voiceWait = -1f;
                 view.Show(pages, _ => closed?.Invoke());
             }
