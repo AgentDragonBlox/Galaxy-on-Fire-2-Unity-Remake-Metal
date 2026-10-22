@@ -22,6 +22,7 @@ using UnityEngine;
 
 namespace GoF2Remake.EditorTools
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class GeneratedLodsBuilder
     {
         const string OutPath = "Assets/Resources/" + GameLods.ResourcePath + ".bytes";

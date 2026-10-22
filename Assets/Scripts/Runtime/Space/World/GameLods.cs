@@ -11,6 +11,7 @@ using UnityEngine;
 
 namespace GoF2Remake.Visuals
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class GameLods
     {
         public const string ResourcePath = "GoF2Data/generated_lods";

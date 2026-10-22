@@ -85,6 +85,10 @@ namespace GoF2Remake.Visuals
         public bool applyMaterialChannels;
         [Tooltip("Write the channels into a copy of each part's material (made once) instead of a MaterialPropertyBlock, so the SRP Batcher keeps batching them.")]
         public bool ownMaterials;
+        [Tooltip("Pose the parts only while one of their renderers is in a camera's view (the time runs on): weapon effects.")]
+        public bool onlyWhenSeen;
+        Renderer[] seenBy;
+        bool poseNext = true;   // the first frame after it is shown or restarted is always posed: its renderers' view is from before
 
         static readonly int ColorId = Shader.PropertyToID("_Color"), BaseColorId = Shader.PropertyToID("_BaseColor"),
             FadeId = Shader.PropertyToID("_Fade"), UVOffsetId = Shader.PropertyToID("_UVOffset"), MainTexStId = Shader.PropertyToID("_MainTex_ST");
@@ -252,6 +256,7 @@ namespace GoF2Remake.Visuals
         {
             timeMs = Mathf.Clamp(loopStartMs, 0f, Mathf.Max(0f, lengthMs - 1f));
             play = true;
+            poseNext = true;
             if (enabled) Update();
         }
 
@@ -426,10 +431,22 @@ namespace GoF2Remake.Visuals
                 timeMs = loop && span > 0f ? start + (timeMs - lengthMs) % span : lengthMs;
             }
             if (timeMs < start) timeMs = start;
+            if (onlyWhenSeen && !poseNext && !Seen()) { if (!loop && timeMs >= lengthMs) play = false; return; }
+            poseNext = false;
             Apply();
             // A finished one-shot holds its last pose: applied once, not again every frame for the rest of the level (the
             // freighter wrecks); Restart plays it again.
             if (!loop && timeMs >= lengthMs) play = false;
+        }
+
+        void OnEnable() => poseNext = true;
+
+        /// <summary>onlyWhenSeen: one of the parts' renderers was in a camera's view last frame (Renderer.isVisible).</summary>
+        bool Seen()
+        {
+            seenBy ??= GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < seenBy.Length; i++) if (seenBy[i] != null && seenBy[i].isVisible) return true;
+            return false;
         }
 
         void Apply()

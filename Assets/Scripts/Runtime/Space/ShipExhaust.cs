@@ -46,6 +46,28 @@ namespace GoF2Remake.Flight
         readonly List<float> baseSizes = new List<float>();
         readonly List<Color> tints = new List<Color>();
         bool on;
+        float shownBoost = float.NaN, shownGrey = float.NaN;
+
+        /// <summary>Remake (performance, 2026-10-22): another ship's plume (AttachRemote) is only emitted within this distance
+        /// of the camera (metres). Its particles are 12.5 m quads living 80 ms: 4 km out they are under 4 pixels on a 1080p
+        /// screen, beside the ship's engine glow, which stays; 20 fleet battles ran ~590 such emitters (~4 ms a frame).</summary>
+        const float RemoteReach = 4000f;
+        static int camFrame = -1;
+        static Vector3 camPos;
+        static bool camKnown;
+
+        /// <summary>'at' is within RemoteReach of the main camera (no camera: true). The camera is read once a frame.</summary>
+        static bool NearCamera(Vector3 at)
+        {
+            if (camFrame != Time.frameCount)
+            {
+                camFrame = Time.frameCount;
+                var cam = Camera.main;
+                camKnown = cam != null;
+                if (camKnown) camPos = cam.transform.position;
+            }
+            return !camKnown || (at - camPos).sqrMagnitude <= RemoteReach * RemoteReach;
+        }
 
         /// <summary>Remake (the Mod Builder's engine slider): the plume of a ship standing still, as at this fraction of full
         /// throttle (0 = none). The particles come per distance flown (one per 8 units), so a parked ship showed none; this
@@ -85,6 +107,7 @@ namespace GoF2Remake.Flight
 
         void Setup(Database db, Transform parent, int shipIndex, bool scaled = false, System.Collections.Generic.IList<WeaponMount> mounts = null)
         {
+            shownBoost = float.NaN;   // the start size and colour are written again
             var mat = ExhaustMaterial(CombatAssets.Load()?.particlesMaterial);
             int value = shipIndex >= 0 && shipIndex < ShipCell.Length ? ShipCell[shipIndex] : 0;
             int cell = value switch { 3 => 0, 2 => 1, 1 => 3, 8 => 4, 9 => 5, _ => 2 };
@@ -290,7 +313,7 @@ namespace GoF2Remake.Flight
         {
             if (ship == null && remoteOn == null) return;
             bool want;
-            if (remoteOn != null) want = remoteOn();
+            if (remoteOn != null) want = remoteOn() && NearCamera(transform.position);
             else
             {
                 if (health == null) health = GetComponent<PlayerHealth>();
@@ -315,6 +338,9 @@ namespace GoF2Remake.Flight
             boost = Mathf.Max(boost, stationaryBoost);
             float cloakPct = remoteCloak != null ? remoteCloak() : cloak != null && cloak.Rules != null ? cloak.Rules.Percentage : 0f;
             float grey = Mathf.Clamp(221f - 2.01f * cloakPct, 0f, 255f) / 255f;
+            if (boost == shownBoost && grey == shownGrey) return;   // a native call per setting and system otherwise
+            shownBoost = boost;
+            shownGrey = grey;
             for (int i = 0; i < systems.Count; i++)
             {
                 var main = systems[i].main;

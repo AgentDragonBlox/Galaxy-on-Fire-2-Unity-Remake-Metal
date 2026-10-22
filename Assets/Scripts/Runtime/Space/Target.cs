@@ -186,10 +186,18 @@ namespace GoF2Remake.Flight
         /// target: false.</summary>
         public bool MayContain(Vector3 point, int frame)
         {
+            float reach = BroadSphere(frame, out var centre);
+            return reach >= 0f && (point - centre).sqrMagnitude <= reach * reach;
+        }
+
+        /// <summary>MayContain's sphere this 'frame': its centre and its radius (metres), -1 for a destroyed target. TargetGrid
+        /// files the targets by it.</summary>
+        public float BroadSphere(int frame, out Vector3 centre)
+        {
             if (broadFrame != frame)
             {
                 broadFrame = frame;
-                if (this == null) { broadReach = -1f; return false; }
+                if (this == null) { broadReach = -1f; centre = broadCentre; return -1f; }
                 var t = transform;
                 broadCentre = t.position;
                 if (boxes != null && boxes.Length > 0)
@@ -207,7 +215,8 @@ namespace GoF2Remake.Flight
                 // How far a ship can still move this frame after being measured (at most ~1 m/ms), plus 10 m.
                 broadReach += 10f + Time.deltaTime * 1000f;
             }
-            return broadReach >= 0f && (point - broadCentre).sqrMagnitude <= broadReach * broadReach;
+            centre = broadCentre;
+            return broadReach;
         }
 
         /// <summary>Gun::calcCharacterCollision: 'point' (metres) inside the cube, or inside a local box.</summary>

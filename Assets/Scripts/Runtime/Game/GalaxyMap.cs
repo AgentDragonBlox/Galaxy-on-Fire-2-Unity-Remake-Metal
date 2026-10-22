@@ -15,6 +15,7 @@ using UnityEngine;
 
 namespace GoF2Remake.Data
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class GalaxyMap
     {
         public const int KhadorDriveItem = 85, EnergyCellItem = 122;

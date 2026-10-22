@@ -636,6 +636,7 @@ namespace GoF2Remake.World
         {
             turretPicking = new TurretTargeting(TurretTargeting.Rule.Timed, TurretRangeUnits)
             {
+                boundFactor = 0.3f,   // Measure: at least the distance to the target's sphere, x0.3 for a turret hunter
                 Candidate = e => Valid(e) && !e.cloaked   // PlayerTurret::handleTurret: no aiming at a cloaked target
                     && (PlayerOwned ? !e.isPlayer && e.isShip && e.hostileToPlayer
                         : e.isPlayer ? Target.hostileToPlayer : e.isShip && e.race >= 0 && Standing.RacesHostile(e.race, Race)),
@@ -1313,14 +1314,22 @@ namespace GoF2Remake.World
                 else
                 {
                     float best = float.MaxValue;
+                    var at = transform.position;
+                    int frame = Time.frameCount;
                     for (int i = 1; i < n; i++)
                     {
                         var e = enemies[i];
-                        if (!Pursuable(e)) continue;
-                        if (!Standing.RacesHostile(Race, e.race)) continue;
-                        if (!nearest) { idx = i; attacking = true; break; }
-                        if (leash && (e.transform.position - centre).sqrMagnitude > reach * reach) continue;
-                        float d = (e.NearestPoint(transform.position) - transform.position).sqrMagnitude;
+                        if ((object)e == null || !Standing.RacesHostile(Race, e.race)) continue;
+                        if (!nearest) { if (!Pursuable(e)) continue; idx = i; attacking = true; break; }
+                        // The cheap tests first, from the target's sphere (Target.BroadSphere, measured once a frame): the
+                        // leash on its centre, and none of it is nearer than its centre less its reach, so a ship that can't
+                        // beat the best so far needs neither the engine's checks (Pursuable) nor its hull's nearest point.
+                        float r = e.BroadSphere(frame, out var c);
+                        if (r < 0f) continue;   // destroyed
+                        if (leash && (c - centre).sqrMagnitude > reach * reach) continue;
+                        float bound = Mathf.Max(0f, (c - at).magnitude - r);
+                        if (bound * bound >= best || !Pursuable(e)) continue;
+                        float d = (e.NearestPoint(at) - at).sqrMagnitude;
                         if (d < best) { best = d; idx = i; attacking = true; }
                     }
                     if (nearest) { heldNearest = idx > 0 ? enemies[idx] : null; nearestHoldMs = Random.Range(NearestHoldMs * 0.5f, NearestHoldMs); }

@@ -15,6 +15,7 @@ using UnityEngine;
 
 namespace GoF2Remake.Visuals
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class ModLodCache
     {
         const int Magic = 0x444F4C4D;   // "MLOD"

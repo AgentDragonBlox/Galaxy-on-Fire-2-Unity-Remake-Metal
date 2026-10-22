@@ -28,6 +28,7 @@ using UnityEngine.Rendering;
 namespace GoF2Remake.Visuals
 {
     [DisallowMultipleComponent]
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public sealed class AutoLods : MonoBehaviour
     {
         /// <summary>Screen heights (share of the screen) below which the made levels 1 and 2 show.</summary>
@@ -387,7 +388,6 @@ namespace GoF2Remake.Visuals
             r.renderingLayerMask = src.renderingLayerMask;
             r.sortingLayerID = src.sortingLayerID;
             r.sortingOrder = src.sortingOrder;
-            r.allowOcclusionWhenDynamic = src.allowOcclusionWhenDynamic;
             Mirror(src, r);
             return r;
         }

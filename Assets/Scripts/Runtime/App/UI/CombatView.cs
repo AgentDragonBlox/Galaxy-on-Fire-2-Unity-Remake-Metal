@@ -325,27 +325,53 @@ namespace GoF2Remake.UI
             _ => Localization.Get(416),                     // the Specters: the original's own "???"
         };
 
+        // The camera as Project needs it, read once a frame (CameraFor): the per-marker camera calls (WorldToScreenPoint,
+        // WorldToViewportPoint, its transform, Screen's size, the panel's size: seven native calls a ship) were most of
+        // the HUD's time with 860 ships about (20 fleet battles).
+        Camera viewCam;
+        int viewFrame = -1;
+        Matrix4x4 viewProj, camToLocal;
+        Vector3 camPos;
+        Rect camPixels;
+        Vector2 screenSize, panelSize;
+
+        void CameraFor(Camera cam)
+        {
+            if (viewFrame == Time.frameCount && viewCam == cam) return;
+            viewFrame = Time.frameCount;
+            viewCam = cam;
+            viewProj = cam.projectionMatrix * cam.worldToCameraMatrix;
+            var tr = cam.transform;
+            camToLocal = tr.worldToLocalMatrix;
+            camPos = tr.position;
+            camPixels = cam.pixelRect;
+            screenSize = new Vector2(Screen.width, Screen.height);
+            panelSize = layer.panel.visualTree.layout.size;
+        }
+
         bool Project(Camera cam, Vector3 world, Vector2 origin, Vector2 centre, out Vector2 p, out bool near)
         {
-            var sp = cam.WorldToScreenPoint(world);
-            bool onScreen = sp.z > 0f && sp.x >= 0f && sp.y >= 0f && sp.x <= Screen.width && sp.y <= Screen.height;
-            var d = (world - cam.transform.position) / M;
+            CameraFor(cam);
+            // Camera.WorldToScreenPoint / WorldToViewportPoint: the clip position, its depth the eye distance (w).
+            var c = viewProj * new Vector4(world.x, world.y, world.z, 1f);
+            float w = c.w;
+            float vx = w != 0f ? c.x / w * 0.5f + 0.5f : 0f, vy = w != 0f ? c.y / w * 0.5f + 0.5f : 0f;
+            float sx = camPixels.x + vx * camPixels.width, sy = camPixels.y + vy * camPixels.height;
+            bool onScreen = w > 0f && sx >= 0f && sy >= 0f && sx <= screenSize.x && sy <= screenSize.y;
+            var d = (world - camPos) / M;
             near = Mathf.Abs(d.x) <= NearUnits && Mathf.Abs(d.y) <= NearUnits && Mathf.Abs(d.z) <= NearUnits;
-            if (onScreen)
-            {
-                // Viewport -> panel (the camera fills the screen): exact on screen and in offscreen captures.
-                var v = cam.WorldToViewportPoint(world);
-                var size = layer.panel.visualTree.layout.size;
-                p = new Vector2(v.x * size.x, (1f - v.y) * size.y) - origin;
-            }
-            else p = OffScreen(cam, world, centre);
+            // Viewport -> panel (the camera fills the screen): exact on screen and in offscreen captures.
+            if (onScreen) p = new Vector2(vx * panelSize.x, (1f - vy) * panelSize.y) - origin;
+            else p = OffScreen(camToLocal, world, centre);
             return onScreen;
         }
 
         /// <summary>Radar::update for an object not on screen: its direction clamped onto the radar ellipse.</summary>
-        static Vector2 OffScreen(Camera cam, Vector3 world, Vector2 centre)
+        static Vector2 OffScreen(Camera cam, Vector3 world, Vector2 centre) => OffScreen(cam.transform.worldToLocalMatrix, world, centre);
+
+        static Vector2 OffScreen(Matrix4x4 camToLocal, Vector3 world, Vector2 centre)
         {
-            var local = cam.transform.InverseTransformPoint(world);
+            var local = camToLocal.MultiplyPoint3x4(world);
             var d = new Vector2(local.x, -local.y);
             if (d.sqrMagnitude < 1e-6f) d = Vector2.down;
             float k = Mathf.Sqrt(d.x * d.x / (EllipseX * EllipseX) + d.y * d.y / (EllipseY * EllipseY));
@@ -417,7 +443,7 @@ namespace GoF2Remake.UI
                 m.distance.EnableInClassList("combat-label--far", !locked);
                 for (int i = 0; i < 3; i++) m.distance.EnableInClassList(LabelFaction[i], !locked && i == faction);
             }
-            float units = (world - cam.transform.position).magnitude / M;
+            float units = (world - camPos).magnitude / M;
             int key = FarShipMarkers.DistanceKey(units);
             if (key != m.distanceKey)
             {
@@ -522,7 +548,7 @@ namespace GoF2Remake.UI
             if (tex != null) Place(m.dot, p.x - tex.width / 2f, p.y - tex.height / 2f);
             if (onScreen && locked)
             {
-                m.distance.text = Navigation.FormatDistance((world - cam.transform.position).magnitude / M);
+                m.distance.text = Navigation.FormatDistance((world - camPos).magnitude / M);
                 m.distanceKey = int.MinValue;
                 Place(m.distance, p.x - 61f, p.y + 61f);
             }

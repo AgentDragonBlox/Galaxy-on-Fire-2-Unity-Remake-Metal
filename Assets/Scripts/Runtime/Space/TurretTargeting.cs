@@ -34,6 +34,10 @@ namespace GoF2Remake.Flight
         /// the enhanced turrets measure to a big hull's nearest point and weight a turret hunter's prey once it is nearer
         /// than the best so far (CapitalShips).</summary>
         public Func<Target, Vector3, float, float> Measure;
+        /// <summary>Remake (performance): Measure is never below this share of the distance from the target's sphere (Target.
+        /// BroadSphere: its centre less its reach), so a target that can't beat the best so far is passed over without
+        /// Candidate's and Measure's engine calls (20 fleet battles: 250 turrets over ~430 enemies). 0 = every one measured.</summary>
+        public float boundFactor;
 
         /// <summary>The target it aims at, null = none.</summary>
         public Target Current { get; set; }
@@ -88,10 +92,17 @@ namespace GoF2Remake.Flight
         {
             Target best = null, ignored = null;
             float bestD = rangeUnits * M;
+            int frame = Time.frameCount;
             if (pool != null)
                 for (int i = 0; i < pool.Count; i++)
                 {
                     var t = pool[i];
+                    if ((object)t == null) continue;
+                    if (boundFactor > 0f)
+                    {
+                        float r = t.BroadSphere(frame, out var c);
+                        if (r < 0f || Mathf.Max(0f, (c - from).magnitude - r) * boundFactor >= bestD) continue;   // destroyed, or can't win
+                    }
                     if (t == null || (Candidate != null && !Candidate(t))) continue;
                     if (rule == Rule.Retarget)
                     {

@@ -17,6 +17,7 @@ using UnityEngine.UIElements;
 
 namespace GoF2Remake.EditorTools
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class UiWalk
     {
         public static string Status { get; private set; } = "idle";

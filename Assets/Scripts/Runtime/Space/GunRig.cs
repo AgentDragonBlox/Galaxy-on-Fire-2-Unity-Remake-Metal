@@ -29,6 +29,10 @@ namespace GoF2Remake.Flight
         float beamMs, beamLength;
         Vector3[] spin;
         bool[] wasActive;
+        // What each projectile object was last set to (SetActive) and its last scale: asking the engine every frame for every
+        // NPC's four projectiles was a native call each (20 fleet battles: ~3400 a frame).
+        bool[] shown;
+        float[] shownScale;
         PartAnimation[][] projAnims;
         readonly bool billboard;
         readonly GameObject muzzle;
@@ -79,6 +83,9 @@ namespace GoF2Remake.Flight
                 muzzle.SetActive(false);
             }
             wasActive = new bool[projectiles.Length];
+            shown = new bool[projectiles.Length];   // made inactive above
+            shownScale = new float[projectiles.Length];
+            for (int i = 0; i < shownScale.Length; i++) shownScale[i] = float.NaN;
             projAnims = new PartAnimation[projectiles.Length][];
             for (int i = 0; i < projectiles.Length; i++)
                 projAnims[i] = projectiles[i] != null ? projectiles[i].GetComponentsInChildren<PartAnimation>(true) : new PartAnimation[0];
@@ -173,7 +180,12 @@ namespace GoF2Remake.Flight
         /// <summary>The part animations apply their `extra` channel as opacity (PartAnimation.applyMaterialChannels).</summary>
         public static void EnableFades(GameObject go)
         {
-            foreach (var a in go.GetComponentsInChildren<PartAnimation>(true)) { a.applyMaterialChannels = true; a.ownMaterials = true; }   // copies, not property blocks: the SRP Batcher keeps them
+            foreach (var a in go.GetComponentsInChildren<PartAnimation>(true))
+            {
+                a.applyMaterialChannels = true;
+                a.ownMaterials = true;   // copies, not property blocks: the SRP Batcher keeps them
+                a.onlyWhenSeen = true;   // a shot nobody sees needn't pulse (20 fleet battles: ~760 of them, 3 ms a frame)
+            }
         }
 
         public static void StripForFx(GameObject go)
@@ -263,12 +275,13 @@ namespace GoF2Remake.Flight
                 projectilesDone(dtMs, cam);
                 return;
             }
+            Quaternion camRot = cam != null ? cam.transform.rotation : Quaternion.identity;
             for (int i = 0; i < projectiles.Length; i++)
             {
                 var t = projectiles[i];
-                if (t == null) continue;
+                if ((object)t == null) continue;
                 bool active = gun.IsActive(i);
-                if (t.gameObject.activeSelf != active) t.gameObject.SetActive(active);
+                if (shown[i] != active) { if (t == null) continue; t.gameObject.SetActive(active); shown[i] = active; }
                 bool launched = active && !wasActive[i];
                 if (trails != null)
                 {
@@ -291,11 +304,12 @@ namespace GoF2Remake.Flight
                     foreach (var a in projAnims[i]) a.speed = sp;
                 }
                 var rot = billboard && cam != null
-                    ? cam.transform.rotation
+                    ? camRot
                     : Quaternion.LookRotation(b.velocity.sqrMagnitude > 1e-9f ? b.velocity : fallbackForward, b.up);
                 if (spin != null) rot = Quaternion.Euler(spin[i] * (b.age * 0.001f * Mathf.Rad2Deg));
                 t.SetPositionAndRotation(b.position, rot);
-                t.localScale = Vector3.one * gun.VisualScale(i) * (spin != null ? 0.7f : 1f);
+                float scale = gun.VisualScale(i) * (spin != null ? 0.7f : 1f);
+                if (scale != shownScale[i]) { t.localScale = Vector3.one * scale; shownScale[i] = scale; }
                 trails?[i].Tick(dtMs, true, b.position, cam);
                 if (flames?[i] != null)
                 {
@@ -362,6 +376,7 @@ namespace GoF2Remake.Flight
         public void HideAll()
         {
             foreach (var t in projectiles) if (t != null) t.gameObject.SetActive(false);
+            if (shown != null) System.Array.Clear(shown, 0, shown.Length);
             for (int i = 0; i < gun.bullets.Length; i++) gun.bullets[i].timer = -1e9f;
             if (trails != null) foreach (var tr in trails) tr.Clear();
             if (flames != null) foreach (var f in flames) if (f != null) f.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);

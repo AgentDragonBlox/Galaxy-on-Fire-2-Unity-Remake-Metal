@@ -28,6 +28,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace GoF2Remake.EditorTools
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class HangarCubemapCapture
     {
         /// <summary>Face size: the original's hangar cubemaps are 512 px (a 512 x 3072 strip), the skies' 256.</summary>
@@ -67,9 +68,9 @@ namespace GoF2Remake.EditorTools
         [MenuItem("GoF2/Tools/Capture Reflection Cubemap", priority = 400)]
         static void Capture()
         {
-            var station = Object.FindFirstObjectByType<StationLevel>();
+            var station = Object.FindAnyObjectByType<StationLevel>();
             if (station != null && station.View == StationView.Hangar && station.HangarRoom != null) { CaptureHangar(station); return; }
-            var space = Object.FindFirstObjectByType<SpaceLevel>();
+            var space = Object.FindAnyObjectByType<SpaceLevel>();
             if (space != null && space.Layout != null) { CaptureSky(space.Layout); return; }
             EditorUtility.DisplayDialog("GoF2", "Enter Play mode and dock in a hangar (its room) or fly in space (the system's sky) first.", "OK");
         }
@@ -113,7 +114,7 @@ namespace GoF2Remake.EditorTools
                 EditorUtility.ClearProgressBar();
                 Object.DestroyImmediate(sky);
             }
-            var space = Application.isPlaying ? Object.FindFirstObjectByType<SpaceLevel>() : null;
+            var space = Application.isPlaying ? Object.FindAnyObjectByType<SpaceLevel>() : null;
             if (space != null && space.Layout != null) SkyReflection.SetSystem(space.Layout);
             Debug.Log($"GoF2: {done} sky reflection cubemaps captured ({FaceSize} px faces) to {OutDir}.");
         }
@@ -128,7 +129,7 @@ namespace GoF2Remake.EditorTools
         [MenuItem("GoF2/Tools/Capture All Hangar Reflection Cubemaps", priority = 402)]
         static void CaptureAllHangars()
         {
-            var level = Application.isPlaying ? Object.FindFirstObjectByType<StationLevel>() : null;
+            var level = Application.isPlaying ? Object.FindAnyObjectByType<StationLevel>() : null;
             if (level == null || level.Layout == null)
             {
                 EditorUtility.DisplayDialog("GoF2", "Enter Play mode and dock at any station first (the hangars are built there in turn).", "OK");
@@ -197,7 +198,7 @@ namespace GoF2Remake.EditorTools
             // (hangar_terran_bot_*: they fly about, a still copy in the reflection would stay put) hidden for the capture.
             // The sky outside (the planets and sun: Backdrop, the orbit's "Sky layers"; the skybox: a black background) too.
             var hidden = new List<Renderer>();
-            foreach (var r in Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+            foreach (var r in Object.FindObjectsByType<Renderer>())
                 if (r.enabled && (IsShip(r.transform, level.HangarRoom.parent) || IsBot(r.transform, level.HangarRoom) || IsSky(r.transform)))
                 { r.enabled = false; hidden.Add(r); }
             try

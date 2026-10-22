@@ -357,7 +357,10 @@ namespace GoF2Remake.EditorTools
 
         static Type FindType(string name)
         {
+            // A menu tool run on demand, between reloads; only the game's own assemblies, by name.
+#pragma warning disable UAC0005
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+#pragma warning restore UAC0005
             {
                 if (!asm.GetName().Name.StartsWith("GoF2") && !asm.GetName().Name.StartsWith("Assembly-CSharp")) continue;
                 Type[] types;

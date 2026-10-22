@@ -13,6 +13,7 @@ using UnityEngine;
 
 namespace GoF2Remake.EditorTools
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class UiShots
     {
         /// <summary>One step: a screen size and the device class (UiLayout.Device + 1, 0 = detect).</summary>
