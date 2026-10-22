@@ -364,5 +364,19 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(80f, Settings.FieldOfView, 1e-5f);
             Assert.IsFalse(Settings.TryDefault(() => 42f, out _), "a getter that reads no option has no default");
         }
+
+        [Test]
+        public void TheFieldOfViewAtItsDefaultShowsNoResetArrow()
+        {
+            var fov = GoF2Remake.UI.OptionsCatalog.All().Find(d => d.id == "fov");
+            var row = new GoF2Remake.UI.OptionControl(fov);
+            row.ResetToDefault();
+            Assert.IsTrue(row.IsDefault(), "70° stored for the original's 69.9° is the default");
+            Settings.FieldOfView = 80f;
+            Assert.IsFalse(row.IsDefault());
+            row.ResetToDefault();
+            Assert.IsTrue(row.IsDefault());
+            Assert.AreEqual(70f, Settings.FieldOfView, 1e-4f);
+        }
     }
 }

@@ -421,7 +421,14 @@ namespace GoF2Remake.UI
         public bool IsDefault()
         {
             if (!TryDefault(out float d)) return true;
-            if (slider != null) return Mathf.Abs(def.get() - d) <= Mathf.Max(1e-5f, (slider.highValue - slider.lowValue) * 0.002f);
+            if (slider != null)
+            {
+                float v = def.get();
+                // Showing the default counts (a setter that rounds: the field of view stores whole degrees, its default is
+                // the original's 1.22 rad = 69.9°, so it never came back to exactly that and kept its arrow).
+                if (def.format != null && def.format(v) == def.format(d)) return true;
+                return Mathf.Abs(v - d) <= Mathf.Max(1e-5f, (slider.highValue - slider.lowValue) * 0.002f);
+            }
             if (toggle != null) return def.getBool() == d > 0.5f;
             if (choice != null) return def.getIndex() == Mathf.RoundToInt(d);
             return true;
