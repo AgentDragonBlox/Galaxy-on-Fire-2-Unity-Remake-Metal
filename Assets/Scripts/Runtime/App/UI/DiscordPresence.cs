@@ -108,6 +108,16 @@ namespace GoF2Remake.UI
                     int squad = Multiplayer.NetSquad.Members().Count;
                     state = squad > 1 ? $"Multiplayer · squad of {squad}" : "Multiplayer";
                 }
+                // The Mod Builder (remake): what the player is making, not the throwaway free-play game it runs in.
+                if (Modding.ModBuilder.Active)
+                {
+                    details = Modding.ModBuilder.PlayTesting ? "Play-testing a mod"
+                        : Modding.ModBuilder.TestFlying ? "Test flight"
+                        : "Making a mod · " + Modding.ModBuilder.OpenKind;
+                    string project = Modding.ModBuilder.Project?.Name;
+                    state = string.IsNullOrEmpty(project) ? "Mod Builder" : "Mod Builder · " + project;
+                    (large, largeText) = ("gof2", "Mod Builder");
+                }
             }
 
             var sb = new System.Text.StringBuilder("{\"type\":0");
