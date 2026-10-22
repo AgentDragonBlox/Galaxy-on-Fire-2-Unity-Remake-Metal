@@ -763,6 +763,7 @@ namespace GoF2Remake.UI
             Act(box, T("mbDependencies", "Dependencies"), ShowDependencies, "mbv-menu-item");
             Act(box, T("mbModDetails", "Mod details"), ShowModDetails, "mbv-menu-item");
             Act(box, T("mbTranslations", "Translations"), () => ShowTranslations(ModProject.TextLanguages[0]), "mbv-menu-item");
+            Act(box, T("mbOptimize", "Optimize models and textures"), () => OpenOptimize(), "mbv-menu-item");
             Act(box, T("mbSave", "Save"), () => { SaveNow(); CloseModal(); Status(T("mbSaved", "Saved."), false); }, "mbv-menu-item");
             Act(box, T("mbExitBuilder", "Exit the Mod Builder"), () => { CloseModal(); SaveNow(); ModBuilder.End(); }, "mbv-menu-item", "mbv-danger");
             modal.AddToClassList("mbv-modal--shown");
@@ -908,6 +909,7 @@ namespace GoF2Remake.UI
             UpdateLayoutClasses();
             nowMs += dt;
             if (saveDirty && nowMs >= saveAtMs) SaveNow();
+            UpdateOptimize();
             UpdateUndoButtons();
             if (reloadPending && nowMs >= reloadAtMs && CanReload)
             {

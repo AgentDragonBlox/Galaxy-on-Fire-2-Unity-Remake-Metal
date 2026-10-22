@@ -33,7 +33,11 @@ picking another mod's makes it a dependency of yours (Menu > Dependencies lists 
 test: the game as a player has it with your mod on, from the builder's station, from your campaign's start or with one of
 your quests under way; the pause menu's (or the station menu's) Back to Mod Builder ends it, and so does a death.
 **Undo** / **Redo** in the top bar (Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z) step back and forth through your edits, files you replaced
-or removed included, until you close the project. **Export as mod** puts the finished project into your Mods folder.
+or removed included, until you close the project. Menu > **Optimize models and textures** (or **Optimize…** beside a ship's
+model) makes a big download small: every texture inside your `.glb` models scaled down to 1K, 2K or 4K and stored as a JPEG
+(a PNG where it uses transparency), your own image files scaled down in their own format, and, if you like, a model's
+triangles cut to 75, 50 or 25 % (its seams and open edges are kept, so textures don't tear); a 61.7 MB model with nine 4K
+PNGs came to 2.7 MB at 1K. Undo puts the original files back. **Export as mod** puts the finished project into your Mods folder.
 Every entry's page has **Edit as JSON…**: the entry's fields as this guide lists them, also the ones the builder has no field
 for (a ship's per-mesh `materials`, throttle and extra glows, a station's collision `volumes`, a room's `gateSpan`). The
 Menu has **Mod details** (website, credits, the Mods screen's picture) and **Translations** (every name and description of

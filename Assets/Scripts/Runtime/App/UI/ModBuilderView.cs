@@ -476,6 +476,7 @@ namespace GoF2Remake.UI
             if (ModImport.Available)
                 Act(mrow, hasModel ? T("mbReplaceModel", "Replace model…") : T("mbUseModel", "Use a .glb model…"), () => PickModel(s));
             Act(mrow, T("mbGameModel", "Game model…"), () => PickGameShip(T("mbGameModelTitle", "Use a game ship's model"), i => UseGameShipModel(s, i)));
+            if (hasModel) Act(mrow, T("mbOptimizeModel", "Optimize…"), () => OpenOptimize(s.Model.Replace('\\', '/')));
             // A new ship on a game model: textures of its own in the Skins kind (textures/ships/<id>/; the game's ship keeps its look).
             if (ModProject.OwnsSkinOf(s) && ModBuilder.IndexOf(s) is int ownIndex && ownIndex >= 0)
                 Act(mrow, T("mbOwnTextures", "Its own textures…"), () =>

@@ -3284,6 +3284,25 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   `mbv-button-label`); `ScrollBars` puts the bar at the viewport's edge and `.gof-scroll-bar` centres itself with
   `translate: -50%` (subtracting the snapped half width each layout fed back into the next: the bar's width flickered by a
   pixel twice a second).
+- **Optimize models and textures** (remake, 2026-10-22, the user's request: a 61.7 MB ship model had been made 4 MB by hand
+  before; `Modding.ModOptimizer` + `MeshSimplifier`, the window `UI.ModBuilderScreenOptimize`: the Menu's entry and the Ship
+  tab's **Optimize…** beside the model): the project's `.glb` models and image files (`Candidates`: not templates/ or
+  preview.png) with their sizes and a model's triangles (`CountTriangles`, the JSON chunk only), ticked from 1 MB; the
+  largest texture 1K / 2K / 4K, JPEG quality high / normal / small (92 / 85 / 70), the model textures as JPEG where possible
+  or kept PNG, the triangles kept all / 75 / 50 / 25 % (PlayerPrefs `mb_opt_*`). Each embedded PNG / JPG image is decoded on
+  the main thread (`Texture2D.LoadImage`, one per frame), halved with a 2 x 2 box filter until it fits and encoded on a worker
+  thread (`ImageConversion.EncodeArrayToJPG` / `PNG`, thread safe), a JPEG unless its alpha is used; a project image file
+  keeps its format (the JSON names it). Polygons: `MeshSimplifier` (quadric edge collapse onto an existing neighbour vertex,
+  so UVs / normals / skins stay valid; quadrics summed per position; seams (several vertices at one point) and open /
+  non-manifold edges locked; a collapse turning a triangle by more than 60 degrees refused) per indexed float-position
+  primitive without morph targets, its unused vertices dropped when it owns its attributes (`ReducePrimitive`, POSITION
+  min / max recomputed, other min / max removed, 16- or 32-bit indices), a view another accessor reads left for a new one,
+  views nothing reads shrunk to 4 bytes; not for Draco / meshopt / quantized models. The GLB written again with every
+  bufferView packed in order (ModGlbImages' layout rules); a result that isn't smaller leaves the file alone. History: a
+  commit before and the reload after, so Undo puts the originals back (checked). Measured on SR2_Normandy.glb (nine 4096 px
+  PNGs, 18 856 triangles): 61.7 MB -> 2.7 MB at 1K in 2.5 s; at 50 % triangles 15 436 (its many seams locked). WebP / KTX2
+  aren't offered: neither Unity's decoders nor the mods' loaders read them, and the game compresses every texture to DXT /
+  ETC2 on load (ModTextureEncoder) whatever the file was. Tests `ModOptimizerTests`.
 - **Image formats** (`ImageImport`): every mod image (ModMaterials' `Texture` and background `PreloadTexture`, so skins,
   portraits, icons, hull textures, planets / suns / skies; ModInfo's preview; ModTextures' file list) and the Mod Builder's
   pickers (which store a picked image as PNG) read PNG / JPG by Unity's decoders and TGA (plain / RLE), BMP (8 / 24 / 32-bit),
