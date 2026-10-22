@@ -201,6 +201,9 @@ namespace GoF2Remake.UI
             void Swallow(EventBase e)
             {
                 if (!GameControls.BlocksMenus) return;
+                // A text box's own keys go through (OptionControl's value box rests the menus with TextEntryOpen: its typed
+                // digits were swallowed here on every page with binding rows, the main menu's and the in-game Options).
+                if (TextFieldKeys.InTextField(e.target)) return;
                 e.StopImmediatePropagation();
                 (e.target as VisualElement)?.focusController?.IgnoreEvent(e);
             }
