@@ -1714,6 +1714,8 @@
  "mbNoItems": "还没有物品。从游戏物品制作，或修改游戏物品。",
  "mbJsonItemNote": "items.json 另有：按编号的属性、defaultEconomy、fx、available。",
  "mbItemOtherMod": "基于其他模组的物品：其他数值请在 items.json 中设置。",
+ "mbStock": "商店库存数量（0 = 该类物品的通常数量）",
+ "mbStockMax": "最多，用于随机数量",
  "mbIconNote": "与游戏图标一样 180 x 88，含边框。",
  "mbItemTechLevel": "科技等级（11-20 在 10 级空间站出售）",
  "mbStatsNote": "时间单位为毫秒，速度为每毫秒游戏单位（20 = 1 米）；射程 = 速度 x 存在时间。",

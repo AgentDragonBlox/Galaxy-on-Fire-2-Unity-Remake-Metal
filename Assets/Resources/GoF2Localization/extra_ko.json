@@ -1724,6 +1724,8 @@
  "mbNoItems": "아이템이 없습니다. 게임 아이템으로 만들거나 바꾸세요.",
  "mbJsonItemNote": "items.json에는 번호별 속성, defaultEconomy, fx, available도 있습니다.",
  "mbItemOtherMod": "다른 모드의 아이템 기반: 나머지 값은 items.json에서 정하세요.",
+ "mbStock": "상점 재고 수량 (0 = 해당 종류의 일반적인 수량)",
+ "mbStockMax": "최대, 무작위 수량일 때",
  "mbIconNote": "게임 아이콘처럼 180 x 88, 테두리 포함.",
  "mbItemTechLevel": "기술 레벨(11-20은 10레벨 정거장에서 판매)",
  "mbStatsNote": "시간은 ms, 속도는 ms당 게임 단위(20 = 1 m). 사거리 = 속도 x 수명.",

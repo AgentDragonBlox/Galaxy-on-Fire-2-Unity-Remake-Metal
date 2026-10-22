@@ -1724,6 +1724,8 @@
  "mbNoItems": "Aún no hay objetos. Crea uno desde un objeto del juego o cambia uno.",
  "mbJsonItemNote": "También en items.json: atributos por número, defaultEconomy, fx, available.",
  "mbItemOtherMod": "Basado en un objeto de otro mod: pon sus demás valores en items.json.",
+ "mbStock": "Unidades que vende una tienda (0 = la cantidad habitual para su tipo)",
+ "mbStockMax": "Como máximo, para una cantidad aleatoria",
  "mbIconNote": "180 x 88 como los iconos del juego, con marco.",
  "mbItemTechLevel": "Nivel técnico (11-20 se venden en estaciones de nivel 10)",
  "mbStatsNote": "Tiempos en ms, velocidades en unidades por ms (20 = 1 m); alcance = velocidad x vida.",

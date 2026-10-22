@@ -167,6 +167,17 @@ namespace GoF2Remake.UI
             Int(itemPage, T("mbItemTechLevel", "Tech level (11-20 sell at tech level 10 stations)"), it.TechLevel ?? original.techLevel, 1, Shop.MaxItemTech, v => { it.TechLevel = Opt(v, original.techLevel); ItemEdited(); });
             Int(itemPage, T("mbOccurrence", "How often shops stock it (0 never - 90)"), it.Occurrence ?? original.occurrence, 0, 100,
                 v => { it.Occurrence = Opt(v, original.occurrence); ItemEdited(); });
+            // Remake mods: "stock", the units a shop holds (Shop.ModStock); 0 = the amount the game gives its kind of item.
+            IntegerField stockField = null, stockMaxField = null;
+            void Stock()
+            {
+                int min = stockField.value, max = Mathf.Max(min, stockMaxField.value);
+                if (max != stockMaxField.value) stockMaxField.SetValueWithoutNotify(max);
+                it.SetStock(min <= 0 ? (int?)null : min, min <= 0 ? (int?)null : max);
+                ItemEdited();
+            }
+            stockField = Int(itemPage, T("mbStock", "Units a shop stocks (0 = the usual amount for its kind)"), it.StockMin ?? 0, 0, Shop.MaxStock, _ => Stock());
+            stockMaxField = Int(itemPage, T("mbStockMax", "At most, for a random amount"), it.StockMax ?? 0, 0, Shop.MaxStock, _ => Stock());
             IntegerField minField = null, maxField = null;
             void Prices()
             {

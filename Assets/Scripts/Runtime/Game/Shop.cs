@@ -61,6 +61,23 @@ namespace GoF2Remake.Data
         /// <summary>Remake mods: the highest tech level a mod item may have (ModContent warns and clamps).</summary>
         public const int MaxItemTech = 20;
 
+        /// <summary>Remake mods: items.json "stock" (attributes 125 / 126, least and most), how many units of the item a
+        /// shop holds, and the highest it may be.</summary>
+        public const int StockMinAttr = 125, StockMaxAttr = 126, MaxStock = 9999;
+
+        /// <summary>Remake mods: the units a shop stocks of a mod's item ("stock"), in place of getItemBuyList's amount by
+        /// item type (goods and secondaries 5..19, a good multiplied by the distance to its cheapest system, weapons and
+        /// equipment 1..3). False = that original rule. The row is also left out of the re-docking nibble, so an exact
+        /// "stock" stays exact.</summary>
+        public static bool ModStock(ItemData it, out int min, out int max)
+        {
+            min = max = 0;
+            if (it == null || !it.HasAttr(StockMinAttr)) return false;
+            min = Mathf.Clamp(it.Attr(StockMinAttr), 1, MaxStock);
+            max = Mathf.Clamp(it.Attr(StockMaxAttr, min), min, MaxStock);
+            return true;
+        }
+
         /// <summary>A station of tech level 'stationTech' may stock an item of 'itemTech' (getItemBuyList: techI &lt;= techS).
         /// Remake mods: no station's tech level is above 10, so a station of the top tech level stocks the items above it too
         /// (a mod's tech level 11+ gear), the item's occurrence alone setting how often; the original items never reach it.</summary>
@@ -287,6 +304,7 @@ namespace GoF2Remake.Data
             {
                 foreach (var row in stock.items)
                 {
+                    if (ModStock(db.Item(row.item), out _, out _)) continue;   // a mod's own stock amount stays as it is
                     int r = Random.Range(0, 3);
                     if (r < row.amount) row.amount -= r;
                 }
@@ -374,7 +392,9 @@ namespace GoF2Remake.Data
 
                 int r = Random.Range(0, 15) + 5;   // 5..19
                 int amount;
-                if (idx == 109) amount = Mathf.Max(1, r / 2);
+                // Remake mods: items.json "stock" says the units outright, in place of the amount by item type below.
+                if (ModStock(it, out int stockMin, out int stockMax)) amount = Random.Range(stockMin, stockMax + 1);
+                else if (idx == 109) amount = Mathf.Max(1, r / 2);
                 else if (type == 1) amount = r;
                 else if (type == 4)
                 {

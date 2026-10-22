@@ -1724,6 +1724,8 @@
  "mbNoItems": "Nog geen voorwerpen. Maak er een uit een spelvoorwerp of wijzig er een.",
  "mbJsonItemNote": "Ook in items.json: attributen op nummer, defaultEconomy, fx, available.",
  "mbItemOtherMod": "Gebaseerd op een voorwerp van een andere mod: overige waarden in items.json.",
+ "mbStock": "Aantal stuks in de winkel (0 = de gebruikelijke hoeveelheid voor dit soort)",
+ "mbStockMax": "Hoogstens, voor een willekeurig aantal",
  "mbIconNote": "180 x 88 zoals de spelpictogrammen, met kader.",
  "mbItemTechLevel": "Techniveau (11-20 bij stations van niveau 10)",
  "mbStatsNote": "Tijden in ms, snelheden in eenheden per ms (20 = 1 m); bereik = snelheid x levensduur.",

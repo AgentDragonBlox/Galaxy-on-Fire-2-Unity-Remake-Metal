@@ -120,6 +120,7 @@ copied.
 | `name`, `description` | String or per language. |
 | `techLevel` | 1-10: shops sell items up to their station's tech level. 11-20: gear above the game's (the originals stop at 10): stocked only by the tech level 10 stations, at its `occurrence` (keep it low); a tier 5 pirate outpost's equipment is such an item one time in three; ordinary NPCs never drop gear from tech level 8. Combine with `available` (`won(main)`), a high price, a blueprint with `autocomplete: false`. |
 | `occurrence` | How often shops stock it and NPCs carry it as loot, 0-90 (0 = never: only `alwaysSoldAt`, blueprints, rewards). |
+| `stock` | How many units a shop holds: `50`, or `[10, 25]` for a random amount (1-9999). Without it the game's own amount by kind: goods 5-19 x the distance to `lowestPriceSystem` (up to x20), secondaries 5-19, weapons / turrets / equipment 1-3. `occurrence` still decides whether it is stocked at all. Works on an `override` too. |
 | `price` / `minPrice`, `maxPrice` | `1500` or `[1200, 1500]`; a station's price lies in the range. |
 | `lowestPriceSystem`, `highestPriceSystem` | System numbers where it's cheapest / dearest. |
 | `vosskOnly` | `true`: only Vossk systems sell it. |

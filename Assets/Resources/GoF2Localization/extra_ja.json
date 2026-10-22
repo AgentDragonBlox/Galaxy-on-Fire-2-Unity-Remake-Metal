@@ -1724,6 +1724,8 @@
  "mbNoItems": "アイテムなし。ゲームのアイテムから作るか、変更。",
  "mbJsonItemNote": "items.jsonには他に番号指定の属性・defaultEconomy・fx・available。",
  "mbItemOtherMod": "他MODのアイテムが元：他の値はitems.jsonで設定。",
+ "mbStock": "店の在庫数（0 = その種類の通常の数量）",
+ "mbStockMax": "最大、ランダムな数量の場合",
  "mbIconNote": "ゲームのアイコン同様180 x 88（枠込み）。",
  "mbItemTechLevel": "技術レベル（11～20はレベル10のステーションで販売）",
  "mbStatsNote": "時間はms、速度はms当たりのゲーム単位（20 = 1 m）。射程＝速度×寿命。",

@@ -1724,6 +1724,8 @@
  "mbNoItems": "Brak przedmiotów. Utwórz z przedmiotu z gry lub zmień któryś.",
  "mbJsonItemNote": "Także w items.json: atrybuty wg numeru, defaultEconomy, fx, available.",
  "mbItemOtherMod": "Oparty na przedmiocie innego moda: pozostałe wartości w items.json.",
+ "mbStock": "Sztuk w sklepie (0 = zwykła ilość dla tego rodzaju)",
+ "mbStockMax": "Najwyżej, dla losowej ilości",
  "mbIconNote": "180 x 88 jak ikony w grze, z ramką.",
  "mbItemTechLevel": "Poziom tech (11-20 na stacjach poziomu 10)",
  "mbStatsNote": "Czasy w ms, prędkości w jednostkach na ms (20 = 1 m); zasięg = prędkość x czas życia.",

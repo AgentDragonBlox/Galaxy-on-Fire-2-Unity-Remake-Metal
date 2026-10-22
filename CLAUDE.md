@@ -2154,9 +2154,14 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   mod unusable (`ModInfo.Errors`), unknown fields are warnings. `ModInfo.Hash` = SHA-256 of every path + file (first 12 hex).
 - **Items** (`ModContent`, items.json): `{ "id", "base": n | "mod:id", fields }` adds an item (a copy of the base: type,
   category and *look* kept, `ItemData.modded` / `modKey` / `Look`), `{ "override": n | "mod:id", fields }` changes one;
-  fields: name, description, techLevel, occurrence, prices (`price` n or [min, max]), price systems, `vosskOnly` (attr 60),
+  fields: name, description, techLevel, occurrence, `stock`, prices (`price` n or [min, max]), price systems, `vosskOnly` (attr 60),
   `alwaysSoldAt` (attr 61; a mod item's always stocks it there, also at the stations whose original filter allows one kind only, Var Destro 105 weapons, Quineros 107 equipment, Valkyrie 101, Sao Perula 106: `Shop.GenerateItemsOriginal` modAlways), `stats` by name (`ItemStats`: readable names + items.json's statList keys, kept in step with the
-  attribute), raw `attributes`, `defaultEconomy` (the same, for the Default Economy). Texts inline or `text/<lang>.json`
+  attribute), raw `attributes`, `defaultEconomy` (the same, for the Default Economy). **`stock`** (remake, attributes 125 /
+  126, a number or [least, most], 1..`Shop.MaxStock` 9999, clamped with a warning): how many units a shop holds of it
+  (`Shop.ModStock` in `Shop.GenerateItemsOriginal`, in place of getItemBuyList's amount by item type: goods and secondaries
+  rnd(15) + 5, a good x the distance to its cheapest system up to x20 (x2 Extreme), weapons / turrets / equipment a fifth
+  of it, so 1-3); `occurrence` still decides whether it is stocked at all, an `override` sets a game item's too, and such a row
+  is left out of `EnterStation`'s computerTradeGoods nibble, so an exact amount stays exact. Texts inline or `text/<lang>.json`
   (`items.<id>.name`). `Database.Load` merges after the economy overlay (`ModContent.Apply`, only for the GoF2Data folder).
   A mod item's 0 occurrence means never (the add-on items' random roll in `Shop.GenerateItems` skips them).
 - **Tech levels above 10** (a modder's report 2026-10-17, the community's "Tech Level 11 Add-On"): the original's items and
@@ -3028,7 +3033,8 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   ends on the next move; `ModTextures.Preload` resets its loading count (an earlier revision's loads left it above 0 for good,
   so the preview waited forever and the camera refused new drags). The top bar's kinds swap the side panels (`ModBuilderView.SelectKind`;
   the gizmo only with Ships): **Items** (`ModBuilderViewItems`, items.json as `ProjectItem`): new items from a game item
-  (a copy: type, category, look) or changes to one, name, description, its own icon PNG, tech level, occurrence, prices
+  (a copy: type, category, look) or changes to one, name, description, its own icon PNG, tech level, occurrence, the units
+  a shop stocks (`stock`: 0 = the amount by item type, with a second row for a random range), prices
   and the base's stats by readable name (`ItemStats`; a new item's value equal to the base's isn't written), the
   remake-only stats of its kind and a turret's own model (see "Missile turrets and salvos"), "Fit to the
   test ship" (every slot of a weapon's kind, equipment in place of its category; a new item waits for the project to be

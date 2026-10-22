@@ -92,6 +92,21 @@ namespace GoF2Remake.Modding
         public int? TechLevel { get => N("techLevel"); set => SetN("techLevel", value); }
         public int? Occurrence { get => N("occurrence"); set => SetN("occurrence", value); }
 
+        /// <summary>"stock": how many units a shop holds of it (a number, or [least, most]), null = the amount the game
+        /// gives its kind of item (Shop.ModStock).</summary>
+        public int? StockMin => N("stock") ?? StockRange(0);
+        public int? StockMax => N("stock") ?? StockRange(1);
+
+        int? StockRange(int end) => json["stock"] is JArray a && a.Count >= 2 ? Mathf.RoundToInt((float)a[end]) : (int?)null;
+
+        /// <summary>Sets it: null = none, one number when least and most are the same, else [least, most].</summary>
+        public void SetStock(int? min, int? max)
+        {
+            if (min == null) json.Remove("stock");
+            else if (max == null || max.Value <= min.Value) json["stock"] = min.Value;
+            else json["stock"] = new JArray(min.Value, max.Value);
+        }
+
         /// <summary>The price range: "minPrice" / "maxPrice", or the "price" shorthand (n, or [min, max]).</summary>
         public int? MinPrice => N("minPrice") ?? PriceShorthand(0);
         public int? MaxPrice => N("maxPrice") ?? PriceShorthand(1);

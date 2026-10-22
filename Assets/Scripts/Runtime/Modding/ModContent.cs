@@ -145,7 +145,7 @@ namespace GoF2Remake.Modding
 
         static readonly HashSet<string> ItemFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "id", "override", "base", "name", "description", "techLevel", "occurrence", "minPrice", "maxPrice", "price",
+            "id", "override", "base", "name", "description", "techLevel", "occurrence", "stock", "minPrice", "maxPrice", "price",
             "lowestPriceSystem", "highestPriceSystem", "vosskOnly", "alwaysSoldAt", "stats", "attributes", "defaultEconomy", "fx", "icon",
             "available",
         };
@@ -261,6 +261,23 @@ namespace GoF2Remake.Modding
             }
         }
 
+        /// <summary>A field written as a number or [least, most] (items.json "stock"): false = not given.</summary>
+        static bool Range(JObject o, string key, out int min, out int max)
+        {
+            min = max = 0;
+            var t = ModJson.Get(o, key);
+            if (t == null) return false;
+            if (t is JArray a)
+            {
+                bool Number(JToken n) => n is JValue v && (v.Type == JTokenType.Integer || v.Type == JTokenType.Float);
+                if (a.Count != 2 || !Number(a[0]) || !Number(a[1]))
+                    throw new ModJsonException($"{ModJson.Where(t, ItemsFile)}: \"{key}\" must be a number or [least, most]");
+                min = (int)a[0]; max = (int)a[1];
+            }
+            else min = max = ModJson.Int(o, key, 0, ItemsFile);
+            return true;
+        }
+
         static void CheckFields(JObject o, string where, ModInfo mod)
         {
             foreach (var f in new[] { "techLevel", "occurrence", "minPrice", "maxPrice", "lowestPriceSystem", "highestPriceSystem", "alwaysSoldAt" })
@@ -269,6 +286,9 @@ namespace GoF2Remake.Modding
             // level stations, Shop.StationStocks).
             if (ModJson.Has(o, "techLevel") && ModJson.Int(o, "techLevel", 0, ItemsFile) is int tl && (tl < 0 || tl > Shop.MaxItemTech))
                 mod.Warnings.Add($"{where}: \"techLevel\" {tl} is outside 0-{Shop.MaxItemTech} (clamped)");
+            // "stock": how many units a shop holds (Shop.ModStock), a number or [least, most].
+            if (Range(o, "stock", out int smin, out int smax) && (smin < 1 || smax < smin || smax > Shop.MaxStock))
+                mod.Warnings.Add($"{where}: \"stock\" {smin} to {smax} must be 1 to {Shop.MaxStock}, least first (clamped)");
             if (ModJson.Get(o, "stats") is JToken st)
             {
                 if (!(st is JObject so)) throw new ModJsonException($"{where}: \"stats\" must be an object {{ \"damage\": 12 }}");
@@ -942,6 +962,13 @@ namespace GoF2Remake.Modding
             it.highestPriceSystem = ModJson.Int(o, "highestPriceSystem", it.highestPriceSystem, F);
             SetAttr(it, 3, it.techLevel); SetAttr(it, 4, it.lowestPriceSystem); SetAttr(it, 5, it.highestPriceSystem);
             SetAttr(it, 6, it.occurrence); SetAttr(it, 7, it.minPrice); SetAttr(it, 8, it.maxPrice);
+            // "stock": the units a shop holds, in place of the amount by item type (Shop.ModStock).
+            if (Range(o, "stock", out int stockMin, out int stockMax))
+            {
+                stockMin = Mathf.Clamp(stockMin, 1, Shop.MaxStock);
+                stockMax = Mathf.Clamp(stockMax, stockMin, Shop.MaxStock);
+                SetAttr(it, Shop.StockMinAttr, stockMin); SetAttr(it, Shop.StockMaxAttr, stockMax);
+            }
             if (ModJson.Has(o, "vosskOnly")) SetAttr(it, 60, ModJson.Bool(o, "vosskOnly", false, F) ? 1 : 0);
             if (ModJson.Has(o, "alwaysSoldAt")) SetAttr(it, 61, ModJson.Int(o, "alwaysSoldAt", -1, F));
             if (ModJson.Get(o, "stats") is JObject st)

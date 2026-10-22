@@ -202,6 +202,7 @@ earlier). Only the fields you give change. Giving `name` or `description` rename
 | `name`, `description` | A string, or one text per language (see Texts below). |
 | `techLevel` | 1 to 10 like the originals, or up to 20 for gear above them (see [Tech levels above 10](#tech-levels-above-10)). Shops sell only items up to their station's tech level. |
 | `occurrence` | How often shops stock it (the originals use 0 to 90; 0 = never in a random shop). |
+| `stock` | How many units a shop stocks of it: `50`, or `[10, 25]` for a random amount between the two (1 to 9999). Without it the amount follows the item's kind, see [How many units a shop stocks](#how-many-units-a-shop-stocks). |
 | `minPrice`, `maxPrice` | The price range. A station's price lies between them, by distance to the cheapest and dearest systems. |
 | `price` | Shorthand: `1500` (both) or `[1200, 1500]`. |
 | `lowestPriceSystem`, `highestPriceSystem` | System numbers where it's cheapest and dearest. |
@@ -213,6 +214,24 @@ earlier). Only the fields you give change. Giving `name` or `description` rename
 | `fx` | A weapon's own look and sound, see [Weapon effects](#weapon-effects). |
 | `icon` | Its own shop icon: a PNG in the mod, 180 x 88 like the originals (frame and background included; copy one from `Assets/Resources/GoF2Icons` to start from), or one of the game's: `"gof2:item_046"`. Without it the item shows its base item's icon. An `override` with `icon` gives an original item a new one. |
 | `available` | A [condition](#conditions) that must hold before shops stock it or it turns up in loot (an `override` can hold back an original item too). |
+
+### How many units a shop stocks
+
+Without `stock`, how many units a station holds follows the item's kind, exactly as in the original game:
+
+| Kind | Units |
+|---|---|
+| Goods (commodities) | 5-19, multiplied by the distance to `lowestPriceSystem` (up to x20, x2 on Extreme): scarce near its home system, piled high far away |
+| Secondary weapons (missiles, mines, bombs) | 5-19 |
+| Primary weapons, turrets, equipment | 1-3 |
+
+`stock` replaces that with your own number: `"stock": 50` for exactly 50 units, `"stock": [10, 25]` for a random amount
+between the two (both included). A row with `stock` is also left out of the 0-2 units the game shaves off the other rows
+when the player re-docks, so an exact amount stays exact.
+
+`occurrence` still decides **whether** the shop stocks it at all, and `techLevel` and the station's own tech level whether
+it may turn up there. It works on an `override` too, so `{ "override": 122, "stock": [60, 90] }` fills every shop's
+energy cells.
 
 ### Stats
 

@@ -1724,6 +1724,8 @@
  "mbNoItems": "Noch keine Gegenstände. Erstelle einen aus einem Spielgegenstand oder ändere einen.",
  "mbJsonItemNote": "Auch in items.json: Attribute per Nummer, defaultEconomy, fx, available.",
  "mbItemOtherMod": "Basiert auf dem Gegenstand einer anderen Mod: weitere Werte in items.json.",
+ "mbStock": "Stückzahl im Shop (0 = die übliche Menge für seine Art)",
+ "mbStockMax": "Höchstens, für eine zufällige Menge",
  "mbIconNote": "180 x 88 wie die Spielsymbole, mit Rahmen.",
  "mbItemTechLevel": "Techstufe (11-20 an Stationen mit Stufe 10)",
  "mbStatsNote": "Zeiten in ms, Tempo in Spieleinheiten pro ms (20 = 1 m); Reichweite = Tempo x Lebensdauer.",
