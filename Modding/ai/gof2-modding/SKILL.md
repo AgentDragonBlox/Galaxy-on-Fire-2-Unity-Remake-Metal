@@ -59,7 +59,7 @@ menu's **Mods** screen and turning it on. Problems show there with file and line
 ## Mod folder
 
 Images (icons, portraits, textures, skins, planets, suns, skies, card art, preview) may be PNG (safest), JPG, TGA, BMP, DDS
-(DXT1/3/5, uncompressed) or the game's .aei.
+(DXT1/3/5, ATC, uncompressed) or the game's .aei (PC, Android or iOS: DXT, ETC1, PVRTC, ATC).
 
 ```
 my_mod/

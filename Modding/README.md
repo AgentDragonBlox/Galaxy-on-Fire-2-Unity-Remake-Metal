@@ -98,8 +98,8 @@ What mods can do so far:
 - **Translate** their own texts into any of the game's languages.
 
 **Image formats:** wherever this guide asks for a PNG (icons, portraits, textures and skins, planets, suns, skies, card art,
-the preview), JPG, TGA (uncompressed or RLE), BMP, DDS (DXT1, DXT3, DXT5 or uncompressed; not BC7) and the game's own `.aei`
-files work too. PNG stays the safe choice. The Mod Builder's pickers take all of them and store the picture as a PNG.
+the preview), JPG, TGA (uncompressed or RLE), BMP, DDS (DXT1, DXT3, DXT5, ATC or uncompressed; not BC7) and the game's own `.aei`
+files (from the PC, Android or iOS version) work too. PNG stays the safe choice. The Mod Builder's pickers take all of them and store the picture as a PNG.
 
 ## Where mods go
 

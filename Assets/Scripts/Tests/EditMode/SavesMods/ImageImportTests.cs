@@ -1,11 +1,12 @@
 // ImageImportTests.cs
 // Feature: CLAUDE.md "Mods (remake-only)" > Image formats (ImageImport.cs): TGA (uncompressed / RLE, grey / 24 / 32-bit,
-// either row order), BMP (8-bit palette, 24 / 32-bit, either row order), DDS (DXT1 / DXT3 / DXT5, uncompressed) and the
-// game's .aei (raw RGBA, ETC1, DXT by size) decoded to pixels bottom row first, like Unity's textures. The files are built
-// byte by byte here from the formats' specifications (TGA: Truevision 2.0; BMP: BITMAPINFOHEADER, rows padded to 4 bytes,
-// positive height = bottom row first; DDS: the 128-byte header, BC1 / BC2 / BC3 blocks with RGB565 endpoints; ETC1: the
-// Khronos block layout and modifier table; AEI: Reference/tools/asset_conversion/aei.py's header), and the expected pixels
-// worked out by hand.
+// either row order), BMP (8-bit palette, 24 / 32-bit, either row order), DDS (DXT1 / DXT3 / DXT5, ATC, uncompressed) and
+// the game's .aei (raw RGBA, ETC1, PVRTC 2 / 4bpp, ATC, DXT by type) decoded to pixels bottom row first, like Unity's
+// textures. The files are built byte by byte here from the formats' specifications (TGA: Truevision 2.0; BMP:
+// BITMAPINFOHEADER, rows padded to 4 bytes, positive height = bottom row first; DDS: the 128-byte header, BC1 / BC2 / BC3
+// blocks with RGB565 endpoints; ETC1: the Khronos block layout and modifier table; PVRTC 1: Imagination's word layout,
+// Morton order and modulation modes; ATC: AMD's palette; AEI: Reference/tools/asset_conversion/aei.py's header and the
+// engine's types), and the expected pixels worked out by hand.
 
 using System;
 using System.Text;
@@ -457,13 +458,16 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
-        public void AeiDxt1AndDxt5BySize()
+        public void AeiDxt1Dxt3AndDxt5ByType()
         {
-            // the PC version's types: 8 bytes for a 4 x 4 image = DXT1, 16 = DXT5
-            var dxt1 = Concat(AeiHeader(0x24, 4, 4), Sized(ColourBlock(R565, B565, 0, 1)));
+            // the PC version's types, as the engine's loader reads them: 0x20 / 0x22 DXT1, 0x21 / 0x23 DXT3, 0x24 / 0x26 DXT5
+            var dxt1 = Concat(AeiHeader(0x20, 4, 4), Sized(ColourBlock(R565, B565, 0, 1)));
             var px = Decode(dxt1, "pc.aei", out int w, out int h);
             AreEqual(Red, At(px, w, h, 0, 0));
             AreEqual(Blue, At(px, w, h, 1, 0));
+            var dxt3 = Concat(AeiHeader(0x23, 4, 4), Sized(Concat(new byte[] { 0x8F, 0, 0, 0, 0, 0, 0, 0 }, ColourBlock(R565, R565))));
+            px = Decode(dxt3, "pc.aei", out w, out h);
+            Assert.AreEqual(136, At(px, w, h, 1, 0).a);
             var dxt5 = Concat(AeiHeader(0x24, 4, 4), Sized(Concat(new byte[] { 255, 0, 1 << 3, 0, 0, 0, 0, 0 }, ColourBlock(White565, White565))));
             px = Decode(dxt5, "pc.aei", out w, out h);
             Assert.AreEqual(255, At(px, w, h, 0, 0).a);
@@ -473,9 +477,130 @@ namespace GoF2Remake.Tests
         [Test]
         public void AnAeiOfAnUnknownKindIsRefused()
         {
-            var aei = Concat(AeiHeader(0x24, 4, 4), Sized(new byte[2]), new byte[8]);
+            var aei = Concat(AeiHeader(0x30, 4, 4), Sized(new byte[2]), new byte[8]);
             Assert.IsFalse(ImageImport.DecodePixels(aei, "x.aei", out _, out _, out _, out string e));
             StringAssert.Contains("isn't known", e);
+        }
+
+        // ---- PVRTC (the iOS version's .aei) ---------------------------------------------------------------------------
+        // A word is 8 bytes: the modulation (u32), colour A (u16, bit 0 the mode) and colour B (u16), opaque when the top
+        // bit is set (A RGB 554, B RGB 555). Words are in Morton order; with every word alike the colours aren't blended.
+
+        const int PvrRedA = 0xFC00, PvrBlueB = 0x801F, PvrBlackA = 0x8000;
+
+        static byte[] PvrWord(uint modulation, int colourA, int colourB)
+        {
+            var wd = new byte[8];
+            W32(wd, 0, (int)modulation);
+            W16(wd, 4, colourA);
+            W16(wd, 6, colourB);
+            return wd;
+        }
+
+        static byte[] PvrAei(int type, int w, int h, params byte[][] words) => Concat(AeiHeader(type, w, h, 1), Sized(Concat(words)));
+
+        [Test]
+        public void AeiPvrtc4bppStandardModulation()
+        {
+            // 2 bits a pixel, row by row: 0 = A, 3 = B, 1 = 3 / 8 of B, 2 = 5 / 8 of B
+            uint mod = 0 | 3 << 2 | 1 << 4 | 2 << 6;
+            var word = PvrWord(mod, PvrRedA, PvrBlueB);
+            var px = Decode(PvrAei(0x12, 8, 8, word, word, word, word), "ios.aei", out int w, out int h);
+            Assert.AreEqual(8, w);
+            AreEqual(Red, At(px, w, h, 0, 0));
+            AreEqual(Blue, At(px, w, h, 1, 0));
+            AreEqual(new Color32(159, 0, 95, 255), At(px, w, h, 2, 0));
+            AreEqual(new Color32(95, 0, 159, 255), At(px, w, h, 3, 0));
+            AreEqual(Red, At(px, w, h, 4, 0), "the next word");
+        }
+
+        [Test]
+        public void AeiPvrtc4bppPunchThrough()
+        {
+            // colour A's bit 0: 1 and 2 = half of B, 2 also see-through
+            uint mod = 1 << 2 | 2 << 4 | 3 << 6;
+            var word = PvrWord(mod, PvrRedA | 1, PvrBlueB);
+            var px = Decode(PvrAei(0x10, 8, 8, word, word, word, word), "ios.aei", out int w, out int h);
+            AreEqual(Red, At(px, w, h, 0, 0));
+            AreEqual(new Color32(127, 0, 127, 255), At(px, w, h, 1, 0));
+            AreEqual(new Color32(127, 0, 127, 0), At(px, w, h, 2, 0));
+            AreEqual(Blue, At(px, w, h, 3, 0));
+        }
+
+        [Test]
+        public void AeiPvrtcBlendsTheWordsAroundAPixel()
+        {
+            // The first word red, the others black. A word's centre pixel (2, 2) is its own colour; its corner pixel (0, 0)
+            // is 1 / 4 its own (2 / 4 across x 2 / 4 across y) and the rest from the neighbours, wrapping round the image:
+            // red 31 x 4 of 16 -> 124 -> (124 >> 1) + (124 >> 6) = 63.
+            var red = PvrWord(0, PvrRedA, PvrBlueB);
+            var black = PvrWord(0, PvrBlackA, PvrBlueB);
+            var px = Decode(PvrAei(0x12, 8, 8, red, black, black, black), "ios.aei", out int w, out int h);
+            AreEqual(Red, At(px, w, h, 2, 2));
+            AreEqual(new Color32(63, 0, 0, 255), At(px, w, h, 0, 0));
+            // the far corner pixel (7, 7) is 1 / 16 the first word, wrapping round both ways: 31 -> 15 + 0
+            AreEqual(new Color32(15, 0, 0, 255), At(px, w, h, 7, 7), "wrapped");
+            AreEqual(new Color32(0, 0, 0, 255), At(px, w, h, 6, 6), "the last word's centre");
+        }
+
+        [Test]
+        public void AeiPvrtc2bppDirect()
+        {
+            // 8 x 4 pixels a word, 1 bit each: 0 = A, 1 = B
+            var word = PvrWord(1u << 1 | 1u << 9, PvrRedA, PvrBlueB);
+            var px = Decode(PvrAei(0x0d, 16, 8, word, word, word, word), "ios.aei", out int w, out int h);
+            Assert.AreEqual(16, w);
+            AreEqual(Red, At(px, w, h, 0, 0));
+            AreEqual(Blue, At(px, w, h, 1, 0));
+            AreEqual(Blue, At(px, w, h, 1, 1));
+            AreEqual(Red, At(px, w, h, 2, 1));
+        }
+
+        [Test]
+        public void AeiPvrtc2bppInterpolatedModes()
+        {
+            // Colour A's bit 0 set: a checkerboard of 2-bit values (rows 0 and 2: x 0 2 4 6, rows 1 and 3: x 1 3 5 7), the
+            // others from their neighbours. Here rows 0 and 2 store 3 (B) and rows 1 and 3 store 0 (A), so pixel (1, 0) is B
+            // from left / right, A from up / down, half from all four. Bit 0 set = left / right or up / down, by bit 20 (the
+            // stored (4, 2)'s low bit); those two stored pixels take their high bit twice.
+            var hOnly = PvrWord(0x00EF00FF, PvrRedA | 1, PvrBlueB);
+            var px = Decode(PvrAei(0x0f, 16, 8, hOnly, hOnly, hOnly, hOnly), "ios.aei", out int w, out int h);
+            AreEqual(Blue, At(px, w, h, 1, 0), "left / right");
+            AreEqual(Blue, At(px, w, h, 0, 0), "stored (0, 0): bit 1 twice");
+            AreEqual(Blue, At(px, w, h, 4, 2), "stored (4, 2): bit 21 twice");
+            AreEqual(Red, At(px, w, h, 1, 1), "stored row 1");
+            var vOnly = PvrWord(0x00FF00FF, PvrRedA | 1, PvrBlueB);
+            px = Decode(PvrAei(0x0f, 16, 8, vOnly, vOnly, vOnly, vOnly), "ios.aei", out w, out h);
+            AreEqual(Red, At(px, w, h, 1, 0), "up / down");
+            var both = PvrWord(0x00EF00FE, PvrRedA | 1, PvrBlueB);
+            px = Decode(PvrAei(0x0f, 16, 8, both, both, both, both), "ios.aei", out w, out h);
+            AreEqual(new Color32(127, 0, 127, 255), At(px, w, h, 1, 0), "all four");
+        }
+
+        // ---- ATC -------------------------------------------------------------------------------------------------------
+
+        [Test]
+        public void AeiAtcExplicitAlpha()
+        {
+            // colour 0 is RGB 555 with the method in its top bit. Method 0: c0, 5:3, 3:5, c1; the alpha half as DXT3's.
+            var colour = ColourBlock(0x7C00, B565, 0, 1, 2, 3);
+            var px = Decode(Concat(AeiHeader(0x11, 4, 4), Sized(Concat(new byte[] { 0x8F, 0, 0, 0, 0, 0, 0, 0 }, colour))), "atc.aei", out int w, out int h);
+            AreEqual(new Color32(255, 0, 0, 255), At(px, w, h, 0, 0));
+            AreEqual(new Color32(159, 0, 95, 136), At(px, w, h, 1, 0));
+            AreEqual(new Color32(95, 0, 159, 0), At(px, w, h, 2, 0));
+            AreEqual(new Color32(0, 0, 255, 0), At(px, w, h, 3, 0));
+        }
+
+        [Test]
+        public void DdsAtcRgbMethod1()
+        {
+            // method 1: black, c0 - c1 / 4, c0, c1
+            var dds = Concat(DdsHeader(4, 4, "ATC ", 0x4), ColourBlock(0x8000 | 0x7C00, White565, 0, 1, 2, 3));
+            var px = Decode(dds, "atc.dds", out int w, out int h);
+            AreEqual(new Color32(0, 0, 0, 255), At(px, w, h, 0, 0));
+            AreEqual(new Color32(192, 0, 0, 255), At(px, w, h, 1, 0));
+            AreEqual(Red, At(px, w, h, 2, 0));
+            AreEqual(White, At(px, w, h, 3, 0));
         }
     }
 }

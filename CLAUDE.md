@@ -3497,10 +3497,16 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
 - **Image formats** (`ImageImport`): every mod image (ModMaterials' `Texture` and background `PreloadTexture`, so skins,
   portraits, icons, hull textures, planets / suns / skies; ModInfo's preview; ModTextures' file list) and the Mod Builder's
   pickers (which store a picked image as PNG) read PNG / JPG by Unity's decoders and TGA (plain / RLE), BMP (8 / 24 / 32-bit),
-  DDS (DXT1 / 3 / 5, uncompressed; not DX10) and the game's `.aei` (raw RGBA, the phone's ETC1, DXT1 / DXT5 by the data's size:
-  the PC version's type 0x24 is DXT5) by its own decoders (`DecodePixels`, worker-thread safe, by magic; TGA by extension).
-  Verified: each format against a reference image (size, orientation, colours, alpha), a PC `.aei` skin identical to an
-  independent decode and shown on the turntable through the background loader.
+  DDS (DXT1 / 3 / 5, ATC "ATC " / "ATCA" / "ATCI", uncompressed; not DX10) and the game's `.aei` by its type byte, as the
+  engine's loader maps it (the function before `TextureCreateFromFile`): raw RGBA 1 / 3 / 0x81, ETC1 0x14 / 0x16 / 0x17 /
+  0x40 / 0x42 (Android), PVRTC 2bpp 0x0d / 0x0f and 4bpp 0x10 / 0x12 (iOS), ATC with explicit alpha 0x11 / 0x13, DXT1 0x20 /
+  0x22, DXT3 0x21 / 0x23, DXT5 0x24 / 0x26 (PC); bit 1 = mipmaps, only the top level read; the engine has no ATC RGB (4bpp)
+  kind. They are decoded by its own decoders (`DecodePixels`, worker-thread safe, by magic; TGA by extension). Until
+  2026-10-23 the .aei types past ETC1 were guessed by the data's size, so an iOS PVRTC texture (a player's
+  `tex_mido_ships.aei`) came out as DXT1 noise. Verified: each format against a reference image (size, orientation,
+  colours, alpha), a PC `.aei` skin identical to an independent decode and shown on the turntable through the background
+  loader; PVRTC 4bpp on that iOS file (the Midorian ships' atlas, identical to an independent Python decode); PVRTC 2bpp
+  and ATC only against hand-built blocks (`ImageImportTests`), no real file.
 - **Mod browser** (`ModBrowser`, the main menu's Mods button and `modsPanel`; styles `.mods-*` in MainMenu.uss): the list in
   load order (thumbnail, name, version · author, On / Off / Error / Can't load), a click or keyboard / controller focus selecting a row (the mouse's hover focus doesn't: passing over the rows on the way to Turn on changed the mod it acted on), the selected mod's preview, name, meta,
   description and credits (mod.json `credits`), where it is installed, errors and warnings, Turn on / off (also the
