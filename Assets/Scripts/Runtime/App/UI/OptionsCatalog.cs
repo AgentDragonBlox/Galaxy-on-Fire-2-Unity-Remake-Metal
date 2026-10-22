@@ -135,8 +135,9 @@ namespace GoF2Remake.UI
                 Slider("sfx", OptionPage.Sound, () => Localization.Get(35), 0f, 1f, () => Settings.SfxVolume, v => Settings.SfxVolume = v, Percent),
                 Slider("voice", OptionPage.Sound, () => Localization.Get(36), 0f, 1f, () => Settings.VoiceVolume, v => Settings.VoiceVolume = v, Percent),
                 // Remake: the original sounds only the first primary gun (Player::calcWeaponSounds).
-                Toggle("eachWeaponSound", OptionPage.Sound, () => X("eachWeaponSound", "Every weapon's own shot sound"),
+                Described(Toggle("eachWeaponSound", OptionPage.Sound, () => X("eachWeaponSound", "Every weapon's own shot sound"),
                     () => Settings.EachWeaponSound, v => Settings.EachWeaponSound = v),
+                    () => X("eachWeaponSoundHelp", "With different primary weapons mounted, the original plays only the first one's shot sound for all of them. On: every weapon plays its own.")),
                 // Remake: the voices apart from the text language (only English and German were recorded); on the Language tab.
                 Choice("voiceLanguage", OptionPage.Language, () => X("voiceLanguage", "Voice language"), true,
                     () => new[] { X("voiceAuto", "As text"), "English", "Deutsch" },
@@ -631,6 +632,13 @@ namespace GoF2Remake.UI
         /// <summary>The flight HUD's size and opacity steps (Settings.HudScalePercent / HudOpacityPercent).</summary>
         static readonly int[] HudScaleSteps = { 70, 80, 90, 100, 115, 130, 150 };
         static readonly int[] HudOpacitySteps = { 30, 40, 50, 60, 70, 80, 90, 100 };
+
+        /// <summary>The row's description: its "?" (OptionInfo), the line under it with a controller.</summary>
+        static OptionDef Described(OptionDef d, Func<string> text)
+        {
+            d.description = text;
+            return d;
+        }
 
         /// <summary>A change of this row asks to be kept (OptionDef.confirm, SettingsConfirm).</summary>
         static OptionDef Confirmed(OptionDef d)

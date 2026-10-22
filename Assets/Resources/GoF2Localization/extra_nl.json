@@ -183,6 +183,7 @@
  "discordPresence": "In Discord laten zien wat ik doe",
  "displayMode": "Weergavemodus",
  "eachWeaponSound": "Eigen schotgeluid voor elk wapen",
+ "eachWeaponSoundHelp": "Met verschillende primaire wapens speelt het origineel voor allemaal alleen het schotgeluid van de eerste. Aan: elk wapen heeft zijn eigen geluid.",
  "easyDesc": "Zwakkere vijanden in kleinere groepen.",
  "economyAndroid": "Android-economie",
  "economyAndroidDesc": "Android-prijzen: duurdere goederen en uitrusting, grotere bouwplannen, goedkopere schepen.",

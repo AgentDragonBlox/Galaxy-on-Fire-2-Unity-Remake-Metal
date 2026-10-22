@@ -172,6 +172,7 @@
   "discordPresence": "Discord में दिखाएँ कि मैं क्या कर रहा हूँ",
   "displayMode": "डिस्प्ले मोड",
   "eachWeaponSound": "हर हथियार की अपनी फ़ायर आवाज़",
+  "eachWeaponSoundHelp": "अलग-अलग प्राइमरी हथियार लगे होने पर मूल गेम सभी के लिए केवल पहले हथियार की फायर ध्वनि बजाता है। चालू: हर हथियार अपनी ध्वनि बजाता है।",
   "economyAndroid": "Android अर्थव्यवस्था",
   "economyDefault": "PC अर्थव्यवस्था",
   "economyTitle": "अर्थव्यवस्था चुनें",

@@ -183,6 +183,7 @@
  "discordPresence": "Mostrar en Discord lo que estoy haciendo",
  "displayMode": "Modo de pantalla",
  "eachWeaponSound": "Sonido de disparo propio de cada arma",
+ "eachWeaponSoundHelp": "Con distintas armas principales montadas, el original reproduce solo el sonido de disparo de la primera para todas. Activado: cada arma suena con el suyo.",
  "easyDesc": "Enemigos más débiles en grupos más pequeños.",
  "economyAndroid": "Economía de Android",
  "economyAndroidDesc": "Precios de Android: bienes y equipo más caros, planos más grandes, naves más baratas.",

@@ -179,6 +179,7 @@
  "discordPresence": "Discord에 현재 활동 표시",
  "displayMode": "디스플레이 모드",
  "eachWeaponSound": "무기마다 고유한 발사음",
+ "eachWeaponSoundHelp": "서로 다른 주무기를 장착하면 원작은 모든 무기에 첫 번째 무기의 발사음만 재생합니다. 켜기: 각 무기가 고유한 소리를 냅니다.",
  "easyDesc": "더 약한 적이 더 작은 무리로 나옵니다.",
  "economyAndroid": "Android 경제",
  "economyAndroidDesc": "안드로이드 가격: 상품과 장비는 비싸고 설계도는 크며 함선은 쌉니다.",

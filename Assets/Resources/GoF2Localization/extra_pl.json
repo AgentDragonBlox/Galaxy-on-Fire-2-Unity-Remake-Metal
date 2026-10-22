@@ -183,6 +183,7 @@
  "discordPresence": "Pokazuj na Discordzie, co robię",
  "displayMode": "Tryb wyświetlania",
  "eachWeaponSound": "Własny dźwięk strzału dla każdej broni",
+ "eachWeaponSoundHelp": "Przy różnych zamontowanych broniach głównych oryginał odtwarza dla wszystkich tylko dźwięk strzału pierwszej. Wł.: każda broń ma własny.",
  "easyDesc": "Słabsi wrogowie w mniejszych grupach.",
  "economyAndroid": "Ekonomia Androida",
  "economyAndroidDesc": "Ceny z Androida: droższe towary i sprzęt, większe plany, tańsze statki.",

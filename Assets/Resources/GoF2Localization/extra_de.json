@@ -183,6 +183,7 @@
  "discordPresence": "In Discord zeigen, was ich mache",
  "displayMode": "Anzeigemodus",
  "eachWeaponSound": "Eigener Schussklang für jede Waffe",
+ "eachWeaponSoundHelp": "Mit verschiedenen Primärwaffen spielt das Original für alle nur den Schussklang der ersten. An: Jede Waffe hat ihren eigenen.",
  "easyDesc": "Schwächere Gegner in kleineren Gruppen.",
  "economyAndroid": "Android-Wirtschaft",
  "economyAndroidDesc": "Android-Preise: teurere Waren und Ausrüstung, größere Baupläne, billigere Schiffe.",
