@@ -2,9 +2,12 @@
 // Remake (the user's request 2026-10-22): "Levels of detail" (Options > Graphics, Settings.Lods; on by default on phones,
 // off on PC, Linux and UWP). Added to every assembled object as it wakes (AssembledObject.Awake), so the game's prefabs
 // stay as built:
-//   - an object with the original's own LOD meshes (the generic ships, the battleship, the jumpgates, the asteroids:
-//     assemblies.json lodDistances) keeps them while the option is on; off, its LODGroup is cut to LOD 0 alone, culled
-//     where the last level was, and the meshes only the lower levels show are kept from drawing (forceRenderingOff);
+//   - an object with the original's own LOD meshes (the generic ships, the battleship, the freighters, the jumpgates, the
+//     asteroids: assemblies.json lodDistances) keeps its LODGroup and switch heights while the option is on; off, the
+//     group is cut to LOD 0 alone, culled where the last level was, and the meshes only the lower levels show are kept
+//     from drawing (forceRenderingOff). Those LOD meshes are copies of LOD 0 as converted (the same triangles, unreadable:
+//     CopiedLevels), so while on each copy is swapped for its hull's made level (GameLods: level k for the original's
+//     level k, the deepest there is past it) and put back when off;
 //   - any other object gets levels made from its own LOD 0 meshes (LodMeshes): the game's from the prebaked library
 //     (GameLods: stations, capital ships, turrets, the add-ons' ships, level objects...), a mod's ship or station from its
 //     model at run time (ModLodCache, the hull as the mod ships it: optimized or not). Each level is a renderer of its own
@@ -45,6 +48,17 @@ namespace GoF2Remake.Visuals
         [SerializeField, HideInInspector] bool ownGroup;         // the LODGroup is this one's (added for the made levels)
         [SerializeField, HideInInspector] bool baseTaken;
         [SerializeField, HideInInspector] List<Level> baseLevels = new List<Level>();   // the object's LODGroup as built
+        [SerializeField, HideInInspector] bool swapsTaken;
+        [SerializeField, HideInInspector] List<Swap> swaps = new List<Swap>();          // the original's copied LOD meshes
+
+        [System.Serializable]
+        sealed class Swap
+        {
+            public MeshFilter lower;   // the original's LOD mesh renderer
+            public Mesh original;      // its mesh as built (a copy of 'hull')
+            public Mesh hull;          // the LOD 0 mesh it copies, whose made levels replace it
+            public int level;          // the original's level it first shows in (1...)
+        }
 
         sealed class Target
         {
@@ -145,6 +159,15 @@ namespace GoF2Remake.Visuals
                 var first = new HashSet<Renderer>(baseLevels[0].renderers);
                 for (int i = 1; i < baseLevels.Count; i++)
                     foreach (var r in baseLevels[i].renderers) if (!first.Contains(r) && !lowerOnly.Contains(r)) lowerOnly.Add(r);
+                if (!swapsTaken)
+                {
+                    swapsTaken = true;
+                    swaps.Clear();
+                    foreach (var (lower, hull, level) in CopiedLevels(transform, ToLods(baseLevels)))
+                        if (string.IsNullOrEmpty(modId) && GameLods.Has(hull.sharedMesh))
+                            swaps.Add(new Swap { lower = lower, original = lower.sharedMesh, hull = hull.sharedMesh, level = level });
+                }
+                swaps.RemoveAll(w => w.lower == null || w.original == null);
                 return;
             }
 
@@ -165,6 +188,45 @@ namespace GoF2Remake.Visuals
                 else if (!GameLods.Has(mesh)) continue;
                 targets.Add(new Target { filter = mf, renderer = mr, slot = slot++ });
             }
+        }
+
+        /// <summary>The meshes only the lower levels of 'lods' show that are LOD 0's meshes again (the same vertex, triangle
+        /// and submesh counts, bounds and place under 'root'): each with that LOD 0 mesh and the level it first shows in.
+        /// The game's converted LOD meshes are all such copies but the deep science station's (GeneratedLodsBuilder too).</summary>
+        public static List<(MeshFilter lower, MeshFilter hull, int level)> CopiedLevels(Transform root, LOD[] lods)
+        {
+            var found = new List<(MeshFilter, MeshFilter, int)>();
+            if (root == null || lods == null || lods.Length < 2) return found;
+            var first = new HashSet<Renderer>();
+            var hulls = new List<MeshFilter>();
+            foreach (var r in lods[0].renderers ?? new Renderer[0])
+            {
+                if (r == null || !first.Add(r)) continue;
+                var mf = r.GetComponent<MeshFilter>();
+                if (mf != null && mf.sharedMesh != null) hulls.Add(mf);
+            }
+            var seen = new HashSet<MeshFilter>();
+            for (int k = 1; k < lods.Length; k++)
+                foreach (var r in lods[k].renderers ?? new Renderer[0])
+                {
+                    if (r == null || first.Contains(r)) continue;
+                    var mf = r.GetComponent<MeshFilter>();
+                    if (mf == null || mf.sharedMesh == null || !seen.Add(mf)) continue;
+                    foreach (var h in hulls)
+                        if (SameGeometry(root, mf, h)) { found.Add((mf, h, k)); break; }
+                }
+            return found;
+        }
+
+        static bool SameGeometry(Transform root, MeshFilter a, MeshFilter b)
+        {
+            Mesh ma = a.sharedMesh, mb = b.sharedMesh;
+            if (ma.vertexCount != mb.vertexCount || ma.subMeshCount != mb.subMeshCount || LodMeshes.Triangles(ma) != LodMeshes.Triangles(mb)) return false;
+            float tolerance = 1e-3f * (mb.bounds.size.magnitude + 1e-3f);
+            if ((ma.bounds.center - mb.bounds.center).magnitude > tolerance || (ma.bounds.size - mb.bounds.size).magnitude > tolerance) return false;
+            Matrix4x4 m = root.worldToLocalMatrix * a.transform.localToWorldMatrix, n = root.worldToLocalMatrix * b.transform.localToWorldMatrix;
+            for (int i = 0; i < 16; i++) if (Mathf.Abs(m[i] - n[i]) > 1e-3f * Mathf.Max(1f, Mathf.Abs(n[i]))) return false;
+            return true;
         }
 
         static AssembledObject OwnerOf(Transform t)
@@ -207,7 +269,7 @@ namespace GoF2Remake.Visuals
             applied = true;
             appliedOn = on;
             appliedFull = fullDetail;
-            if (baseLevels.Count > 1) { ApplyOriginal(on || fullDetail); return; }
+            if (baseLevels.Count > 1) { ApplyOriginal(on || fullDetail); SwapCopied(on); return; }
             if (targets.Count == 0) return;
             if (on) waiting = !Build();
             else { waiting = false; RemoveMade(); }
@@ -230,6 +292,22 @@ namespace GoF2Remake.Visuals
                 group.SetLODs(new[] { new LOD(baseLevels[baseLevels.Count - 1].height, baseLevels[0].renderers) });
                 foreach (var r in lowerOnly) if (r != null) r.forceRenderingOff = true;
                 collapsed = true;
+            }
+        }
+
+        /// <summary>The original's copied LOD meshes: their hull's made levels ('on') or as built.</summary>
+        void SwapCopied(bool on)
+        {
+            foreach (var w in swaps)
+            {
+                if (w.lower == null) continue;
+                var want = w.original;
+                if (on)
+                {
+                    var made = GameLods.Get(w.hull);
+                    if (made.Length > 0) want = made[Mathf.Min(w.level, made.Length) - 1];
+                }
+                if (w.lower.sharedMesh != want) w.lower.sharedMesh = want;
             }
         }
 

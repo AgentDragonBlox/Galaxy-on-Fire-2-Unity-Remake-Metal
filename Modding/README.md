@@ -37,8 +37,8 @@ or removed included, until you close the project. Menu > **Optimize models and t
 model) makes a big download small: every texture inside your `.glb` models scaled down to 1K, 2K or 4K and stored as a JPEG
 (a PNG where it uses transparency), your own image files scaled down in their own format, and, if you like, a model's
 triangles cut to 75, 50 or 25 % (its seams and open edges are kept, so textures don't tear); a 61.7 MB model with nine 4K
-PNGs came to 2.7 MB at 1K. Undo puts the original files back. With Options > Graphics > **Levels of detail** on (the default
-on phones) the game also makes simpler copies of your ships' and stations' models for when they are far away, from the
+PNGs came to 2.7 MB at 1K. Undo puts the original files back. With Options > Graphics > **Levels of detail** on (the
+default) the game also makes simpler copies of your ships' and stations' models for when they are far away, from the
 model as you ship it, optimized or not; they are made again by themselves after you optimize. **Export as mod** puts the finished project into your Mods folder.
 
 **Mods for the original game** (the game's own `.aem` models and `.aei` textures, usually in `MESHES/` and `TEXTURES/`

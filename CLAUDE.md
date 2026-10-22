@@ -187,18 +187,25 @@ The game stores every object as several meshes (hull, `_lights_add`, `_emissive`
   `Models/valkyrie/ships/v_ship_037_deep_science.gof2mesh.json` — posX is swapped between part0 / part1 and each carries
   a rotY (the file's rotY is Unity z, see "Coordinates and scale"), so re-running the asset conversion would undo it.
 - LOD: each level shows only its LOD mesh, its LOD child meshes and the last-added child (usually the engine). Generic ships switch at 5000/13000 units and cull at 80000. **In this binary `AEGeometry::updateLod` always picks LOD 0** (the modded APK), the prefabs use the intended distances.
-- **Levels of detail** (remake, 2026-10-22, the user's request; Options > Graphics, `Settings.Lods`, on by default on phones
-  (`Application.isMobilePlatform`: Android, iOS), off on PC / Linux / UWP; `Visuals.AutoLods`, added to every assembled
+- **Levels of detail** (remake, 2026-10-22, the user's request; Options > Graphics, `Settings.Lods`, on by default on
+  every platform (the user's choice; it was phones only at first); `Visuals.AutoLods`, added to every assembled
   object in `AssembledObject.Awake`, set up in Start, the prefabs untouched). An object with the original's own LOD meshes
-  (generic ships, the battleship, jumpgates, asteroids) keeps its LODGroup while on; off, the group is cut to LOD 0 culled
-  where the last level was and the lower-only renderers get `forceRenderingOff` (= the binary's always-LOD-0). Every other
+  (generic ships, freighters, the battleship, jumpgates, asteroids) keeps its LODGroup and switch heights while on; off,
+  the group is cut to LOD 0 culled where the last level was and the lower-only renderers get `forceRenderingOff` (= the
+  binary's always-LOD-0). Those LOD meshes are, as converted, copies of LOD 0 (the same triangles at every level: the
+  generic ships 2900-4900 each, unreadable), all but the deep science station's: `AutoLods.CopiedLevels` finds each copy
+  by its LOD 0 hull (counts, bounds, place), and while on it shows that hull's made level instead (`SwapCopied`: level k
+  for the original's level k, the deepest there is past it; put back when off); the builder cuts those hulls from 500
+  triangles (`LodMeshes.MinTrianglesCopied`, the asteroids). Every other
   object gets made levels (`LodMeshes`: the Mod Builder optimizer's `MeshSimplifier` after joining vertices alike in every
   byte, in its `seams` / `borders` mode: a seam point collapses with all its copies at once, each onto a copy of the
   neighbour it shares a triangle with, and a point on one open border only along it, the border edges' upright planes
   in its quadric; the optimizer keeps both locked. The game's models split 93-97 % of their points by hard edges and UV
-  seams and 17-41 % lie on open panel edges: with both locked 142 of 147 hull meshes got no level, now 63 do (347k ->
-  235k triangles at level 1: the add-on ships, Vossk battleship, carriers, plasma array ~30-50 %); the stations stay
-  whole, being flat-shaded (a copy per face, so no copy has a partner along an edge) or double-sided (non-manifold);
+  seams and 17-41 % lie on open panel edges: with both locked 142 of 147 hull meshes got no level. The last level is cut
+  `loose` too: a seam copy without a partner along the edge goes onto the neighbour's copy nearest it in UV (within
+  0.05; the asteroids streaked black and white with any copy). Now 109 meshes have levels, 532k -> 350k -> 142k
+  triangles (a generic ship ~4000 -> ~2200 -> ~900); most stations stay whole, being flat-shaded (a copy per face, so
+  no copy has a partner along an edge, and level 1 isn't loose) or double-sided (non-manifold);
   level 1 = 50 %, level 2 = 20 % of the triangles; a level keeping over 85 % of the one above is dropped; meshes under
   1000 triangles and additive / light / glow / emissive layers (they sit on the hull) get none): a renderer per level under
   the mesh's own (`<name>_lod_gen1`, a non-readable mesh of only its vertices, so `HullCollision` and the shadow bake's

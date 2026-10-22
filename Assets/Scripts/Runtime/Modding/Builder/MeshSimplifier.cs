@@ -14,6 +14,10 @@
 // edge) a point on one open border (two open edges) may go along that border onto its neighbour there, never inward; each
 // open edge adds the plane through it upright on its triangle to its points' quadrics, so the outline costs to move. A
 // point where borders meet, or on a non-manifold edge (more than two triangles), stays.
+// With 'loose' as well (the last level of detail, a few percent of the screen high) a seam copy without such a partner
+// goes onto the neighbouring point's copy nearest it in the texture ('uvs'; none within LooseUvReach: it stays): its
+// triangles may take a neighbouring face's normal and a slightly shifted UV, which only a close look would show; flat-shaded
+// parts (a copy per face) can be cut at all only this way.
 
 using System;
 using System.Collections.Generic;
@@ -26,8 +30,10 @@ namespace GoF2Remake.Modding
         /// <summary>'indices' (triangles over 'positions') cut to about 'ratio' of the triangles where the seams and edges
         /// allow; returns the new triangle list (the same vertex numbers). Degenerate triangles of the input are dropped.
         /// 'seams': seam points may be collapsed along their seam; 'borders': border points along their border (see the
-        /// header).</summary>
-        public static int[] Simplify(Vector3[] positions, int[] indices, float ratio, bool seams = false, bool borders = false)
+        /// header); 'loose': seam copies without a partner along the edge too, by 'uvs' (the vertices' texture coordinates;
+        /// null: any copy).</summary>
+        public static int[] Simplify(Vector3[] positions, int[] indices, float ratio, bool seams = false, bool borders = false, bool loose = false,
+            Vector2[] uvs = null)
         {
             int triCount = indices.Length / 3;
             int target = Mathf.Max(1, Mathf.RoundToInt(triCount * Mathf.Clamp01(ratio)));
@@ -128,6 +134,23 @@ namespace GoF2Remake.Modding
             var heap = new MinHeap();
             var pairs = new List<(int u, int v)>();
             var scratch = new List<(int u, int v)>();
+            // The live copy of the point g nearest 'a' in the texture (within LooseUvReach), any live one without UVs.
+            int NearestLive(int g, int a)
+            {
+                int best = -1;
+                float bestDistance = LooseUvReach * LooseUvReach;
+                foreach (int b in copies[g])
+                {
+                    if (removed[b]) continue;
+                    bool live = false;
+                    foreach (int t in vtris[b]) if (alive[t]) { live = true; break; }
+                    if (!live) continue;
+                    if (uvs == null || uvs.Length != n) return b;
+                    float d = (uvs[b] - uvs[a]).sqrMagnitude;
+                    if (d <= bestDistance) { bestDistance = d; best = b; }
+                }
+                return best;
+            }
             // Is the edge between the points gu and gv open now: one live triangle on it?
             bool OpenEdge(int gu, int gv)
             {
@@ -139,7 +162,8 @@ namespace GoF2Remake.Modding
                 return on == 1;
             }
             // The copies of u's point each paired with a copy of v's that shares a live triangle with it (copies without
-            // live triangles left out); false when one has none. A point of one copy pairs with v itself.
+            // live triangles left out); false when one has none ('loose': any live copy of v's point). A point of one copy
+            // pairs with v itself.
             bool Pair(int u, int v, List<(int u, int v)> into)
             {
                 into.Clear();
@@ -159,6 +183,7 @@ namespace GoF2Remake.Modding
                         if (partner >= 0) break;
                     }
                     if (!live) continue;
+                    if (partner < 0 && loose) partner = NearestLive(gv, a);
                     if (partner < 0) return false;
                     into.Add((a, partner));
                 }
@@ -229,6 +254,9 @@ namespace GoF2Remake.Modding
                 if (alive[t]) { outList.Add(tri[t * 3]); outList.Add(tri[t * 3 + 1]); outList.Add(tri[t * 3 + 2]); }
             return outList.ToArray();
         }
+
+        /// <summary>How far in the texture (UV units) a loose seam copy may land from where it was.</summary>
+        const float LooseUvReach = 0.05f;
 
         /// <summary>The weight of an open edge's plane against the triangles' (which weigh by their area).</summary>
         const double BorderWeight = 4.0;

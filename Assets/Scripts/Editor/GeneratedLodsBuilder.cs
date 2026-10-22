@@ -5,7 +5,9 @@
 // battlestations...) that has no LOD meshes of the original's: each of its LOD 0 hull meshes (readable at run time,
 // ImportPostprocessor.IsHullModel; not an additive / light / glow / emissive layer, LodMeshes.Eligible: 1000 triangles or
 // more) cut by LodMeshes.Simplify (the Mod Builder optimizer's MeshSimplifier) to level 1 (50 %) and level 2 (20 %),
-// where the seams allow. Stored as indices only, per mesh (LodMeshes.Key); the game makes the meshes when an object needs
+// where the seams allow. An object with the original's LOD meshes (the generic ships, freighters, battleship, jumpgates,
+// asteroids) has them as copies of LOD 0 (AutoLods.CopiedLevels): the LOD 0 meshes they copy are cut the same way (from
+// LodMeshes.MinTrianglesCopied, 500: the asteroids), and AutoLods swaps the copies for them. Stored as indices only, per mesh (LodMeshes.Key); the game makes the meshes when an object needs
 // them. Interiors (hangars, bars), the star map, shop previews and effects are left out: always seen up close or flat.
 // Run again after changing a model; the mods' models get theirs at run time (ModLodCache).
 
@@ -32,7 +34,14 @@ namespace GoF2Remake.EditorTools
         {
             var db = Database.Load();
             var meshes = new SortedDictionary<string, Mesh>(System.StringComparer.Ordinal);
-            int objects = 0, original = 0;
+            var minimum = new Dictionary<string, int>();
+            int objects = 0, original = 0, copied = 0;
+            void Add(Mesh mesh, int min)
+            {
+                string key = LodMeshes.Key(mesh);
+                meshes[key] = mesh;
+                minimum[key] = minimum.TryGetValue(key, out int m) ? Mathf.Min(m, min) : min;
+            }
             try
             {
                 int n = 0;
@@ -44,7 +53,20 @@ namespace GoF2Remake.EditorTools
                     var prefab = AssembledObject.LoadPrefab(a);
                     if (prefab == null) continue;
                     var group = prefab.GetComponent<LODGroup>();
-                    if (group != null && group.lodCount > 1) { original++; continue; }   // the original's own LOD meshes
+                    if (group != null && group.lodCount > 1)
+                    {
+                        // The original's own LOD meshes, copies of LOD 0: their LOD 0 meshes cut for them.
+                        original++;
+                        bool cut = false;
+                        foreach (var (_, hull, _) in AutoLods.CopiedLevels(prefab.transform, group.GetLODs()))
+                        {
+                            if (!hull.sharedMesh.isReadable || !LodMeshes.Eligible(hull.sharedMesh, LodMeshes.MinTrianglesCopied)) continue;
+                            Add(hull.sharedMesh, LodMeshes.MinTrianglesCopied);
+                            cut = true;
+                        }
+                        if (cut) copied++;
+                        continue;
+                    }
                     var own = prefab.GetComponent<AssembledObject>();
                     bool any = false;
                     foreach (var mf in prefab.GetComponentsInChildren<MeshFilter>(true))
@@ -53,7 +75,7 @@ namespace GoF2Remake.EditorTools
                         var mesh = mf.sharedMesh;
                         if (!LodMeshes.Eligible(mesh)) continue;
                         if (!ImportPostprocessor.IsHullModel(AssetDatabase.GetAssetPath(mesh))) continue;   // unreadable in a build
-                        meshes[LodMeshes.Key(mesh)] = mesh;
+                        Add(mesh, LodMeshes.MinTriangles);
                         any = true;
                     }
                     if (any) objects++;
@@ -67,7 +89,7 @@ namespace GoF2Remake.EditorTools
                     if (EditorUtility.DisplayCancelableProgressBar("GoF2", "Generated LODs: reading " + meshes[keys[i]].name, 0.2f + 0.2f * i / keys.Count)) return;
                     captured[i] = LodMeshes.Capture(meshes[keys[i]]);
                 }
-                var tasks = captured.Select(c => Task.Run(() => LodMeshes.Simplify(c))).ToArray();
+                var tasks = captured.Select((c, i) => { int min = minimum[keys[i]]; return Task.Run(() => LodMeshes.Simplify(c, min)); }).ToArray();
                 while (!Task.WaitAll(tasks, 250))
                 {
                     int done = tasks.Count(t => t.IsCompleted);
@@ -107,7 +129,7 @@ namespace GoF2Remake.EditorTools
                 }
                 AssetDatabase.ImportAsset(OutPath);
                 Debug.Log($"GoF2: Generated LODs: {written} meshes of {objects} objects with levels in {OutPath} ({new FileInfo(OutPath).Length / 1024} KB); "
-                          + $"{original} objects keep the original's LOD meshes, {noGain} meshes gained too little. Triangles: {before} -> {level1} (level 1) -> {level2} (level 2).\n"
+                          + $"{original} objects have the original's LOD meshes ({copied} of them copies of LOD 0, cut here), {noGain} meshes gained too little. Triangles: {before} -> {level1} (level 1) -> {level2} (level 2).\n"
                           + string.Join("\n", lines));
             }
             finally { EditorUtility.ClearProgressBar(); }

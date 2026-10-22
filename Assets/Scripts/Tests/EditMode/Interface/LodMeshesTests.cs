@@ -3,8 +3,9 @@
 // optimizer's simplifier after its identical vertices are joined (a model with three vertices per triangle is cut like a
 // shared one), level 1 to about half the triangles and level 2 to about a fifth; a level is a mesh of its own with only
 // the vertices it uses; the levels go through a file as indices and come back the same; a changed mesh hashes otherwise;
-// light / glow layers and small meshes get none; the option is on by default on phones only; a UV seam is cut along itself
-// (each side keeping its own copies) and the mesh stays closed.
+// light / glow layers and small meshes get none; the option is on by default; a UV seam is cut along itself
+// (each side keeping its own copies) and the mesh stays closed; an open panel keeps its outline; the original's LOD meshes
+// that are copies of LOD 0 are found by their hull.
 // Expected values: a closed 64 x 32 sphere written with three vertices per triangle: 3968 triangles, 11904 vertices.
 
 using System.Collections.Generic;
@@ -160,6 +161,42 @@ namespace GoF2Remake.Tests
                 Assert.Contains(corner, levels[1][0], "the panel's corners stay where they are: the outline holds");
         }
 
+        [Test]
+        public void TheOriginalsCopiedLodMeshesAreFoundByTheirHull()
+        {
+            var hullMesh = Sphere(16, 8);
+            var copy = Object.Instantiate(hullMesh);
+            made.Add(copy);
+            var other = Sphere(12, 6, "test_other");
+            var root = new GameObject("test_object");
+            made.Add(root);
+            MeshRenderer Part(string partName, Mesh mesh, Vector3 at)
+            {
+                var go = new GameObject(partName);
+                go.transform.SetParent(root.transform, false);
+                go.transform.localPosition = at;
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                return go.AddComponent<MeshRenderer>();
+            }
+            var hull = Part("hull", hullMesh, Vector3.zero);
+            var lod1 = Part("hull_lod_1", copy, Vector3.zero);
+            var moved = Part("hull_lod_2", copy, Vector3.right * 5f);   // the same mesh elsewhere: not this hull's copy
+            var different = Part("other_lod_2", other, Vector3.zero);
+            root.transform.position = new Vector3(100, 20, -50);
+            root.transform.rotation = Quaternion.Euler(10, 70, 0);
+            var lods = new[]
+            {
+                new LOD(0.3f, new Renderer[] { hull }),
+                new LOD(0.1f, new Renderer[] { lod1 }),
+                new LOD(0f, new Renderer[] { lod1, moved, different }),
+            };
+            var found = AutoLods.CopiedLevels(root.transform, lods);
+            Assert.AreEqual(1, found.Count, "only the copy in the hull's own place");
+            Assert.AreEqual(lod1.GetComponent<MeshFilter>(), found[0].lower);
+            Assert.AreEqual(hull.GetComponent<MeshFilter>(), found[0].hull);
+            Assert.AreEqual(1, found[0].level, "the level it first shows in");
+        }
+
         static IEnumerable<float> UvAreas(int[] tris, Vector2[] uv)
         {
             for (int t = 0; t < tris.Length; t += 3)
@@ -249,11 +286,11 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
-        public void TheOptionIsOnByDefaultOnPhonesOnly()
+        public void TheOptionIsOnByDefault()
         {
             PlayerPrefs.DeleteKey("gof2.lods");
             Settings.Reset(new[] { "lods" });
-            Assert.AreEqual(Application.isMobilePlatform, Settings.Lods);
+            Assert.IsTrue(Settings.Lods, "on by default on every platform");
             CollectionAssert.Contains(Settings.GraphicsKeys, "lods", "Default settings resets it with the Graphics tab");
         }
     }

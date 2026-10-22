@@ -33,8 +33,11 @@ namespace GoF2Remake.Visuals
         public const float MinGain = 0.85f;
         /// <summary>Meshes with fewer triangles get no levels: nothing to win.</summary>
         public const int MinTriangles = 1000;
+        /// <summary>The same for the hulls whose levels replace the original's copied LOD meshes (AutoLods.CopiedLevels):
+        /// the asteroids (538-1369 triangles) are many to a field.</summary>
+        public const int MinTrianglesCopied = 500;
         /// <summary>Bumped when Ratios / MinGain / the simplifier change: the mods' cached levels are made again.</summary>
-        public const int ParamsVersion = 2;
+        public const int ParamsVersion = 4;
 
         /// <summary>A mesh read for the simplifier (plain data, any thread).</summary>
         public sealed class Captured
@@ -42,6 +45,7 @@ namespace GoF2Remake.Visuals
             public string name;
             public int vertexCount;
             public Vector3[] positions;
+            public Vector2[] uvs;      // texture coordinates 0 (null without): the last level's loose seam cut picks by them
             public byte[] vertices;    // every vertex's bytes from every stream, 'stride' each
             public int stride;
             public int[][] submeshes;  // triangles, absolute vertex numbers
@@ -58,13 +62,13 @@ namespace GoF2Remake.Visuals
 
         /// <summary>A mesh worth levels: big enough, not an additive / light / glow / emissive layer or a lower LOD of the
         /// game's (those sit on the hull: cut apart from it they would float off or sink in), triangles only, no blend shapes.</summary>
-        public static bool Eligible(Mesh mesh)
+        public static bool Eligible(Mesh mesh, int minTriangles = MinTriangles)
         {
             if (mesh == null || mesh.vertexCount == 0 || mesh.blendShapeCount > 0) return false;
             string n = mesh.name.ToLowerInvariant();
             if (n.Contains("_add") || n.Contains("_lights") || n.Contains("_lod_") || n.Contains("glow") || n.Contains("emissive")) return false;
             for (int s = 0; s < mesh.subMeshCount; s++) if (mesh.GetTopology(s) != MeshTopology.Triangles) return false;
-            return Triangles(mesh) >= MinTriangles;
+            return Triangles(mesh) >= minTriangles;
         }
 
         /// <summary>A game mesh's name in the prebaked library: its name, vertex and index counts, submeshes and size (cm).</summary>
@@ -88,6 +92,8 @@ namespace GoF2Remake.Visuals
             int n = d.vertexCount;
             var c = new Captured { name = mesh.name, vertexCount = n, positions = new Vector3[n], submeshes = new int[d.subMeshCount][] };
             using (var p = new NativeArray<Vector3>(n, Allocator.Temp)) { d.GetVertices(p); p.CopyTo(c.positions); }
+            if (d.HasVertexAttribute(VertexAttribute.TexCoord0) && d.GetVertexAttributeDimension(VertexAttribute.TexCoord0) >= 2)
+                using (var uv = new NativeArray<Vector2>(n, Allocator.Temp)) { d.GetUVs(0, uv); c.uvs = uv.ToArray(); }
             int streams = d.vertexBufferCount;
             var strides = new int[streams];
             for (int s = 0; s < streams; s++) { strides[s] = d.GetVertexBufferStride(s); c.stride += strides[s]; }
@@ -113,7 +119,7 @@ namespace GoF2Remake.Visuals
 
         /// <summary>The lower levels of a captured mesh (any thread): [level][submesh] triangle lists over its vertex numbers;
         /// empty when no level is worth it.</summary>
-        public static int[][][] Simplify(Captured c)
+        public static int[][][] Simplify(Captured c, int minTriangles = MinTriangles)
         {
             if (c == null || c.submeshes == null) return Array.Empty<int[][]>();
             var canonical = Weld(c);
@@ -127,13 +133,15 @@ namespace GoF2Remake.Visuals
             }
             int curTris = Count(cur);
             var levels = new List<int[][]>();
-            if (curTris < MinTriangles) return levels.ToArray();
+            if (curTris < minTriangles) return levels.ToArray();
             float prev = 1f;
-            foreach (float ratio in Ratios)
+            for (int l = 0; l < Ratios.Length; l++)
             {
+                float ratio = Ratios[l];
+                bool last = l == Ratios.Length - 1;   // a few percent of the screen high: seams may smear (MeshSimplifier loose)
                 var next = new int[cur.Length][];
                 for (int s = 0; s < cur.Length; s++)
-                    next[s] = cur[s].Length >= 12 ? MeshSimplifier.Simplify(c.positions, cur[s], ratio / prev, seams: true, borders: true) : (int[])cur[s].Clone();
+                    next[s] = cur[s].Length >= 12 ? MeshSimplifier.Simplify(c.positions, cur[s], ratio / prev, seams: true, borders: true, loose: last, uvs: c.uvs) : (int[])cur[s].Clone();
                 int tris = Count(next);
                 if (tris > curTris * MinGain) break;   // the seams and edges held it: not worth a level
                 levels.Add(next);
