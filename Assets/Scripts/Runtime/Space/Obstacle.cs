@@ -41,6 +41,31 @@ namespace GoF2Remake.Flight
 
         public bool Active => isActiveAndEnabled && volumes != null && volumes.Count > 0;
 
+        // Remake (performance, 2026-10-22): the NPC fighters' avoidance (NpcShip.Avoid) tested every obstacle's volumes from
+        // every fighter twice a frame; a sphere around them, measured once a frame, rules out the far ones first.
+        int broadFrame = -1;
+        Vector3 broadCentre;
+        float broadReach;
+        bool broadActive;
+
+        /// <summary>'world' may touch the volumes (or the contact cube): within their bounding sphere and the obstacle active.
+        /// Measured once per 'frame'.</summary>
+        public bool MayTouch(Vector3 world, int frame)
+        {
+            if (broadFrame != frame)
+            {
+                broadFrame = frame;
+                broadActive = Active;
+                broadCentre = transform.position;
+                float reach = 0f;
+                if (cubeHalf > 0f) reach = cubeHalf * 1.7321f;   // Touches is false outside the cube
+                else if (volumes != null)
+                    foreach (var v in volumes) reach = Mathf.Max(reach, v.centre.magnitude + (v.sphere ? v.radius : v.half.magnitude));
+                broadReach = reach + 50f;   // what the obstacle can move in the rest of the frame, generously
+            }
+            return broadActive && (world - broadCentre).sqrMagnitude <= broadReach * broadReach;
+        }
+
         /// <summary>Remake (a fleet battle's capital ships turn, CapitalShip): the volumes were made for 'baseRotation' and
         /// turn with the owner from there (the original's are never rotated).</summary>
         public bool rotates;

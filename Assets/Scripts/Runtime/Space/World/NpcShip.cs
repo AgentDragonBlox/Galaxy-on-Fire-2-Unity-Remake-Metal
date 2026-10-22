@@ -657,8 +657,8 @@ namespace GoF2Remake.World
             if (turretPicking.JustPicked) turretTargetFixed = target != null && IsTurretTarget(target);
             if (target == null || target.cloaked) return;   // handleTurret: no turning toward a cloaked target
             var at = Spec.capitalEnhanced && target.boxes != null && target.boxes.Length > 0 ? TurretAimPoint(target, turretCore.GunPosition)
-                   : turretTargetFixed ? target.transform.position
-                   : TurretTargeting.LeadPoint(target);
+                   : turretTargetFixed ? AimAt(target, dtMs)
+                   : TurretTargeting.LeadPoint(target) + (AimAt(target, dtMs) - target.transform.position);   // led, at a spot on it
             bool aligned = turretCore.StepToward(at, dtMs);
             if (turretCore.Aim.LimitHit) { turretPicking.LimitHit(dtMs); return; }   // out of reach: dropped at the next pick
             if (!aligned || !shootingEnabled) return;
@@ -1249,6 +1249,12 @@ namespace GoF2Remake.World
             }
         }
 
+        /// <summary>A fleet battle fighter's nearest pick (UpdateTargetingLocal) is made again after this long (ms, randomised down
+        /// to half, so the ships' scans spread over the frames).</summary>
+        const float NearestHoldMs = 800f;
+        float nearestHoldMs;
+        Target heldNearest;
+
         void UpdateTargetingLocal()
         {
             int n = enemies.Count;
@@ -1295,16 +1301,29 @@ namespace GoF2Remake.World
                 Vector3 centre = Vector3.zero;
                 float reach = 0f;
                 bool leash = nearest && CapitalShip.BattleArea(Spec.capitalHost, out centre, out reach);
-                float best = float.MaxValue;
-                for (int i = 1; i < n; i++)
+                // Remake (performance, 2026-10-22): the nearest pick is held for NearestHoldMs while it can still be taken,
+                // then made again: every fighter of a fleet battle scanned every enemy's hull every frame (20 fleet battles,
+                // ~600 fighters: 20 ms of an 80 ms frame).
+                nearestHoldMs -= Time.deltaTime * 1000f;
+                int held = targetIdx;
+                if (nearest && nearestHoldMs > 0f && held > 0 && held < n && (object)enemies[held] == heldNearest && Pursuable(heldNearest)
+                    && Standing.RacesHostile(Race, heldNearest.race)
+                    && (!leash || (heldNearest.transform.position - centre).sqrMagnitude <= reach * reach))
+                { idx = held; attacking = true; }
+                else
                 {
-                    var e = enemies[i];
-                    if (!Pursuable(e)) continue;
-                    if (!Standing.RacesHostile(Race, e.race)) continue;
-                    if (!nearest) { idx = i; attacking = true; break; }
-                    if (leash && (e.transform.position - centre).sqrMagnitude > reach * reach) continue;
-                    float d = (e.NearestPoint(transform.position) - transform.position).sqrMagnitude;
-                    if (d < best) { best = d; idx = i; attacking = true; }
+                    float best = float.MaxValue;
+                    for (int i = 1; i < n; i++)
+                    {
+                        var e = enemies[i];
+                        if (!Pursuable(e)) continue;
+                        if (!Standing.RacesHostile(Race, e.race)) continue;
+                        if (!nearest) { idx = i; attacking = true; break; }
+                        if (leash && (e.transform.position - centre).sqrMagnitude > reach * reach) continue;
+                        float d = (e.NearestPoint(transform.position) - transform.position).sqrMagnitude;
+                        if (d < best) { best = d; idx = i; attacking = true; }
+                    }
+                    if (nearest) { heldNearest = idx > 0 ? enemies[idx] : null; nearestHoldMs = Random.Range(NearestHoldMs * 0.5f, NearestHoldMs); }
                 }
             }
             targetIdx = idx;
@@ -1397,17 +1416,37 @@ namespace GoF2Remake.World
 
         Vector3 targetPos;
 
+        // Remake (the user's request 2026-10-22): where on the target's model this ship aims (Target.AimSpot), a new spot
+        // every 1.5-3.5 s and with every new target; the original aims at the centre.
+        Target aimFor;
+        int aimSpot;
+        float aimMs;
+
+        Vector3 AimAt(Target t, float dtMs)
+        {
+            if (t != aimFor || (aimMs -= dtMs) <= 0f)
+            {
+                aimFor = t;
+                aimSpot = UnityEngine.Random.Range(0, int.MaxValue);
+                aimMs = UnityEngine.Random.Range(1500f, 3500f);
+            }
+            return t.AimSpot(aimSpot);
+        }
+
         /// <summary>§5.4 fire, turn, bank, move.</summary>
         void Steer(float dtMs)
         {
-            var dir = targetPos - transform.position;
+            // Turned and fired at a spot on the target's model (AimAt); the break-off range measured to its centre.
+            var aimPos = attacking && !followingWaypoint && target != null ? AimAt(target, dtMs) : targetPos;
+            var dir = aimPos - transform.position;
             // PlayerFighter::update's fly state: the player docked at an object (PlayerEgo::isDockedToDockingPoint) is circled
             // at +-12000 instead of +-8000, and not fired at while it is above the ship (0xf2cfa).
             bool dockedPlayer = target != null && target.isPlayer && ObjectDocking.PlayerDocked;
             if (target != null && !followingWaypoint)
             {
                 float r = (dockedPlayer ? 12000f : NpcTables.BreakOffRange) * M;
-                if (Mathf.Abs(dir.x) < r && Mathf.Abs(dir.y) < r && Mathf.Abs(dir.z) < r) dir = transform.right;
+                var toCentre = targetPos - transform.position;
+                if (Mathf.Abs(toCentre.x) < r && Mathf.Abs(toCentre.y) < r && Mathf.Abs(toCentre.z) < r) dir = transform.right;
             }
             if (dir.sqrMagnitude < 1e-8f) dir = transform.forward;
             var dirN = dir.normalized;
@@ -1418,7 +1457,7 @@ namespace GoF2Remake.World
                 if (target.untargetable || target.cloaked) attacking = false;   // a cloaked ship: chased, never fired at
                 else
                 {
-                    var d = targetPos - transform.position;
+                    var d = aimPos - transform.position;
                     float fr = NpcTables.FireRange * M;
                     if (Mathf.Abs(local.x) < NpcTables.FireCone && Mathf.Abs(local.y) < NpcTables.FireCone
                         && Mathf.Abs(d.x) < fr && Mathf.Abs(d.y) < fr && Mathf.Abs(d.z) < fr)
@@ -1697,10 +1736,12 @@ namespace GoF2Remake.World
         {
             var all = Obstacle.All;
             var pos = transform.position;
+            int frame = Time.frameCount;
             for (int i = 0; i < all.Count; i++)
             {
                 var o = all[i];
-                if (o == null || o.landmark != landmarks || !o.Active) continue;
+                // Obstacle.All holds only enabled obstacles; MayTouch is a distance test against a sphere measured once a frame.
+                if ((object)o == null || o.landmark != landmarks || !o.MayTouch(pos, frame)) continue;
                 if (!o.Touches(pos, out int index)) continue;
                 var p = o.ProjectionVector(pos, index);
                 if (p == Vector3.zero) continue;

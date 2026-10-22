@@ -26,11 +26,20 @@ namespace GoF2Remake.EditorTools
 
     public class ImportPostprocessor : AssetPostprocessor
     {
+        /// <summary>Textures the Texture quality option (Settings.TextureQuality, QualitySettings.globalTextureMipmapLimit)
+        /// leaves at full size: the space skies (their stars blur when smaller), the reflection cubemaps (picked by mip
+        /// level for their blur), the HUD / UI images.</summary>
+        static bool KeepsFullMips(string path, string name) =>
+            path.StartsWith("Assets/Resources/GoF2Sky/") || path.StartsWith("Assets/Resources/GoF2Reflections/")
+            || path.StartsWith("Assets/Resources/GoF2Hud/") || path.StartsWith("Assets/UI/")
+            || (path.StartsWith(ImportSettings.Root + "/Textures/") && name.Contains("cubemap"));
+
         void OnPreprocessTexture()
         {
+            string name = Path.GetFileNameWithoutExtension(assetPath).ToLowerInvariant();
+            if (KeepsFullMips(assetPath, name)) ((TextureImporter)assetImporter).ignoreMipmapLimit = true;
             if (!assetPath.StartsWith(ImportSettings.Root + "/Textures/")) return;
             var ti = (TextureImporter)assetImporter;
-            string name = Path.GetFileNameWithoutExtension(assetPath).ToLowerInvariant();
             ti.maxTextureSize = 2048;
             ti.mipmapEnabled = true;
 

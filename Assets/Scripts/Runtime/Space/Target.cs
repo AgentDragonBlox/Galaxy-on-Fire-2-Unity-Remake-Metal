@@ -223,6 +223,55 @@ namespace GoF2Remake.Flight
             return Mathf.Abs(d.x) < radius && Mathf.Abs(d.y) < radius && Mathf.Abs(d.z) < radius;
         }
 
+        // ---- aim spots (remake, the user's request 2026-10-22: NPCs shot every ship in its middle) ---------------------
+
+        /// <summary>Points on the model NPC fighters and turrets aim at (NpcShip.AimAt), each on a part (so it moves with it):
+        /// up to SpotsPerMesh vertices of each readable mesh (not the additive / light / glow layers or a lower LOD), else
+        /// the hit boxes' inner corners; none = the centre.</summary>
+        [NonSerialized] List<(Transform part, Vector3 local)> aimSpots;
+        static readonly Dictionary<Mesh, Vector3[]> meshSpots = new Dictionary<Mesh, Vector3[]>();
+        const int SpotsPerMesh = 24;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetSpots() => meshSpots.Clear();
+
+        /// <summary>Aim spot 'i' (any number, wrapped) in world space; the centre when the model has none.</summary>
+        public Vector3 AimSpot(int i)
+        {
+            BuildAimSpots();
+            if (aimSpots.Count == 0) return transform.position;
+            var s = aimSpots[(int)((uint)i % (uint)aimSpots.Count)];
+            if (s.part == null) { aimSpots = null; return transform.position; }   // the model was swapped: made again next time
+            return s.part.TransformPoint(s.local);
+        }
+
+        void BuildAimSpots()
+        {
+            if (aimSpots != null) return;
+            aimSpots = new List<(Transform, Vector3)>();
+            foreach (var mf in GetComponentsInChildren<MeshFilter>(true))
+            {
+                var m = mf.sharedMesh;
+                if (m == null || !m.isReadable || m.vertexCount == 0 || mf.GetComponent<Renderer>() == null) continue;
+                string n = m.name.ToLowerInvariant();
+                if (n.Contains("_add") || n.Contains("_lights") || n.Contains("_lod_") || n.Contains("glow")) continue;
+                if (!meshSpots.TryGetValue(m, out var pts))
+                {
+                    var v = m.vertices;
+                    int count = Mathf.Min(SpotsPerMesh, v.Length);
+                    pts = new Vector3[count];
+                    for (int k = 0; k < count; k++) pts[k] = v[(int)((long)k * v.Length / count)];
+                    meshSpots[m] = pts;
+                }
+                foreach (var p in pts) aimSpots.Add((mf.transform, p));
+            }
+            if (aimSpots.Count > 0 || boxes == null) return;
+            foreach (var b in boxes)
+                for (int c = 0; c < 8; c++)
+                    aimSpots.Add((transform, b.center + Vector3.Scale(b.extents * 0.7f,
+                        new Vector3((c & 1) == 0 ? -1 : 1, (c & 2) == 0 ? -1 : 1, (c & 4) == 0 ? -1 : 1))));
+        }
+
         /// <summary>Remake (World.CapitalShips' turrets): the point of its hit boxes nearest 'from' (world), a little inside the
         /// box so a shot at it lands; its position when it has no boxes.</summary>
         public Vector3 NearestPoint(Vector3 from)

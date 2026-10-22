@@ -524,10 +524,11 @@ namespace GoF2Remake.Flight
             for (int t = 0; t < targets.Count; t++)
             {
                 var target = targets[t];
-                if (hulls && (object)target != null && target != null && target.HasHull && (!scatter || BigTarget(target))) continue;   // tested above
-                // The cheap sphere test first (Target.MayContain): most targets are nowhere near the bullet. Scatter guns'
-                // cube grows with the distance, so they keep the full test.
+                // The cheap sphere test first (Target.MayContain, measured once a frame): most targets are nowhere near the
+                // bullet, and Unity's null check and HasHull cost a native call each (every shot against every target was a
+                // third of a 20-fleet-battle frame). Scatter guns' cube grows with the distance, so they keep the full test.
                 if ((object)target == null || (kind != Kind.ScatterGun && !target.MayContain(probe, frame))) continue;
+                if (hulls && target != null && target.HasHull && (!scatter || BigTarget(target))) continue;   // tested above
                 if (target == null || target == owner || !target.Alive || target.phased) continue;   // phased: flies through
                 if (Ignores != null && Ignores(target)) continue;
                 if (kind == Kind.ScatterGun ? !InScatterCube(target, b.position - b.velocity) : !target.Contains(b.position - b.velocity)) continue;

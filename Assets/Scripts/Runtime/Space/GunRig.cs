@@ -173,7 +173,7 @@ namespace GoF2Remake.Flight
         /// <summary>The part animations apply their `extra` channel as opacity (PartAnimation.applyMaterialChannels).</summary>
         public static void EnableFades(GameObject go)
         {
-            foreach (var a in go.GetComponentsInChildren<PartAnimation>(true)) a.applyMaterialChannels = true;
+            foreach (var a in go.GetComponentsInChildren<PartAnimation>(true)) { a.applyMaterialChannels = true; a.ownMaterials = true; }   // copies, not property blocks: the SRP Batcher keeps them
         }
 
         public static void StripForFx(GameObject go)

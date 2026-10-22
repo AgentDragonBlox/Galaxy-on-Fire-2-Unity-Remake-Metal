@@ -260,6 +260,11 @@ namespace GoF2Remake.UI
                     ? X("msaaByUpscaler", "The upscaler does the anti-aliasing: turn it off to use MSAA") : "");
             msaa.enabled = () => !Bootstrap.IsTemporal(Bootstrap.ActiveUpscaler);
             list.Add(msaa);
+            // Remake: the textures' mipmap levels skipped on loading (Settings.TextureQuality); less memory on phones.
+            list.Add(Choice("textureQuality", OptionPage.Graphics, () => X("textureQuality", "Texture quality"), true,
+                () => new[] { X("textureFull", "Full"), X("textureHalf", "Half"), X("textureQuarter", "Quarter") },
+                () => Settings.TextureQuality, i => Settings.TextureQuality = i,
+                () => X("textureQualityHelp", "Half and Quarter load smaller textures: less memory and faster on phones, a little blurrier up close.")));
             list.Add(Choice("brightness", OptionPage.Graphics, () => Localization.Get(503), true,
                 () => new[] { Localization.Get(513), Localization.Get(514), Localization.Get(515) },
                 () => Settings.Brightness, i => Settings.Brightness = i));
@@ -693,6 +698,7 @@ namespace GoF2Remake.UI
                 "lensFlare" => Settings.LensFlare ? 1f : 0f,
                 "npcPlayerEngines" => Settings.NpcPlayerEngines ? 1f : 0f,
                 "lods" => Settings.Lods ? 1f : 0f,
+                "textureQuality" => Settings.TextureQuality,
                 _ => float.NaN,
             };
             for (int p = Settings.PresetLow; p <= Settings.PresetHigh; p++)

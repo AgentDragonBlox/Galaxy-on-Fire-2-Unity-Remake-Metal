@@ -95,6 +95,12 @@ namespace GoF2Remake.Data
         public static int Quality { get => Mathf.RoundToInt(Get("quality", Default("quality", 2f))); set => Set("quality", Mathf.Clamp(value, 0, 2)); }
         public static bool QualityEffects => Quality >= 2;
 
+        /// <summary>Remake: Texture quality, the mipmap levels skipped when textures are loaded (QualitySettings.
+        /// globalTextureMipmapLimit, Bootstrap): 0 full, 1 half (a quarter of the memory), 2 quarter. The space skies,
+        /// reflection cubemaps and HUD images keep theirs (AssetImport.KeepsFullMips: ignoreMipmapLimit); textures made at
+        /// run time (the mods') aren't affected. Half in the Low preset.</summary>
+        public static int TextureQuality { get => Mathf.Clamp(Mathf.RoundToInt(Get("textureQuality", Default("textureQuality", 0f))), 0, 2); set => Set("textureQuality", Mathf.Clamp(value, 0, 2)); }
+
         /// <summary>Original "Brightness" option: 0 Dark, 1 Medium, 2 Bright (texts 513-515).</summary>
         public static int Brightness { get => Mathf.RoundToInt(Get("brightness", 1f)); set => Set("brightness", Mathf.Clamp(value, 0, 2)); }
 
@@ -148,6 +154,7 @@ namespace GoF2Remake.Data
         public static readonly string[] PresetKeys =
         {
             "quality", "renderScale", "upscaler", "msaa", "bloomStyle", "hangarShadows", "hangarDof", "lensFlare", "npcPlayerEngines", "lods",
+            "textureQuality",
         };
 
         // One row per preset, in PresetKeys' order. The original's Quality Low / Medium: smoke and fog off, LOD bias x0.35 /
@@ -155,10 +162,10 @@ namespace GoF2Remake.Data
         // MSAA 1 = off (the flight camera's SMAA stays); bloom off on Low (both blooms are full-screen passes).
         static readonly float[][] Presets =
         {
-            //        quality scale  upscaler     msaa bloom        hangar shadows       dof lens npcEngines lods
-            new[] { 0f, 0.67f, UpscalerFsr, 1f, BloomOff,    HangarShadowsOff,    0f, 0f, 0f, 1f },
-            new[] { 1f, 0.8f,  UpscalerFsr, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 0f, 1f },
-            new[] { 2f, 1f,    UpscalerOff, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 1f, 1f },
+            //        quality scale  upscaler     msaa bloom        hangar shadows       dof lens npcEngines lods textures
+            new[] { 0f, 0.67f, UpscalerFsr, 1f, BloomOff,    HangarShadowsOff,    0f, 0f, 0f, 1f, 1f },
+            new[] { 1f, 0.8f,  UpscalerFsr, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 0f, 1f, 0f },
+            new[] { 2f, 1f,    UpscalerOff, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 1f, 1f, 0f },
         };
 
         /// <summary>'key''s value in 'preset' (PresetLow..PresetHigh).</summary>
@@ -337,7 +344,8 @@ namespace GoF2Remake.Data
         /// sphere (HullBody.flyableShip), freighters, capital ships, stations, gates, turrets and objects on their real
         /// shape. Original: no mesh collision at all, the original's boxes, spheres and cubes everywhere. A session rule (the
         /// host's or the server's, -shipcollision; two rule bits, SessionRules.CollisionOf). The old toggle's key
-        /// (preciseShipCollision, on = Exact) is read until the mode is set.</summary>
+        /// (preciseShipCollision, on = Exact) is read until the mode is set. Android's default is Original (2026-10-22: no
+        /// hull meshes cooked or synced, HullCollision).</summary>
         public static int ShipCollision
         {
             get
@@ -361,7 +369,7 @@ namespace GoF2Remake.Data
             get
             {
                 float v = Get("shipCollision", -1f);
-                if (v < -0.5f) return GetBool("preciseShipCollision", false) ? R.CollisionExact : R.DefaultCollision;
+                if (v < -0.5f) return GetBool("preciseShipCollision", false) ? R.CollisionExact : AndroidDefaults ? R.CollisionOriginal : R.DefaultCollision;
                 return Mathf.Clamp(Mathf.RoundToInt(v), R.CollisionExact, R.CollisionOriginal);
             }
         }
@@ -491,7 +499,7 @@ namespace GoF2Remake.Data
         public static readonly string[] GraphicsKeys =
         {
             "displayMode", "resolutionWidth", "resolutionHeight", "frameRate", "quality", "renderScale", "upscaler", "upscalerQuality",
-            "msaa", "brightness", "bloom", "bloomStyle", "hangarShadows", "lods", "hangarDof", "lensFlare", "npcPlayerEngines", "fov",
+            "msaa", "textureQuality", "brightness", "bloom", "bloomStyle", "hangarShadows", "lods", "hangarDof", "lensFlare", "npcPlayerEngines", "fov",
             "cameraShake", "originalChaseCamera", "uiWidth", "uiMargin", "showFps", "fpsPosition",
         };
         public static readonly string[] ControlsKeys =

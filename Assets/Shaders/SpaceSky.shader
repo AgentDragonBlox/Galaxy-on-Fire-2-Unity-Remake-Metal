@@ -8,6 +8,7 @@
 // the order right (+X), left (-X), up (+Y), down (-Y), front (+Z), back (-Z), each as seen from inside facing it (the up
 // face with the front at its bottom edge, the down face with the front at its top edge). Mip level 0 (no seam at the
 // panorama's wrap, no bleeding between the strip's faces: the face coordinates stay half a texel inside).
+// SRP Batcher compatible (2026-10-22): every per-material value in the UnityPerMaterial buffer.
 Shader "GoF2/SpaceSky"
 {
     Properties
@@ -37,10 +38,15 @@ Shader "GoF2/SpaceSky"
 
             TEXTURECUBE(_Stars);  SAMPLER(sampler_Stars);
             TEXTURECUBE(_Nebula); SAMPLER(sampler_Nebula);
-            TEXTURE2D(_StarsMap);  SAMPLER(sampler_StarsMap);  float4 _StarsMap_TexelSize;
-            TEXTURE2D(_NebulaMap); SAMPLER(sampler_NebulaMap); float4 _NebulaMap_TexelSize;
-            float4x4 _SkyRotation;   // world direction -> baked cube direction, set by GoF2SpaceLevel
-            half _Exposure, _StarsGain, _NebulaGain;
+            TEXTURE2D(_StarsMap);  SAMPLER(sampler_StarsMap);
+            TEXTURE2D(_NebulaMap); SAMPLER(sampler_NebulaMap);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4x4 _SkyRotation;   // world direction -> baked cube direction, set by OrbitBuilder.SetupSky
+                float4 _StarsMap_TexelSize;
+                float4 _NebulaMap_TexelSize;
+                half _Exposure, _StarsGain, _NebulaGain;
+            CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct Varyings { float4 positionCS : SV_POSITION; float3 dir : TEXCOORD0; UNITY_VERTEX_OUTPUT_STEREO };

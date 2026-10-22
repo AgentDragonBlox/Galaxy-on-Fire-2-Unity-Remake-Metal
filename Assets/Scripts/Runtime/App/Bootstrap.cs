@@ -25,7 +25,7 @@ namespace GoF2Remake
     {
         // The project's own values, the "default" of the render scale / MSAA options and the base of the LOD bias.
         static float defaultRenderScale = 1f, defaultLodBias = 1f, defaultDeadzone = Settings.DefaultDeadzone;
-        static int defaultMsaa = 1;
+        static int defaultMsaa = 1, defaultMipLimit;
 #if !ENABLE_UPSCALER_FRAMEWORK
         static UpscalingFilterSelection defaultUpscaling = UpscalingFilterSelection.Auto;
 #endif
@@ -57,6 +57,7 @@ namespace GoF2Remake
 #endif
             }
             defaultLodBias = QualitySettings.lodBias;
+            defaultMipLimit = QualitySettings.globalTextureMipmapLimit;
             defaultDeadzone = InputSystem.settings.defaultDeadzoneMin;
 
             ApplyAll();
@@ -100,6 +101,7 @@ namespace GoF2Remake
                 RenderPipelineManager.endCameraRendering -= UpscalerFramework.FlushContexts;
                 QualitySettings.vSyncCount = editorVSync;
                 QualitySettings.lodBias = defaultLodBias;
+                QualitySettings.globalTextureMipmapLimit = defaultMipLimit;
                 if (urp != null)
                 {
                     urp.renderScale = defaultRenderScale;
@@ -138,6 +140,8 @@ namespace GoF2Remake
             if (urp != null) urp.renderScale = Settings.RenderScale > 0f ? Settings.RenderScale : defaultRenderScale;
             ApplyUpscaling();
             QualitySettings.lodBias = defaultLodBias * (Settings.Quality >= 2 ? 1f : Settings.Quality == 1 ? 0.6f : 0.35f);
+            // Texture quality: the mipmap levels skipped (a change reloads the textures: only when it changes).
+            if (QualitySettings.globalTextureMipmapLimit != Settings.TextureQuality) QualitySettings.globalTextureMipmapLimit = Settings.TextureQuality;
             if (!Mathf.Approximately(InputSystem.settings.defaultDeadzoneMin, Settings.StickDeadzone))
                 InputSystem.settings.defaultDeadzoneMin = Settings.StickDeadzone;
             ApplyFog();

@@ -18,7 +18,9 @@
 // out (HullBody.flyableShip): shots hit fighters, the player's ship and other players' ships on the original's hit cube,
 // and the player meets another player's ship on its sphere, while freighters, the battleship, the capital ships,
 // stations, gates, turrets and objects keep their hulls; Original leaves every hull out: the original's boxes, spheres and
-// cubes everywhere (CollisionVolume obstacles, Target cubes / boxes). The hulls are still built, so switching is at once.
+// cubes everywhere (CollisionVolume obstacles, Target cubes / boxes). Under Original no hull is built (Attach only notes
+// the model, `pending`: no cooking at the spawns, no kinematic bodies to sync every frame; Original is Android's default,
+// 2026-10-22); the mode leaving Original builds the noted ones (Mode), so switching is still at once.
 // Untouched: NPC fighters steering round stations and freighters (Obstacle volumes), the original's rules for what can be
 // hit (stations never, a ship's own shots never) and for what the player slides along (landmarks and freighters, not
 // fighters), asteroids (their cube), crates. The physics simulation isn't used: the bodies are kinematic, the queries read
@@ -49,6 +51,8 @@ namespace GoF2Remake.Flight
 
         static int modeFrame = -1;
         static int mode = GoF2Remake.Data.SessionRules.DefaultCollision;
+        static readonly List<(GameObject model, Target target, Obstacle obstacle, bool flyableShip)> pending =
+            new List<(GameObject, Target, Obstacle, bool)>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics()
@@ -58,6 +62,7 @@ namespace GoF2Remake.Flight
             syncedFrame = -1;
             Suppressed = false;
             modeFrame = -1;
+            pending.Clear();
         }
 
         /// <summary>Options > Gameplay "Ship collision" (SessionRules.CollisionExact / Mixed / Original; the session's in
@@ -70,6 +75,12 @@ namespace GoF2Remake.Flight
                 {
                     modeFrame = Time.frameCount;
                     mode = GoF2Remake.Data.Settings.ShipCollision;
+                    if (mode != GoF2Remake.Data.SessionRules.CollisionOriginal && pending.Count > 0)
+                    {
+                        var noted = pending.ToArray();
+                        pending.Clear();
+                        foreach (var p in noted) if (p.model != null) Attach(p.model, p.target, p.obstacle, p.flyableShip);
+                    }
                 }
                 return mode;
             }
@@ -97,6 +108,12 @@ namespace GoF2Remake.Flight
         {
             if (model == null || Suppressed) return null;
             var body = model.GetComponent<HullBody>();
+            if (body == null && Application.isPlaying && Mode == GoF2Remake.Data.SessionRules.CollisionOriginal)
+            {
+                pending.RemoveAll(p => p.model == null || p.model == model);
+                pending.Add((model, target, obstacle, flyableShip));
+                return null;
+            }
             if (body == null)
             {
                 lowLods.Clear();
@@ -158,6 +175,7 @@ namespace GoF2Remake.Flight
         /// radius 0).</summary>
         public static void Detach(Target target)
         {
+            if (target != null) pending.RemoveAll(p => p.target == target);
             var b = target != null ? target.hull : null;
             if (b == null) return;
             foreach (var c in b.colliders) if (c != null) { bodies.Remove(c); UnityEngine.Object.Destroy(c.gameObject); }

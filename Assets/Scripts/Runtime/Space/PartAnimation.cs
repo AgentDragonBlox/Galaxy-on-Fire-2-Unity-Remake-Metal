@@ -10,7 +10,10 @@
 // (rotationMap, applied in the file's Rx * Ry * Rz order; see the map's comment).
 // applyMaterialChannels (opt-in: the sky layers, explosions): the `extra` channel (0..100, opacity) goes to the part
 // renderer's _Fade, or for the GoF2 Shader Graphs (no _Fade) scales their _Color tint (rgb on additive, alpha otherwise),
-// and `v5_0` (a UV scroll, assumed 100 = one texture width) to its _UVOffset.x, through a MaterialPropertyBlock.
+// and `v5_0` (a UV scroll, assumed 100 = one texture width) to its _UVOffset.x, through a MaterialPropertyBlock; with
+// ownMaterials (GunRig: the projectiles, muzzle flashes and impacts, pooled) through a copy of the part's material instead,
+// made once: a renderer with a property block falls out of the SRP Batcher (2026-10-22, a fleet battle: ~150 of its ~200
+// draws the batcher couldn't take were these).
 // Without it an explosion's debris streaks never fade and hang in space fully stretched (long lines). An animation with
 // nothing but `extra` keys (blinking lights: the Kaamo Club's, the plasma array stages') applies them by itself and runs
 // for their length (it had no length and stayed off); on an opaque material `extra` scales the colour (_BaseColor on URP
@@ -80,6 +83,8 @@ namespace GoF2Remake.Visuals
         public bool rotationInRadians = true;
         [Tooltip("Apply the `extra` (opacity) and `v5_0` (UV scroll) channels to the part renderers (_Fade / _UVOffset).")]
         public bool applyMaterialChannels;
+        [Tooltip("Write the channels into a copy of each part's material (made once) instead of a MaterialPropertyBlock, so the SRP Batcher keeps batching them.")]
+        public bool ownMaterials;
 
         static readonly int ColorId = Shader.PropertyToID("_Color"), BaseColorId = Shader.PropertyToID("_BaseColor"),
             FadeId = Shader.PropertyToID("_Fade"), UVOffsetId = Shader.PropertyToID("_UVOffset"), MainTexStId = Shader.PropertyToID("_MainTex_ST");
@@ -97,7 +102,7 @@ namespace GoF2Remake.Visuals
             return m;
         }
 
-        class Track { public Transform tr; public AnimationKey[][] pos = new AnimationKey[3][]; public AnimationKey[][] rot = new AnimationKey[3][]; public AnimationKey[][] scl = new AnimationKey[3][]; public float[] rotTimes; public Vector3 basePos; public Quaternion baseRot; public Vector3 baseScale; public AnimationKey[] extra, uv, uvY; public bool signedExtra; public Renderer renderer; public MaterialPropertyBlock block; public int fadeMode; public int fadeProperty = ColorId; public Color baseColor; public int uvMode; public Vector4 baseST; public bool initialised; }
+        class Track { public Transform tr; public AnimationKey[][] pos = new AnimationKey[3][]; public AnimationKey[][] rot = new AnimationKey[3][]; public AnimationKey[][] scl = new AnimationKey[3][]; public float[] rotTimes; public Vector3 basePos; public Quaternion baseRot; public Vector3 baseScale; public AnimationKey[] extra, uv, uvY; public bool signedExtra; public Renderer renderer; public MaterialPropertyBlock block; public int fadeMode; public int fadeProperty = ColorId; public Color baseColor; public int uvMode; public Vector4 baseST; public bool initialised; public Material own, from; }
         readonly List<Track> tracks = new List<Track>();
         float timeMs, lengthMs, extraMs;
 
@@ -158,13 +163,38 @@ namespace GoF2Remake.Visuals
             foreach (var tk in tracks) tk.initialised = false;
         }
 
+        void OnDestroy()
+        {
+            if (tracks == null) return;
+            foreach (var tk in tracks) if (tk.own != null) { Destroy(tk.own); tk.own = null; }
+        }
+
+        /// <summary>ownMaterials: the part's own copy of its material, made again when someone else put another material on
+        /// it (a weapon tint, RefreshMaterials); null where a copy can't stand in (several materials: the property block).</summary>
+        static Material OwnMaterial(Track tk)
+        {
+            var r = tk.renderer;
+            if (r == null) return null;
+            var cur = r.sharedMaterial;
+            if (cur != null && cur == tk.own) return tk.own;
+            if (cur == null || r.sharedMaterials.Length != 1) return null;
+            if (tk.own != null) Destroy(tk.own);
+            tk.from = cur;
+            tk.own = new Material(cur) { name = cur.name + " (fade)" };
+            r.sharedMaterial = tk.own;
+            if (r.HasPropertyBlock()) r.SetPropertyBlock(null);
+            tk.initialised = false;
+            InitMaterialTrack(tk);
+            return tk.own;
+        }
+
         static void InitMaterialTrack(Track tk)
         {
             if (tk.initialised) return;
             tk.initialised = true;
             tk.renderer = tk.tr.GetComponent<Renderer>();
-            tk.block = new MaterialPropertyBlock();
-            var mat = tk.renderer != null ? tk.renderer.sharedMaterial : null;
+            tk.block ??= new MaterialPropertyBlock();
+            var mat = tk.renderer == null ? null : tk.own != null && tk.renderer.sharedMaterial == tk.own ? tk.from : tk.renderer.sharedMaterial;
             // 0 = _Fade, 1 = _Color rgb (additive), 2 = _Color alpha, -1 = nothing to fade
             tk.fadeMode = mat == null ? -1 : mat.HasProperty("_Fade") ? 0 : !mat.HasProperty("_Color") ? -1
                         : mat.shader.name.Contains("Additive") ? 1 : 2;
@@ -435,25 +465,31 @@ namespace GoF2Remake.Visuals
                 {
                     InitMaterialTrack(tk);
                     if (tk.renderer == null) continue;
-                    tk.renderer.GetPropertyBlock(tk.block);
+                    var own = ownMaterials ? OwnMaterial(tk) : null;
+                    if (own == null) tk.renderer.GetPropertyBlock(tk.block);
                     if (tk.extra != null && applyMaterialChannels)
                     {
                         float e = Eval(tk.extra, timeMs, 100f);
                         // A signed channel (IsSignedExtra) as the iOS build shows it: the colour byte wraps, so -100 is
                         // almost dark, it brightens toward 0 and is dark again at 0 exactly.
                         float f = tk.signedExtra && e < 0f ? Mathf.Clamp01((256f + e * 2.55f) / 255f) : Mathf.Clamp01(e / 100f);
-                        if (tk.fadeMode == 0) tk.block.SetFloat(FadeId, f);
-                        else if (tk.fadeMode == 1) tk.block.SetColor(tk.fadeProperty, new Color(tk.baseColor.r * f, tk.baseColor.g * f, tk.baseColor.b * f, tk.baseColor.a));
-                        else if (tk.fadeMode == 2) tk.block.SetColor(tk.fadeProperty, new Color(tk.baseColor.r, tk.baseColor.g, tk.baseColor.b, tk.baseColor.a * f));
+                        if (tk.fadeMode == 0) { if (own != null) own.SetFloat(FadeId, f); else tk.block.SetFloat(FadeId, f); }
+                        else if (tk.fadeMode > 0)
+                        {
+                            var c = tk.fadeMode == 1 ? new Color(tk.baseColor.r * f, tk.baseColor.g * f, tk.baseColor.b * f, tk.baseColor.a)
+                                : new Color(tk.baseColor.r, tk.baseColor.g, tk.baseColor.b, tk.baseColor.a * f);
+                            if (own != null) own.SetColor(tk.fadeProperty, c); else tk.block.SetColor(tk.fadeProperty, c);
+                        }
                     }
-                    if (uvAnimated)
+                    if (uvAnimated && tk.uvMode != 0)
                     {
                         float u = tk.uv != null ? Eval(tk.uv, timeMs, 0f) / 100f : 0f, v = tk.uvY != null ? Eval(tk.uvY, timeMs, 0f) / 100f : 0f;
                         // GoF2/SkyLayer subtracts _UVOffset; the Shader Graphs take _MainTex_ST the same way round.
-                        if (tk.uvMode == 1) tk.block.SetVector(UVOffsetId, new Vector4(u, v, 0f, 0f));
-                        else if (tk.uvMode == 2) tk.block.SetVector(MainTexStId, new Vector4(tk.baseST.x, tk.baseST.y, tk.baseST.z - u, tk.baseST.w - v));
+                        var uvValue = tk.uvMode == 1 ? new Vector4(u, v, 0f, 0f) : new Vector4(tk.baseST.x, tk.baseST.y, tk.baseST.z - u, tk.baseST.w - v);
+                        int uvId = tk.uvMode == 1 ? UVOffsetId : MainTexStId;
+                        if (own != null) own.SetVector(uvId, uvValue); else tk.block.SetVector(uvId, uvValue);
                     }
-                    tk.renderer.SetPropertyBlock(tk.block);
+                    if (own == null) tk.renderer.SetPropertyBlock(tk.block);
                 }
             }
         }

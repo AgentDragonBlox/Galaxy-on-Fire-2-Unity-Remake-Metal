@@ -61,7 +61,8 @@ namespace GoF2Remake.Flight
             foreach (var s in voices)
             {
                 // Its pitch is left alone: TimeExtender pitches the sources it finds and puts their pitch back itself.
-                if (!s.isPlaying && s.time <= 0f) return s;
+                // A voice that never played has no clip: its time can't be read (Unity warns on every read).
+                if (!s.isPlaying && (s.clip == null || s.time <= 0f)) return s;
                 if (quietest == null || s.volume < quietest.volume) quietest = s;
             }
             if (quietest == null || quietest.volume >= volume) return null;

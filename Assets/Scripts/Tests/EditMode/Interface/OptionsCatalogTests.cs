@@ -289,6 +289,7 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(Settings.HangarShadowsOff, Settings.HangarShadows);
             Assert.IsFalse(Settings.NpcPlayerEngines);
             Assert.AreEqual(0.67f, Settings.RenderScale, 1e-4f);
+            Assert.AreEqual(1, Settings.TextureQuality, "half-size textures");
             Settings.ApplyPreset(Settings.PresetMedium);
             Assert.AreEqual(Settings.PresetMedium, OptionsCatalog.CurrentPreset());
             Settings.LensFlare = false;
@@ -300,7 +301,7 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
-        public void AndroidStartsOnTheLowPresetAt60Fps()
+        public void AndroidStartsOnTheLowPresetAt60FpsWithOriginalCollision()
         {
             try
             {
@@ -309,7 +310,9 @@ namespace GoF2Remake.Tests
                 Assert.AreEqual(Settings.PresetLow, OptionsCatalog.CurrentPreset(), "every preset option at Low");
                 Assert.AreEqual(FrameRate.Fps60, Settings.FrameRate);
                 Assert.IsFalse(Settings.NpcPlayerEngines, "the other ships' engines the original's");
+                Assert.AreEqual(SessionRules.CollisionOriginal, Settings.ShipCollision, "no hull meshes on phones");
                 Settings.OverrideAndroidDefaults(false);
+                Assert.AreEqual(SessionRules.CollisionMixed, Settings.ShipCollision);
                 Assert.AreEqual(FrameRate.VSync, Settings.FrameRate, "elsewhere V-Sync");
                 Assert.IsTrue(Settings.NpcPlayerEngines);
             }
