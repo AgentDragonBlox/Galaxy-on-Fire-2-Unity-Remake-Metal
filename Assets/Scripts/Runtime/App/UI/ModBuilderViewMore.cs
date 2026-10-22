@@ -43,7 +43,6 @@ namespace GoF2Remake.UI
             // Default Economy: the prices when the player picked the PC / Mac economy (the rest stays the item's).
             var de = it.Get("defaultEconomy") as JObject;
             int dMin = JInt(de?["minPrice"]) ?? 0, dMax = JInt(de?["maxPrice"]) ?? 0;
-            var row = Row(itemPage, "mbv-xyz");
             void SetDe(string k, int v)
             {
                 var o = it.Get("defaultEconomy") as JObject ?? new JObject();
@@ -51,8 +50,8 @@ namespace GoF2Remake.UI
                 it.Set("defaultEconomy", o.HasValues ? o : null);
                 ItemEdited();
             }
-            Int(row, T("mbDefaultMin", "Default Economy: lowest"), dMin, 0, 999999999, v => SetDe("minPrice", v));
-            Int(row, T("mbDefaultMax", "highest (0 = as above)"), dMax, 0, 999999999, v => SetDe("maxPrice", v));
+            Int(itemPage, T("mbDefaultMin", "Default Economy: lowest"), dMin, 0, 999999999, v => SetDe("minPrice", v));
+            Int(itemPage, T("mbDefaultMaxPrice", "Default Economy: highest (0 = as the lowest)"), dMax, 0, 999999999, v => SetDe("maxPrice", v));
 
             // Raw attributes: the original game's attribute numbers ({ "9": 14 }).
             Heading(itemPage, T("mbAttributes", "Attributes by number"));
@@ -61,7 +60,7 @@ namespace GoF2Remake.UI
                 foreach (var p in attrs.Properties().ToList())
                 {
                     string key = p.Name;
-                    var arow = Row(itemPage, "mbv-xyz");
+                    var arow = Row(itemPage);
                     Int(arow, string.Format(T("mbAttrN", "Attribute {0}"), key), JInt(p.Value) ?? 0, int.MinValue / 2, int.MaxValue / 2, v => { ((JObject)it.Get("attributes"))[key] = v; ItemEdited(); });
                     Act(arow, "✕", () => { var o = (JObject)it.Get("attributes"); o.Remove(key); it.Set("attributes", o.HasValues ? o : null); ItemEdited(); BuildItemPage(); }, "mbv-step");
                 }

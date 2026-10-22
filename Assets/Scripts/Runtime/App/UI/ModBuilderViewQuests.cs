@@ -1097,9 +1097,8 @@ namespace GoF2Remake.UI
             if (stations.Count > 0) Act(row, "✕", () => { q.Stations = null; QuestEdited(true); }, "mbv-step");
             var players = q.Get("players") as JArray;
             int min = players != null && players.Count > 0 ? (int)players[0] : 1, max = players != null && players.Count > 1 ? (int)players[1] : 4;
-            var prow = Row(questPage, "mbv-xyz");
-            Int(prow, T("mbMinPilots", "Pilots: at least"), min, 1, 16, v => { q.Set("players", new JArray(v, Math.Max(v, max))); QuestEdited(); });
-            Int(prow, T("mbMaxPilots", "at most"), max, 1, 16, v => { q.Set("players", new JArray(Math.Min(min, v), v)); QuestEdited(); });
+            Int(questPage, T("mbMinPilots", "Pilots: at least"), min, 1, 16, v => { q.Set("players", new JArray(v, Math.Max(v, max))); QuestEdited(); });
+            Int(questPage, T("mbMaxPilotsFull", "Pilots: at most"), max, 1, 16, v => { q.Set("players", new JArray(Math.Min(min, v), v)); QuestEdited(); });
         }
 
         /// <summary>A track for a Music step: the game's (the event words) or a mod's.</summary>
