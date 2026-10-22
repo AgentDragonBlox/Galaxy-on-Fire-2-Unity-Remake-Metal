@@ -13,13 +13,15 @@ namespace GoF2Remake.Modding
     {
         /// <summary>Something of the mods is still loading.</summary>
         public static bool Busy => !ModShips.Ready || !ModStations.Ready || !ModWeapons.Ready || !ModMusic.Ready || !ModSounds.Ready || !ModShipSounds.Ready || !ModTextures.Ready
+                                   || !ModVoices.ReplacementsReady
                                    || !World.ShipShadowBaker.ModShipsBaked;
 
         /// <summary>The mods that are on bring something to load (ship, station or room models, planets / suns / skies,
         /// weapon fx, music, sounds). The counts are known once Busy has started each loader; with none (no mods, or
         /// only quests) the loading screen isn't shown while the loaders finish.</summary>
         public static bool HasWork => ModShips.Count > 0 || ModStations.Count > 0 || ModStations.Backdrops > 0 || ModWeapons.Count > 0
-                                      || ModMusic.Count > 0 || ModSounds.Count > 0 || ModShipSounds.Count > 0 || ModTextures.Count > 0;
+                                      || ModMusic.Count > 0 || ModSounds.Count > 0 || ModShipSounds.Count > 0 || ModTextures.Count > 0
+                                      || ModVoices.ReplacementCount > 0;
 
         /// <summary>How far it is, 0..1.</summary>
         public static float Progress

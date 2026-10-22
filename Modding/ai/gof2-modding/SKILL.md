@@ -432,11 +432,15 @@ required). `override` changes originals (name, techLevel, looks, music...).
   that only shows through transparent parts of the PNG (both on by default). Named in dialogs as `id`, `mod_id:id` or the name; `id as Other Name`.
   `replaces` (a story speaker's name, e.g. `"Keith"`, or number) takes that speaker's portrait everywhere, and its name
   in the headers when the character has a `name`; other lines' mentions of the old name and the voices stay.
-- Voice-over: `[voice <clip>]` in a Dialog page / Radio line; files `voices/<clip>.ogg` (or `voices/en/`, `voices/de/`).
+- Voice-over: `[voice <clip>]` in a Dialog page / Radio line; files `voices/<clip>.ogg` (every language) or
+  `voices/<language>/<clip>.ogg` (en, de, fr, es, it, nl, pl, ru, pt, zh, hi: heard in that text language). A file named like
+  one of the game's lines (`voices/MSG_MISSION_24_NO_EQUIPMENT_INSTALLED.ogg`) replaces that line everywhere, the story
+  included, in every language or (in `voices/<language>/`) one.
 - `music/<name>.ogg`: a game track's name (`Space_Terraner`, `Station_Vossk`, `Space_Battle_Full`, `Space_NoCombat_Void`
   (main menu)...) replaces it; any other name is a new track for systems/stations (`spaceMusic`, `stationMusic`, `music`) and
   quests.
-- `sounds/<name>.ogg`: replaces the game sound with that file name (from the game's Assets/Audio folders).
+- `sounds/<name>.ogg`: replaces the game sound with that file name (from the game's Assets/Audio folders); any other name is
+  a new sound the quests' Sound step / Play Sound's Mod sound / `/sound <name>` play.
 - `textures/<name>.png`: replaces that game texture everywhere (`ship_028_terran_diffuse`; keep the original UV layout,
   2048 x 2048). `textures/<model>/<name>.png` (e.g. `textures/ship_028_terran/glow_terran.png`) replaces a shared texture
   (`glow_<race>` lights, `ship_engine_glow`) on that one model only, before the every-ship one. A new ship on a game model

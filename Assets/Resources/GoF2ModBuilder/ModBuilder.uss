@@ -1098,6 +1098,25 @@
     -unity-text-align: middle-left;
 }
 
+/* The audio pickers (ShowAudioPicker): a row per sound, ▶ and the name. */
+.mbv-audio-row {
+    flex-wrap: nowrap;
+    margin-bottom: 4px;
+}
+
+.mbv-audio-row > .mbv-step {
+    min-width: 44px;
+}
+
+.mbv-audio-name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin: 0 0 0 8px;
+    padding: 8px 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .mbv-modal--options > .options-panel {
     max-height: 90%;
 }

@@ -959,8 +959,14 @@ namespace GoF2Remake.EditorTools
     [Node("Commands", null, "Play Sound")]
     public class EventPlaySoundNode : EventCommandNode
     {
-        public const string Sound = "Sound";
-        protected override void OnDefineOptions(IOptionDefinitionContext context) => context.AddOption<EventSound>(Sound).Build();
+        public const string Sound = "Sound", ModSound = "ModSound";
+
+        protected override void OnDefineOptions(IOptionDefinitionContext context)
+        {
+            context.AddOption<EventSound>(Sound).Build();
+            context.AddOption<string>(ModSound).WithDisplayName("Mod sound").WithTooltip("Optional: a mod's sound instead (its sounds/<name>.ogg " +
+                "file's name, a mod that is on); empty: the Sound above.").Delayed().Build();
+        }
         protected override void DefineInputs(IPortDefinitionContext context) => PlayersIn(context);
     }
 

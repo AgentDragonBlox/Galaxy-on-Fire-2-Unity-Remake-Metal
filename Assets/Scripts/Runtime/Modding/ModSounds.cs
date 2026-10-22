@@ -4,6 +4,7 @@
 // FMOD event list in Reference/research/fmod_event_ids.txt names them per event): each replaces that clip wherever the
 // game plays it (Get, at every place that plays a clip: Sfx, ShotVoices, the engines, the loops, the UI's PlayOneShot...).
 // Voices and weapon shots are clips like any other. Music is ModMusic's (music/). A later mod in the load order wins.
+// A file of any other name is a new sound: the quests' Sound step and /sound play it by name (Named, Has).
 // Loaded in the background when the mods change (Preload; the main menu's loading screen waits, ModLoading), decoded once
 // (sound effects are short and play often).
 
@@ -64,6 +65,24 @@ namespace GoF2Remake.Modding
             }
             if (files.Count > 0) Debug.Log($"Mods: {files.Count} sound effect(s) from the mods");
         }
+
+        /// <summary>A mod's sound by its file name (a new one, or a replacement played by name), once loaded; else null.</summary>
+        public static AudioClip Named(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            if (revision != ModManager.Revision) Preload();
+            return clips.TryGetValue(name, out var c) ? c : null;
+        }
+
+        /// <summary>A mod that is on has a sound of that name (loaded or still loading).</summary>
+        public static bool Has(string name)
+        {
+            if (revision != ModManager.Revision) Preload();
+            return !string.IsNullOrEmpty(name) && names.Contains(name);
+        }
+
+        /// <summary>The names of the mods' sounds.</summary>
+        public static IEnumerable<string> Names { get { if (revision != ModManager.Revision) Preload(); return names; } }
 
         /// <summary>The game's clip, or a mod's replacement of the same name. Cheap when no mod has sounds.</summary>
         public static AudioClip Get(AudioClip clip)

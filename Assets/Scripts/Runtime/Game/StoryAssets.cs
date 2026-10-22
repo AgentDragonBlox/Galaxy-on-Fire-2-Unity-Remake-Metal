@@ -77,11 +77,46 @@ namespace GoF2Remake.Data
         public AudioClip Voice(string name)
         {
             if (string.IsNullOrEmpty(name)) return null;
+            // Remake mods: a mod's file named like the line replaces it (Modding.ModVoices.Replacement).
+            var replaced = Modding.ModVoices.Replacement(name);
+            if (replaced != null) return replaced;
             eng ??= Map(voiceNamesEng, voiceClipsEng);
             deu ??= Map(voiceNamesDeu, voiceClipsDeu);
             if (Settings.GermanVoices && (deu.TryGetValue(name, out var d) || deu.TryGetValue(name + AltSuffix, out d))) return d;
             // Remake mods: a mod's own clip (Modding.ModVoices, loaded when its page arrived).
             return eng.TryGetValue(name, out var e) || eng.TryGetValue(name + AltSuffix, out e) ? e : Modding.ModVoices.Get(name);
+        }
+
+        /// <summary>The game's own recording of a line in one language (German, else English), not a mod's: the Mod Builder
+        /// plays it before it is replaced.</summary>
+        public AudioClip OriginalVoice(string name, bool german)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            eng ??= Map(voiceNamesEng, voiceClipsEng);
+            deu ??= Map(voiceNamesDeu, voiceClipsDeu);
+            var table = german ? deu : eng;
+            return table.TryGetValue(name, out var c) || table.TryGetValue(name + AltSuffix, out c) ? c : null;
+        }
+
+        /// <summary>The game's own voice line of that event name (English or German; not a mod's).</summary>
+        public bool IsVoice(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            eng ??= Map(voiceNamesEng, voiceClipsEng);
+            deu ??= Map(voiceNamesDeu, voiceClipsDeu);
+            return eng.ContainsKey(name) || eng.ContainsKey(name + AltSuffix) || deu.ContainsKey(name) || deu.ContainsKey(name + AltSuffix);
+        }
+
+        /// <summary>The game's voice lines by event name (a re-recorded "_Alt2" wave by its event's), sorted: the Mod
+        /// Builder's list of lines to replace.</summary>
+        public List<string> VoiceNames()
+        {
+            var set = new SortedSet<string>(System.StringComparer.OrdinalIgnoreCase);
+            foreach (var list in new[] { voiceNamesEng, voiceNamesDeu })
+                if (list != null)
+                    foreach (var n in list)
+                        if (!string.IsNullOrEmpty(n)) set.Add(n.EndsWith(AltSuffix) ? n.Substring(0, n.Length - AltSuffix.Length) : n);
+            return new List<string>(set);
         }
 
         /// <summary>A portrait part: its texture (the image sits in the top-left corner of the canvas) and image height.</summary>

@@ -837,8 +837,24 @@ namespace GoF2Remake.UI
                     Caption(card, label);
                     var row = Row(card);
                     Add(row, new Label(Cur() ?? "?"), "mbv-inline-label");
-                    Act(row, T("mbChoose", "Choose…"), () => ShowPicker(label, Enum.GetNames(typeof(EventSound)).Select(n =>
-                        (n, (Texture2D)null, (Action)(() => Set(n.ToLowerInvariant(), true)))).ToList()), "mbv-step");
+                    Act(row, T("mbChoose", "Choose…"), () =>
+                    {
+                        var events = Events.EventAudio.Load();
+                        var choices = Enum.GetValues(typeof(EventSound)).Cast<EventSound>().Select(s => (s.ToString(),
+                            (Func<AudioClip>)(() => events?.Sound((int)s)), (Action)(() => Set(s.ToString().ToLowerInvariant(), true)))).ToList();
+                        // The project's own new sounds (sounds/<name> not named like a game sound): played by name.
+                        var own = Project.AudioFiles(ModProject.SoundsFolder).Where(f => !IsGameSound(f.name)).ToList();
+                        if (own.Count > 0)
+                        {
+                            choices.Add((string.Format(T("mbFromThisMod", "This mod: {0}"), Project.Name ?? Project.Id), null, null));
+                            foreach (var (n, _) in own)
+                            {
+                                string nm = n;
+                                choices.Add((nm, () => ModSounds.Named(nm), () => Set(nm, true)));   // loaded with the project
+                            }
+                        }
+                        ShowAudioPicker(label, choices, Settings.SfxVolume);
+                    }, "mbv-step");
                     break;
                 }
                 case QuestFieldKind.ShipName:

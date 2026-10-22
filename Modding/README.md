@@ -1609,12 +1609,19 @@ Any **Dialog** page or **Radio** line can have voice-over: add `[voice <clip>]` 
 
 - `<clip>` can be one of the game's own voice lines by its name (`MSG_MISSION_24_NO_EQUIPMENT_INSTALLED`, the names in
   `Assets/Audio/*_VOICE_*`).
-- Or it is a file in the mod's `voices` folder: `voices/<clip>.ogg` (`.wav` and `.mp3` work too). For German voices add
-  `voices/de/<clip>.ogg`; the game picks it when the player's voice language is German, else `voices/en/<clip>.ogg`, else
-  `voices/<clip>.ogg`.
+- Or it is a file in the mod's `voices` folder: `voices/<clip>.ogg` (`.wav` and `.mp3` work too) for every language. A
+  language of its own goes in `voices/<language>/<clip>.ogg`, any of the game's text languages (`en`, `de`, `fr`, `es`,
+  `it`, `nl`, `pl`, `ru`, `pt`, `zh`, `hi`): with the voice language option on "as text" a player hears the one in their
+  text language, then the game's voice language (German or English), then `voices/<clip>.ogg`; with the option on English
+  or German, that language's.
 
 The window waits a moment for the clip to load, types the text along with it, and turns the page when the line ends (with
 the player's **auto-advance** option on), like the story's own voices.
+
+**Replace one of the game's lines**: name a file in `voices` like the line (`voices/MSG_MISSION_24_NO_EQUIPMENT_INSTALLED.ogg`)
+and it is spoken instead, everywhere the game uses that line, the story included. `voices/` replaces it in every language,
+`voices/<language>/` in that language only (a French file there gives French players a French line). The Mod Builder's Audio page lists the lines (**+ Replace a
+game line**).
 
 ## Music
 
@@ -1644,6 +1651,9 @@ per sound bank), for example `Target_Lock_v08` (a ship lock), `Blaster_Nsaan_01`
 `Engine_09` (an NPC engine). `Reference/research/fmod_event_ids.txt` in the repository lists every sound event with its
 files. Voices are sounds too: a voice line's file name replaces that line (the German voices are the same names with `de_`
 in front, so each language is replaced on its own). Music has its own `music` folder (above).
+
+**Add a sound**: any other name is a new sound of your own. The quests' **Sound** step and the event graphs' **Play Sound**
+node (its **Mod sound** field) play it by that name, so does `/sound <name>`.
 
 A sound the game picks at random from several files (most shots and explosions) needs each file replaced to always sound
 yours. Only a weapon's own shot can be set on the item instead (`fx` → `shot`, above). A ship's own engine and boost sounds are

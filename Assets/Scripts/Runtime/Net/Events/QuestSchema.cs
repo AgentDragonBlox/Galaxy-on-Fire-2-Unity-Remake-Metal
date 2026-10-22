@@ -81,7 +81,7 @@ namespace GoF2Remake.Events
             QuestFieldKind.ShipName => "; the name a spawn / fight step gave the ships",
             QuestFieldKind.Speaker => "; Keith, a story character, \"mod_id:character\", \"vossk K'ekki\", player",
             QuestFieldKind.Music => "; a game track word (battle, boss, void, terran...), a mod track's name, or stop",
-            QuestFieldKind.Sound => "; " + string.Join(", ", System.Enum.GetNames(typeof(EventSound)).Select(n => n.ToLowerInvariant())),
+            QuestFieldKind.Sound => "; " + string.Join(", ", System.Enum.GetNames(typeof(EventSound)).Select(n => n.ToLowerInvariant())) + ", or a mod sound's name",
             QuestFieldKind.Variable => "; a variable's name (letters, digits, _)",
             QuestFieldKind.Event => "; an event graph's or quest's name",
             QuestFieldKind.Quest => "; a quest's name",

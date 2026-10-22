@@ -69,6 +69,13 @@ namespace GoF2Remake.World
 
         [Header("Audio")]
         public AudioSource musicSource;
+
+        /// <summary>Remake: the Mod Builder plays a sound, voice line or track to choose it; the station's music fades out
+        /// meanwhile (0.3 s) and stays out 3 s after the last one (the user's request: the next one is often played right
+        /// after), then fades back in over a second. The station's own: gone with the scene.</summary>
+        public bool MusicHeld { get; set; }
+        float musicHold = 1f, musicHeldUntil;
+        const float MusicHoldAfter = 3f;
         [Tooltip("Indexed by StationTables.Music.")]
         public AudioClip[] music = new AudioClip[7];
         public AudioClip mainViewAmbience;
@@ -1305,7 +1312,10 @@ namespace GoF2Remake.World
             if (View == StationView.Lounge && vosskBots != null) UpdateVosskBots(dtMs);
 
             if (View == StationView.Hangar) RefreshTurret(false);
-            if (musicSource != null) musicSource.volume = Settings.MusicVolume * GoF2Remake.World.SpaceHooks.SceneMusic;
+            if (MusicHeld) musicHeldUntil = Time.unscaledTime + MusicHoldAfter;
+            bool held = Time.unscaledTime < musicHeldUntil;
+            musicHold = Mathf.MoveTowards(musicHold, held ? 0f : 1f, Time.unscaledDeltaTime / (held ? 0.3f : 1f));
+            if (musicSource != null) musicSource.volume = Settings.MusicVolume * GoF2Remake.World.SpaceHooks.SceneMusic * musicHold;
             float atmoMs = Time.unscaledDeltaTime * 1000f;
             mainViewAtmo?.Update(atmoMs); loungeAtmo?.Update(atmoMs); hangarAtmo?.Update(atmoMs);
         }

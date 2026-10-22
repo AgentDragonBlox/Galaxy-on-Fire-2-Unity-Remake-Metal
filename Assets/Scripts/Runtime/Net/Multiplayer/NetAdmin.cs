@@ -717,11 +717,18 @@ namespace GoF2Remake.Multiplayer
             return "";
         });
 
-        /// <summary>/sound [players] &lt;sound&gt;: an event sound (EventAudio) on their game.</summary>
+        /// <summary>/sound [players] &lt;sound&gt;: an event sound (EventAudio), or a mod's by name (Modding.ModSounds), on their
+        /// game.</summary>
         public static string Sound(string args, IPilot by) => ForTargets(args, by, true, (t, rest) =>
         {
-            if (!EventAudio.TryParse(rest.Trim(), out EventSound sound))
-                return string.Format(X("mpAdmNoSound", "Sounds: {0}."), EventAudio.Names<EventSound>());
+            rest = rest.Trim();
+            if (!EventAudio.TryParse(rest, out EventSound sound))
+            {
+                // A mod's sound by name: each game plays its own copy (a session's mods are the same).
+                if (Modding.ModSounds.Has(rest)) { Send(t, Order.Sound, -2, 0, 0, by, $"sound {rest}", rest); return ""; }
+                return string.Format(X("mpAdmNoSound", "Sounds: {0}."), EventAudio.Names<EventSound>()
+                    + (System.Linq.Enumerable.Any(Modding.ModSounds.Names) ? ", " + string.Join(", ", Modding.ModSounds.Names) : ""));
+            }
             Send(t, Order.Sound, (int)sound, 0, 0, by, $"sound {sound}");
             return "";
         });
@@ -1099,7 +1106,8 @@ namespace GoF2Remake.Multiplayer
                     EventScreen.ShowScoreboard(text);
                     break;
                 case Order.Sound:
-                    EventScreen.PlaySound(a);
+                    if (a == -2) EventScreen.PlayModSound(text);
+                    else EventScreen.PlaySound(a);
                     break;
                 case Order.Respawn:
                     EventRespawn.Apply(text);

@@ -38,7 +38,7 @@ namespace GoF2Remake.UI
         void UpdateKind(float dt)
         {
             if (kind == ModBuilder.Kind.Interiors) UpdateInteriorView(dt);
-            if (kind == ModBuilder.Kind.Audio) UpdateAudio();
+            UpdateAudio();   // also the quests' Sound picker's preview
         }
 
         bool EscapeKind() => kind switch

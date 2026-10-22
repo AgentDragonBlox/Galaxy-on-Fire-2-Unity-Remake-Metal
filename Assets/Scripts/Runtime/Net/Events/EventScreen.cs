@@ -284,7 +284,15 @@ namespace GoF2Remake.Events
             s.Source(ref s.sound).PlayOneShot(GoF2Remake.Modding.ModSounds.Get(clip), Settings.SfxVolume);
         }
 
-        /// <summary>An event track (EventMusic) looped instead of the scene's music; -1 stops it.</summary>
+        /// <summary>A mod's sound by name (ModSounds) at the FX volume.</summary>
+        public static void PlayModSound(string name)
+        {
+            var s = Get();
+            var clip = Modding.ModSounds.Named(name);
+            if (s == null || clip == null) return;
+            s.Source(ref s.sound).PlayOneShot(clip, Settings.SfxVolume);
+        }
+
         /// <summary>A mod's track by name (ModMusic) instead of the scene's music, looped.</summary>
         public static void PlayModMusic(string name)
         {

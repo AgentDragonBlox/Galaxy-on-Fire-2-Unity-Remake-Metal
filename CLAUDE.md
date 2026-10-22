@@ -2960,6 +2960,19 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   refs, and the event graphs' names (`NetAdmin.FindShip` / `FindItem` / `FindHull`, `NetTeleport.ParseStation`).
 - **Quests and bar missions** (event graphs in a mod's `events/*.gof2event`, found by `EventRunner.Load` / `List` after the
   Events folders, the later mod in the load order winning; then the built-ins): see "Event graph quests" in Multiplayer.
+- **New sounds, game lines replaced, voices per language** (2026-10-22, the user's requests): a `sounds/` file not named like
+  a game clip is a new sound, played by name (`ModSounds.Named` / `Has`; `/sound <name>` sends Order.Sound a = -2 ->
+  `EventScreen.PlayModSound`; the quest step's picker lists the project's own, the Play Sound node a Mod sound field); a
+  `voices/` file named like one of the game's lines (`StoryAssets.IsVoice` / `VoiceNames`) replaces it, the story's
+  included (`ModVoices.Replacement`, which `StoryAssets.Voice` asks first; loaded with the mods, `ModLoading`); mod lines
+  and replacements in `voices/<language>/` for any of `LanguageTables.Offered` (`ModVoices.Languages`: with the voice option
+  on auto the text language, then the game's bank de / en), `voices/` for every language. Builder: Audio's + New sound,
+  + Voice line / + Replace a game line with a language picker (each language's flag, a globe for every language:
+  `UI.LanguageFlags`, painted in code, the game has no flag images); the pickers of the game's tracks, sounds and lines
+  play each on ▶ (`ShowAudioPicker`: `Modding.GameAudioIndex`, Resources/GoF2ModBuilder, from GoF2 > Build > Mod Builder
+  Audio Previews; `StoryAssets.OriginalVoice`; the quests' Sound step too), the station's music fading out meanwhile
+  and back in 3 s after the last one (`StationLevel.MusicHeld`); Characters' + Replace a game character (the speaker's own
+  portrait rendered to a PNG, `Portrait.RenderSpeaker`, and name). Tests `ModAudioNamesTests`.
 - **Voice-over** (`ModVoices`, `ModAudio`): "[voice <clip>]" in a Dialog page or a Radio line (`ModVoices.Take` in
   `NetAdmin.Apply`'s Dialog / Radio orders); the clip is an original voice line by its event name or a mod's
   `voices/<de|en>/<clip>.ogg|wav|mp3`, else `voices/<clip>.*`; loaded in the background (`Preload` when the order arrives;

@@ -2,8 +2,12 @@
 // The Mod Builder's Audio kind (part of ModBuilderView), in the Space Lounge where the music plays: the project's audio files
 // (Modding/README.md "Music", "Sound effects", "Voice-over"). Left: the three groups. Right, for the group picked: Music
 // (a game track replaced: music/<track>.ogg; or a new track by name, for the quests' Music step, systems' and stations'
-// music), Sound effects (a game sound replaced, sounds/<name>, from the list in Resources/GoF2ModBuilder/SoundNames.txt),
-// Voice lines (voices/<clip>, English or German: voices/de/; the quests' conversations name them). Each file plays on ▶
+// music), Sound effects (a game sound replaced, sounds/<name>, from the list in Resources/GoF2ModBuilder/SoundNames.txt; or
+// a new sound by name, which the quests' Sound step plays), Voice lines (a new line, voices/<clip> for every language or
+// voices/<language>/ for one of the game's text languages, which the quests' conversations name; or one of the game's lines
+// replaced, named like it, the story's included: StoryAssets.VoiceNames, Modding.ModVoices.Replacement). The pickers of the
+// game's tracks, sounds and lines play each one on ▶ before it is picked (ShowAudioPicker: Modding.GameAudioIndex,
+// StoryAssets.OriginalVoice). Each file plays on ▶
 // (ModAudio, from the project's folder), is replaced or removed. The game reads them when the project is read again.
 
 using System;
@@ -22,6 +26,8 @@ namespace GoF2Remake.UI
         int audioGroup;
         AudioSource audioPreview;
         string playing;
+        bool previewOwnsClip;    // a project file's clip, made for the preview (destroyed after it); the game's clips are kept
+        Button pickerPlaying;    // the audio picker's ▶ of the clip playing
 
         static readonly (string key, string english)[] AudioGroups = { ("mbMusic", "Music"), ("mbSounds", "Sound effects"), ("mbVoices", "Voice lines") };
 
@@ -39,7 +45,8 @@ namespace GoF2Remake.UI
             for (int i = 0; i < AudioGroups.Length; i++)
             {
                 int n = i;
-                int count = Project.AudioFiles(folders[i]).Count + (i == 2 ? Project.AudioFiles(ModProject.VoicesFolder + "/de").Count + Project.AudioFiles(ModProject.VoicesFolder + "/en").Count : 0);
+                int count = Project.AudioFiles(folders[i]).Count
+                            + (i == 2 ? LanguageTables.Offered.Sum(l => Project.AudioFiles(ModProject.VoicesFolder + "/" + l.code).Count) : 0);
                 ListRow(audioList, T(AudioGroups[i].key, AudioGroups[i].english), string.Format(T("mbFilesN", "{0} files"), count), i == audioGroup,
                         () => { audioGroup = n; RebuildAudio(); BuildAudioPage(); }, null, null);
             }
@@ -64,9 +71,9 @@ namespace GoF2Remake.UI
                     var mrow = Row(audioPage);
                     Act(mrow, T("mbReplaceTrack", "+ Replace a game track"), () =>
                     {
-                        var choices = ModRefs.GameMusic.Select(t => (t, (Texture2D)null, (Action)(() => PickAudio(T("mbPickMusic", "Choose the music file"), path =>
+                        var choices = ModRefs.GameMusic.Select(t => (t, (Func<AudioClip>)(() => GameAudioIndex.Clip(t)), (Action)(() => PickAudio(T("mbPickMusic", "Choose the music file"), path =>
                         { Project.SetAudio(ModProject.MusicFolder, t, path); AudioChanged(); })))).ToList();
-                        ShowPicker(T("mbReplaceTrack", "+ Replace a game track"), choices, true);
+                        ShowAudioPicker(T("mbReplaceTrack", "+ Replace a game track"), choices, Settings.MusicVolume);
                     }, "mbv-add");
                     Act(mrow, T("mbNewTrack", "+ New track"), () => AskText(T("mbNewTrack", "+ New track"), T("mbTrackName", "Its name (a-z, 0-9, _)"), "", name =>
                     {
@@ -77,10 +84,11 @@ namespace GoF2Remake.UI
                     break;
                 case 1:
                     Heading(audioPage, T("mbSounds", "Sound effects"));
-                    Note(audioPage, T("mbSoundsNote", "Named like a game sound: it replaces it everywhere. A weapon's shot is set on its item."));
-                    Act(audioPage, T("mbReplaceSound", "+ Replace a game sound"), () =>
+                    Note(audioPage, T("mbSoundsNote2", "Named like a game sound: it replaces it everywhere. Any other name is a new sound for your quests' Sound step. A weapon's shot is set on its item."));
+                    var srow = Row(audioPage);
+                    Act(srow, T("mbReplaceSound", "+ Replace a game sound"), () =>
                     {
-                        var choices = new List<(string, Texture2D, Action)>();
+                        var choices = new List<(string, Func<AudioClip>, Action)>();
                         string folder = null;
                         foreach (var line in GameSounds())
                         {
@@ -88,21 +96,31 @@ namespace GoF2Remake.UI
                             string f = slash > 0 ? line.Substring(0, slash) : "", name = slash > 0 ? line.Substring(slash + 1) : line;
                             if (f != folder) { folder = f; choices.Add((f.Replace('_', ' '), null, null)); }
                             string n = name;
-                            choices.Add((n, null, () => PickAudio(T("mbPickSound", "Choose the sound file"), path => { Project.SetAudio(ModProject.SoundsFolder, n, path); AudioChanged(); })));
+                            choices.Add((n, () => GameAudioIndex.Clip(n), () => PickAudio(T("mbPickSound", "Choose the sound file"), path => { Project.SetAudio(ModProject.SoundsFolder, n, path); AudioChanged(); })));
                         }
-                        ShowPicker(T("mbReplaceSound", "+ Replace a game sound"), choices, true);
+                        ShowAudioPicker(T("mbReplaceSound", "+ Replace a game sound"), choices, Settings.SfxVolume);
                     }, "mbv-add");
-                    FileRows(ModProject.SoundsFolder, n => T("mbReplaces", "replaces the game's"));
+                    Act(srow, T("mbNewSound", "+ New sound"), () => AskText(T("mbNewSound", "+ New sound"), T("mbSoundName", "Its name (a-z, 0-9, _): the quests play it by this name"), "", name =>
+                    {
+                        string id = ModProject.Slug(name);
+                        PickAudio(T("mbPickSound", "Choose the sound file"), path => { Project.SetAudio(ModProject.SoundsFolder, id, path); AudioChanged(); });
+                    }), "mbv-add");
+                    FileRows(ModProject.SoundsFolder, n => IsGameSound(n) ? T("mbReplaces", "replaces the game's") : T("mbNewSoundSub", "a new sound"));
                     break;
                 default:
                     Heading(audioPage, T("mbVoices", "Voice lines"));
-                    Note(audioPage, T("mbVoicesNote", "Lines for your quests' conversations and radio; German ones go in voices/de."));
+                    Note(audioPage, T("mbVoicesNote3", "Lines for your quests' conversations and radio, for every language or one: a player hears the one in their text language, else the one for every language. Named like one of the game's lines, a file replaces that line everywhere, the story's included."));
                     var vrow = Row(audioPage);
-                    Act(vrow, T("mbNewVoice", "+ Voice line"), () => NewVoice(ModProject.VoicesFolder), "mbv-add");
-                    Act(vrow, T("mbNewVoiceDe", "+ German line"), () => NewVoice(ModProject.VoicesFolder + "/de"), "mbv-add");
+                    Act(vrow, T("mbNewVoice", "+ Voice line"), () => PickVoiceLanguage(T("mbNewVoice", "+ Voice line"), NewVoice), "mbv-add");
+                    Act(vrow, T("mbReplaceVoice", "+ Replace a game line"), () => PickVoiceLanguage(T("mbReplaceVoice", "+ Replace a game line"), ReplaceVoice), "mbv-add");
+                    Caption(audioPage, T("mbEveryLanguage", "Every language") + " (voices)");
                     FileRows(ModProject.VoicesFolder, n => UsedBy(n));
-                    if (Project.AudioFiles(ModProject.VoicesFolder + "/en").Count > 0) { Caption(audioPage, "English (voices/en)"); FileRows(ModProject.VoicesFolder + "/en", UsedBy); }
-                    if (Project.AudioFiles(ModProject.VoicesFolder + "/de").Count > 0) { Caption(audioPage, "Deutsch (voices/de)"); FileRows(ModProject.VoicesFolder + "/de", UsedBy); }
+                    foreach (var (code, name) in LanguageTables.Offered)
+                        if (Project.AudioFiles(ModProject.VoicesFolder + "/" + code).Count > 0)
+                        {
+                            Caption(audioPage, $"{name} (voices/{code})");
+                            FileRows(ModProject.VoicesFolder + "/" + code, UsedBy);
+                        }
                     break;
             }
         }
@@ -113,9 +131,110 @@ namespace GoF2Remake.UI
             PickAudio(T("mbPickVoice", "Choose the voice line"), path => { Project.SetAudio(folder, id, path); AudioChanged(); });
         });
 
-        /// <summary>The quests that name a voice line.</summary>
+        /// <summary>The language a voice line is for: every language (voices/) or one of the game's text languages
+        /// (voices/<code>/).</summary>
+        void PickVoiceLanguage(string title, Action<string> folder)
+        {
+            var choices = new List<(string, Texture2D, Action)> { (T("mbEveryLanguage", "Every language"), LanguageFlags.Of("*"), () => folder(ModProject.VoicesFolder)) };
+            foreach (var (code, name) in LanguageTables.Offered) { string c = code; choices.Add((name, LanguageFlags.Of(code), () => folder(ModProject.VoicesFolder + "/" + c))); }
+            ShowPicker(title, choices);
+        }
+
+        /// <summary>One of the game's voice lines replaced: picked from its lines by event name (StoryAssets.VoiceNames), the
+        /// file stored under that name in the language's folder.</summary>
+        void ReplaceVoice(string folder)
+        {
+            var assets = StoryAssets.Load();
+            var names = assets?.VoiceNames() ?? new List<string>();
+            // The recording heard: the German one for voices/de, else the English one (the other languages have none).
+            bool german = folder.EndsWith("/de") || (folder == ModProject.VoicesFolder && Settings.GermanVoices);
+            var choices = names.Select(n => (n, (Func<AudioClip>)(() => assets?.OriginalVoice(n, german) ?? assets?.OriginalVoice(n, !german)), (Action)(() =>
+                PickAudio(T("mbPickVoice", "Choose the voice line"), path => { Project.SetAudio(folder, n, path); AudioChanged(); })))).ToList();
+            ShowAudioPicker(T("mbReplaceVoice", "+ Replace a game line"), choices, Settings.VoiceVolume);
+        }
+
+        /// <summary>A picker of the game's audio as rows: ▶ plays the clip (again: stops it), the name picks it; a choice
+        /// without an action is a section's heading. Searched by name; the preview stops when the picker closes.</summary>
+        void ShowAudioPicker(string title, List<(string name, Func<AudioClip> clip, Action pick)> choices, float volume)
+        {
+            StopAudio();
+            modal.Clear();
+            var box = Add(modal, new VisualElement(), "mbv-modal-box", "mbv-modal-box--list", "mbv-panel");
+            Heading(box, title);
+            Note(box, T("mbAudioPickerNote", "▶ plays it; the name picks it."));
+            var field = Add(box, new TextField { maxLength = 60 }, "mbv-field", "mbv-search");
+            field.textEdition.placeholder = T("mbSearch", "Search");
+            var scroll = new ScrollView(ScrollViewMode.Vertical);
+            scroll.AddToClassList("mbv-picker-scroll");
+            scroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            new DragScroll(scroll);
+            var list = Add(scroll, new VisualElement(), "mbv-audio-list");
+            void Fill(string filter)
+            {
+                list.Clear();
+                pickerPlaying = null;
+                var words = (filter ?? "").ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                string heading = null;
+                int shown = 0;
+                foreach (var (name, clip, pick) in choices)
+                {
+                    if (pick == null) { heading = name; continue; }
+                    if (words.Length > 0 && !words.All(w => name.ToLowerInvariant().Contains(w))) continue;
+                    if (shown >= 400) break;   // the voice lines run to thousands: a search narrows them
+                    if (heading != null) { Add(list, new Label(heading.ToUpperInvariant()), "mbv-picker-heading", "gof-semibold"); heading = null; }
+                    shown++;
+                    var row = Row(list, "mbv-audio-row");
+                    string key = "game:" + name;
+                    Button play = null;
+                    play = Act(row, playing == key ? "■" : "▶", () => PlayGameClip(key, clip, play, volume), "mbv-step");
+                    if (playing == key) pickerPlaying = play;
+                    var b = Act(row, name, () => { StopAudio(); CloseModal(); pick(); }, "mbv-menu-item", "mbv-audio-name");
+                    b.tooltip = name;
+                }
+                if (shown == 0) Note(list, T("mbNothingFound", "Nothing matches."));
+            }
+            field.RegisterValueChangedCallback(e => Fill(e.newValue));
+            field.schedule.Execute(() => field.Focus());
+            box.Add(scroll);
+            Fill(null);
+            Act(box, T("mbCancel", "Cancel"), () => { StopAudio(); CloseModal(); });
+            modal.AddToClassList("mbv-modal--shown");
+        }
+
+        /// <summary>The audio picker's ▶: plays the game's clip (not destroyed afterwards), or stops it when it is playing.</summary>
+        void PlayGameClip(string key, Func<AudioClip> get, Button button, float volume)
+        {
+            bool same = playing == key;
+            StopAudio();
+            if (same) return;
+            var clip = get?.Invoke();
+            if (clip == null) { Status(T("mbNoPreview", "There is no recording of it to play."), true); return; }
+            EnsurePreviewSource();
+            playing = key;
+            previewOwnsClip = false;
+            audioPreview.clip = clip;
+            audioPreview.volume = volume;
+            audioPreview.Play();
+            level.MusicHeld = true;
+            pickerPlaying = button;
+            button.text = "■";
+        }
+
+        void EnsurePreviewSource()
+        {
+            if (audioPreview != null) return;
+            var go = new GameObject("Mod Builder audio preview");
+            audioPreview = go.AddComponent<AudioSource>();
+            audioPreview.ignoreListenerPause = true;
+            audioPreview.spatialBlend = 0f;
+        }
+
+        bool IsGameSound(string name) => GameSounds().Any(l => l.EndsWith("/" + name, StringComparison.OrdinalIgnoreCase) || string.Equals(l, name, StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>The quests that name a voice line, or that it replaces one of the game's.</summary>
         string UsedBy(string clip)
         {
+            if (StoryAssets.Load()?.IsVoice(clip) == true) return T("mbReplacesLine", "replaces the game's line");
             var users = Project.Quests.Where(q => q.ToJson().ToString(Newtonsoft.Json.Formatting.None).Contains("\"voice\":\"" + clip + "\"")).Select(q => q.Title ?? q.Name).ToList();
             return users.Count == 0 ? T("mbNotUsed", "not used by a quest") : string.Join(", ", users);
         }
@@ -161,13 +280,9 @@ namespace GoF2Remake.UI
             ModAudio.Load(mod, path, clip =>
             {
                 if (playing != path || clip == null) { if (clip == null) Status(T("mbAudioUnreadable", "The file couldn't be played."), true); return; }
-                if (audioPreview == null)
-                {
-                    var go = new GameObject("Mod Builder audio preview");
-                    audioPreview = go.AddComponent<AudioSource>();
-                    audioPreview.ignoreListenerPause = true;
-                    audioPreview.spatialBlend = 0f;
-                }
+                EnsurePreviewSource();
+                previewOwnsClip = true;
+                level.MusicHeld = true;
                 audioPreview.clip = clip;
                 audioPreview.volume = path.StartsWith(ModProject.MusicFolder) ? Settings.MusicVolume : path.StartsWith(ModProject.VoicesFolder) ? Settings.VoiceVolume : Settings.SfxVolume;
                 audioPreview.Play();
@@ -175,19 +290,31 @@ namespace GoF2Remake.UI
             BuildAudioPage();
         }
 
+        /// <summary>Every frame in every kind (the quests' Sound picker plays too): a preview that ended, or whose picker was
+        /// closed (Esc, a click outside), stops.</summary>
         void UpdateAudio()
         {
-            if (playing != null && audioPreview != null && audioPreview.clip != null && !audioPreview.isPlaying) { playing = null; BuildAudioPage(); }
+            if (playing == null || audioPreview == null) return;
+            if (pickerPlaying != null && !ModalOpen) { StopAudio(); return; }
+            if (audioPreview.clip != null && !audioPreview.isPlaying)
+            {
+                bool fromPicker = pickerPlaying != null;
+                StopAudio();
+                if (!fromPicker && kind == ModBuilder.Kind.Audio) BuildAudioPage();
+            }
         }
 
         void StopAudio()
         {
             playing = null;
+            if (level != null) level.MusicHeld = false;
+            if (pickerPlaying != null) { pickerPlaying.text = "▶"; pickerPlaying = null; }
             if (audioPreview == null) return;
             audioPreview.Stop();
             var clip = audioPreview.clip;
             audioPreview.clip = null;
-            if (clip != null) UnityEngine.Object.Destroy(clip);
+            if (clip != null && previewOwnsClip) UnityEngine.Object.Destroy(clip);
+            previewOwnsClip = false;
             UnityEngine.Object.Destroy(audioPreview.gameObject);
             audioPreview = null;
         }

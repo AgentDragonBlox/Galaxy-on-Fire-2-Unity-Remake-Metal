@@ -617,8 +617,12 @@ namespace GoF2Remake.Events
                         Line(Join("letterbox", Text(n, "Players"), Bool(n, "On") ? "on" : "off"));
                         break;
                     case "EventPlaySoundNode":
-                        Line(Join("sound", Text(n, "Players"), ((EventSound)Int(n, "Sound")).ToString().ToLowerInvariant()));
+                    {
+                        // A mod's sound by name (ModSounds) instead of the game's list.
+                        string modSound = Clean(n, Get(n, "ModSound", false));
+                        Line(Join("sound", Text(n, "Players"), modSound.Length > 0 ? modSound : ((EventSound)Int(n, "Sound")).ToString().ToLowerInvariant()));
                         break;
+                    }
                     case "EventPlayMusicNode":
                     {
                         // A mod's track by name (ModMusic) instead of the game's list.
