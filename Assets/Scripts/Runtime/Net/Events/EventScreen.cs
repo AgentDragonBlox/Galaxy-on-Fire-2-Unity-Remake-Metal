@@ -215,7 +215,7 @@ namespace GoF2Remake.Events
         {
             var s = Get();
             if (s == null) return;
-            s.timerEnd = seconds < 0f ? -1f : Time.unscaledTime + seconds;
+            s.timerEnd = seconds < 0f ? -1f : EventHost.Now + seconds;   // the events' clock: stops while single player is paused
             s.timerText = label ?? "";
             s.pending = true;
         }
@@ -243,7 +243,7 @@ namespace GoF2Remake.Events
             s.pendingQuestion = f;
             s.questionId = id;
             float.TryParse(f[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float seconds);
-            s.questionEnd = seconds > 0f ? Time.unscaledTime + seconds : float.PositiveInfinity;
+            s.questionEnd = seconds > 0f ? EventHost.Now + seconds : float.PositiveInfinity;   // the server's deadline's clock
             s.questionGone = -1f;
             PlaySound((int)EventSound.Message);
         }
@@ -783,9 +783,10 @@ namespace GoF2Remake.Events
             bool lingering = !open && questionGone >= 0f && now < questionGone;
             questionBox.style.display = open || lingering ? DisplayStyle.Flex : DisplayStyle.None;
             if (!open) { if (!lingering) questionGone = -1f; return; }
-            if (now >= questionEnd) { questionId = 0; return; }   // the server closes it too
+            float eventNow = EventHost.Now;
+            if (eventNow >= questionEnd) { questionId = 0; return; }   // the server closes it too
             questionTimer.text = float.IsPositiveInfinity(questionEnd) ? Localization.Extra("mpAskSkip", "Esc: skip")
-                : $"{Mathf.CeilToInt(questionEnd - now)} s  ·  " + Localization.Extra("mpAskSkip", "Esc: skip");
+                : $"{Mathf.CeilToInt(questionEnd - eventNow)} s  ·  " + Localization.Extra("mpAskSkip", "Esc: skip");
             var kb = Keyboard.current;
             var pad = Gamepad.current;
             for (int k = 1; k <= answerButtons.Count; k++)
@@ -902,13 +903,15 @@ namespace GoF2Remake.Events
             titleBox.style.display = titleOn ? DisplayStyle.Flex : DisplayStyle.None;
             if (titleOn) titleBox.style.opacity = Mathf.Min(Mathf.Clamp01((now - titleStart) / FadeIn), Mathf.Clamp01((titleEnd + FadeOut - now) / FadeOut));
             else if (titleEnd >= 0f) titleEnd = -1f;
-            // The countdown: m:ss, amber for the last 10 s, gone 2 s after 0.
-            bool timerOn = timerEnd >= 0f && now < timerEnd + TimerLinger;
+            // The countdown: m:ss, amber for the last 10 s, gone 2 s after 0; on the events' clock like the event's own
+            // waits, so it holds under the pause menu with them (it ran on in real time and fell out of step).
+            float eventNow = EventHost.Now;
+            bool timerOn = timerEnd >= 0f && eventNow < timerEnd + TimerLinger;
             timerBox.style.display = timerOn ? DisplayStyle.Flex : DisplayStyle.None;
             if (timerOn)
             {
                 if (pending) { timerLabel.text = timerText.ToUpperInvariant(); timerLabel.style.display = timerText.Length > 0 ? DisplayStyle.Flex : DisplayStyle.None; }
-                int left = Mathf.CeilToInt(Mathf.Max(0f, timerEnd - now));
+                int left = Mathf.CeilToInt(Mathf.Max(0f, timerEnd - eventNow));
                 timerValue.text = $"{left / 60}:{left % 60:00}";
                 timerValue.style.color = left <= 10 ? new Color(1f, 0.7f, 0.25f) : Color.white;
             }
