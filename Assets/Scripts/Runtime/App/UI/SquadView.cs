@@ -27,14 +27,18 @@ namespace GoF2Remake.UI
     public sealed class SquadView : MonoBehaviour
     {
         const float RefreshSeconds = 0.25f;
+        /// <summary>Pilot rows the list shows at most (the rest as "+N more"): a busy hangar filled the screen.</summary>
+        const int MaxPilotRows = 6;
 
-        static bool squadCollapsed, pilotsCollapsed;
+        static bool squadCollapsed, pilotsCollapsed, collapseChecked;
+        /// <summary>The view of the scene on screen (the station's or the flight HUD's), for the popups below.</summary>
+        static SquadView current;
         VisualElement codePlate;
         Label codeLabel;
         Button copyButton;
 
         VisualElement box, squadPanel, squadBody, pilotsPanel, pilotsBody, invitePopup, tradePopup;
-        Button squadHeader, pilotsHeader;
+        Button squadHeader, pilotsHeader, inviteAccept, inviteDecline, tradeAccept, tradeDecline;
         Label inviteText, tradeText;
         bool hangar;
         int hereStation = -1;
@@ -57,6 +61,7 @@ namespace GoF2Remake.UI
         void Build(VisualElement parent, int hangarStation)
         {
             db = Database.Load();
+            current = this;
             hangar = hangarStation >= 0;
             hereStation = hangarStation;
             box?.RemoveFromHierarchy();
@@ -78,35 +83,21 @@ namespace GoF2Remake.UI
             // Under everything else on that layer (the hangar, missions and status windows, the HUD): the first child.
             parent.Insert(0, box);
 
-            invitePopup = new VisualElement();
-            invitePopup.AddToClassList("squad-invite");
-            if (sheet != null) invitePopup.styleSheets.Add(sheet);
-            inviteText = new Label();
-            inviteText.AddToClassList("squad-invite-text");
-            invitePopup.Add(inviteText);
-            var row = new VisualElement();
-            row.AddToClassList("squad-invite-buttons");
-            row.Add(MakeButton(Localization.Extra("mpAccept", "Accept"), () => { if (shownInvite != null) NetSquad.Accept(shownInvite); shownInvite = null; }, "squad-button--accept"));
-            row.Add(MakeButton(Localization.Extra("mpDecline", "Decline"), () => { if (shownInvite != null) NetSquad.Decline(shownInvite); shownInvite = null; }, null));
-            invitePopup.Add(row);
+            invitePopup = Popup(sheet, Localization.Extra("mpInviteTitle", "Squad invitation"), out inviteText,
+                                Localization.Extra("mpAccept", "Accept"), () => { if (shownInvite != null) NetSquad.Accept(shownInvite); shownInvite = null; },
+                                Localization.Extra("mpDecline", "Decline"), () => { if (shownInvite != null) NetSquad.Decline(shownInvite); shownInvite = null; },
+                                out inviteAccept, out inviteDecline);
             parent.Add(invitePopup);
 
-            // A trade request (NetTradeClient): the same popup's look.
-            tradePopup = new VisualElement();
-            tradePopup.AddToClassList("squad-invite");
-            if (sheet != null) tradePopup.styleSheets.Add(sheet);
-            tradeText = new Label();
-            tradeText.AddToClassList("squad-invite-text");
-            tradePopup.Add(tradeText);
-            var tradeRow = new VisualElement();
-            tradeRow.AddToClassList("squad-invite-buttons");
-            tradeRow.Add(MakeButton(Localization.Extra("mpAccept", "Accept"), () =>
-            {
-                if (shownTrade != null) { NetTradeClient.Accept(shownTrade); MultiplayerWindow.OpenTradeAny(); }
-                shownTrade = null;
-            }, "squad-button--accept"));
-            tradeRow.Add(MakeButton(Localization.Extra("mpDecline", "Decline"), () => { if (shownTrade != null) NetTradeClient.Decline(shownTrade); shownTrade = null; }, null));
-            tradePopup.Add(tradeRow);
+            // A trade request (NetTradeClient): the same popup.
+            tradePopup = Popup(sheet, Localization.Extra("mpTradeRequestTitle", "Trade request"), out tradeText,
+                               Localization.Extra("mpAccept", "Accept"), () =>
+                               {
+                                   if (shownTrade != null) { NetTradeClient.Accept(shownTrade); MultiplayerWindow.OpenTradeAny(); }
+                                   shownTrade = null;
+                               },
+                               Localization.Extra("mpDecline", "Decline"), () => { if (shownTrade != null) NetTradeClient.Decline(shownTrade); shownTrade = null; },
+                               out tradeAccept, out tradeDecline);
             parent.Add(tradePopup);
             BuildCodePlate(parent, sheet);
             Refresh();
@@ -171,13 +162,58 @@ namespace GoF2Remake.UI
             return panel;
         }
 
-        static Button MakeButton(string text, System.Action onClick, string cls)
+        /// <summary>A squad button. It never takes the focus (the distress call too: never by a stray key), except in the
+        /// invitation and trade popups, which are answered with the keys or a controller (StationMenu walks them).</summary>
+        /// <summary>A popup (the squad invitation, a trade request) in the interface rework's panel shape
+        /// (docs/UI-DESIGN.md "Shapes"): the panel fill with its cyan left edge, a title with the amber accent under it,
+        /// the message as running text, and the two answers as the shared button kinds (the yes primary) carrying the
+        /// controller's A / B inside them, as a dialog's do.</summary>
+        static VisualElement Popup(StyleSheet sheet, string title, out Label text, string yes, System.Action onYes,
+                                   string no, System.Action onNo, out Button yesButton, out Button noButton)
         {
-            var b = new Button(onClick) { text = text.ToUpperInvariant(), focusable = false };   // the distress call too: never by a stray key
+            var popup = new VisualElement();
+            popup.AddToClassList("squad-invite");
+            if (sheet != null) popup.styleSheets.Add(sheet);
+            var heading = new Label(title.ToUpperInvariant()) { pickingMode = PickingMode.Ignore };
+            heading.AddToClassList("panel-title");
+            heading.AddToClassList("squad-invite-title");
+            popup.Add(heading);
+            var accent = new VisualElement { pickingMode = PickingMode.Ignore };
+            accent.AddToClassList("panel-accent");
+            popup.Add(accent);
+            text = new Label();
+            text.AddToClassList("squad-invite-text");
+            popup.Add(text);
+            var row = new VisualElement();
+            row.AddToClassList("squad-invite-buttons");
+            yesButton = PopupButton(yes, onYes, true);
+            noButton = PopupButton(no, onNo, false);
+            row.Add(yesButton);
+            row.Add(noButton);
+            popup.Add(row);
+            return popup;
+        }
+
+        /// <summary>One answer: the rework's secondary button, primary for the yes, focusable (the keys and a controller
+        /// answer the popup) and with its controller glyph inside it (A only on the focused one, like a dialog's).</summary>
+        static Button PopupButton(string text, System.Action onClick, bool primary)
+        {
+            var b = new Button(onClick) { text = text.ToUpperInvariant(), focusable = true };
+            b.AddToClassList("gof-button");
+            if (primary) b.AddToClassList("gof-button--primary");
+            InputGlyph.PadPrompt(b, primary ? PadButton.A : PadButton.B, primary);
+            return b;
+        }
+
+        static Button MakeButton(string text, System.Action onClick, string cls, bool focusable = false)
+        {
+            var b = new Button(onClick) { text = text.ToUpperInvariant(), focusable = focusable };
             b.AddToClassList("squad-button");
             if (cls != null) b.AddToClassList(cls);
             return b;
         }
+
+        void OnDisable() { if (current == this) current = null; }
 
         float nextScaleCheck;
 
@@ -189,6 +225,13 @@ namespace GoF2Remake.UI
             {
                 nextScaleCheck = Time.unscaledTime + 1f;
                 bool large = UiScale.Large(box);
+                // Rework: on a small screen the panels start folded (their headers alone). Open, the squad and the pilots
+                // here took most of the right side, over the lounge's visitor list and the chat.
+                if (!collapseChecked && box.panel != null)
+                {
+                    collapseChecked = true;
+                    if (large) { squadCollapsed = pilotsCollapsed = true; squadKey = pilotsKey = ""; }
+                }
                 box.EnableInClassList("squad--large", large);
                 invitePopup.EnableInClassList("squad--large", large);
             }
@@ -313,8 +356,18 @@ namespace GoF2Remake.UI
             pilotsHeader.text = $"{Localization.Extra("mpPilotsHere", "Pilots in this hangar").ToUpperInvariant()} ({pilots.Count})  {(pilotsCollapsed ? "+" : "-")}";
             pilotsBody.Clear();
             pilotsBody.style.display = pilotsCollapsed ? DisplayStyle.None : DisplayStyle.Flex;
+            int shown = 0;
             foreach (var p in pilots)
             {
+                // A busy hangar: the list stops at MaxPilotRows and says how many more are here (the Multiplayer window's
+                // Squad tab lists them all).
+                if (++shown > MaxPilotRows)
+                {
+                    var more = new Label(string.Format(Localization.Extra("mpMorePilots", "+{0} more"), pilots.Count - MaxPilotRows));
+                    more.AddToClassList("squad-tag");
+                    pilotsBody.Add(more);
+                    break;
+                }
                 var row = new VisualElement();
                 row.AddToClassList("squad-pilot");
                 var name = new Label(p.DisplayName + (p == me ? $"  ({Localization.Extra("mpYou", "you")})" : ""));
@@ -387,6 +440,33 @@ namespace GoF2Remake.UI
                                   + (warning.Length > 0 ? "\n" + warning : "");
             }
             invitePopup.style.display = shownInvite != null ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        // ---- the popups, answered with the keys or a controller --------------------------------------------------
+
+        /// <summary>A squad invitation or a trade request is on screen (only while docked). The station menu then walks its
+        /// two buttons (StationMenu.OnNavigate), gives the focus to Accept and answers Esc / B with Decline.</summary>
+        public static bool PopupOpen => Buttons() != null;
+
+        /// <summary>Accept and Decline of the popup on screen, null without one.</summary>
+        public static VisualElement[] PopupButtons => Buttons();
+
+        static VisualElement[] Buttons()
+        {
+            var v = current;
+            if (v == null || !NetGame.Active) return null;
+            if (v.shownInvite != null && v.inviteAccept != null) return new VisualElement[] { v.inviteAccept, v.inviteDecline };
+            if (v.shownTrade != null && v.tradeAccept != null) return new VisualElement[] { v.tradeAccept, v.tradeDecline };
+            return null;
+        }
+
+        /// <summary>Esc / B: the popup's own No, so it is always answered (its action runs, like a station dialog's).</summary>
+        public static void DeclinePopup()
+        {
+            var v = current;
+            if (v == null) return;
+            if (v.shownInvite != null) { NetSquad.Decline(v.shownInvite); v.shownInvite = null; v.invitePopup.style.display = DisplayStyle.None; }
+            else if (v.shownTrade != null) { NetTradeClient.Decline(v.shownTrade); v.shownTrade = null; v.tradePopup.style.display = DisplayStyle.None; }
         }
     }
 }

@@ -268,6 +268,8 @@ namespace GoF2Remake.UI
             // A press on the window holds a new snapshot back until it is released (a rebuild under the finger dropped the
             // button being pressed: "Claim" did nothing).
             window.RegisterCallback<PointerDownEvent>(_ => pressedSince = Time.unscaledTime, TrickleDown.TrickleDown);
+            window.RegisterCallback<NavigationMoveEvent>(OnNavigate, TrickleDown.TrickleDown);
+            UiFocus.SkipScrollBars(window);   // the D-pad never stops on the list's scroll bar
             window.RegisterCallback<PointerUpEvent>(_ => pressedSince = -1f, TrickleDown.TrickleDown);
             window.RegisterCallback<PointerCancelEvent>(_ => pressedSince = -1f, TrickleDown.TrickleDown);
             // The list follows the focus (a controller's D-pad, the keys).
@@ -353,7 +355,7 @@ namespace GoF2Remake.UI
                 tabs.Add(b);
                 if (t == tab) currentTabButton = b;
             }
-            if (isOpen && InputMode.Current == InputKind.Gamepad) FocusLater(currentTabButton);
+            if (isOpen && FocusesItself) FocusLater(currentTabButton);
         }
 
         void SelectTab(Tab t)
@@ -376,6 +378,79 @@ namespace GoF2Remake.UI
         }
 
         static void FocusLater(VisualElement e) => e?.schedule.Execute(() => { if (e.panel != null) e.Focus(); }).ExecuteLater(1);
+
+        /// <summary>The window gives itself the focus when it opens: with keys or a controller, not under the mouse or a
+        /// finger (where a click or tap picks, and a frame on the tab would only puzzle).</summary>
+        static bool FocusesItself => InputMode.Current != InputKind.Touch && !InputMode.MousePointing;
+
+        /// <summary>Everything in the window that can take the focus and is on screen (the tabs, the close button, the
+        /// shown pane's buttons and fields), for its own navigation; a scroll bar is never one (UiFocus.SkipScrollBars).</summary>
+        List<VisualElement> NavItems()
+        {
+            var items = new List<VisualElement>();
+            if (window == null) return items;
+            foreach (var e in window.Query<VisualElement>().ToList())
+            {
+                if (!e.focusable || !Navigable(e)) continue;
+                bool inScroller = false;
+                for (var p = e; p != null && !inScroller; p = p.parent) inScroller = p is Scroller;
+                if (!inScroller) items.Add(e);
+            }
+            return items;
+        }
+
+        /// <summary>The focus is on one of the open window's own controls: only then do the keys reach its navigation
+        /// (a navigation event travels from the panel's root to whatever has the focus).</summary>
+        public static bool FocusInside
+        {
+            get
+            {
+                var w = current;
+                if (w == null || !w.isOpen || w.window == null) return false;
+                return w.window.focusController?.focusedElement is VisualElement f && (f == w.window || w.window.Contains(f));
+            }
+        }
+
+        /// <summary>The focus steps into the open window (its tab row, else its first control), for a key pressed while it
+        /// is still outside: the window was opened with the mouse or a tap.</summary>
+        public static void FocusFirstAny()
+        {
+            var w = current;
+            if (w == null || !w.isOpen) return;
+            if (w.currentTabButton != null && Navigable(w.currentTabButton)) { w.currentTabButton.Focus(); return; }
+            var items = w.NavItems();
+            if (items.Count > 0) items[0].Focus();
+        }
+
+        /// <summary>On screen and usable: laid out (a pane that isn't shown has no size), enabled and visible.</summary>
+        static bool Navigable(VisualElement e) =>
+            e != null && e.enabledInHierarchy && e.visible && e.resolvedStyle.display != DisplayStyle.None
+            && e.worldBound.height > 0.5f && e.worldBound.width > 0.5f;
+
+        /// <summary>Keys / D-pad inside the window: the neighbour on screen among its own controls (SpatialNav), scrolled
+        /// into view. The station menu walks its own buttons for the whole panel and yields to an open window
+        /// (StationMenu.OnNavigate), so without this the arrows moved the menu behind it instead.</summary>
+        void OnNavigate(NavigationMoveEvent e)
+        {
+            if (!isOpen) return;
+            var from = window.focusController?.focusedElement as VisualElement;
+            // A field keeps the keys it is typing with (left / right move the caret), but up / down still step out of it
+            // and a controller always navigates (TextFieldKeys.IsTyping): the window opens on the Chat tab, whose line
+            // takes the focus by itself, and a blanket "chat typing" check left the keys dead in the whole window.
+            if (TextFieldKeys.IsTyping(e, from)) return;
+            var items = NavItems();
+            if (items.Count == 0) return;
+            int dx = e.direction == NavigationMoveEvent.Direction.Left ? -1 : e.direction == NavigationMoveEvent.Direction.Right ? 1 : 0;
+            int dy = e.direction == NavigationMoveEvent.Direction.Up ? -1 : e.direction == NavigationMoveEvent.Direction.Down ? 1 : 0;
+            var next = from == null || !items.Contains(from) ? items[0] : SpatialNav.Next(items, from, dx, dy, Navigable);
+            if (next != null)
+            {
+                next.Focus();
+                if (body != null && body.Contains(next)) scroll.ScrollTo(next);
+            }
+            e.StopPropagation();
+            window.focusController?.IgnoreEvent(e);
+        }
 
         /// <summary>The window's size: 64 x 78 % centred; large, almost the whole screen; raised (a phone typing into a
         /// field), the top half, clear of the on-screen keyboard.</summary>
@@ -438,7 +513,7 @@ namespace GoF2Remake.UI
             window.style.display = DisplayStyle.Flex;
             if (scrim != null) { scrim.style.display = DisplayStyle.Flex; scrim.BringToFront(); }
             window.BringToFront();
-            if (InputMode.Current == InputKind.Gamepad) FocusLater(currentTabButton);
+            if (FocusesItself) FocusLater(currentTabButton);
             status.text = "";
             refresh = 0f;
             ShowPane();

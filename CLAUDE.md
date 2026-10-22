@@ -1395,9 +1395,18 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   the top bar left of Menu; in flight its own button on the right under the HUD readout and the "Multiplayer window"
   binding, N (`FlightHud`: Esc / B / the binding close it, the flight controls and the mouse-steering cursor wait
   meanwhile, `Navigation.InputHalted`); under it in flight a Distress call / End the call button (in a squad in space,
-  `MultiplayerWindow.UpdateSos`; or the unbound "Distress call" binding); these buttons and the squad window's never take
-  the focus, so Space / Enter / a controller's A can't press them; the Squad tab has Distress call / End the call in
-  space; its text fields (`TextFieldKeys.Guard`) keep their typed keys (no menu navigation or submit, Esc drops the
+  `MultiplayerWindow.UpdateSos`; or the unbound "Distress call" binding); these buttons and the squad window's panels
+  never take the focus, so Space / Enter / a controller's A can't press them (its invitation popups do, below); the Squad
+  tab has Distress call / End the call in space; **its own navigation** (`MultiplayerWindow.OnNavigate`, a trickle-down
+  NavigationMoveEvent on the window): the neighbour on screen among its tabs, close button and the shown pane's controls
+  (`NavItems` / `SpatialNav`, the body scrolled to it, scroll bars never focusable, `UiFocus.SkipScrollBars`), since the
+  station menu walks its own buttons for the whole panel and now yields to an open window (`StationMenu.OnNavigate`:
+  before, the arrows moved the menu behind it and the Squad tab's Accept could never be reached with keys or a
+  controller); a navigation event only travels through what has the focus, so the window takes it when it opens with keys
+  or a controller (`FocusesItself`, was a controller only) and the station's first press steps into it
+  (`MultiplayerWindow.FocusInside` / `FocusFirstAny`); typing in one of its fields keeps left / right for the caret while
+  up / down still step out of it (`TextFieldKeys.IsTyping`, not a blanket `NetChat.Typing`: the window opens on the Chat
+  tab, whose line takes the focus by itself, and the keys were dead in the whole window); its text fields (`TextFieldKeys.Guard`) keep their typed keys (no menu navigation or submit, Esc drops the
   focus) and turn the game's keys off while focused (`NetChat.SetTyping`); a snapshot waits while a field has the focus
   or a pointer is down on the window (a rebuild under the finger dropped the pressed button and Android's keyboard); both lists scroll by mouse drag too (`DragScroll`) and the chat follows new
   lines only while at its end; the Admin tab also on a session without profiles for its host (master) and session admins
@@ -1445,7 +1454,22 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   bullets pass through, `Gun.Ignores`; a squadmate's replayed shots pass through the squad too). UI: `SquadView`
   (`Resources/GoF2Net/Squad.uss`) in the flight HUD and the station menu: the collapsible squad window (right side, only in
   a squad: each member, where they are, a shield bar and a hull bar with the armor over it like the HUD's), the station's
-  collapsible pilot list, the invitation popup.
+  collapsible pilot list (at most `SquadView.MaxPilotRows` 6 rows, then "+N more": a busy hangar filled the screen), the
+  invitation popup. On a small screen (`UiScale.Large`) both panels start folded and the panel is narrower
+  (`.squad--large.squad` 26 % / 360 px): open, they took most of the right side, over the lounge's own lists. The
+  invitation and trade popups (only while docked) are the interface rework's panel shape (docs/UI-DESIGN.md "Shapes":
+  the panel fill with its cyan left edge, a `.panel-title` with the `.panel-accent` under it, the message as running
+  text at `--text-body`, and the two answers as the shared button kinds, Accept primary, each with the controller's A /
+  B inside it as a dialog's answers have; `SquadView.Popup` / `PopupButton`) and are the only squad buttons that take
+  the focus: while one shows it is
+  the station menu's navigation (`SquadView.PopupOpen` / `PopupButtons` in `StationMenu.OnNavigate`, like a dialog's Yes /
+  No), its Accept takes the focus as it appears with keys or a controller (tried again over `PopupFocusTries` frames: the
+  popup is laid out a frame after it shows and a focus set before that doesn't take) and the menu's selection comes back
+  when it is answered, and Esc / B is its Decline (`SquadView.DeclinePopup` in `StationMenu.Back`); before, an invitation
+  could only be answered with a mouse or a finger. Verified in a session (the Editor hosting, a Windows build joining on
+  127.0.0.1, the client's invitation): the popup focused on Accept, left / right between Accept and Decline, Enter / A
+  forming the squad, Esc declining; and in the window, the tab row walked, the Squad tab's Accept reached from it and
+  pressed into a squad.
 - **Trades between players** (remake, `NetTrade` on the server, `NetTradeClient` on each game, RPCs in `NetState`, rate
   kind `PlayerTrade`): only while both are docked at the same station. A request (the station pilot list's Trade, the
   Multiplayer window's Trade tab, `/trade <pilot>`) waits 60 s for Accept / Decline (a popup like the squad invitation's,

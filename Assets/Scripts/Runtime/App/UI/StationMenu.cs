@@ -1050,6 +1050,13 @@ namespace GoF2Remake.UI
         public void PlayRelease() => Play(buttonRelease);
         public void PlayClip(AudioClip clip) => Play(clip);
 
+        /// <summary>A squad popup is on screen (SquadView): the menu takes the selection back when it is answered, and
+        /// gives it to the popup's Accept over the first frames, until the focus lands (the popup is laid out a frame
+        /// after it appears).</summary>
+        bool squadPopupShown;
+        int squadPopupTries;
+        const int PopupFocusTries = 20;
+
         ItemInfoWindow infoWindow;
         /// <summary>The full-screen item / ship details (ListItemWindow), shared by the hangar and the lounge.</summary>
         public ItemInfoWindow InfoWindow => infoWindow;
@@ -1062,6 +1069,7 @@ namespace GoF2Remake.UI
             else if (OptionInfo.IsOpen) { Play(buttonRelease); OptionInfo.Hide(); }
             else if (infoWindow != null && infoWindow.IsOpen) { Play(buttonRelease); infoWindow.Close(); }
             else if (MultiplayerWindow.IsOpenAny) { Play(buttonRelease); MultiplayerWindow.CloseAny(); }   // multiplayer: the faction window
+            else if (SquadView.PopupOpen) { Play(buttonRelease); SquadView.DeclinePopup(); }   // multiplayer: the invitation's Decline
             else if (DialogOpen)
             {
                 // The original's ChoiceWindow can't be dismissed (ModStation::OnKeyPress ignores every key while it is open):
@@ -1938,6 +1946,18 @@ namespace GoF2Remake.UI
         void OnNavigate(NavigationMoveEvent e)
         {
             if (GoF2Remake.Multiplayer.NetChat.Typing) return;   // the arrows move the chat line's cursor
+            // The multiplayer window walks its own tabs and buttons (MultiplayerWindow.OnNavigate), as Update yields its
+            // keys to it: without this the arrows moved the menu behind it and its Squad tab could never be reached.
+            // A navigation event only travels through what has the focus, so opened with the mouse (the focus still on a
+            // menu button behind it) the first press steps into it.
+            if (MultiplayerWindow.IsOpenAny)
+            {
+                if (MultiplayerWindow.FocusInside) return;
+                MultiplayerWindow.FocusFirstAny();
+                e.StopPropagation();
+                root.focusController?.IgnoreEvent(e);
+                return;
+            }
             SetTouchMode(false);
             pointerDriven = false;
             bool vertical = e.direction == NavigationMoveEvent.Direction.Up || e.direction == NavigationMoveEvent.Direction.Down;
@@ -1951,7 +1971,10 @@ namespace GoF2Remake.UI
             }
             var stationItems = new VisualElement[] { hangarButton, loungeButton, mapButton, missionsButton, statusButton, inspectButton, customizeButton, launchButton };
             VisualElement[] items;
+            // A squad invitation / trade request (SquadView): its Accept and Decline, like a dialog's Yes and No.
+            bool squadPopup = !DialogOpen && SquadView.PopupOpen;
             if (DialogOpen) items = new VisualElement[] { dialogYes, dialogNo };
+            else if (squadPopup) items = SquadView.PopupButtons;
             else if (SystemMenuOpen) items = SystemMenuItems();
             else if (missions != null && missions.IsOpen) { items = missions.NavItems(); vertical |= horizontal; }
             else if (status != null && status.IsOpen) { items = status.NavItems(); vertical |= horizontal; }
@@ -2028,7 +2051,7 @@ namespace GoF2Remake.UI
             }
             var focusedNow = root.focusController?.focusedElement as VisualElement;
             int index = System.Array.IndexOf(items, focusedNow);
-            bool mainView = !DialogOpen && !SystemMenuOpen && !(missions != null && missions.IsOpen) && !(status != null && status.IsOpen)
+            bool mainView = !DialogOpen && !squadPopup && !SystemMenuOpen && !(missions != null && missions.IsOpen) && !(status != null && status.IsOpen)
                             && !(lounge != null && lounge.ChatOpen);
             if (mainView && index >= 0 && focusedNow != launchButton) lastSideItem = focusedNow;
             if (mainView && horizontal && InputMode.Current == InputKind.Gamepad)
@@ -2042,7 +2065,7 @@ namespace GoF2Remake.UI
                     back?.Focus();
                 }
             }
-            else if (DialogOpen ? horizontal : vertical)
+            else if (DialogOpen || squadPopup ? horizontal : vertical)
             {
                 int step = e.direction == NavigationMoveEvent.Direction.Up || e.direction == NavigationMoveEvent.Direction.Left ? -1 : 1;
                 NextNavigable(items, index, step)?.Focus();
@@ -2731,6 +2754,29 @@ namespace GoF2Remake.UI
             if (settleMs > 0f) settleMs -= Time.unscaledDeltaTime * 1000f;
             else if (RunDockingChecks()) return;
             lounge?.Update();
+            // A squad invitation / trade request (SquadView): with keys or a controller its Accept takes the focus as it
+            // shows, so it can be answered at all, and the menu's selection comes back when it is answered. The popup is
+            // laid out a frame after it appears (a focus set before that doesn't take), so it is tried again until it
+            // lands; Select itself does nothing while the mouse is the one in use.
+            bool popupNow = SquadView.PopupOpen;
+            bool canFocusPopup = !HangarOpen && !DialogOpen && !SystemMenuOpen && !MultiplayerWindow.IsOpenAny
+                                 && InputMode.Current != InputKind.Touch && !InputMode.MousePointing;
+            if (popupNow != squadPopupShown)
+            {
+                squadPopupShown = popupNow;
+                squadPopupTries = popupNow ? PopupFocusTries : 0;
+                if (!popupNow && canFocusPopup) Select(DefaultFocus());
+            }
+            if (popupNow && squadPopupTries > 0 && canFocusPopup)
+            {
+                var popupButtons = SquadView.PopupButtons;
+                if (popupButtons != null && popupButtons.Length > 0 && Navigable(popupButtons[0]))
+                {
+                    Select(popupButtons[0]);
+                    squadPopupTries = root.focusController?.focusedElement == popupButtons[0] ? 0 : squadPopupTries - 1;
+                }
+                else squadPopupTries--;
+            }
 
             var kb = GoF2Remake.Multiplayer.NetChat.Keys;
             var pad = Gamepad.current;

@@ -125,35 +125,39 @@
     border-color: rgba(255, 140, 120, 0.5);
 }
 
+/* The invitation / trade request: the rework's panel shape (docs/UI-DESIGN.md "Shapes"), title and accent above the
+   message, the answers as the shared button kinds. */
 .squad-invite {
     position: absolute;
     top: 12%;
     left: 50%;
-    width: 440px;
+    width: 46%;
+    min-width: 480px;
+    max-width: 700px;
     translate: -50% 0;
-    padding: 16px 16px;
-    background-color: rgba(0, 0, 0, 0.75);
+    padding: 32px 36px;
+    background-color: var(--gof-panel);
     border-width: 1px;
-    border-color: rgba(143, 216, 255, 0.5);
+    border-color: var(--gof-line);
+    border-left-width: 3px;
+    border-left-color: var(--gof-cyan);
     border-radius: 2px;
 }
 
 .squad-invite-text {
-    font-size: var(--text-small);
-    color: rgb(255, 255, 255);
+    font-size: var(--text-body);
+    color: var(--gof-text);
     white-space: normal;
-    -unity-text-align: middle-center;
-    margin-bottom: var(--space-m);
+    margin-bottom: var(--space-xl);
 }
 
 .squad-invite-buttons {
     flex-direction: row;
-    justify-content: center;
+    justify-content: flex-end;
 }
 
-.squad-invite-buttons .squad-button {
-    margin: 0 8px;
-    min-width: 120px;
+.squad-invite-buttons .gof-button {
+    margin-left: var(--space-m);
 }
 
 /* the station's join code plate (an online session), under the system information */
@@ -181,8 +185,8 @@
 /* Large (UiScale.Large: a small high-density screen such as a 5.5" handheld): the squad window, the invitation and the
    multiplayer window (.mpw--large) about 1.5x, the buttons finger-sized (about 6 mm on the Retroid Pocket G2). */
 .squad--large.squad {
-    width: 30%;
-    min-width: 420px;
+    width: 26%;
+    min-width: 360px;
 }
 
 .squad--large .squad-header {
@@ -204,12 +208,12 @@
 }
 
 .squad--large.squad-invite {
-    width: 52%;
-    padding: 20px 24px;
+    width: 56%;
+    padding: 36px 44px;
 }
 
 .squad--large .squad-invite-text {
-    font-size: var(--text-heading);
+    font-size: var(--text-subhead);
 }
 
 .squad--large .squad-button,
@@ -222,8 +226,8 @@
     -unity-text-align: middle-center;
 }
 
-.squad--large .squad-invite-buttons .squad-button {
-    min-width: 180px;
+.squad--large .squad-invite-buttons .gof-button {
+    min-width: 200px;
 }
 
 .mpw--large .unity-base-text-field__input {
