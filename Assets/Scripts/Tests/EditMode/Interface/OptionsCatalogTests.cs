@@ -144,6 +144,7 @@ namespace GoF2Remake.Tests
                         break;
                     default:
                         int n = o.choices().Length;
+                        if (o.id == "graphicsPreset") n = Settings.PresetCustom;   // Custom only reads back, it sets nothing
                         for (int i = 0; i < n; i++)
                         {
                             o.setIndex(i);
@@ -274,6 +275,45 @@ namespace GoF2Remake.Tests
             Assert.AreEqual("Key bindings", OptionsCatalog.PageTitle(OptionPage.Bindings));
             Assert.AreEqual("Only Sound", OptionsCatalog.ResetTabLabel(OptionPage.Sound));
             Assert.AreEqual("Language", Localization.Get(0));
+        }
+
+        [Test]
+        public void TheGraphicsPresetsSetTheirOptionsAndAChangeShowsCustom()
+        {
+            Settings.ResetToDefaults();
+            Assert.AreEqual(Settings.PresetHigh, OptionsCatalog.CurrentPreset(), "a fresh desktop install shows High (its defaults)");
+            Settings.ApplyPreset(Settings.PresetLow);
+            Assert.AreEqual(Settings.PresetLow, OptionsCatalog.CurrentPreset());
+            Assert.AreEqual(0, Settings.Quality);
+            Assert.AreEqual(Settings.BloomOff, Settings.BloomStyle);
+            Assert.AreEqual(Settings.HangarShadowsOff, Settings.HangarShadows);
+            Assert.IsFalse(Settings.NpcPlayerEngines);
+            Assert.AreEqual(0.67f, Settings.RenderScale, 1e-4f);
+            Settings.ApplyPreset(Settings.PresetMedium);
+            Assert.AreEqual(Settings.PresetMedium, OptionsCatalog.CurrentPreset());
+            Settings.LensFlare = false;
+            Assert.AreEqual(Settings.PresetCustom, OptionsCatalog.CurrentPreset(), "one option changed: Custom");
+            Settings.ApplyPreset(Settings.PresetCustom);
+            Assert.IsFalse(Settings.LensFlare, "picking Custom changes nothing");
+            Settings.ApplyPreset(Settings.PresetHigh);
+            Assert.AreEqual(Settings.PresetHigh, OptionsCatalog.CurrentPreset());
+        }
+
+        [Test]
+        public void AndroidStartsOnTheLowPresetAt60Fps()
+        {
+            try
+            {
+                Settings.ResetToDefaults();
+                Settings.OverrideAndroidDefaults(true);
+                Assert.AreEqual(Settings.PresetLow, OptionsCatalog.CurrentPreset(), "every preset option at Low");
+                Assert.AreEqual(FrameRate.Fps60, Settings.FrameRate);
+                Assert.IsFalse(Settings.NpcPlayerEngines, "the other ships' engines the original's");
+                Settings.OverrideAndroidDefaults(false);
+                Assert.AreEqual(FrameRate.VSync, Settings.FrameRate, "elsewhere V-Sync");
+                Assert.IsTrue(Settings.NpcPlayerEngines);
+            }
+            finally { Settings.OverrideAndroidDefaults(null); }
         }
     }
 }

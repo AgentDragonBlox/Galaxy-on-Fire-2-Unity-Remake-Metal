@@ -158,6 +158,12 @@ namespace GoF2Remake.UI
                     () => Settings.MuteInBackground, v => Settings.MuteInBackground = v));
 
             // ---- graphics
+            // Remake: Low / Medium / High set the preset options at once (Settings.ApplyPreset); the row shows the preset the
+            // options match now, else Custom (picking Custom changes nothing).
+            list.Add(Choice("graphicsPreset", OptionPage.Graphics, () => X("graphicsPreset", "Graphics preset"), true,
+                () => new[] { Localization.Get(507), Localization.Get(508), Localization.Get(509), X("presetCustom", "Custom") },
+                CurrentPreset, i => Settings.ApplyPreset(i),
+                () => X("graphicsPresetHelp", "Sets the render scale, effects, shadows and detail at once. Low suits phones and slower devices; High is the full look.")));
             if (Bootstrap.HasDisplayOptions)
             {
                 list.Add(Confirmed(Choice("displayMode", OptionPage.Graphics, () => X("displayMode", "Display mode"), true,
@@ -669,6 +675,29 @@ namespace GoF2Remake.UI
             Settings.Language = code;
             var table = LanguageTables.TableFor(code);
             if (table != null) Localization.Load(code, table);
+        }
+
+        /// <summary>The graphics preset the options match (Settings.PresetKeys, the render scale and MSAA as they apply: 0 = the
+        /// platform's asset), else Settings.PresetCustom.</summary>
+        public static int CurrentPreset()
+        {
+            float Now(string key) => key switch
+            {
+                "quality" => Settings.Quality,
+                "renderScale" => Settings.RenderScale > 0f ? Settings.RenderScale : Bootstrap.DefaultRenderScale,
+                "upscaler" => Settings.Upscaler,
+                "msaa" => Settings.Msaa > 0 ? Settings.Msaa : Bootstrap.DefaultMsaa,
+                "bloomStyle" => Settings.BloomStyle,
+                "hangarShadows" => Settings.HangarShadows,
+                "hangarDof" => Settings.HangarDepthOfField ? 1f : 0f,
+                "lensFlare" => Settings.LensFlare ? 1f : 0f,
+                "npcPlayerEngines" => Settings.NpcPlayerEngines ? 1f : 0f,
+                "lods" => Settings.Lods ? 1f : 0f,
+                _ => float.NaN,
+            };
+            for (int p = Settings.PresetLow; p <= Settings.PresetHigh; p++)
+                if (Settings.PresetKeys.All(k => Mathf.Abs(Now(k) - Settings.PresetValue(p, k)) < 0.01f)) return p;
+            return Settings.PresetCustom;
         }
 
         static OptionDef Choice(string id, OptionPage page, Func<string> label, bool segmented, Func<string[]> choices, Func<int> get,

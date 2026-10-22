@@ -64,21 +64,22 @@ namespace GoF2Remake.Data
             set { SetQuiet("resolutionWidth", value.x); Set("resolutionHeight", value.y, force: true); }
         }
 
-        /// <summary>Frame rate limit, applied by Bootstrap. V-Sync (display refresh rate) by default.</summary>
+        /// <summary>Frame rate limit, applied by Bootstrap. V-Sync (display refresh rate) by default; 60 on Android (the user's
+        /// choice, 2026-10-22: a 120 Hz phone rendering at 120 heats up and throttles).</summary>
         public static FrameRate FrameRate
         {
-            get => (FrameRate)Mathf.Clamp(Mathf.RoundToInt(Get("frameRate", (float)FrameRate.VSync)), 0, (int)FrameRate.VSync);
+            get => (FrameRate)Mathf.Clamp(Mathf.RoundToInt(Get("frameRate", (float)(AndroidDefaults ? FrameRate.Fps60 : FrameRate.VSync))), 0, (int)FrameRate.VSync);
             set => Set("frameRate", (float)value);
         }
 
         /// <summary>URP render scale; 0 = the platform's render pipeline asset (1 on PC, 0.8 on mobile).</summary>
-        public static float RenderScale { get => Get("renderScale", 0f); set => Set("renderScale", value <= 0f ? 0f : Mathf.Clamp(value, 0.5f, 2f)); }
+        public static float RenderScale { get => Get("renderScale", Default("renderScale", 0f)); set => Set("renderScale", value <= 0f ? 0f : Mathf.Clamp(value, 0.5f, 2f)); }
 
         /// <summary>Upscaler: 0 off (URP's automatic bilinear / point), 1 AMD FSR 1 (sharpening, also at 100 %), 2 Unity STP
         /// (temporal: anti-aliasing and upscaling, replaces MSAA), 3 NVIDIA DLSS and 4 AMD FSR 2 / 3 / 4 (temporal, the render
         /// resolution by UpscalerQuality; desktop builds with the upscaler framework only, UpscalerFramework), 5 Apple MetalFX
         /// Spatial and 6 MetalFX Temporal (macOS / iOS on Metal, from the render scale; 6 temporal like STP).</summary>
-        public static int Upscaler { get => Mathf.RoundToInt(Get("upscaler", 0f)); set => Set("upscaler", Mathf.Clamp(value, 0, 6)); }
+        public static int Upscaler { get => Mathf.RoundToInt(Get("upscaler", Default("upscaler", 0f))); set => Set("upscaler", Mathf.Clamp(value, 0, 6)); }
         public const int UpscalerOff = 0, UpscalerFsr = 1, UpscalerStp = 2, UpscalerDlss = 3, UpscalerFsrTemporal = 4,
             UpscalerMetalFxSpatial = 5, UpscalerMetalFxTemporal = 6;
 
@@ -87,11 +88,11 @@ namespace GoF2Remake.Data
         public static int UpscalerQuality { get => Mathf.RoundToInt(Get("upscalerQuality", 1f)); set => Set("upscalerQuality", Mathf.Clamp(value, 0, 4)); }
 
         /// <summary>MSAA samples (1 = off, 2, 4, 8); 0 = the platform's render pipeline asset.</summary>
-        public static int Msaa { get => Mathf.RoundToInt(Get("msaa", 0f)); set => Set("msaa", value); }
+        public static int Msaa { get => Mathf.RoundToInt(Get("msaa", Default("msaa", 0f))); set => Set("msaa", value); }
 
         /// <summary>Original "Quality" option (504; texts 507-512): 0 Low (smoke off, fog off, detail low), 1 Medium (smoke
         /// off, fog off, detail medium), 2 High (everything on). Default High (Globals::init options+0x28 = 1.0).</summary>
-        public static int Quality { get => Mathf.RoundToInt(Get("quality", 2f)); set => Set("quality", Mathf.Clamp(value, 0, 2)); }
+        public static int Quality { get => Mathf.RoundToInt(Get("quality", Default("quality", 2f))); set => Set("quality", Mathf.Clamp(value, 0, 2)); }
         public static bool QualityEffects => Quality >= 2;
 
         /// <summary>Original "Brightness" option: 0 Dark, 1 Medium, 2 Bright (texts 513-515).</summary>
@@ -106,7 +107,7 @@ namespace GoF2Remake.Data
         /// lights with the original's on the sky, the stars and the planets). Old saves: the "bloom" toggle.</summary>
         public static int BloomStyle
         {
-            get => Mathf.RoundToInt(Get("bloomStyle", GetBool("bloom", true) ? BloomRemake : BloomOff));
+            get => Mathf.RoundToInt(Get("bloomStyle", GetBool("bloom", Default("bloomStyle", BloomRemake) != BloomOff) ? BloomRemake : BloomOff));
             set => Set("bloomStyle", value);
         }
         public const int BloomOff = 0, BloomRemake = 1, BloomOriginal = 2, BloomBoth = 3;
@@ -117,23 +118,68 @@ namespace GoF2Remake.Data
         public static bool ClassicBloom => BloomStyle == BloomOriginal || BloomStyle == BloomBoth;
 
         /// <summary>The sun's lens flare in flight (LensFlareView).</summary>
-        public static bool LensFlare { get => GetBool("lensFlare", true); set => SetBool("lensFlare", value); }
+        public static bool LensFlare { get => GetBool("lensFlare", Default("lensFlare", 1f) > 0.5f); set => SetBool("lensFlare", value); }
 
         /// <summary>Remake: the hangar ships' contact shadows (HangarShipShadow): 0 off, 1 only the player's own ship, 2 every
         /// ship (default). Off also drops the station camera's depth texture they read.</summary>
-        public static int HangarShadows { get => Mathf.Clamp(Mathf.RoundToInt(Get("hangarShadows", HangarShadowsPlayer)), 0, 2); set => Set("hangarShadows", Mathf.Clamp(value, 0, 2)); }
+        public static int HangarShadows { get => Mathf.Clamp(Mathf.RoundToInt(Get("hangarShadows", Default("hangarShadows", HangarShadowsPlayer))), 0, 2); set => Set("hangarShadows", Mathf.Clamp(value, 0, 2)); }
         public const int HangarShadowsOff = 0, HangarShadowsPlayer = 1, HangarShadowsAll = 2;
         /// <summary>Remake: levels of detail (AutoLods): far objects drawn with fewer triangles, the original's LOD meshes
         /// and the ones made from the models (the game's prebaked, the mods' at run time). Off: every model at full detail
         /// (LOD 0, as the original binary's AEGeometry::updateLod). On by default on every platform (the user's choice,
         /// 2026-10-22; it was phones only).</summary>
-        public static bool Lods { get => GetBool("lods", true); set => SetBool("lods", value); }
+        public static bool Lods { get => GetBool("lods", Default("lods", 1f) > 0.5f); set => SetBool("lods", value); }
         /// <summary>Remake: the hangar view's depth of field on the player's ship (StationLevel); off by default on phones.</summary>
-        public static bool HangarDepthOfField { get => GetBool("hangarDof", false); set => SetBool("hangarDof", value); }   // off by default (2026-10)
+        public static bool HangarDepthOfField { get => GetBool("hangarDof", Default("hangarDof", 0f) > 0.5f); set => SetBool("hangarDof", value); }   // off by default (2026-10)
 
         /// <summary>Remake: NPC ships fly with the player's engine system (the *_engine_glow_add mesh and the exhaust
-        /// particles) instead of the original's *_engine_add mesh; from the next spawn.</summary>
-        public static bool NpcPlayerEngines { get => GetBool("npcPlayerEngines", true); set => SetBool("npcPlayerEngines", value); }
+        /// particles) instead of the original's *_engine_add mesh; from the next spawn. Off on Android (the Low preset): a
+        /// particle system per NPC ship and the additive glow's overdraw.</summary>
+        public static bool NpcPlayerEngines { get => GetBool("npcPlayerEngines", Default("npcPlayerEngines", 1f) > 0.5f); set => SetBool("npcPlayerEngines", value); }
+
+        // ---- graphics presets (remake, the user's request 2026-10-22) -----------------------------------------------
+
+        /// <summary>Options > Graphics "Graphics preset": Low, Medium, High set these options at once (ApplyPreset); the row
+        /// shows the preset the options match, else Custom (OptionsCatalog). High is the desktop's defaults, so a fresh
+        /// install there shows High; Low is Android's defaults (AndroidDefaults: every key here a player never set), for
+        /// lower-end phones' frame rate and heat. The frame rate isn't part of them (Android's default is 60 on its own).</summary>
+        public const int PresetLow = 0, PresetMedium = 1, PresetHigh = 2, PresetCustom = 3;
+
+        public static readonly string[] PresetKeys =
+        {
+            "quality", "renderScale", "upscaler", "msaa", "bloomStyle", "hangarShadows", "hangarDof", "lensFlare", "npcPlayerEngines", "lods",
+        };
+
+        // One row per preset, in PresetKeys' order. The original's Quality Low / Medium: smoke and fog off, LOD bias x0.35 /
+        // x0.6 (Bootstrap); render scale with FSR 1 sharpening it back up (only where the device runs FSR, Bootstrap.ActiveUpscaler);
+        // MSAA 1 = off (the flight camera's SMAA stays); bloom off on Low (both blooms are full-screen passes).
+        static readonly float[][] Presets =
+        {
+            //        quality scale  upscaler     msaa bloom        hangar shadows       dof lens npcEngines lods
+            new[] { 0f, 0.67f, UpscalerFsr, 1f, BloomOff,    HangarShadowsOff,    0f, 0f, 0f, 1f },
+            new[] { 1f, 0.8f,  UpscalerFsr, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 0f, 1f },
+            new[] { 2f, 1f,    UpscalerOff, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 1f, 1f },
+        };
+
+        /// <summary>'key''s value in 'preset' (PresetLow..PresetHigh).</summary>
+        public static float PresetValue(int preset, string key) => Presets[Mathf.Clamp(preset, 0, Presets.Length - 1)][Array.IndexOf(PresetKeys, key)];
+
+        /// <summary>Sets every option of 'preset' (PresetLow..PresetHigh; anything else does nothing), one Changed.</summary>
+        public static void ApplyPreset(int preset)
+        {
+            if (preset < 0 || preset >= Presets.Length) return;
+            for (int i = 0; i < PresetKeys.Length; i++) SetQuiet(PresetKeys[i], Presets[preset][i]);
+            PlayerPrefs.Save();
+            Changed?.Invoke();
+        }
+
+        /// <summary>The Android defaults: the Low preset and 60 fps (the user's choice, 2026-10-22). Tests set the override.</summary>
+        public static bool AndroidDefaults => androidDefaultsOverride ?? Application.platform == RuntimePlatform.Android;
+        static bool? androidDefaultsOverride;
+        public static void OverrideAndroidDefaults(bool? android) { androidDefaultsOverride = android; cache.Clear(); }
+
+        /// <summary>A preset option's default: the Low preset's value on Android, else 'other'.</summary>
+        static float Default(string key, float other) => AndroidDefaults ? PresetValue(PresetLow, key) : other;
 
         /// <summary>The chase camera's vertical field of view in degrees (at 16:9; the original's is OriginalFov).</summary>
         public static float FieldOfView { get => Get("fov", OriginalFov); set => Set("fov", Mathf.Clamp(value, 55f, 95f)); }
