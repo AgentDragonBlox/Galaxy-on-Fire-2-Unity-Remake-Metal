@@ -311,16 +311,20 @@ namespace GoF2Remake.Flight
                 return;
             }
 
-            // The launch / arrival camera: no steering, throttle, boost or levelling (the ship flies on).
-            if (!useBuiltInInput || inputLocked) Model.Braking = false;
+            // The launch / arrival camera: no steering, throttle, boost or levelling (the ship flies on). Nor while a menu,
+            // conversation or map holds the controls in multiplayer (Navigation.InputHalted), where the clock runs on: the ship
+            // flies on as it was (a player's report: the pause menu still steered it).
+            bool halted = Navigation.InputHalted;
+            bool live = useBuiltInInput && !inputLocked && !halted;
+            if (!live) Model.Braking = false;
             if (inputLocked) freeSettle = true;   // free flight takes over at rest once the fly-in is over (StepFree)
-            Vector2 steer = useBuiltInInput && !inputLocked ? ReadInput() : Vector2.zero;
-            if (!inputLocked && externalSteer.sqrMagnitude > steer.sqrMagnitude) steer = externalSteer;
-            var mouseSteer = !inputLocked ? ReadMouseSteer() : Vector2.zero;
+            Vector2 steer = live ? ReadInput() : Vector2.zero;
+            if (!inputLocked && !halted && externalSteer.sqrMagnitude > steer.sqrMagnitude) steer = externalSteer;
+            var mouseSteer = !inputLocked && !halted ? ReadMouseSteer() : Vector2.zero;
             if (mouseSteer.sqrMagnitude > steer.sqrMagnitude) steer = mouseSteer;
             // Remake: a motion controller's gyro (ControllerGyro); Level out re-centres it.
-            if (useBuiltInInput && !inputLocked && !Navigation.PressesBlocked && GameControls.LevelOut.WasPressedThisFrame()) ControllerGyro.Recenter();
-            var gyroSteer = useBuiltInInput && !inputLocked && autopilotTarget == null ? ControllerGyro.Steer(Time.timeScale > 0f ? Time.unscaledDeltaTime : 0f) : Vector2.zero;
+            if (live && !Navigation.PressesBlocked && GameControls.LevelOut.WasPressedThisFrame()) ControllerGyro.Recenter();
+            var gyroSteer = live && autopilotTarget == null ? ControllerGyro.Steer(Time.timeScale > 0f ? Time.unscaledDeltaTime : 0f) : Vector2.zero;
             // Added to the other steering (it was the stronger of the two: a tilted controller held the stick off).
             if (gyroSteer != Vector2.zero) steer = new Vector2(Mathf.Clamp(steer.x + gyroSteer.x, -1f, 1f), Mathf.Clamp(steer.y + gyroSteer.y, -1f, 1f));
             SteerInput = steer;
@@ -329,7 +333,7 @@ namespace GoF2Remake.Flight
             // Model convention: +x = yaw left, +y = pitch down. Map "stick right = turn right".
             var model = new Vector2(invertYaw ? steer.x : -steer.x, invertPitch ? steer.y : -steer.y);
 
-            Model.BoostHeld = Model.FreeFlight && useBuiltInInput && !inputLocked && GameControls.Boost.IsPressed();
+            Model.BoostHeld = Model.FreeFlight && live && GameControls.Boost.IsPressed();
             if (Model.FreeFlight && autopilotTarget == null && !inputLocked && !steeringLocked)
             {
                 // In free look the stick (the right one in this layout) and the mouse turn the camera: the ship flies on.
@@ -364,7 +368,7 @@ namespace GoF2Remake.Flight
                 // Original: yaw positive = left. Unity yaw positive = right, so negate.
                 transform.Rotate(r.pitchDeg, -r.yawDeg, r.rollDeg, Space.Self);
                 // Remake: manual roll (keys 1 / 3, the touch Level button slid sideways); rolling ends an auto-level.
-                float roll = inputLocked || steeringLocked ? 0f : Mathf.Clamp((useBuiltInInput ? GameControls.Roll.ReadValue<float>() : 0f) + touchRoll, -1f, 1f);
+                float roll = inputLocked || steeringLocked || halted ? 0f : Mathf.Clamp((useBuiltInInput ? GameControls.Roll.ReadValue<float>() : 0f) + touchRoll, -1f, 1f);
                 if (Mathf.Abs(roll) > 0.01f)
                 {
                     Model.StopLeveling();
@@ -375,7 +379,7 @@ namespace GoF2Remake.Flight
                                 + transform.right * (r.sidePushUnits * metersPerUnit);
             // The PC version's held strafe (bindings 3350 / 3351 "Strafe left / right"): not while the controls are locked.
             // Remake: on the autopilot too (it slides the ship sideways; the autopilot keeps correcting the heading).
-            if (useBuiltInInput && !inputLocked && !steeringLocked)
+            if (live && !steeringLocked)
             {
                 int dir = (GameControls.StrafeRight.IsPressed() ? 1 : 0) - (GameControls.StrafeLeft.IsPressed() ? 1 : 0);
                 if (dir != 0) Model.Strafe(dir, dtMs);
@@ -407,7 +411,7 @@ namespace GoF2Remake.Flight
                 thrust = live ? GameControls.Thrust.ReadValue<float>() : 0f,
                 strafe = live ? GameControls.StrafeAxis.ReadValue<float>() : 0f,
                 hover = live ? GameControls.Hover.ReadValue<float>() : 0f,
-                roll = Mathf.Clamp((live ? GameControls.Roll.ReadValue<float>() : 0f) + touchRoll, -1f, 1f),
+                roll = live ? Mathf.Clamp(GameControls.Roll.ReadValue<float>() + touchRoll, -1f, 1f) : 0f,
                 aim = aim,
                 dampeners = Dampeners,
             };
