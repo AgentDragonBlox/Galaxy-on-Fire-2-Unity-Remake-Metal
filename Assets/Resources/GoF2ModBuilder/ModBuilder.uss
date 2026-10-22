@@ -761,6 +761,19 @@
     border-radius: 2px;
 }
 
+/* A kind's standing tip (the Systems map, a room's markers): centred, as wide as its text, see-through. */
+.mbv-root .mbv-place-hint.mbv-place-hint--quiet {
+    right: auto;
+    left: 50%;
+    translate: -50% 0;
+    max-width: 46%;
+    padding: 4px 12px;
+    white-space: normal;
+    font-size: var(--text-caption);
+    color: var(--gof-text);
+    background-color: rgba(4, 10, 18, 0.62);
+}
+
 .mbv-point-tag {
     position: absolute;
     left: 0;

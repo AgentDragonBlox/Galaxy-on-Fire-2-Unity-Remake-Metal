@@ -1227,6 +1227,9 @@ namespace GoF2Remake.UI
                                                           T("mbType" + TypeNames[placing], TypeNames[placing]).ToLowerInvariant())
                            : PlaceHintOfKind();
             placeHint.style.display = placeHint.text.Length > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            // Amber only while a point is being placed (a mode to finish or cancel); a kind's standing tip is a quiet line
+            // sized to its text, which the amber bar across the map was too much for.
+            placeHint.EnableInClassList("mbv-place-hint--quiet", placing < 0);
             ReadKeys(dt);
             UpdateCamera(dt);
             UpdateLabels();
