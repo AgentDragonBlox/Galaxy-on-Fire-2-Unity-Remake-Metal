@@ -785,9 +785,10 @@
     color: #FFFFFF;
 }
 
+/* docs/UI-DESIGN.md "Tabs": the open tab is a white label on the amber underline, no box (it had a cyan fill, which
+   is the focused look elsewhere). */
 .debug-tab--active {
     color: #FFFFFF;
-    background-color: var(--gof-cyan-faint);
     border-bottom-color: var(--gof-amber);
 }
 
@@ -831,9 +832,10 @@
     margin-right: var(--space-m);
 }
 
+/* An inset on the panel: its line, no fill. A 3 % white fill (the UI blends in linear colour space) came out as a flat
+   (51, 52, 54) grey over the dark-blue panel, foreign to the palette (docs/UI-DESIGN.md "Colour"). */
 .debug-card {
     padding: 8px 8px 8px 8px;
-    background-color: rgba(255, 255, 255, 0.03);
     border-width: 1px;
     border-color: var(--gof-line);
 }
@@ -916,7 +918,7 @@
     padding: 3px;
     overflow: hidden;
     align-items: center;
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: rgba(62, 200, 255, 0.06);   /* a tile of the panel blue; white at 4 % read grey */
     border-width: 2px;
     border-color: rgba(0, 0, 0, 0);
 }

@@ -26,6 +26,9 @@ namespace GoF2Remake.UI
         readonly VisualElement backdrop, panel;
         VisualElement body, pagePrompts;
         readonly Label title;
+        /// <summary>The panel shape's amber line under the title (docs/UI-DESIGN.md "Shapes"): only on the Debug page, a
+        /// window like the Options page (OptionsView); the short menus keep their plain title.</summary>
+        readonly VisualElement accent;
         readonly Action backToMenu;
         readonly List<VisualElement> items = new List<VisualElement>();
         readonly List<Action> actions = new List<Action>();
@@ -70,7 +73,11 @@ namespace GoF2Remake.UI
             title.AddToClassList("gof-semibold");
             title.AddToClassList("pause-title");
             body = NewBody();
+            accent = new VisualElement { pickingMode = PickingMode.Ignore };
+            accent.AddToClassList("panel-accent");
+            accent.style.display = DisplayStyle.None;
             panel.Add(title);
+            panel.Add(accent);
             panel.Add(body);
             backdrop.Add(panel);
             root.Add(backdrop);
@@ -183,6 +190,7 @@ namespace GoF2Remake.UI
         {
             page = p;
             panel.RemoveFromClassList("pause-panel--wide");   // the Debug page's
+            accent.style.display = DisplayStyle.None;
             if (options != null) { options.Root.RemoveFromHierarchy(); options = null; }
             panel.style.display = StyleKeyword.Null;
             var oldBody = body;   // a new body per page: FitToContent only grows a scroll view
@@ -262,15 +270,18 @@ namespace GoF2Remake.UI
                     return;
                 case Page.Debug:
                     title.text = Localization.Extra("debugTitle", "Debug").ToUpperInvariant();
+                    accent.style.display = DisplayStyle.Flex;
                     BuildDebug();
                     BackItem(() => Show(Page.Main));
+                    items[items.Count - 1].AddToClassList("debug-back");   // at the bottom left, as the Options page's
                     break;
             }
-            // Rework (docs/UI-DESIGN.md "Button prompts"): the page's keys under it, outside its scrolling body (the Debug page
-            // has its own row; a question's answers carry their own A / B).
-            if (p != Page.Debug && p != Page.Choice && p != Page.Quit)
+            // Rework (docs/UI-DESIGN.md "Button prompts"): the page's keys under it, outside its scrolling body, in the divided
+            // row the Options page has (the Debug page's with its tabs and left / right; a question's answers carry their own
+            // A / B).
+            if (p != Page.Choice && p != Page.Quit)
             {
-                pagePrompts = MenuKeys.Bar(MenuKeys.Rows.Select | MenuKeys.Rows.Confirm | MenuKeys.Rows.Back);
+                pagePrompts = p == Page.Debug ? MenuKeys.DebugPrompts() : MenuKeys.Bar(MenuKeys.Rows.Select | MenuKeys.Rows.Confirm | MenuKeys.Rows.Back);
                 pagePrompts.AddToClassList("prompt-bar--row");
                 panel.Add(pagePrompts);
             }
@@ -594,7 +605,6 @@ namespace GoF2Remake.UI
             debugScroll.AddManipulator(new DragScroll(debugScroll));
             FitToContent(debugScroll, float.MaxValue);
             body.Add(debugScroll);
-            body.Add(MenuKeys.DebugPrompts());
             scroll = debugScroll;
             var content = new VisualElement();
             content.AddToClassList("debug-content");

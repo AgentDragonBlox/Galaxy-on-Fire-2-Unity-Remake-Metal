@@ -1033,10 +1033,30 @@
     border-left-color: rgba(0, 0, 0, 0);
 }
 
-/* The Debug page (PauseMenu.BuildDebug): a wide panel, tabs, a result line, two-column grids and side-by-side cards. */
+/* The Debug page (PauseMenu.BuildDebug): a wide panel, tabs, a result line, two-column grids and side-by-side cards.
+   It is a window like the Options page (OptionsView, docs/UI-DESIGN.md "Shapes"): the cyan left edge, the title in
+   cyan with its amber accent (PauseMenu.accent), Back at the bottom left and the keys in the divided row under it; it
+   had the short menus' white title, amber edge and a centred Back under the keys. */
 .pause-panel--wide {
     width: 1180px;
     max-width: 96%;
+    padding: 32px 40px;
+    border-left-color: var(--gof-cyan);
+}
+
+.pause-panel--wide > .pause-title {
+    margin-bottom: 0;
+    font-size: var(--text-title);
+    letter-spacing: 6px;
+    color: var(--gof-cyan);
+}
+
+.pause-panel--wide .autopilot-menu-item.debug-back {
+    align-self: flex-start;
+    margin-top: var(--space-s);
+    padding: 8px 16px;
+    font-size: var(--text-body);
+    -unity-text-align: middle-left;
 }
 
 /* Its rows scroll when the screen is short: as tall as the rows (PauseMenu.BuildDebug sets the height), shrunk to fit

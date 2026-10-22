@@ -1474,7 +1474,9 @@ namespace GoF2Remake.UI
             optionsScroll.AddToClassList("system-slot-list");
             new DragScroll(optionsScroll);
             systemOptions.Add(optionsScroll);
-            optionsBack = SystemButton(Localization.Extra("hudBack", "BACK"), -1, () => ShowSystemPage(SysPage.Main), systemOptions);
+            // "‹ Back" at the bottom left, the Options window's (OptionsView); the keys go in the divided row under it
+            // (BuildStationDebug).
+            optionsBack = SystemButton("‹  " + Localization.Extra("hudBack", "BACK"), -1, () => ShowSystemPage(SysPage.Main), systemOptions);
             optionsBack.AddToClassList("system-menu-back");
             systemMain.parent.Add(systemOptions);
         }
@@ -1503,6 +1505,7 @@ namespace GoF2Remake.UI
         /// <summary>The Debug page: the cheat toggles and actions (CheatsCatalog); an action reports in a toast.</summary>
         int stationDebugTab;
         Button activeDebugTab;
+        VisualElement debugPrompts, debugAccent;
 
         /// <summary>The Debug page like the pause menu's (remake-only, CheatsCatalog): tabs Cheats / Actions / Give items (click,
         /// Q / E or LB / RB), the toggles and actions in two columns, the item pickers with "Add to hold" / "Add and mount";
@@ -1526,11 +1529,15 @@ namespace GoF2Remake.UI
                 b.clicked += () => { Play(buttonRelease); SwitchDebugTab(tab - stationDebugTab); };   // Modified: its sound
                 tabs.Add(b);
             }
-            // Modified: a "?" with what the page is for at the tab row's end; its keys as a prompt row at the page's top, under
-            // the tabs (the page scrolls: at its end they were out of view).
+            // Modified: a "?" with what the page is for at the tab row's end. Its keys: the divided row at the page's bottom,
+            // under Back and outside the scrolling list, as the Options window has them (they were under the tabs, at
+            // the list's top: at its end they had been out of view).
             MenuKeys.AddDebugIcons(tabs);
             optionsScroll.Add(tabs);
-            optionsScroll.Add(MenuKeys.DebugPrompts());
+            debugPrompts?.RemoveFromHierarchy();
+            debugPrompts = MenuKeys.DebugPrompts();
+            debugPrompts.AddToClassList("prompt-bar--row");
+            systemOptions.Add(debugPrompts);
 
             void Row(OptionDef def, VisualElement parent, string cls = null)
             {
@@ -1659,8 +1666,17 @@ namespace GoF2Remake.UI
             if (menuPanel != null) menuPanel.style.display = page == SysPage.Options ? DisplayStyle.None : StyleKeyword.Null;
             if (page == SysPage.Options) BuildOptionsView();
             int title = page == SysPage.Save ? 30 : page == SysPage.Load ? 29 : page == SysPage.Options ? 31 : 172;   // Menu
-            root.Q<Label>("systemMenuTitle").text = page == SysPage.Debug ? Localization.Extra("debugTitle", "Debug").ToUpperInvariant()
-                                                                          : Localization.Get(title).ToUpperInvariant();
+            var titleLabel = root.Q<Label>("systemMenuTitle");
+            titleLabel.text = page == SysPage.Debug ? Localization.Extra("debugTitle", "Debug").ToUpperInvariant()
+                                                    : Localization.Get(title).ToUpperInvariant();
+            // The Debug page is a window like Options (OptionsView): the amber accent under its title.
+            if (debugAccent == null && titleLabel.parent != null)
+            {
+                debugAccent = new VisualElement { pickingMode = PickingMode.Ignore };
+                debugAccent.AddToClassList("panel-accent");
+                titleLabel.parent.Insert(titleLabel.parent.IndexOf(titleLabel) + 1, debugAccent);
+            }
+            if (debugAccent != null) debugAccent.style.display = page == SysPage.Debug ? DisplayStyle.Flex : DisplayStyle.None;
             if (slots) BuildSaveSlots();
             if (debugButton != null) debugButton.style.display = Cheats.PageShown ? StyleKeyword.Null : DisplayStyle.None;
             if (page == SysPage.Debug && !Cheats.PageShown) { ShowSystemPage(SysPage.Main); return; }   // switched off meanwhile

@@ -584,6 +584,23 @@
     max-width: 1180px;   /* the Give items grid: seven icons to a row */
     height: auto;
     max-height: 92%;
+    /* A window like the Options page (.options-panel, docs/UI-DESIGN.md "Shapes"): the cyan edge at the left, not the
+       short menus' top band; the title's amber accent is StationMenu.debugAccent. */
+    border-top-width: 1px;
+    border-top-color: var(--gof-line);
+    border-left-width: 3px;
+    border-left-color: var(--gof-cyan);
+}
+
+.system-menu--wide .system-menu-title {
+    margin-bottom: 0;
+}
+
+/* Back at the bottom left at the body size, as the Options window's; the keys' divided row under it. */
+.system-menu--wide .system-menu-back {
+    align-self: flex-start;
+    margin-top: var(--space-s);
+    font-size: var(--text-body);
 }
 
 .system-menu--wide .system-menu-page--shown {
