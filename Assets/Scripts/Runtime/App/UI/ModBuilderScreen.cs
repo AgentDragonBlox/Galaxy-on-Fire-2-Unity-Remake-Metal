@@ -54,7 +54,7 @@ namespace GoF2Remake.UI
         {
             ("mbShips", "Ships", ModBuilder.Kind.Ships), ("mbItems", "Items", ModBuilder.Kind.Items), ("mbFx", "Weapon fx", ModBuilder.Kind.WeaponFx),
             ("mbSkins", "Skins", ModBuilder.Kind.Skins), ("mbKits", "Ship kits", ModBuilder.Kind.Kits), ("mbBlueprints", "Blueprints", ModBuilder.Kind.Blueprints),
-            ("mbCharacters", "Characters", ModBuilder.Kind.Characters), ("mbQuests", "Quests", ModBuilder.Kind.Quests), ("mbAudio", "Audio", ModBuilder.Kind.Audio),
+            ("mbCharacters", "Characters", ModBuilder.Kind.Characters), ("mbQuests", "Missions", ModBuilder.Kind.Quests), ("mbAudio", "Audio", ModBuilder.Kind.Audio),
             ("mbSystems", "Systems", ModBuilder.Kind.Systems), ("mbStations", "Stations", ModBuilder.Kind.Stations),
             ("mbInteriors", "Hangars & bars", ModBuilder.Kind.Interiors), ("mbCampaigns", "Campaign", ModBuilder.Kind.Campaigns),
         };
@@ -855,7 +855,7 @@ namespace GoF2Remake.UI
                 string k = key;
                 Text(scroll, lang.ToUpperInvariant(), cur, 600, v => { Project.SetText(lang, k, v); MarkDirty(); }, key.EndsWith(".description"));
             }
-            Note(scroll, T("mbTranslationsNote", "Empty = English. Quests and characters carry their own languages."));
+            Note(scroll, T("mbTranslationsNote", "Empty = English. Missions and characters carry their own languages."));
             Act(box, T("mbClose", "Close"), CloseModal);
             modal.AddToClassList("mbv-modal--shown");
         }

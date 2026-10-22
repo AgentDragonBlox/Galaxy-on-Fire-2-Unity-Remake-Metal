@@ -88,12 +88,12 @@ namespace GoF2Remake.EditorTools
             context.AddOption<string>(Description).WithTooltip("What the event is (written as # lines at the top of the script).")
                 .AsTextArea(2, 8).Delayed().Build();
             context.AddOption<EventKind>(Kind).WithTooltip("Event: started by /event (with a Mission title it is offered as a bar mission, as " +
-                "before). Bar Mission: offered by a Space Lounge visitor (multiplayer squads and single player). Quest: single player, like the " +
+                "before). Bar Mission: offered by a Space Lounge visitor (multiplayer squads and single player). Story Mission: single player, like the " +
                 "story: starts by itself when Starts when holds, lasts across saves (Checkpoint), shows its Mission title and objective in the " +
                 "Missions window; Mission Complete finishes it for good, Mission Failed loads the last save.").Build();
-            context.AddOption<string>(StartsWhen).WithDisplayName("Starts when").WithTooltip("A quest: the condition that starts it, checked " +
+            context.AddOption<string>(StartsWhen).WithDisplayName("Starts when").WithTooltip("A story mission: the condition that starts it, checked " +
                 "every second in a game (an expression: \"campaign >= 20\", \"visited(Kepler Prime)\", \"quest(first_contact) == 2\", " +
-                "\"credits > 50000\"). Empty: at once; \"never\": only by another graph's Start Quest.").Delayed().Build();
+                "\"credits > 50000\"). Empty: at once; \"never\": only by another graph's Start Mission.").Delayed().Build();
             context.AddOption<string>(MissionTitle).WithDisplayName("Mission title").WithTooltip("Set it to offer this event as a bar " +
                 "mission: a visitor in the multiplayer Space Lounge offers it, and it runs for the squad that takes it (its selectors, " +
                 "counts, triggers and scoreboard cover only them). Empty: only /event starts it, for everyone.").Delayed().Build();
@@ -124,8 +124,8 @@ namespace GoF2Remake.EditorTools
         public const string Name = "Name";
 
         protected override void OnDefineOptions(IOptionDefinitionContext context) =>
-            context.AddOption<string>(Name).WithTooltip("Optional: the checkpoint's name (one word; empty: the node's id). A save keeps the quest " +
-                "as it is here (its variables, objective, target, quest orbits); loading it goes on from here: the On handlers and the Run In " +
+            context.AddOption<string>(Name).WithTooltip("Optional: the checkpoint's name (one word; empty: the node's id). A save keeps the mission " +
+                "as it is here (its variables, objective, target, mission orbits); loading it goes on from here: the On handlers and the Run In " +
                 "Parallel / Every blocks before it start again, so do their music, waypoint, respawn and travel commands. Only on the main " +
                 "flow from Start (not inside a block). Renaming it later sends old saves back to the start.").Delayed().Build();
     }
@@ -145,27 +145,27 @@ namespace GoF2Remake.EditorTools
     }
 
     [Serializable]
-    [Node("Event", null, "Quest Orbit")]
+    [Node("Event", null, "Mission Orbit")]
     public class EventQuestOrbitNode : EventFlowNode
     {
         public const string OrbitIn = "Orbit", On = "On";
 
         protected override void OnDefineOptions(IOptionDefinitionContext context) =>
-            context.AddOption<bool>(On).WithDefaultValue(true).WithTooltip("On: the orbit is the quest's from the next arrival, no normal traffic " +
-                "is built there (like a story orbit), until off or the quest's end. Off: normal again.").Build();
+            context.AddOption<bool>(On).WithDefaultValue(true).WithTooltip("On: the orbit is the mission's from the next arrival, no normal traffic " +
+                "is built there (like a story orbit), until off or the mission's end. Off: normal again.").Build();
 
         protected override void DefineInputs(IPortDefinitionContext context) =>
             context.AddInputPort<Orbit>(OrbitIn).WithTooltip("The orbit (wire Get Orbit in).").Build();
     }
 
     [Serializable]
-    [Node("Event", null, "Start Quest")]
+    [Node("Event", null, "Start Mission")]
     public class EventStartQuestNode : EventFlowNode
     {
         public const string Quest = "Quest";
 
         protected override void DefineInputs(IPortDefinitionContext context) =>
-            TextIn(context, Quest, "", "The quest to start beside this one (its graph's file name), unless it is under way or done. Single player.");
+            TextIn(context, Quest, "", "The story mission to start beside this one (its graph's file name), unless it is under way or done. Single player.");
     }
 
     [Serializable]

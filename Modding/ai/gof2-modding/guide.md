@@ -12,7 +12,7 @@ hardpoints placed on the hull in 3D (turrets facing out of the hull where they s
 and test flights against pirates; new items made from a game item (or changes to one) with their own stats and icon (the
 remake-only stats too: missiles and salvos, a turret's range, mining beams, phase cloaks), a turret's model (a game
 turret's or your own `.glb`), resized and moved on its mount, a weapon's projectile, muzzle flash, impact and sounds
-borrowed from the game's other weapons, fitted to the ship to try them out; characters with their portraits, for your quests
+borrowed from the game's other weapons, fitted to the ship to try them out; characters with their portraits, for your missions
 or standing in for a story character; and skins: a game ship's textures replaced, with its originals saved for you to paint
 over. A new ship's shop icon is rendered from its model
 (`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). Each kind of content is edited where it lives
@@ -23,27 +23,42 @@ in the game:
 | Ships, Items, Skins | the hangar | as above; **Test fly** flies them against pirates |
 | Ship kits | the hangar | customizable ships: the kit's slots, its parts (a `.glb` each) with their stats, weapon slots, tier models and hardpoints placed on the hull, paint slots; the turntable shows the kit's ship with the part you picked |
 | Blueprints | the hangar | the product (a ship stands on the turntable), ingredients, autocomplete, where it is found |
-| Campaign | the hangar | the card, the start (station, ship and its equipment, money, standings), its story quest, the galaxy / shops kept to mods; new-game options |
-| Characters, Quests, Audio | the Space Lounge | portraits; quests, bar missions and events in a node graph (or as a list of steps, below), Unity-made event graphs imported; music, sound effects and voice lines, each with ▶ |
+| Campaign | the hangar | the card, the start (station, ship and its equipment, money, standings), its story mission, the galaxy / shops kept to mods; new-game options |
+| Characters, Missions, Audio | the Space Lounge | portraits; story missions, bar missions and events in a node graph (or as a list of steps, below), Unity-made event graphs imported; music, sound effects and voice lines, each with ▶ |
 | Systems | the star map | every system shown: drag yours to their place, their gates, sky, sun, music, stations |
 | Stations, Weapon fx | in space | a station in its own orbit (model, size, turn, rooms, planet); weapons firing from one ship onto another |
 | Hangars & bars | the room itself | a `.glb` room or one of the game's (its markers filled in), the markers clicked into the room, light, fog, lens |
 
-Wherever content names other content (a quest's speaker, a station's system, a blueprint's product, a campaign's ship) the
-picker offers the game's, your project's own (your character can speak in your quest) and **every other installed mod's**:
+Wherever content names other content (a mission's speaker, a station's system, a blueprint's product, a campaign's ship) the
+picker offers the game's, your project's own (your character can speak in your mission) and **every other installed mod's**:
 picking another mod's makes it a dependency of yours (Menu > Dependencies lists them). **Play** in the top bar starts a play
 test: the game as a player has it with your mod on, from the builder's station, from your campaign's start or with one of
-your quests under way; the pause menu's (or the station menu's) Back to Mod Builder ends it, and so does a death.
+your missions under way; the pause menu's (or the station menu's) Back to Mod Builder ends it, and so does a death.
 **Undo** / **Redo** in the top bar (Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z) step back and forth through your edits, files you replaced
-or removed included, until you close the project. **Export as mod** puts the finished project into your Mods folder.
+or removed included, until you close the project. Menu > **Optimize models and textures** (or **Optimize…** beside a ship's
+model) makes a big download small: every texture inside your `.glb` models scaled down to 1K, 2K or 4K and stored as a JPEG
+(a PNG where it uses transparency), your own image files scaled down in their own format, and, if you like, a model's
+triangles cut to 75, 50 or 25 % (its seams and open edges are kept, so textures don't tear); a 61.7 MB model with nine 4K
+PNGs came to 2.7 MB at 1K. Undo puts the original files back. With Options > Graphics > **Levels of detail** on (the
+default) the game also makes simpler copies of your ships' and stations' models for when they are far away, from the
+model as you ship it, optimized or not; they are made again by themselves after you optimize. **Export as mod** puts the finished project into your Mods folder.
+
+**Mods for the original game** (the game's own `.aem` models and `.aei` textures, usually in `MESHES/` and `TEXTURES/`
+folders, named like the files they replace): the projects page's **Import mod > From a file...** makes a project of such a
+zip. A game ship's hull (`ship_016_nivelian.aem`) becomes a change to that ship with the new model at the length it had in
+the game, so the ship's hardpoints still fit; its `_diffuse` and `_normal_specular` textures become the hull's textures
+(the specular map as its smoothness). Any other `.aei` replaces the game's texture of that name, so a mod that only
+changes textures becomes a skin. The ship's other parts (`_lod_1`, `_engine_add`, `_lights_add`...) aren't used: the new
+model is the whole ship. Every model picker in the builder also takes a single `.aem`, and every texture picker an `.aei`.
+
 Every entry's page has **Edit as JSON…**: the entry's fields as this guide lists them, also the ones the builder has no field
 for (a ship's per-mesh `materials`, throttle and extra glows, a station's collision `volumes`, a room's `gateSpan`). The
 Menu has **Mod details** (website, credits, the Mods screen's picture) and **Translations** (every name and description of
 your items, ships, systems and stations in each language, `text/<lang>.json`); the Skins kind's **Other textures…** replaces
 any game texture (a station's, a planet's, a sun's, a ring's) and turns your retextured planets into stars (`backdrop.json`).
 **AI tools** in the top bar (Windows) is a switch for an MCP server: your own AI assistant (Claude Code, Claude Desktop,
-other MCP apps) can then look up content, write entries and files, check quests, play-test the open project, look at models
-and textures, aim the builder's camera, place hardpoints and room markers, set the test loadout, test-fly, play a quest
+other MCP apps) can then look up content, write entries and files, check missions, play-test the open project, look at models
+and textures, aim the builder's camera, place hardpoints and room markers, set the test loadout, test-fly, play a mission
 through by itself and export
 (`Modding/ai/README.md` says how to connect; off by default, this computer only, with a token). Its **Permissions** say
 what waits for your Yes: Read only, Ask always, Ask to remove (the default) or Allow all, so an assistant can also build
@@ -71,13 +86,13 @@ What mods can do so far:
   that only appears with it, or only later in the game (after leaving Mido, after the Supernova...).
 - **Change existing ships**: armour, cargo, price, slots, handling, and their model.
 - **Tune the flight, for either flight style**: items and ships that fly faster, turn quicker or boost harder in the
-  original flight, in free flight (the EVERSPACE 2-style option) or both, and campaigns, ships, new-game options and quests
+  original flight, in free flight (the EVERSPACE 2-style option) or both, and campaigns, ships, new-game options and missions
   that decide which of the two the game flies with (see [Flight styles](#flight-styles)).
 - **Add star systems and stations**: on the star map, linked by jumpgates, with their own orbits, shops and bars, their own
   station models (glTF / GLB), planets and suns, and their own hangars and bars to dock in.
-- **Add quests and bar missions**: story chains and side jobs made as event graphs in the Unity Editor, with dialogue,
+- **Add story missions and bar missions**: story chains and side jobs made as event graphs in the Unity Editor, with dialogue,
   voice-over, objectives, map markers, checkpoints that saves keep, rewards and failure.
-- **Add and replace music**: replace any of the game's tracks, or add new ones for your systems, stations and quests.
+- **Add and replace music**: replace any of the game's tracks, or add new ones for your systems, stations and missions.
 - **Replace sound effects**: any of the game's sounds, from the guns to the menu clicks and the voices.
 - **Reskin ships and objects**: replace any of the game's textures, for example a ship's hull paint.
 - **Build on other mods**: a story mod can use the ships, items and systems of a mod it depends on.
@@ -202,8 +217,9 @@ earlier). Only the fields you give change. Giving `name` or `description` rename
 | Field | |
 |---|---|
 | `name`, `description` | A string, or one text per language (see Texts below). |
-| `techLevel` | 1 to 10. Shops sell only items up to their station's tech level. |
+| `techLevel` | 1 to 10 like the originals, or up to 20 for gear above them (see [Tech levels above 10](#tech-levels-above-10)). Shops sell only items up to their station's tech level. |
 | `occurrence` | How often shops stock it (the originals use 0 to 90; 0 = never in a random shop). |
+| `stock` | How many units a shop stocks of it: `50`, or `[10, 25]` for a random amount between the two (1 to 9999). Without it the amount follows the item's kind, see [How many units a shop stocks](#how-many-units-a-shop-stocks). |
 | `minPrice`, `maxPrice` | The price range. A station's price lies between them, by distance to the cheapest and dearest systems. |
 | `price` | Shorthand: `1500` (both) or `[1200, 1500]`. |
 | `lowestPriceSystem`, `highestPriceSystem` | System numbers where it's cheapest and dearest. |
@@ -215,6 +231,24 @@ earlier). Only the fields you give change. Giving `name` or `description` rename
 | `fx` | A weapon's own look and sound, see [Weapon effects](#weapon-effects). |
 | `icon` | Its own shop icon: a PNG in the mod, 180 x 88 like the originals (frame and background included; copy one from `Assets/Resources/GoF2Icons` to start from), or one of the game's: `"gof2:item_046"`. Without it the item shows its base item's icon. An `override` with `icon` gives an original item a new one. |
 | `available` | A [condition](#conditions) that must hold before shops stock it or it turns up in loot (an `override` can hold back an original item too). |
+
+### How many units a shop stocks
+
+Without `stock`, how many units a station holds follows the item's kind, exactly as in the original game:
+
+| Kind | Units |
+|---|---|
+| Goods (commodities) | 5-19, multiplied by the distance to `lowestPriceSystem` (up to x20, x2 on Extreme): scarce near its home system, piled high far away |
+| Secondary weapons (missiles, mines, bombs) | 5-19 |
+| Primary weapons, turrets, equipment | 1-3 |
+
+`stock` replaces that with your own number: `"stock": 50` for exactly 50 units, `"stock": [10, 25]` for a random amount
+between the two (both included). A row with `stock` is also left out of the 0-2 units the game shaves off the other rows
+when the player re-docks, so an exact amount stays exact.
+
+`occurrence` still decides **whether** the shop stocks it at all, and `techLevel` and the station's own tech level whether
+it may turn up there. It works on an `override` too, so `{ "override": 122, "stock": [60, 90] }` fills every shop's
+energy cells.
 
 ### Stats
 
@@ -273,10 +307,37 @@ earlier). Only the fields you give change. Giving `name` or `description` rename
 | `freeBoostFactor` | 121 | Free flight's boost top speed in hundredths of the top speed (350 = x3.5) instead of the booster's own |
 | `tractorTargets` | 122 | Tractor beams: how many containers it pulls at once, 1 to 8 (default 1; see [Multi-grab tractor beams](#multi-grab-tractor-beams)) |
 | `tractorRange` | 123 | Multi-grab tractor beams: how far the extra beams reach for containers (game units, 20 per metre; default 30000 = 1.5 km) |
+| `shieldDamage` | 124 | A weapon's damage to a shield in percent (default 100; the Disruptor Laser and items based on it 200). What the shield doesn't absorb hits the armor and hull at the plain damage. Only ships with a shield feel it: the players (each other in multiplayer), not the game's NPCs |
 
 Which stats an item uses depends on its category, so copy the stats its base item has (see `items.json` and
 `item_attributes.json` in `Assets/Resources/GoF2Data`). items.json's own stat names (`loadingTimeMs`, `range`,
 `projectileSpeed`...) work too.
+
+### Tech levels above 10
+
+The original game's items and stations both stop at tech level 10, so an item can go higher (`"techLevel": 11`, up to 20;
+past that it is cut back to 20 with a warning) for gear better than anything in the game, like a community "Tech Level
+11" add-on. Where it turns up:
+
+- **Shops**: every station of tech level 10 (16 of them: Anesa, Posého, Binon, Thynome, F'err, Carme, P'arrenkk, Rr'ostam,
+  G'ukkion, K'mirkk, B'akrram, Genoh, Kothar, and the special stations Var Destro, Sao Perula and Quineros, which keep their
+  own rules: Var Destro weapons, Quineros equipment) may stock it, never a station below. Tech levels 11 and 20 are the same
+  there: `occurrence` alone says how often (40 = about every other visit at a mid-story stop, 100 = almost every time), so
+  give the top items a low one. `alwaysSoldAt` still puts it in one station's shop whatever the tech level.
+- **Loot**: a tier 5 ("Extremely dangerous") pirate outpost's two pieces of equipment are each one time in three an item
+  above tech level 10 (picked by `occurrence`) while one is available; an enhanced capital ship's gear (two pieces of tech
+  level 5+) may be one; ordinary pirates and freighters never drop weapons or equipment from tech level 8, as in the original.
+- **Everywhere else** it is an item like any other: lounge sellers may offer it, the item window shows "Tech level 11".
+
+Pair it with the other tools: `available` (e.g. `"won(main)"`, only after the story) holds it back from shops, loot and
+sellers until then, a high `price`, and a [blueprint](#blueprints) with `"autocomplete": false` when it should be built
+rather than bought. A ships.json `dealer` with `minTechLevel` above 10 likewise means the tech level 10 stations' dealers
+(ships have no tech level of their own).
+
+```json
+{ "id": "vanadis", "base": 59, "name": "Vanadis Plating", "techLevel": 11, "occurrence": 8,
+  "price": [420000, 460000], "available": "won(main)", "stats": { "armor": 260 } }
+```
 
 ### Mining beams
 
@@ -513,21 +574,28 @@ styles](#exhaust-styles)), 4 manoeuvring jet (`"direction": [x, y, z]`, the way 
 | `engineFx` | Optional. A Galaxy on Fire 3 style engine effect at every exhaust instead of the flame and its particles, see [Engine effect](#engine-effect). For effects any ship can wear, see [Exhaust styles](#exhaust-styles). |
 | `lounge` | Optional. A visitor in the Space Lounges sells it: in systems of `systemRace` (-1 = any), from story step `minCampaign` (in free play from rank `minRank`), `chance` % each time a bar fills with new visitors. |
 | `npcTurrets` | Optional, also in an `override`. Turret items (numbers or `"mod:id"`, e.g. `[ 48, "my_mod:flak" ]`) the **NPC** ships of this type carry on its turret mounts (`slotType` 2), the n-th item on the n-th mount: in space they aim and fire by themselves at whatever that ship is hostile to (your own turret model, missiles and salvos included), and parked in a hangar they show them. Items that are no turret, or more items than mounts, give a warning. The game's own NPC ships carry none; the Bloodstar (45) and the Rhino (51) swap their built-in turret for yours. |
-| `dealer` | Optional. The ordinary ship dealers may stock it: `{ "chance": 2, "systemRace": -1, "minTechLevel": 0 }`, `chance` % (decimals allowed) each time a station's dealer list is made, at stations of `systemRace` systems (-1 = any) with at least that tech level. Not the special yards (Kothar, Quineros, Thynome...). |
+| `dealer` | Optional. The ordinary ship dealers may stock it: `{ "chance": 2, "systemRace": -1, "minTechLevel": 0 }`, `chance` % (decimals allowed) each time a station's dealer list is made, at stations of `systemRace` systems (-1 = any) with at least that tech level (above 10: the tech level 10 stations). Not the special yards (Kothar, Quineros, Thynome...). |
 | `traffic` | Optional. How NPC fighters fly it: `{ "weight": 1, "races": [8] }`. With the Gameplay option "Mod ships in traffic" (Off / 10 / 25 % (default) / 50 %) that share of the game's NPC fighters (patrols, raiders, pirates, escorts, guards) fly one of the mods' ships of their race instead, picked by `weight` (0 = never); `races` are the races whose fighters fly it (0 Terran, 1 Vossk, 2 Nivelian, 3 Midorian, 8 pirates, 9 Void; default its own `race`). Only ships up to 150 m long, available now (`available`), with their model loaded. Their hull and guns stay those of the fighter they replace. Freighters and capital ships aren't replaced, and a [campaign's](#campaigns) `trafficShips` win. A [customizable ship](#customizable-ships)'s NPCs each fly a random build of it (parts the type may fit, a tier, one of the kit's colour presets or random palette colours, now and then a skin); `"randomBuild": false` keeps them to its default build. The builds use the parts already loaded, and every docking loads a few more in the background, so the variety grows as you play. |
 | `available` | Optional. A [condition](#conditions) that must hold before it is sold anywhere (dealers and lounges), and before NPCs fly it. |
 | `sounds` | Optional. The ship's own engine and boost sounds, see [Ship sounds](#ship-sounds). |
-| `integrated` | Optional, also in an `override`. Equipment built into the hull, like the Kothar ships' Khador Drive (Cronus, Typhon, Nemesis) and the Specter's / Scimitar's cloak: `{ "khadorDrive": true, "cloak": true }`. `khadorDrive`: the ship can make Khador jumps without the drive in a slot (it still needs energy cells). `cloak`: `true` (the U'tool's stats), a cloak item (a number or `"mod:id"`, e.g. `96`) whose stats it has, or `false`; a cloak the player mounts replaces it, and with the Gameplay option "Cloak bay on cloaking ships" it goes into the built-in cloak's bay instead of a slot. `false` takes an original ship's away. |
+| `integrated` | Optional, also in an `override`. Equipment built into the hull, like the Kothar ships' Khador Drive (Cronus, Typhon, Nemesis) and the Specter's / Scimitar's cloak: `{ "khadorDrive": true, "cloak": true }`. `khadorDrive`: the ship can make Khador jumps without the drive in a slot (it still needs energy cells). `cloak`: `true` (the U'tool's stats), a cloak item (a number or `"mod:id"`, e.g. `96`) whose stats it has, or `false`; a cloak the player mounts replaces it, and with the Gameplay option "Cloak bay on cloaking ships" it goes into the built-in cloak's bay instead of a slot. `false` takes an original ship's away. `items`: any equipment built in, a list of item numbers, `"mod:id"` keys or `{ "item": ..., "amount": n }` (a secondary weapon's starting ammo, default 10), e.g. `"items": [46, { "item": 36, "amount": 20 }, 54]`. Built-in items work like mounted ones but take no slot, show on the hangar's Ship tab under "Built into the ship", and can't be demounted, sold or stored; they stay with the ship type when the player changes ships. A one-per-ship item the player fits (a shield, armor, a booster, a scanner, a drill, a cloak...) takes the built-in one's place without a slot, and the built-in one is back when it is demounted; built-in weapons and turrets add to the ship's own slots. A built-in launcher's missiles are refilled by buying more; a one-off item that is used up (an emergency system) is back at the next docking. An empty list takes them away. |
 
-Ship and station materials get the original game's hull shine: the system's reflection and a rim light, stronger where
-the surface is smoother (the smoothness / alpha of the metallic map), like the game's own ships; metal parts reflect
-through the normal lighting instead. A custom hangar or bar (interiors.json) has none, like the game's rooms. A mod system
-reflects its template system's sky.
+Ship and station materials are lit physically (URP Lit): they reflect the system's sky by their smoothness (the
+alpha of the metallic map) and metalness, the way PBR engines draw them. The game's own hulls add the original's shine
+on top, from specular maps made for it; a mod's smoothness map is a different thing, so mod materials don't get it. In
+the game's hangars a mod hull is lit from above with less of the room's flat ambient light, so it keeps its shading
+(models have no shading painted into their textures, the game's do). A custom hangar or bar (interiors.json) lights
+mod and game ships alike. A mod system reflects its template system's sky.
 
 The model's own materials (base colour, metallic-roughness with its metallic / roughness factors, normal map, emission,
 transparency) are used as they are. glTF
 from Blender works: File > Export > glTF 2.0, format glTF Binary (.glb), +Y up. Projects made in Unity can use the
 Project window's right-click **GoF2 > Export Model As GLB (Mods)**.
+
+Moving parts animate: the model's first animation (a spinning radar dish, bobbing engine pods: objects moved, turned or
+scaled over time) plays on a loop wherever the ship is shown, in flight, in the hangar and on NPC ships. Animations
+that bend the mesh with bones (an armature) don't play: such a hull is shown in its rest pose. Keep moving parts as
+separate objects animated by themselves, and put the animation you want looped first in the file.
 
 ### Ship sounds
 
@@ -618,7 +686,9 @@ off while the ship is parked or the engines are off, stronger and longer with th
 |---|---|
 | `glow`, `glowSize`, `glowIntensity` | A flare facing the camera at the nozzle, brightest seen from behind: a square of the whole picture plus a long thin streak at half brightness (the picture turned a quarter). `glowSize`: the square's half size, the streak's half width and half height (game units, default 240, 720, 72). |
 | `cone`, `coneLength`, `coneWidth`, `coneIntensity` | Four crossed cards along the exhaust, `coneLength` at full throttle and `coneWidth` half wide (default 650, 87); along them the picture's horizontal middle band from 0.39 (the nozzle) to 0.69, brightest just behind the nozzle. |
-| `trail`, `trailCount`, `trailLength`, `trailWidth`, `trailWander`, `trailTime`, `trailIntensity` | `trailCount` streams per exhaust (default 2) that waver in smooth waves and bend behind the ship when it turns: each reaches `trailLength` behind at full throttle (default 2800), `trailWidth` half wide at the nozzle (default 28, thinner toward the end), swaying by `trailWander` (default 650), each point living `trailTime` seconds (default 0.75). `trail` is one soft streak; the stream takes its middle row across. |
+| `nozzle` | The nozzle radius the effect is drawn for (game units, default `coneWidth`): exhaust styles on this ship are sized so its nozzles are this large (only when `nozzle` is given), and a style made from this effect fits other ships' nozzles against it. The GoF3 Ships mod's: Nivelian 87, Terran 100, Vossk 45 (the Vossk plume is three times its nozzles). |
+| `coneProfile`, `coneFade` | The cards' own shape: `coneProfile` a ring after ring `[share of the length, brightness 0..1, u of the picture, ...]` from the nozzle (default `[0, 0, 0.39, 0.143, 0.77, 0.44, 0.571, 0.2, 0.56, 1, 0, 0.69]`); `coneFade` `[from, to]` fades each card out as it turns edge-on to the camera (how much it faces the camera, 0 edge-on to 1 face-on: gone at `from`, full from `to`): seen from straight behind only the flare shows, as Galaxy on Fire 3 draws its exhausts (its engines use `[0, 0.3]`). |
+| `trail`, `trailCount`, `trailLength`, `trailWidth`, `trailWander`, `trailTime`, `trailIntensity` | `trailCount` streams per exhaust (default 2) that waver in smooth waves and bend behind the ship when it turns: each reaches `trailLength` behind at full throttle (default 2800), `trailWidth` half wide at the nozzle (default 28, thinner toward the end), swaying by `trailWander` (default 650; 0 = a straight streak), each point living `trailTime` seconds (default 0.75). `trail` is one soft streak; the stream takes its middle row across. |
 | `spiral`, `spiralCount`, `spiralLength`, `spiralRadius`, `spiralWidth`, `spiralTurns`, `spiralSpin`, `spiralScroll`, `spiralRepeat`, `spiralIntensity` | A helix: `spiralCount` strands per exhaust (default 2) winding round it, `spiralLength` long at full throttle (default 560), from `spiralRadius` `[at the nozzle, at the end]` (default 27, 5), each `spiralWidth` half wide (default 22), `spiralTurns` turns along it (default 2), spinning `spiralSpin` turns a second (default 1.2). The picture runs along each strand (taller than wide: Galaxy on Fire 3's Nivelian engines use a lightning bolt, so the strands crackle), `spiralRepeat` times along it (default 3), scrolling `spiralScroll` lengths a second (default 3); the strands fade out toward their end. |
 | `color` | `[r, g, b]` for exhausts with no colour of their own. |
 | `flareColor`, `coneColor`, `trailColor`, `spiralColor` | `[r, g, b]`: that part's own colour, over the exhaust's (the GoF3 Ships mod's Nivelian engines take them from the game's materials: a deep blue helix and plume; its Terran engines the textures' own amber). |
@@ -658,14 +728,16 @@ colours. "Ship's own" keeps the model's exhaust.
 | `id`, `name` | The style (builds name it `"mod_id:id"`). |
 | `engineFx` | A Galaxy on Fire 3 style effect, the fields of a ship's [`engineFx`](#engine-effect). Its two colours: the flare and cone, then the trails and helix. |
 | `model`, `materials`, `yaw` | Or a flame model put at each exhaust: its origin at the nozzle's exit, the flame blowing along -Z (`yaw`: degrees about the up axis when it faces another way); `materials` as a ship's, a `"flame": true` entry for the flame cards (see [materials](#materials)). Its two colours: the flame and the boost cards. |
-| `nozzle` | The nozzle radius the effect is made for: game units for `engineFx` (default its `coneWidth`), the model's units for `model` (default 1). Each exhaust of the ship is scaled by its own nozzle's size against it (a mod mount's `glowSize`, a mod ship's `engineGlowRadius`, the game's ships' exhaust sizes). |
+| `nozzle` | The nozzle radius the effect is made for: game units for `engineFx` (default its own `nozzle`, else its `coneWidth`), the model's units for `model` (default 1). Each exhaust of the ship is scaled by its own nozzle's size against it (a mod mount's `glowSize`, a mod ship's `engineGlowRadius`, the game's ships' exhaust sizes; on a ship with an `engineFx` of its own that gives a `nozzle`, its nozzles are taken as large as that `nozzle` x `fxScale`, so a ship wearing a style made like its own engine shows it at its own engine's size). |
 | `palette` | The colours offered, `[ { "id", "name", "color": "#RRGGBB" } ]` (default the game's bright colour list). Each row also offers "Original", the style's own colour. |
 | `mainName`, `secondName` | The two colour rows' names (default "Exhaust colour" / "Second colour"). |
+| `group`, `groupName`, `scale` | Flame models of one mod with the same `group` are offered as one choice (named `groupName`, else the first one's name): each nozzle of the ship wears the one made for the nearest nozzle size, its `nozzle` x `scale` (the model's size as the mod's own ships show it: Unity metres per model unit, default 1). The EVERSPACE 2 importer offers its three thrusters this way. |
 
 The style sits where the ship's exhausts are (`slotType` 3 mounts: a kit ship's build's, a mod ship's, the game's own) and takes
 each nozzle's shape: its outline (the hull of the nozzle seen from behind) and centre. A flame model's cross-section is bent to
 that outline (a square nozzle gets a square flame, a hexagon a hexagonal one), a GoF3 effect's cone and helix follow it and its
-trails spread along a slot. Where the outline comes from: a mount's `"outline"` (below), else the ship's meshes whose material
+trails spread along a slot. Where the outline comes from: a mount's `"outline"` (below; only when it is at least half the
+mount's `glowSize` and centred within 1.5 x it, else it is taken for stray lit pixels), else the ship's meshes whose material
 name contains "nozzle", else a mount's `glowSize` (an oval), else the game's ships' own nozzles (measured from their engine
 glow). It goes
 with the engines: off while parked, mining or docking at an object, stronger with the throttle and the boost. The model's own
@@ -674,8 +746,10 @@ resizes it (50 % to 200 % of the fitted size, in 10 % steps) so it fits the ship
 own mod's ships' boost jets: on the game's ships and other mods' ships they stay hidden, and a boost turns each nozzle's main
 flame to the boost colour instead. While the Customize screen is open the engines run on the turntable, boosting while a
 boost colour row is picked. A build may carry it (`"exhaust": "mod_id:id"`, `"exhaustColor"`, `"exhaustColor2"`: a palette id or
-`"#RRGGBB"`, `"exhaustSize"`: 0.5 to 2); it is saved with the game and other players see it. The Galaxy on Fire 3 Ships mod offers GoF3's Nivelian (with its helix), Terran and Vossk drives, the
-EVERSPACE 2 importer three ES2 thrusters cut from rear parts.
+`"#RRGGBB"`, `"exhaustSize"`: 0.5 to 2); it is saved with the game and other players see it. A flame model style isn't
+offered on its own mod's ships: it is cut from those ships' own exhaust parts, which they choose in their own rows. The Galaxy
+on Fire 3 Ships mod offers GoF3's Nivelian (with its helix), Terran and Vossk drives, the EVERSPACE 2 importer three ES2
+thrusters cut from rear parts.
 
 ### Changing ships
 
@@ -872,6 +946,7 @@ own, at the kit's scale and yaw, with the kit's materials:
 ```json
 "hardpoints": {
   "turret": "equipment/turret.glb",
+  "toggle": true,
   "weapons": [
     { "slot": "primary", "model": "equipment/beam_laser.glb", "items": [9, 10, 11] },
     { "slot": "primary", "model": "equipment/blaster.glb", "categories": [1] },
@@ -901,6 +976,11 @@ own, at the kit's scale and yaw, with the kit's materials:
   shot (a list of files: one at random; a `pitch` range: a random pitch), `loop` loops while the trigger is held (a beam),
   with `shot` then played once as it starts, and fades out over `release` ms (default 100) when let go. Each is a sound as in
   [Ship sounds](#ship-sounds) (`volume` a number; the game's shots play at 0.7). Other players hear it on your shots too.
+- `toggle` (optional, default false): the hangar's Customize screen gets a **Weapon models** row, Shown / Hidden. Hidden,
+  the ship shows none of these models, no turret model and none of its mounts' `nodes` (the pylons): a bare hull, for kits
+  whose weapons are an addition to models that had none. The weapons still fire, from the mounts themselves, and the turret
+  works as on a `builtIn` mount without a model. The choice is part of the build (text `weapons=off`); a ship's default
+  `"build"` may start hidden with `"weapons": false`. Other players see the choice.
 
 In the hangars a customizable ship floats at the height its build needs: its lowest point, weapon models hanging under it
 included, 1.5 m above the pad (its `hangarHeight` isn't used), so no build cuts into the floor.
@@ -948,10 +1028,10 @@ bonuses instead.
 | `flightStyle` | `"free"` or `"original"`: this ship always flies so, whatever the player's option (`"player"` or no field: the player's). |
 | `flight` | Bonuses in % for both styles: `topSpeed`, `turnRate`, `strafeSpeed`, `acceleration` (free flight only: the original has none), and `boostFactor` (free flight's boost in hundredths of the top speed). `original` / `free` inside it: the same, for one style only. |
 
-**Who decides the style**, first match: an event or quest (the **Set Flight Model** node, `/flightstyle`), the ship flown,
+**Who decides the style**, first match: an event or mission (the **Set Flight Model** node, `/flightstyle`), the ship flown,
 the mod campaign (`campaign.json`'s `"flightStyle"`), a new-game option that is on (`gameoptions.json`'s `"flightStyle"`), then
 the player's own option. The Options page says so while a mod decides, and the key layout follows the style in use. Touch,
-tilt and VR always fly the original. Quests can ask with `freeflight` (1 in free flight, 0 in the original).
+tilt and VR always fly the original. Missions can ask with `freeflight` (1 in free flight, 0 in the original).
 
 In the original a top speed bonus speeds the boost up too, and a turn rate bonus keeps the time the ship takes to reach its
 turn rate. Free flight's top speed, turn rate and acceleration otherwise come from the ship's handling (with its Steering
@@ -1001,6 +1081,7 @@ New star systems and their stations. Both are lists: `"id"` adds one, `"override
 | `race` | Who owns it: 0 Terran, 1 Vossk, 2 Nivelian, 3 Midorian. It sets the hangars, bars, music, traffic, shops and the jumpgate. |
 | `security` | 0 (lawless) to 3 (secure): how many raiders show up. |
 | `visible` | On the star map from the start (default true). A hidden system can't be reached yet. |
+| `available` | A condition (the expressions of [Conditions](#conditions)) for a system that comes and goes: while it holds the system is on the star map, while it doesn't it is hidden, whatever was revealed, with its routes and jumps. A player inside when it disappears is told so and, 4 seconds later, taken to the nearest system on the map. For example `"available": "quest(smuggler_run) == 1"`: only while that story mission or bar mission is under way. |
 | `position` | `[x, y, z]` on the star map. The original systems lie between 15 and 94 (x), 2 and 96 (y) and 10 and 90 (z). |
 | `sky` | Which of the original skies (nebula and sun) it uses, 0 to 18. |
 | `gates` | The systems its jumpgate reaches (numbers, or `"mod_id:system_id"`). Routes work both ways: the other system gets the route back. |
@@ -1010,7 +1091,12 @@ New star systems and their stations. Both are lists: `"id"` adds one, `"override
 | `skybox` | Its own sky, see [Skies](#skies). Default: the nebula of its `sky` and the game's stars. |
 | `spaceMusic`, `stationMusic` | A mod's track (see [Music](#music)). |
 
-Changing a system (`"override"`): `name`, `security`, `visible`, `sky`, `sunTexture`, `sunColor`, `skybox`, the music, and `gates` (added to its routes; links original systems too).
+Changing a system (`"override"`): `name`, `security`, `visible`, `available`, `sky`, `sunTexture`, `sunColor`, `skybox`, the music, and `gates` (added to its routes; links original systems too).
+
+Events and missions can also show or hide a system themselves: the `system` step (Show / hide a system), the graph's **Show /
+Hide System** node, or the command `system [players] <system> <show | hide | reset>` (the system by number, name or
+`"mod_id:system_id"`). It holds, and is saved, until the same system is reset, and it wins over `available`. A mission that
+shows a system for its mission hides (or resets) it again in its last steps, including the failure branch.
 
 ### Skies
 
@@ -1102,7 +1188,7 @@ story off.
 | `equipment` | What is mounted on the ship: items, or `{ "item", "amount" }` (a secondary weapon's amount is its ammo). Default: nothing. |
 | `cargo` | What is in the hold: `{ "item", "amount" }`. |
 | `standing` | `[Terran / Vossk, Nivelian / Midorian]` from -100 to 100 (positive leans toward the first race). Default `[30, 0]`. |
-| `quest` | An event graph (a quest, see [Quests and bar missions](#quests-and-bar-missions)) that starts with the game: the campaign's story. Its other quests start by their own conditions as usual. |
+| `quest` | An event graph (a mission, see [Story missions and bar missions](#story-missions-and-bar-missions)) that starts with the game: the campaign's story. Its other missions start by their own conditions as usual. |
 | `galaxy` | `"mod"`: only this mod's star systems and those of the mods it depends on exist in this game (the map, missions, the news); `"all"` (default): the whole galaxy. |
 | `items` | `"mod"`: shops and bar sellers offer only mods' items (sell the player anything they find; mining still brings the game's ores). Default `"all"`. Give the campaign its own goods and energy cells if it needs them. |
 | `ships` | `"mod"`: dealers sell only mods' ships. Default `"all"`. |
@@ -1146,7 +1232,7 @@ installed has every option off.
 
 ## Conditions
 
-Several fields take a condition: `available` on items, ships and blueprints, and the quests' "Starts when". It is written in
+Several fields take a condition: `available` on items, ships and blueprints, and the missions' "Starts when". It is written in
 the event graphs' expression language and is checked when it matters (a shop's stock, a lounge's visitors, a kill...):
 
 | Word | |
@@ -1156,7 +1242,7 @@ the event graphs' expression language and is checked when it matters (a shop's s
 | `systemsvisited` | How many star systems the player has docked in (2 or more: they have left Mido). |
 | `campaign` | The story step (-1 in free play and mod campaigns). |
 | `rank`, `credits`, `kills`, `station`, `system`, `ship` | The player's rank, credits, kills, where they are docked / flying, the ship they fly. |
-| `visited(station)`, `has(item)`, `cargo(item)`, `quest(name)` | A station docked at; how many of an item the player has (mounted too) / has in the hold; a quest under way (1) or done (2). |
+| `visited(station)`, `has(item)`, `cargo(item)`, `quest(name)` | A station docked at; how many of an item the player has (mounted too) / has in the hold; a mission under way (1) or done (2). |
 | `docked(station)`, `inorbit(station)` | How many of the players are docked at that station now / alive in its orbit (single player: 1 or 0). |
 
 Combine them with `and`, `or`, `not`, comparisons and arithmetic:
@@ -1207,7 +1293,7 @@ autocomplete), and the product is made at the station where the first ingredient
 | `available` | A [condition](#conditions) before any source offers it. |
 | `unlocked` | `true`: the player knows it as soon as it is available (the next docking), without finding it. |
 | `lounge` | A Space Lounge visitor sells it: `chance` % each time a bar fills with new visitors, for `price` (default half the product's price), in `systemRace` systems (-1 = any). |
-| `derelict` | `chance` % of the orbits visited hold a derelict freighter (`race`: terran, vossk, nivelian, midorian or any) to dock at and hack; it leaves the blueprint in a data container. `stations`: only in those orbits (station numbers or `"mod_id:station_id"`; then `chance` defaults to 100, always there). `position`: `[ x, y, z ]` in game units (what `/pos` shows in that orbit), else somewhere out in front of the station. Hacking it also fires the quests' and events' `hacked` trigger. |
+| `derelict` | `chance` % of the orbits visited hold a derelict freighter (`race`: terran, vossk, nivelian, midorian or any) to dock at and hack; it leaves the blueprint in a data container. `stations`: only in those orbits (station numbers or `"mod_id:station_id"`; then `chance` defaults to 100, always there). `position`: `[ x, y, z ]` in game units (what `/pos` shows in that orbit), else somewhere out in front of the station. Hacking it also fires the missions' and events' `hacked` trigger. |
 | `drops` | A ship the player destroys may leave it in a data container: `race` (terran, vossk, nivelian, midorian, pirate, void, specter or any), `chance` % per kill (decimals allowed). |
 
 A blueprint found in a data container is learnt when the tractor beam pulls the container in ("Blueprint found: ..."). A
@@ -1299,7 +1385,7 @@ The keys are `items.<id>.name` / `items.<id>.description`, `ships.<id>.name` / `
 language, then English, then the plain text. Language codes: `en`, `de`, `fr`, `es`, `it`, `pt`, `ru`, `pl`, `nl`,
 `ar`, `ja`, `ko`, `zh`, `hi`.
 
-## Quests and bar missions
+## Story missions and bar missions
 
 Story content is made with **event graphs**, the same node graphs the multiplayer events use (`.gof2event` files, made in
 the Unity Editor of the remake's project: **Assets > Create > GoF2 > Event Graph**; older `.gof2netevent` files still work, and
@@ -1318,26 +1404,32 @@ my_story/
 The file name (without `.gof2event`) is the graph's name; keep it one word. The graph's **Start** node decides what it is
 (its **Kind**):
 
-- **Quest** works like the game's own story chain. It starts by itself once **Starts when** holds, checked every second in a
+- **Story Mission** works like the game's own story chain. It starts by itself once **Starts when** holds, checked every second in a
   game (an expression: `campaign >= 20`, `visited(Kernstal)`, `quest(first_signal) == 2`, `credits > 50000`; empty = at once,
-  `never` = only when another graph's **Start Quest** node starts it). Its **Mission title** and current objective show in the
+  `never` = only when another graph's **Start Mission** node starts it). Its **Mission title** and current objective show in the
   Missions window's Story panel. **Mission Complete** pays the reward and finishes it for good. **Mission Failed** works like
   failing a story mission: "Mission failed!", then the last save is loaded.
 - **Bar Mission** is offered by a visitor in the Space Lounges (**Offered at**: station names or numbers, empty = every
   station; **Client**: a story character like `Keith`, one of your [characters](#characters) or a race and a name like `vossk K'ekki`, empty = someone of the
-  station's race). In single player it is the player's one mission, like the game's freelance missions: it shows in the
+  station's race). **Offer chance %** (default 35) is how many of those stations' bars offer it: each station decides for 30
+  minutes, so docking again doesn't roll it anew, and once someone takes it there that bar doesn't offer it again for 30
+  minutes; 100 = every bar, always. **Who can take it** (multiplayer): **One In Universe** (the default: while a squad is
+  on it no bar anywhere offers it), **One Per Station** (taking it takes it out of that bar for 30 minutes, other stations
+  still offer it) or **Anyone** (any number of squads, at the same station too). The visitor's plate names the mission only once you have talked to them. When it ends
+  with **Mission Complete** or **Mission Failed** the client sends their message, like the game's own freelance missions.
+  In single player it is the player's one mission, like the game's freelance missions: it shows in the
   Missions window's Freelance panel with **Discard**, and a success counts like a freelance mission. In multiplayer the squad
   takes it together.
 - **Event** is a multiplayer game mode started by an admin's `/event`.
 
-Nodes made for quests:
+Nodes made for missions:
 
 | Node | |
 |---|---|
-| **Checkpoint** | What a save keeps: the quest's variables, objective, target and quest orbits as they are here. Loading a save goes on from the last checkpoint. Put one after each step the player shouldn't have to repeat. Only on the main flow from Start, not inside an If / While / Repeat / parallel block. |
+| **Checkpoint** | What a save keeps: the mission's variables, objective, target and mission orbits as they are here. Loading a save goes on from the last checkpoint. Put one after each step the player shouldn't have to repeat. Only on the main flow from Start, not inside an If / While / Repeat / parallel block. |
 | **Set Objective** | The objective in the Missions window (`\n` = a new line) and, with a **Get Orbit** wired in, the target station: the gold story icon on the star map and the HUD, and the window's **Show on map**. |
-| **Quest Orbit** | That orbit becomes the quest's: no normal traffic is built there (like the story's own mission orbits), so the graph can spawn exactly the ships it wants. |
-| **Start Quest** | Starts another quest beside this one (a chain of quests, or a bar mission leading into one). |
+| **Mission Orbit** | That orbit becomes the mission's: no normal traffic is built there (like the story's own mission orbits), so the graph can spawn exactly the ships it wants. |
+| **Start Mission** | Starts another mission beside this one (a chain of missions, or a bar mission leading into one). |
 
 Everything else is the event graphs' toolbox: **Dialog** (conversations with portraits, see [Voice-over](#voice-over)), **Radio**,
 **Spawn** (ships, friendly or hostile, named; objects as scenery; `wreck`: a hackable freighter wreck), **Wait Until**, **On**
@@ -1366,29 +1458,29 @@ limited to a station like the others), with the player as `@trigger` and the wre
 In multiplayer the wreck is in the games it was spawned for (each player of `@a` gets their own); the other players see it
 but can't dock at it. Spawn it for one player (`@trigger`, `@p`) when a squad shares the orbit.
 
-Mod quests run beside the game's own story. A quest whose mod is turned off waits in the save until the mod is back.
+Mod missions run beside the game's own story. A mission whose mod is turned off waits in the save until the mod is back.
 
-### Quests made in the Mod Builder
+### Missions made in the Mod Builder
 
-The Mod Builder's Quests kind makes quests, bar missions and events without the Unity Editor, in a **node graph** like
+The Mod Builder's Missions kind makes story missions, bar missions and events without the Unity Editor, in a **node graph** like
 the Editor's: a Start node, every step a node, the white wires the order they run in, a block's outputs (If's Then / Else,
 an Ask's answers...) the steps it runs. Drag the canvas to move around, the wheel to zoom; drag from an output onto a node
 to wire it (onto the empty canvas: a new step there, or cut the wire); drag a wired input away to cut it; double-click
 the canvas for a new step; Delete removes the selected node; **Tidy up** lays the graph out. The panel on the right edits
-the selected node (or the quest's settings), **Edit as JSON…** included. A node reached by no wire is drawn faded: it
+the selected node (or the mission's settings), **Edit as JSON…** included. A node reached by no wire is drawn faded: it
 doesn't run. **Value nodes** (+ Value: a number, the game's state, a variable, maths, a comparison, and / or / not,
-random, min / max, the players, an orbit, ships alive, a ship's distance, cargo, docked at, visited, a quest's state)
+random, min / max, the players, an orbit, ships alive, a ship's distance, cargo, docked at, visited, a mission's state)
 wire into the small square inputs of a step's fields (conditions, numbers, stations, whom it is for) or into each other.
 **List view** shows the same as an outline of steps. **Import an event graph…** reads a `.gof2event` from the Unity Editor:
 converted into the builder's nodes (where they stood on the Unity canvas; the lines the builder has no node for stay
 Command nodes, so it runs the same) or added as it is.
 
-It writes `events/<name>.gof2quest`, which the game turns into an event graph's script when it loads it (**Show the script**
+It writes `events/<name>.gof2mission`, which the game turns into an event graph's script when it loads it (**Show the script**
 shows it). It can be written by hand too:
 
 ```json
 {
-    "format": "gof2quest", "title": "The first signal", "kind": "quest", "startsWhen": "visited(78)", "reward": 5000,
+    "format": "gof2mission", "title": "The first signal", "kind": "quest", "startsWhen": "visited(78)", "reward": 5000,
     "variables": [ { "name": "waves", "value": 2 } ],
     "steps": [
         { "type": "dialog", "pages": [ { "speaker": "Keith", "text": "A signal! {waves} waves of them.", "voice": "signal_1" }, { "speaker": "my_mod:vega", "text": "Come." } ] },
@@ -1407,16 +1499,16 @@ shows it). It can be written by hand too:
 ```
 
 `kind` is `quest`, `mission` (a bar mission: `offer`, `client`, `stations`, `players` [min, max] as the Start node's) or
-`event` (started by `/event <name>` or another one's Next event step). `variables`: numbers the quest keeps (`setting`: true
-lets `/event name x=3` change it); a text shows one in braces (`{waves}`). Without `complete` / `fail` a quest completes after
-its last step (`"autoComplete": false` turns that off). Every step takes `who` (whom it is for: `@a` everyone the quest is for,
+`event` (started by `/event <name>` or another one's Next event step). `variables`: numbers the mission keeps (`setting`: true
+lets `/event name x=3` change it); a text shows one in braces (`{waves}`). Without `complete` / `fail` a mission completes after
+its last step (`"autoComplete": false` turns that off). Every step takes `who` (whom it is for: `@a` everyone the mission is for,
 the default; `@trigger` the player a When block is about; any selector). The steps:
 
 | Group | Steps (fields) |
 |---|---|
 | Story | `dialog` (pages: speaker, text, voice), `radio` (speaker, text, voice), `objective` (text, station), `title` (title, subtitle, seconds), `note` (text: a comment) |
-| Flow | `wait` (seconds), `waituntil` (condition, timeout), `if` (condition, `then`, `else`), `while` (condition, `steps`), `repeat` (count, as, `steps`), `parallel` (`steps`: beside the rest), `every` (seconds, `steps`), `on` (trigger: died, docked, launched, kill, cleared, entered, near, respawned, hacked, joined, left, pvpkill; station; near: at "x y z", radius; `steps`), `ask` / `vote` (question, speaker, seconds, `answers`: [{ text, steps }]; a vote's `none` runs when nobody voted), `random` (`branches`: [{ weight, steps }]), `set` (variable, value), `checkpoint` (name), `startquest` (quest), `startevent` (event, settings), `complete` (reward, title), `fail` (title), `stop` |
-| Places | `goto` (station, `dock` true: docked there, false: in its orbit, objective), `waypoint` (station, at), `target` (station), `questorbit` (station, on), `restrict` (what: jumps / docking / all / off), `respawn` (station, at, spread, delay), `teleport` (station, dock, at) |
+| Flow | `wait` (seconds), `waituntil` (condition, timeout), `if` (condition, `then`, `else`), `while` (condition, `steps`), `repeat` (count, as, `steps`), `parallel` (`steps`: beside the rest), `every` (seconds, `steps`), `on` (trigger: died, docked, launched, kill, cleared, entered, near, respawned, hacked, joined, left, pvpkill; station; near: at "x y z", radius; `steps`), `ask` / `vote` (question, speaker, seconds, `answers`: [{ text, steps }]; a vote's `none` runs when nobody voted), `random` (`branches`: [{ weight, steps }]), `set` (variable, value), `checkpoint` (name), `startquest` (mission), `startevent` (event, settings), `complete` (reward, title), `fail` (title), `stop` |
+| Places | `goto` (station, `dock` true: docked there, false: in its orbit, objective), `waypoint` (station, at), `target` (station), `questorbit` (station, on), `system` (system, action: show / hide / reset), `restrict` (what: jumps / docking / all / off), `respawn` (station, at, spread, delay), `teleport` (station, dock, at) |
 | Ships | `fight` (station, ships: ship / count / race / behaviour, name, quiet; ends when none is left), `spawn` (ship, count, race, behaviour, name, at, turrets), `wreck` (race, name, at: a hackable freighter wreck), `shipgoto` (ship, to, speed, radius, fight, then), `shiproute` (ship, route "place / place", loop, ...), `shipfollow` (ship, leader, offset, escort, speed), `shipattack` (ship, target), `shipaction` (ship, action: hold / resume / jump / dock / flee, seconds), `provoke` (race, within) |
 | The player | `reward` (credits, items, title), `give` (item, amount, mount), `cargo` (item, amount, station: waits until the hold has it), `credits` (amount), `ship` (hull, own), `heal`, `ammo`, `kill`, `reveal`, `peace` |
 | Cutscenes | `cutscene` (letterbox, freeze, invulnerable), `camera` (from, to, seconds, look, follow, fov, shake), `chasecamera`, `cutsceneend`, `fade` (direction: out / in / clear, seconds, colour), `letterbox` (on) |
@@ -1457,7 +1549,7 @@ flee seconds 5`, `/npc Blue Wing dock`, `/npc Blue Wing hold | resume | jump | s
 
 ### Cutscenes
 
-The **Cutscene** nodes stage a scene in flight. They work in quests, bar missions and multiplayer events alike.
+The **Cutscene** nodes stage a scene in flight. They work in story missions, bar missions and multiplayer events alike.
 
 | Node | |
 |---|---|
@@ -1483,7 +1575,7 @@ Look At "ship Pirate Boss", Follow, Seconds 0)  ->  Radio (the boss's threat)  -
 To "player -2500 400 1500", Seconds 3)  ->  Wait 3  ->  End Cutscene
 ```
 
-The cutscene ends with the graph too (a quest finished or failed, an event stopped), so the player is never left stuck in it.
+The cutscene ends with the graph too (a mission finished or failed, an event stopped), so the player is never left stuck in it.
 The same in typed commands (multiplayer admins): `/cutscene start freeze`, `/camera player 0 300 4000 to station 0 2000 20000 over 5
 look station`, `/camera chase`, `/fade out 1 ffffff`, `/letterbox on`, `/cutscene end`; a ship name with spaces goes in
 "quotes" there (`ship "Pirate Boss"`).
@@ -1514,7 +1606,7 @@ named can use them: a **Dialog** page, a **Radio** call, an **Ask** / **Vote** q
 | `mirrored` | `true`: drawn mirrored (the game mirrors Keith's portrait). |
 | `frame` | `false`: without the faint scanlines the game draws over every portrait (a light screen look, about 10 % dark lines). |
 | `background` | `false`: without the dark, half-transparent backdrop behind the picture. It only shows through transparent parts of your PNG (a cut-out character), so a full picture looks the same either way. |
-| `replaces` | A story character (`"Gunant Breh"`, `"Keith"`, or a speaker number) whose portrait this one takes everywhere, the game's own story included, and whose name too when this character has a `name` (the dialogue and radio headers, `%player%` for Keith). Other characters' lines that mention the old name, and the voices, stay. |
+| `replaces` | A story character (`"Gunant Breh"`, `"Keith"`, or a speaker number) whose portrait this one takes everywhere, the game's own story included, and whose name too when this character has a `name` (the dialogue and radio headers, `%player%` for Keith). Other characters' lines that mention the old name, and the voices, stay. The Mod Builder's **+ Replace a game character…** starts one from that character's own portrait and name. |
 
 Name the character in a speaker slot by `vega`, by `frontier_systems:vega` (always unique, also across mods) or by its name
 (`Captain Vega`). `vega as Harbour Master` shows another name over the same face, like the story characters. In typed
@@ -1527,12 +1619,19 @@ Any **Dialog** page or **Radio** line can have voice-over: add `[voice <clip>]` 
 
 - `<clip>` can be one of the game's own voice lines by its name (`MSG_MISSION_24_NO_EQUIPMENT_INSTALLED`, the names in
   `Assets/Audio/*_VOICE_*`).
-- Or it is a file in the mod's `voices` folder: `voices/<clip>.ogg` (`.wav` and `.mp3` work too). For German voices add
-  `voices/de/<clip>.ogg`; the game picks it when the player's voice language is German, else `voices/en/<clip>.ogg`, else
-  `voices/<clip>.ogg`.
+- Or it is a file in the mod's `voices` folder: `voices/<clip>.ogg` (`.wav` and `.mp3` work too) for every language. A
+  language of its own goes in `voices/<language>/<clip>.ogg`, any of the game's text languages (`en`, `de`, `fr`, `es`,
+  `it`, `nl`, `pl`, `ru`, `pt`, `zh`, `hi`): with the voice language option on "as text" a player hears the one in their
+  text language, then the game's voice language (German or English), then `voices/<clip>.ogg`; with the option on English
+  or German, that language's.
 
 The window waits a moment for the clip to load, types the text along with it, and turns the page when the line ends (with
 the player's **auto-advance** option on), like the story's own voices.
+
+**Replace one of the game's lines**: name a file in `voices` like the line (`voices/MSG_MISSION_24_NO_EQUIPMENT_INSTALLED.ogg`)
+and it is spoken instead, everywhere the game uses that line, the story included. `voices/` replaces it in every language,
+`voices/<language>/` in that language only (a French file there gives French players a French line). The Mod Builder's Audio page lists the lines (**+ Replace a
+game line**).
 
 ## Music
 
@@ -1562,6 +1661,9 @@ per sound bank), for example `Target_Lock_v08` (a ship lock), `Blaster_Nsaan_01`
 `Engine_09` (an NPC engine). `Reference/research/fmod_event_ids.txt` in the repository lists every sound event with its
 files. Voices are sounds too: a voice line's file name replaces that line (the German voices are the same names with `de_`
 in front, so each language is replaced on its own). Music has its own `music` folder (above).
+
+**Add a sound**: any other name is a new sound of your own. The missions' **Sound** step and the event graphs' **Play Sound**
+node (its **Mod sound** field) play it by that name, so does `/sound <name>`.
 
 A sound the game picks at random from several files (most shots and explosions) needs each file replaced to always sound
 yours. Only a weapon's own shot can be set on the item instead (`fx` → `shot`, above). A ship's own engine and boost sounds are
@@ -1650,6 +1752,25 @@ To draw your retextured planets as stars, add a `backdrop.json` to the mod (the 
 
 Planets you don't retexture stay planets.
 
+### Flight HUD markers
+
+The combat HUD's images are replaced the same way, by their names in the game's `Assets/Resources/GoF2Hud` folder: the ship
+markers `ship_dot_<faction>` (a far ship), `ship_ring_<faction>` (a far locked ship), `ship_ring_open_<faction>` (a far ship
+with the "Far ship markers" option on Ring), `ship_bracket_<faction>` (a locked ship's bracket), `ship_bar_<faction>` /
+`ship_fill_<faction>` (a near ship's hull bar), with `<faction>` `enemy`, `friend` or `neutral`; the containers `crate_dot`,
+`bracket`, `crate_off`; the lock ring's frames `lock_00` ... `lock_23`; the status bars and the hit arcs. Each is drawn at its
+own size, placed where the original's is, so keep the transparent edge and roughly the original's size. Other HUD images
+(the crosshair, the navigation markers, the touch controls) can't be replaced yet.
+
+```
+small_markers/
+  mod.json
+  textures/
+    ship_dot_enemy.png
+    ship_dot_friend.png
+    ship_dot_neutral.png
+```
+
 ## The game's own models
 
 Anywhere a mod takes a 3D model, it can name one of the game's own models instead of a `.glb` file: `"gof2:<model name>"`,
@@ -1661,7 +1782,7 @@ model comes with everything it has: its textures, lights, engine glows, animatio
 | ships.json `model` | A new ship on a game ship's model: `"model": "gof2:ship_028_terran"`. It gets that ship's hardpoints (unless the entry has its own `mounts`), sits on the hangar pads like that ship (unless it gives `hangarHeight`) and uses its shop icon (unless it gives `icon`). Textures of its own go in `textures/ships/<ship id>/` (see [A new ship on a game model](#a-new-ship-on-a-game-model)). On an `override` it gives an original ship another ship's model. `modelLength`, `modelYaw` and the other model fields don't apply: the model is used as made. |
 | stations.json `model` | A station on any game model, at its own size unless `modelSize` is given: `"model": "gof2:station_078_midorian"`. |
 | items.json fx `turret` | A turret on any game model: `"turret": "gof2:turret_003_ship_mounted"` (a model without the turret's `pivot` / `*_gun` nodes turns as one piece), or `"turret": { "item": 48 }` for that game turret's model with its own muzzle and shot start. `scale` and `offset` work on both. |
-| items.json fx parts | A projectile, muzzle flash or impact on a game model: `{ "model": "gof2:rocket_002", "size": 300 }`; or another item's own part with `{ "item": 46 }` (see [Weapon effects](#weapon-effects)). |
+| items.json fx parts | A projectile, muzzle flash or impact on a game model: `{ "model": "gof2:rocket_002", "size": 300 }`; or another item's own part with `{ "item": 46 }` (see [Weapon effects](#weapon-effects)). Two props that aren't in the model list work here too: `"gof2:bra"` and `"gof2:beer"`, the bra and beer can that drift through the ending (see `Modding/Examples/exploding_bra`). |
 | items.json / ships.json `icon` | One of the game's shop icons: `"icon": "gof2:item_046"`, `"icon": "gof2:ship_028"`. |
 
 The Mod Builder offers the same without typing names: **+ New ship on a game model** and **Game model…** on the Ship tab,

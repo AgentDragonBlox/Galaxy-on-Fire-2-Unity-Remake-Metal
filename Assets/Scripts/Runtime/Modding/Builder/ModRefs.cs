@@ -246,7 +246,7 @@ namespace GoF2Remake.Modding
                     }
                     break;
                 case RefKind.Quest:
-                    foreach (string f in m.Source.FilesIn("events", ".gof2event", ".gof2netevent", "." + ProjectQuest.Extension))
+                    foreach (string f in m.Source.FilesIn("events", ".gof2event", ".gof2netevent", "." + ProjectQuest.Extension, "." + ProjectQuest.LegacyExtension))
                         l.Add(E(System.IO.Path.GetFileNameWithoutExtension(f), System.IO.Path.GetFileNameWithoutExtension(f)));
                     break;
                 case RefKind.Music:

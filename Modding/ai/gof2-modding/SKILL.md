@@ -15,7 +15,7 @@ the PNG / GLB / OGG assets they name. Mods contain no code. This file is the for
   replaces, backdrop textures, music tracks, sound effects, the event sound / music words, the built-in event graphs.
 - `voices.md`: every voice clip with its speaker and English line (for `[voice <clip>]`).
 - `events.md`: every event graph node with its options, ports, types, choices and defaults, the expression words, every
-  command with its syntax and the player selectors (for quest / bar mission / cutscene recipes).
+  command with its syntax and the player selectors (for mission / bar mission / cutscene recipes).
 - `guide.md`: the full modders' guide, every field of every file with more detail and examples than this file. When a
   field or behaviour isn't covered here, look it up there.
 
@@ -31,9 +31,9 @@ If you can't open them, ask the user to paste the part you need (or to attach it
    sound or voice clip is referred to by its number or name from `reference.md` / `voices.md`; never guess one. Content from a mod (this one or another) is referred to by its key `mod_id:id`.
 4. You can't make binary assets. For every PNG / GLB / OGG a file names, tell the user exactly what to provide (size, format,
    layout, where to put it). Paths in JSON are relative to the mod folder, with `/`.
-5. Event graphs (quests, bar missions, cutscenes) are made in the Unity Editor, not written by hand. For those, give the user
-   a node-by-node recipe (see "Quests"). A simple quest or bar mission can be written by hand instead as a step list,
-   `events/<name>.gof2quest` (see "Quests made as step lists"; the in-game Mod Builder writes the same).
+5. Event graphs (story missions, bar missions, cutscenes) are made in the Unity Editor, not written by hand. For those, give the user
+   a node-by-node recipe (see "Missions"). A simple story mission or bar mission can be written by hand instead as a step list,
+   `events/<name>.gof2mission` (see "Missions made as step lists"; the in-game Mod Builder writes the same).
 6. Check your output against the checklist at the end before giving it.
 
 The player installs the mod by copying the folder (or zip) into the game's `Mods` folder, pressing **Refresh** in the main
@@ -73,8 +73,8 @@ my_mod/
   exhausts.json       exhaust styles any ship can wear (the hangar's Customize screen)
   systems.json, stations.json, interiors.json   new star systems, stations, hangars and bars
   characters.json     speakers with portraits
-  events/*.gof2event  quests and bar missions as Unity event graphs
-  events/*.gof2quest  quests and bar missions as step lists (by hand or the Mod Builder)
+  events/*.gof2event  story missions and bar missions as Unity event graphs
+  events/*.gof2mission  story missions and bar missions as step lists (by hand or the Mod Builder)
   text/<lang>.json    translations
   music/, sounds/, voices/, textures/          replacement / new audio and skins
 ```
@@ -364,7 +364,7 @@ first-time position and what multiplayer uses. A game started before the mod was
 
 ## Conditions
 
-Used by `available` (items, ships, blueprints) and quests' "Starts when". Expression language:
+Used by `available` (items, ships, blueprints) and missions' "Starts when". Expression language:
 
 | Word | Value |
 |---|---|
@@ -373,7 +373,7 @@ Used by `available` (items, ships, blueprints) and quests' "Starts when". Expres
 | `systemsvisited` | Star systems docked in; `>= 2` = has left Mido (the start system). |
 | `campaign` | Story step (0-162; -1 in free play / mod campaigns). |
 | `rank`, `credits`, `kills`, `station`, `system`, `ship` | Player state. |
-| `visited(station)`, `has(item)`, `cargo(item)`, `quest(name)` | Docked there (1/0); count owned incl. mounted / in hold; quest 0 none, 1 running, 2 done. |
+| `visited(station)`, `has(item)`, `cargo(item)`, `quest(name)` | Docked there (1/0); count owned incl. mounted / in hold; mission 0 none, 1 running, 2 done. |
 
 Operators: `and`, `or`, `not`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `+ - * /`, parentheses, `min(a,b)`, `max(a,b)`,
 `floor(x)`, `random(a,b)`. Example: `"option(canon_ships:gof3d) and systemsvisited >= 2"`. An unreadable condition counts as
@@ -414,7 +414,7 @@ the game. `"flightStyle": "free" | "original"`: the campaign's games always fly 
 Kaamo Club's storage and siege, a pirate base) stay with the original number. Stations have no hidden flag: every station of
 a visible system shows on the map. A system's `"available"` condition (an expression, e.g. `"quest(smuggler_run) == 1"`)
 shows it only while it holds and hides it otherwise (a player inside is taken to the nearest visible system); events and
-quests can also `system <system> show | hide | reset` (step `system`, node Show / Hide System), saved until reset, over
+missions can also `system <system> show | hide | reset` (step `system`, node Show / Hide System), saved until reset, over
 `available`.
 
 Systems: race 0-3, security 0 (lawless) - 3 (secure), map position (originals x 15-94, y 2-96, z 10-90), sky 0-18, gates
@@ -438,9 +438,9 @@ required). `override` changes originals (name, techLevel, looks, music...).
   included, in every language or (in `voices/<language>/`) one.
 - `music/<name>.ogg`: a game track's name (`Space_Terraner`, `Station_Vossk`, `Space_Battle_Full`, `Space_NoCombat_Void`
   (main menu)...) replaces it; any other name is a new track for systems/stations (`spaceMusic`, `stationMusic`, `music`) and
-  quests.
+  missions.
 - `sounds/<name>.ogg`: replaces the game sound with that file name (from the game's Assets/Audio folders); any other name is
-  a new sound the quests' Sound step / Play Sound's Mod sound / `/sound <name>` play.
+  a new sound the missions' Sound step / Play Sound's Mod sound / `/sound <name>` play.
 - `textures/<name>.png`: replaces that game texture everywhere (`ship_028_terran_diffuse`; keep the original UV layout,
   2048 x 2048). `textures/<model>/<name>.png` (e.g. `textures/ship_028_terran/glow_terran.png`) replaces a shared texture
   (`glow_<race>` lights, `ship_engine_glow`) on that one model only, before the every-ship one. A new ship on a game model
@@ -453,15 +453,15 @@ required). `override` changes originals (name, techLevel, looks, music...).
   `ship_ring_<faction>`, `ship_ring_open_<faction>`, `ship_bracket_<faction>`, `ship_bar_` / `ship_fill_<faction>` (faction
   `enemy` / `friend` / `neutral`), `crate_dot`, `bracket`, `crate_off`, `lock_00` ... `lock_23`; drawn at their own size.
 
-## Quests made as step lists (.gof2quest)
+## Missions made as step lists (.gof2mission)
 
 Prefer these over event graphs: plain JSON, no Unity Editor, and the Mod Builder opens them as a node graph.
-`events/<name>.gof2quest` (the file name is its name: letters, digits, `_`): `{ "format": "gof2quest", "title", "kind":
+`events/<name>.gof2mission` (the file name is its name: letters, digits, `_`): `{ "format": "gof2mission", "title", "kind":
 "quest" | "mission" | "event", "startsWhen", "reward", "offer", "client", "stations", "players", "chance" (a bar mission: % of
 its stations' bars offering it, default 35, 100 = always), "takers" ("universe" default: one squad at a time anywhere;
 "station": one per station; "any": any number), "variables": [{ name, value,
-setting }], "steps": [...] }`. Every step type, field and default is in `quests.md` (the same as `quest.schema.json`), made
-from the game's own table: read it before writing a quest. In short: story steps (`dialog` pages, `radio`, `objective`,
+setting }], "steps": [...] }`. Every step type, field and default is in `missions.md` (the same as `mission.schema.json`), made
+from the game's own table: read it before writing a mission. In short: story steps (`dialog` pages, `radio`, `objective`,
 `title`), flow and blocks (`wait`, `waituntil`, `if` then / else, `while`, `repeat`, `parallel`, `every`, `on` <trigger> (also
 `hacked`: the player hacked a wreck, its name as %victim%), `ask`
 / `vote` answers, `random` branches, `set`, `checkpoint`, `startquest`, `startevent`, `complete`, `fail`), places (`goto`,
@@ -471,21 +471,21 @@ wreck: race, name, at), `shipgoto`, `shiproute`,
 cutscenes (`cutscene`, `camera`, `fade`, `letterbox`...), `music`, `sound`, `timer`, score steps and `command` (any event
 command line). Steps acting on players take `who` (default `@a`; `@trigger` inside an `on` block). Speakers as in Dialog
 (`Keith`, `my_mod:vega`, `vossk K'ekki`, `player`); stations / ships / items by number or key; `{variable}` in a text shows
-it. Without `complete` / `fail` a quest completes after its last step. Put a `checkpoint` after each step a save shouldn't
+it. Without `complete` / `fail` a mission completes after its last step. Put a `checkpoint` after each step a save shouldn't
 repeat (not inside a block).
 
 ## The Mod Builder's MCP server
 
 When the user has the game's Mod Builder open with its **AI tools** MCP server on (Windows), you may have its tools:
 `builder_status`, `search_content` (find the right numbers / keys: use its `value`), `list_entries`, `get_entries`,
-`put_entry` (the mod files' own JSON; quests with `name`), `patch_entry` (for changes to an existing entry: ops `set` /
+`put_entry` (the mod files' own JSON; missions with `name`), `patch_entry` (for changes to an existing entry: ops `set` /
 `insert` / `remove` / `move` / `test` by paths like "steps/2/pages/0/text" or "steps/3/then/0", all or none; it keeps the rest
-and a quest's graph layout, so prefer it to rewriting the whole entry; `test` a step's type first so a stale index can't
+and a mission's graph layout, so prefer it to rewriting the whole entry; `test` a step's type first so a stale index can't
 edit the wrong step; `get_entries` with `path` reads one part), `delete_entry`, `list_files`, `read_file`, `write_file`,
-`compile_quest`, `validate`, `get_quest_schema`, `play_test`, `end_play_test`, `get_log`, `screenshot`, `undo`, `redo`,
+`compile_mission`, `validate`, `get_mission_schema`, `play_test`, `end_play_test`, `get_log`, `screenshot`, `undo`, `redo`,
 `show_kind`; and to see and drive the builder: `view_model` (a model from named angles in one image: "gof2:<assembly>",
 "ship:<id | override:N | number>" with its hardpoints as tagged dots P / S / T / E, hollow where the hull hides them,
-"station:...", or "models/x.glb"), `view_texture` / `list_textures`, `select_entry` (an entry on screen; ships' tab, a quest's
+"station:...", or "models/x.glb"), `view_texture` / `list_textures`, `select_entry` (an entry on screen; ships' tab, a mission's
 graph), `view` (the builder's camera from front / back / left / right / top / bottom / threequarter / rear, zoom, with a
 screenshot, `clean` hides the panels), `hardpoint` (op list / add / snap / select / mirror / delete; add puts a point where a
 line from a side meets the hull: use it instead of guessing coordinates, then check with view_model), `engines`, `test_fly` /
@@ -499,27 +499,27 @@ button by its text). Audio: `search_content` kinds `music`, `sound` and `voice` 
 names (a voice line with its speaker and English line); a `music/`, `sounds/` or `voices/` file of that name replaces it
 (the story's lines too; `voices/<code>/` for one language: en, de, fr, es, it, nl, pl, ru, pt, zh, hi), any other name is a
 new one. `write_file` of a `models/<name>.aem` (the game's own model format) converts it to `.glb` and gives its length
-for `modelLength`. Play a quest through to check it (ui_click a conversation's Next / Close and Launch; the autopilot menu
+for `modelLength`. Play a mission through to check it (ui_click a conversation's Next / Close and Launch; the autopilot menu
 plus a number key and a held fastForward dock you), watching with the screenshots they answer with. Then work
 in the live project instead of giving the user files: look things up, put entries, `validate` (fix every error), look at
-what you made (`view_model`, `view_texture`, `select_entry` + `view`), `play_test` a quest and check it with `screenshot` /
+what you made (`view_model`, `view_texture`, `select_entry` + `view`), `play_test` a mission and check it with `screenshot` /
 `builder_status` / `get_log`, `end_play_test`. Every
 change is an undo step. What waits for the player depends on the permission mode they chose (builder_status's
 `permission`): ReadOnly (changes are refused: suggest instead), AskEveryChange (each change waits for their Yes, up to 5
 minutes: make few, complete calls), AskRemovals (only delete_entry asks), AllowEverything (nothing asks: remove only
 what they asked you to). "The player said no" means stop and ask them what they want.
 
-## Quests and bar missions (event graphs)
+## Story missions and bar missions (event graphs)
 
 Made as `.gof2event` node graphs in the Unity Editor (the remake's project: Assets > Create > GoF2 > Event Graph), saved
-to the mod's `events/` folder; the file name is the graph's name. The Start node's Kind: **Quest** (starts by itself when
+to the mod's `events/` folder; the file name is the graph's name. The Start node's Kind: **Story Mission** (starts by itself when
 "Starts when" holds), **Bar Mission** (offered by a lounge visitor; Offered at, Offer chance % (default 35), Who can take it, Client, Reward) or **Event** (multiplayer).
 Nodes include Dialog, Radio, Spawn (named ships), Wait / Wait Until, On (docked, entered orbit, destroyed, cleared, near a
-point), Set Waypoint, Set Objective, Checkpoint, Quest Orbit, Give Item, Reward, Mission Complete / Failed, Start Quest, ship
+point), Set Waypoint, Set Objective, Checkpoint, Mission Orbit, Give Item, Reward, Mission Complete / Failed, Start Mission, ship
 orders (Fly To, Fly Route, Follow, Attack, Ship Action), cutscene nodes (Start Cutscene, Camera Shot, Fade, End Cutscene),
 Play Music, Set Flight Model (free flight / original / the player's choice, undone at the graph's end; expression
-`freeflight` = 1 in free flight). A Checkpoint (and a quest's start) is kept by the game's next save: the auto-save at the next docking or a manual
-save; a quest started while docked isn't in that docking's auto-save. Quest Orbit takes effect the next time the orbit is built
+`freeflight` = 1 in free flight). A Checkpoint (and a mission's start) is kept by the game's next save: the auto-save at the next docking or a manual
+save; a mission started while docked isn't in that docking's auto-save. Mission Orbit takes effect the next time the orbit is built
 (launching from its station counts). You can't write the file; describe the graph as an ordered list of nodes with their settings and wires for the
 user to build, using the exact node, option and port names (and option choices) from `events.md`.
 

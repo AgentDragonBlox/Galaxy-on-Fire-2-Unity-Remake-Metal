@@ -175,9 +175,9 @@ namespace GoF2Remake.UI
             Int(srow, T("mbNivelianMidorian", "Nivelian (+) / Midorian (-)"), st.y, -100, 100, v => { c.Standing = new Vector2Int(c.Standing.x, v); MarkDirty(); });
 
             Heading(campaignPage, T("mbStory", "Story"));
-            RefField(campaignPage, T("mbStoryQuest", "Its story quest (starts with the game)"), RefKind.Quest, c.Quest, v => { c.Quest = v; MarkDirty(); BuildCampaignPage(); },
+            RefField(campaignPage, T("mbStoryQuest", "Its story mission (starts with the game)"), RefKind.Quest, c.Quest, v => { c.Quest = v; MarkDirty(); BuildCampaignPage(); },
                      T("mbNoQuest", "none"));
-            Note(campaignPage, T("mbStoryQuestNote", "Made in Quests; the mod's other quests start by their own conditions."));
+            Note(campaignPage, T("mbStoryQuestNote", "Made in Missions; the mod's other missions start by their own conditions."));
 
             Heading(campaignPage, T("mbWorld", "The world"));
             var wrow = Row(campaignPage);

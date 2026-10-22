@@ -4,8 +4,8 @@
 // numbers, blueprint recipes, ships with their models, systems with their skies, stations with their planets and models,
 // story steps, story speakers, every assembled model with the texture names a skin replaces, the backdrop textures, music
 // tracks, sound effects, the event commands' sound / music words, the built-in event graphs; the Android economy), and
-// voices.md beside it (every voice clip with its speaker and English line, for "[voice <clip>]"), quests.md + quest.schema.json
-// (the .gof2quest step format, Events.QuestSchema). The AI modding guide
+// voices.md beside it (every voice clip with its speaker and English line, for "[voice <clip>]"), missions.md + mission.schema.json
+// (the .gof2mission step format, Events.QuestSchema). The AI modding guide
 // (Modding/ai/gof2-modding/SKILL.md) points assistants to both. Run it again after changing the game data. Mods' content is
 // left out (only the original numbers).
 
@@ -26,8 +26,8 @@ namespace GoF2Remake.EditorTools
         const string VoicesPath = "Modding/ai/gof2-modding/voices.md";
         const string EventsPath = "Modding/ai/gof2-modding/events.md";
         const string GuidePath = "Modding/ai/gof2-modding/guide.md";
-        const string QuestsPath = "Modding/ai/gof2-modding/quests.md";
-        const string QuestSchemaPath = "Modding/ai/gof2-modding/quest.schema.json";
+        const string QuestsPath = "Modding/ai/gof2-modding/missions.md";
+        const string QuestSchemaPath = "Modding/ai/gof2-modding/mission.schema.json";
         const string GuideSource = "Modding/README.md";
 
         static readonly string[] RaceNames = { "Terran", "Vossk", "Nivelian", "Midorian", "?", "?", "?", "?", "Pirate", "Void", "Specter" };
@@ -132,7 +132,7 @@ namespace GoF2Remake.EditorTools
                 WriteReference(db, dbDefault);
                 WriteVoices(db);
                 Write(EventsPath, new StringBuilder(ModdingEventsReference.Build()));
-                // The .gof2quest format from the game's own step table (Events.QuestSchema).
+                // The .gof2mission format from the game's own step table (Events.QuestSchema).
                 Write(QuestsPath, new StringBuilder(Events.QuestSchema.Markdown()));
                 Write(QuestSchemaPath, new StringBuilder(Events.QuestSchema.Build().ToString(Newtonsoft.Json.Formatting.Indented) + "\n"));
                 WriteGuide();
@@ -178,7 +178,7 @@ namespace GoF2Remake.EditorTools
             sb.AppendLine("`system`, `looksLike`, `planet`, `sky`, `startStation`, `startShip`, `replaces`, speakers, `textures/<name>.png`,");
             sb.AppendLine("`music/<name>.ogg`, `sounds/<name>.ogg`, `/spawn` objects... Mod content is referred to by key instead (`mod_id:id`).");
             sb.AppendLine("Beside this file: `voices.md` (every voice clip with its line), `events.md` (every event graph node with its options and");
-            sb.AppendLine("ports, every command), `quests.md` + `quest.schema.json` (the .gof2quest step format), `guide.md` (the full modders' guide:");
+            sb.AppendLine("ports, every command), `missions.md` + `mission.schema.json` (the .gof2mission step format), `guide.md` (the full modders' guide:");
             sb.AppendLine("every field of every mod file).");
             sb.AppendLine();
             sb.AppendLine("Contents: Races, Items, Item categories, Item stats (attribute numbers), Blueprints, Ships, Ship hardpoints, Default");

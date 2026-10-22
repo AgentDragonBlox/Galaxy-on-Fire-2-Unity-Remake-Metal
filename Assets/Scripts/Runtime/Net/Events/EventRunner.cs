@@ -424,9 +424,9 @@ namespace GoF2Remake.Events
         /// startquest): a quest under way or done isn't an error. The reason when it can't (null: started).</summary>
         public static string StartQuest(string name, bool quiet = false)
         {
-            if (!EventHost.Local) return X("mpEventQuestSingle", "Quests run in single player only.");
+            if (!EventHost.Local) return X("mpEventQuestSingle", "Story missions run in single player only.");
             if (Session.GraphQuestsDone.Contains(name) || Session.GraphQuests.Exists(q => q.name == name))
-                return quiet ? null : string.Format(X("mpEventQuestTaken", "The quest {0} is under way or done."), name);
+                return quiet ? null : string.Format(X("mpEventQuestTaken", "The mission {0} is under way or done."), name);
             string text = Load(name, out string from, out string error);
             if (text == null) return string.Format(X("mpEventMissing", "No event \"{0}\". /event list shows them."), name);
             if (error != null) return string.Format(X("mpEventError", "{0}: {1}"), name, error);
@@ -592,8 +592,8 @@ namespace GoF2Remake.Events
         /// <summary>An event graph file's extension; LegacyExtension = the files from when the graphs were multiplayer only
         /// (read everywhere, the Editor renames them, EventGraphImporter).</summary>
         public const string GraphExtension = "gof2event", LegacyExtension = "gof2netevent";
-        /// <summary>The graphs' file extensions, the Mod Builder's quests (QuestFile, .gof2quest) last.</summary>
-        static readonly string[] Extensions = { GraphExtension, LegacyExtension, QuestFile.Extension };
+        /// <summary>The graphs' file extensions, the Mod Builder's missions (QuestFile, .gof2mission, the old .gof2quest) last.</summary>
+        static readonly string[] Extensions = { GraphExtension, LegacyExtension, QuestFile.Extension, QuestFile.LegacyExtension };
         /// <summary>The built-in events' Resources folder.</summary>
         const string BuiltIn = "GoF2Events";
 
@@ -639,7 +639,8 @@ namespace GoF2Remake.Events
                 catch (Exception) { }
             }
             foreach (var mod in Modding.ModManager.Active)
-                foreach (string f in mod.Source.FilesIn("events", "." + GraphExtension, "." + LegacyExtension, "." + QuestFile.Extension)) names.Add(Path.GetFileNameWithoutExtension(f));
+                foreach (string f in mod.Source.FilesIn("events", "." + GraphExtension, "." + LegacyExtension, "." + QuestFile.Extension, "." + QuestFile.LegacyExtension))
+                    names.Add(Path.GetFileNameWithoutExtension(f));
             foreach (var a in Resources.LoadAll<TextAsset>(BuiltIn)) names.Add(a.name);
             return new List<string>(names);
         }
@@ -767,7 +768,6 @@ namespace GoF2Remake.Events
                         info.kind = v.Equals("quest", StringComparison.OrdinalIgnoreCase) ? 2 : v.Equals("mission", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
                         break;
                     case "starts": info.starts = v; break;
-                    case "stations":
                     case "takers":
                         info.takers = v.Equals("station", StringComparison.OrdinalIgnoreCase) ? EventMissionTakers.OnePerStation
                                     : v.Equals("any", StringComparison.OrdinalIgnoreCase) ? EventMissionTakers.Anyone : EventMissionTakers.OneInUniverse;
@@ -775,6 +775,7 @@ namespace GoF2Remake.Events
                     case "chance":
                         if (double.TryParse(v.TrimEnd('%'), NumberStyles.Float, CultureInfo.InvariantCulture, out double pc)) info.chance = Mathf.Clamp((int)Math.Round(pc), 0, 100);
                         break;
+                    case "stations":
                         foreach (string part in v.Split(','))
                             if (part.Trim().Length > 0 && NetTeleport.ParseStation(part.Trim(), out int st, out string left) && left.Length == 0 && st >= 0) info.stations.Add(st);
                         break;
@@ -1337,8 +1338,8 @@ namespace GoF2Remake.Events
                     return;
                 }
                 if (record != null) { Session.GraphQuests.Remove(record); record = null; }   // a bar mission: lost
-                var was = executing;
                 failed = true;
+                var was = executing;
                 executing = this;
                 try
                 {

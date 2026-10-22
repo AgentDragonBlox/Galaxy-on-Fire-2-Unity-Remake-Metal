@@ -26,14 +26,15 @@ namespace GoF2Remake.Events
     [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]   // read-only tables
     public static class QuestFile
     {
-        public const string Extension = "gof2quest";
+        /// <summary>The file's extension and its "format"; Legacy* = from when these were called quests (still read).</summary>
+        public const string Extension = "gof2mission", LegacyExtension = "gof2quest", Format = "gof2mission", LegacyFormat = "gof2quest";
 
-        /// <summary>A .gof2quest file's text?</summary>
+        /// <summary>A .gof2mission (or old .gof2quest) file's text?</summary>
         public static bool Is(string text)
         {
             if (string.IsNullOrEmpty(text)) return false;
             string t = text.TrimStart();
-            return t.StartsWith("{") && t.Contains("\"gof2quest\"");
+            return t.StartsWith("{") && (t.Contains("\"" + Format + "\"") || t.Contains("\"" + LegacyFormat + "\""));
         }
 
         /// <summary>The players a step speaks to by default: everyone the run covers (single player: the player; a bar
@@ -114,11 +115,11 @@ namespace GoF2Remake.Events
                     int min = 1, max = 4;
                     if (o["players"] is JArray pl && pl.Count >= 2) { min = Math.Max(1, (int)pl[0]); max = Math.Max(min, (int)pl[1]); }
                     Line($"mission players {min} {max}");
-                    var stations = Refs(o["stations"]);
                     if (o["chance"] is JValue ch && (ch.Type == JTokenType.Integer || ch.Type == JTokenType.Float))
                         Line("mission chance " + Math.Max(0, Math.Min(100, (int)Math.Round((double)ch))));
                     string takers = Str(o, "takers").ToLowerInvariant();
                     if (takers == "station" || takers == "any") Line("mission takers " + takers);
+                    var stations = Refs(o["stations"]);
                     if (stations.Count > 0) Line("mission stations " + string.Join(", ", stations));
                 }
                 foreach (var v in (o["variables"] as JArray ?? new JArray()).OfType<JObject>())
@@ -519,7 +520,7 @@ namespace GoF2Remake.Events
         public static JObject FromScript(string script, string fallbackTitle, List<string> notes, Dictionary<string, (float x, float y)> places)
         {
             var placed = new HashSet<string>();
-            var o = new JObject { ["format"] = "gof2quest" };
+            var o = new JObject { ["format"] = Format };
             var variables = new JArray();
             var root = new JArray();
             // The open blocks: the list steps go into, what opened it ("if", "else", "ask" ...), its step.
@@ -589,9 +590,9 @@ namespace GoF2Remake.Events
                                 if (f.Length >= 1 && int.TryParse(f[0], out int lo)) o["players"] = new JArray(lo, f.Length > 1 && int.TryParse(f[1], out int hi) ? hi : lo);
                                 break;
                             }
-                            case "stations":
                             case "chance": if (int.TryParse(v.TrimEnd('%'), out int pc)) o["chance"] = pc; break;
                             case "takers": if (v == "station" || v == "any") o["takers"] = v; break;
+                            case "stations":
                                 o["stations"] = new JArray(v.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).Select(x => int.TryParse(x, out int i) ? (JToken)i : x));
                                 break;
                         }

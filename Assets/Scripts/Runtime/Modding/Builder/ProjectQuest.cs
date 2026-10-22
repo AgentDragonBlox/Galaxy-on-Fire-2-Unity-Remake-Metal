@@ -14,17 +14,18 @@ namespace GoF2Remake.Modding
 {
     public class ProjectQuest : ProjectEntry
     {
-        public const string Extension = "gof2quest";
+        // The same as Events.QuestFile's (a layer above); Legacy = from when these were called quests (still read).
+        public const string Extension = "gof2mission", LegacyExtension = "gof2quest", Format = "gof2mission";
         public const string Folder = "events";
 
-        /// <summary>Its file name (without .gof2quest): the name startquest, campaign.json's "quest" and "quest(name)" use.</summary>
+        /// <summary>Its file name (without .gof2mission): the name startquest, campaign.json's "quest" and "quest(name)" use.</summary>
         public string Name { get; set; }
         public string Ref => "quest:" + Name;
 
         public ProjectQuest(string name, JObject o) : base(o)
         {
             Name = name;
-            json["format"] = "gof2quest";
+            json["format"] = Format;   // an old "gof2quest" one is written back as a .gof2mission
             if (!(json["steps"] is JArray)) json["steps"] = new JArray();
         }
 

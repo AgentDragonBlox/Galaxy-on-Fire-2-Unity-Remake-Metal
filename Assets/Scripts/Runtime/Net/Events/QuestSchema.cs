@@ -1,8 +1,8 @@
 // QuestSchema.cs
-// Remake-only: the .gof2quest format as a JSON Schema (draft 2020-12) and as a Markdown reference, made from the same tables
+// Remake-only: the .gof2mission format as a JSON Schema (draft 2020-12) and as a Markdown reference, made from the same tables
 // the game compiles with (QuestSteps' step types and fields, QuestGraph's value nodes), so what an AI assistant is told can't
 // drift from what the game reads. GoF2 > Build > Modding AI Reference writes them into Modding/ai/gof2-modding
-// (quest.schema.json, quests.md); the Mod Builder's MCP server hands the schema out (get_quest_schema). The fields of the
+// (mission.schema.json, missions.md); the Mod Builder's MCP server hands the schema out (get_mission_schema). The fields of the
 // steps the builder edits on its own page (a conversation's pages, a fight's ships...) are listed here by hand. Plain C#.
 
 using System.Collections.Generic;
@@ -31,8 +31,8 @@ namespace GoF2Remake.Events
                                 ("objective", "text", "the objective meanwhile (optional)") },
             ["reward"] = new[] { ("credits", "number", "credits (or an expression)"), ("items", "items", "[{ item, amount }]"), ("title", "text", "the reward box's title") },
             ["checkpoint"] = new[] { ("name", "string", "its name (optional; one word)") },
-            ["startquest"] = new[] { ("quest", "string", "the quest's name (its file name)") },
-            ["complete"] = new[] { ("reward", "integer", "credits (default: the quest's reward)"), ("title", "text", "the reward box's title") },
+            ["startquest"] = new[] { ("quest", "string", "the story mission's name (its file name)") },
+            ["complete"] = new[] { ("reward", "integer", "credits (default: the mission's reward)"), ("title", "text", "the reward box's title") },
             ["fail"] = new[] { ("title", "text", "what the player is told") },
         };
 
@@ -44,7 +44,7 @@ namespace GoF2Remake.Events
         static JObject Text(string d) => Desc(new JObject { ["$ref"] = "#/$defs/text" }, d);
         static JObject TextDef => new JObject { ["anyOf"] = new JArray(new JObject { ["type"] = "string" },
             new JObject { ["type"] = "object", ["description"] = "one per language: { \"en\": ..., \"de\": ... }", ["additionalProperties"] = new JObject { ["type"] = "string" } }) };
-        const string WhoNote = "@a everyone the quest is for (default), @trigger the player an \"on\" block is about, @alive, @docked, @survivors, @r, or @alive[orbit=<station>]";
+        const string WhoNote = "@a everyone the mission is for (default), @trigger the player an \"on\" block is about, @alive, @docked, @survivors, @r, or @alive[orbit=<station>]";
 
         static JObject FieldSchema(QuestField f)
         {
@@ -163,7 +163,7 @@ namespace GoF2Remake.Events
             return new JObject
             {
                 ["type"] = "object", ["title"] = t.english,
-                ["description"] = t.what + (t.topOnly ? " (only on the quest's own line of steps, not inside a block)" : ""),
+                ["description"] = t.what + (t.topOnly ? " (only on the mission's own line of steps, not inside a block)" : ""),
                 ["properties"] = props, ["required"] = required,
             };
         }
@@ -184,7 +184,7 @@ namespace GoF2Remake.Events
             };
         }
 
-        /// <summary>The whole .gof2quest format as a JSON Schema.</summary>
+        /// <summary>The whole .gof2mission format as a JSON Schema.</summary>
         public static JObject Build()
         {
             var steps = new JArray(QuestSteps.Types.Select(StepSchema));
@@ -192,18 +192,18 @@ namespace GoF2Remake.Events
             return new JObject
             {
                 ["$schema"] = "https://json-schema.org/draft/2020-12/schema",
-                ["$id"] = "https://github.com/JoppieToppie/Galaxy-on-Fire-2-Unity-Remake/Modding/ai/gof2-modding/quest.schema.json",
-                ["title"] = "Galaxy on Fire 2 Remake quest (.gof2quest)",
-                ["description"] = "events/<name>.gof2quest in a mod: a quest, bar mission or event as a tree of steps (Modding/README.md \"Quests made in the Mod Builder\"). The file name is its name.",
+                ["$id"] = "https://github.com/JoppieToppie/Galaxy-on-Fire-2-Unity-Remake/Modding/ai/gof2-modding/mission.schema.json",
+                ["title"] = "Galaxy on Fire 2 Remake mission (.gof2mission)",
+                ["description"] = "events/<name>.gof2mission in a mod: a story mission, bar mission or event as a tree of steps (Modding/README.md \"Missions made in the Mod Builder\"). The file name is its name. Files from before the rename (.gof2quest, format \"gof2quest\") are read too.",
                 ["type"] = "object",
                 ["required"] = new JArray("format", "steps"),
                 ["properties"] = new JObject
                 {
-                    ["format"] = new JObject { ["const"] = "gof2quest" },
-                    ["title"] = Text("the title (quests and bar missions need one)"),
+                    ["format"] = new JObject { ["const"] = "gof2mission" },
+                    ["title"] = Text("the title (story and bar missions need one)"),
                     ["kind"] = new JObject { ["type"] = "string", ["enum"] = new JArray("quest", "mission", "event"), ["default"] = "quest",
-                                             ["description"] = "quest: starts by itself when startsWhen holds; mission: a bar mission offered in the Space Lounges; event: started by /event or another's startevent step" },
-                    ["startsWhen"] = Str("a quest's start: \"\" at once, \"never\" only by a startquest step, else a condition (visited(78), quest(other) == 2, campaign >= 20...)"),
+                                             ["description"] = "quest: a story mission, starts by itself when startsWhen holds; mission: a bar mission offered in the Space Lounges; event: started by /event or another's startevent step" },
+                    ["startsWhen"] = Str("a story mission's start: \"\" at once, \"never\" only by a startquest step, else a condition (visited(78), quest(other) == 2, campaign >= 20...)"),
                     ["reward"] = new JObject { ["type"] = "integer", ["minimum"] = 0, ["description"] = "credits paid at complete" },
                     ["offer"] = Text("a bar mission: what the visitor says"),
                     ["client"] = Str("a bar mission's client: a story character, \"mod_id:character\", \"vossk K'ekki\"; empty: someone of the station's race"),
@@ -213,7 +213,7 @@ namespace GoF2Remake.Events
                     ["players"] = new JObject { ["type"] = "array", ["minItems"] = 2, ["maxItems"] = 2, ["items"] = new JObject { ["type"] = "integer" }, ["description"] = "a bar mission's pilots [min, max] (multiplayer)" },
                     ["variables"] = new JObject
                     {
-                        ["type"] = "array", ["description"] = "numbers the quest keeps; {name} in a text shows one",
+                        ["type"] = "array", ["description"] = "numbers the mission keeps; {name} in a text shows one",
                         ["items"] = new JObject { ["type"] = "object", ["required"] = new JArray("name"), ["properties"] = new JObject
                         {
                             ["name"] = Str("letters, digits, _"), ["value"] = new JObject { ["type"] = new JArray("number", "string"), ["description"] = "its start (an expression)" },
@@ -243,15 +243,15 @@ namespace GoF2Remake.Events
             };
         }
 
-        /// <summary>The steps and value nodes as a Markdown reference (quests.md).</summary>
+        /// <summary>The steps and value nodes as a Markdown reference (missions.md).</summary>
         public static string Markdown()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("# Galaxy on Fire 2 Remake: quest steps (.gof2quest)");
+            sb.AppendLine("# Galaxy on Fire 2 Remake: mission steps (.gof2mission)");
             sb.AppendLine();
             sb.AppendLine("Generated by GoF2 > Build > Modding AI Reference from the game's own step table (the same the game compiles and the");
-            sb.AppendLine("Mod Builder's graph edits). The machine-readable form is `quest.schema.json` beside this file. A quest is");
-            sb.AppendLine("`events/<name>.gof2quest`: `{ \"format\": \"gof2quest\", \"title\", \"kind\", ..., \"steps\": [ { \"type\": ..., fields } ] }`.");
+            sb.AppendLine("Mod Builder's graph edits). The machine-readable form is `mission.schema.json` beside this file. A mission is");
+            sb.AppendLine("`events/<name>.gof2mission`: `{ \"format\": \"gof2mission\", \"title\", \"kind\", ..., \"steps\": [ { \"type\": ..., fields } ] }`.");
             sb.AppendLine("Every step that acts on players also takes `who` (wirable): " + WhoNote + ". Blocks hold their own");
             sb.AppendLine("step lists. A field marked (wirable) can hold `{ \"$value\": \"v1\" }` instead, wired to a value node in `values`.");
             sb.AppendLine();
@@ -265,7 +265,7 @@ namespace GoF2Remake.Events
                 {
                     sb.AppendLine($"### `{t.type}`: {t.english}");
                     sb.AppendLine();
-                    sb.AppendLine(t.what + (t.topOnly ? " Only on the quest's own line of steps." : ""));
+                    sb.AppendLine(t.what + (t.topOnly ? " Only on the mission's own line of steps." : ""));
                     sb.AppendLine();
                     var schema = StepSchema(t);
                     foreach (var p in ((JObject)schema["properties"]).Properties())

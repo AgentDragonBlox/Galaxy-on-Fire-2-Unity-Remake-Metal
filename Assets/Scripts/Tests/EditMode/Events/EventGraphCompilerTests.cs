@@ -227,7 +227,7 @@ namespace GoF2Remake.Tests
         [Test]
         public void AQuestStartNode()
         {
-            var g = U.WithStart(("Kind", ((int)EventKind.Quest).ToString()), ("MissionTitle", "Lost cargo"), ("StartsWhen", "visited(78)"), ("MissionReward", "0"));
+            var g = U.WithStart(("Kind", ((int)EventKind.StoryMission).ToString()), ("MissionTitle", "Lost cargo"), ("StartsWhen", "visited(78)"), ("MissionReward", "0"));
             var lines = CompileLines(g, out var problems);
             Assert.IsEmpty(U.Errors(problems), U.Describe(problems));
             Assert.Contains("mission title Lost cargo", lines);
@@ -267,7 +267,7 @@ namespace GoF2Remake.Tests
         [Test]
         public void ACheckpointInsideABlockIsAnError()
         {
-            var g = U.WithStart(("Kind", ((int)EventKind.Quest).ToString()), ("MissionReward", "0"));
+            var g = U.WithStart(("Kind", ((int)EventKind.StoryMission).ToString()), ("MissionReward", "0"));
             U.Node(g, "if", "EventIfNode", ("Condition", "1"));
             U.Node(g, "cp", "EventCheckpointNode", ("Name", "inside"));
             U.Wire(g, "start", "Next", "if", "In");
@@ -279,7 +279,7 @@ namespace GoF2Remake.Tests
         [Test]
         public void ACheckpointsNameLosesItsSpaces()
         {
-            var g = U.WithStart(("Kind", ((int)EventKind.Quest).ToString()), ("MissionReward", "0"));
+            var g = U.WithStart(("Kind", ((int)EventKind.StoryMission).ToString()), ("MissionReward", "0"));
             U.Node(g, "cp", "EventCheckpointNode", ("Name", "met the trader"));
             U.Wire(g, "start", "Next", "cp", "In");
             Assert.Contains("checkpoint met_the_trader", CompileLines(g, out _));

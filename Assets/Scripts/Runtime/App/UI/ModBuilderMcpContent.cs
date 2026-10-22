@@ -85,7 +85,7 @@ namespace GoF2Remake.UI
                 }
                 if (Project != null)
                     foreach (var (name, _) in Project.AudioFiles(ModProject.SoundsFolder))
-                        if (!game.Contains(name)) l.Add((name, name, "this project's new sound (a quest's Sound step plays it)"));
+                        if (!game.Contains(name)) l.Add((name, name, "this project's new sound (a mission's Sound step plays it)"));
                 return l;
             }
             // Voice lines: the story's pages and radio, then the voice table, then the rest of the game's clips.

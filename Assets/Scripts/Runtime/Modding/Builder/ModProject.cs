@@ -249,8 +249,12 @@ namespace GoF2Remake.Modding
                 }
                 string events = Path.Combine(folder, ProjectQuest.Folder);
                 if (Directory.Exists(events))
-                    foreach (var f in Directory.GetFiles(events, "*." + ProjectQuest.Extension).OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
+                    foreach (var f in Directory.GetFiles(events, "*." + ProjectQuest.Extension).Concat(Directory.GetFiles(events, "*." + ProjectQuest.LegacyExtension))
+                                               .OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
                     {
+                        // An old .gof2quest beside a .gof2mission of the same name: the new one counts.
+                        if (f.EndsWith("." + ProjectQuest.LegacyExtension, StringComparison.OrdinalIgnoreCase)
+                            && File.Exists(Path.ChangeExtension(f, ProjectQuest.Extension))) continue;
                         try { p.Quests.Add(new ProjectQuest(Path.GetFileNameWithoutExtension(f), JObject.Parse(File.ReadAllText(f)))); }
                         catch (Exception e) { p.LoadError ??= $"{ProjectQuest.Folder}/{Path.GetFileName(f)}: {e.Message}"; }
                     }
@@ -430,7 +434,7 @@ namespace GoF2Remake.Modding
                 foreach (var f in Directory.GetFiles(Folder, "*", SearchOption.AllDirectories))
                 {
                     string ext = Path.GetExtension(f).ToLowerInvariant();
-                    if (ext != ".json" && ext != ".gof2event" && ext != ".gof2netevent" && ext != ".gof2quest") continue;
+                    if (ext != ".json" && ext != ".gof2event" && ext != ".gof2netevent" && ext != ".gof2mission" && ext != ".gof2quest") continue;
                     if (Path.GetFileName(f) == ModManifest.FileName || Path.GetFileName(f) == BuilderFile) continue;
                     string text = File.ReadAllText(f), changed = re.Replace(text, id + ":");
                     if (changed != text) File.WriteAllText(f, changed);
@@ -940,7 +944,8 @@ namespace GoF2Remake.Modding
             if (f != null) try { File.Delete(f); } catch { }
         }
 
-        /// <summary>events/&lt;name&gt;.gof2quest for every quest; a builder quest file no longer in the list goes.</summary>
+        /// <summary>events/&lt;name&gt;.gof2mission for every mission; a builder mission file no longer in the list goes, and so does
+        /// the old .gof2quest a mission was read from (written back as a .gof2mission).</summary>
         void WriteQuests()
         {
             string dir = Path.Combine(Folder, ProjectQuest.Folder);
@@ -950,6 +955,8 @@ namespace GoF2Remake.Modding
             foreach (var f in Directory.GetFiles(dir, "*." + ProjectQuest.Extension))
                 if (!Quests.Any(q => string.Equals(q.Name, Path.GetFileNameWithoutExtension(f), StringComparison.OrdinalIgnoreCase)))
                     try { File.Delete(f); } catch { }
+            foreach (var f in Directory.GetFiles(dir, "*." + ProjectQuest.LegacyExtension))
+                try { File.Delete(f); } catch { }
         }
 
         /// <summary>The event graphs made in the Unity Editor (events/*.gof2event): listed, not edited by the builder.</summary>

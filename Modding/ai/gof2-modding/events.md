@@ -132,6 +132,7 @@ Flow: in; out: Next.
 | Kind | Name | Type | Default | What it is |
 |---|---|---|---|---|
 | option | Sound | Choice: Alarm / Warning / Success / Message / Info / Click / Explosion / SmallExplosion / Jumpgate / Khador / Charge / Lock / Boost / Shield / TimeShift / Medal |  |  |
+| option | Mod sound | Text |  | Optional: a mod's sound instead (its sounds/<name>.ogg file's name, a mod that is on); empty: the Sound above. |
 | input | Players | Text | `@a` | Who: @a everyone, @r a random player, @alive, @space, @docked, @dead, @survivors (never destroyed since the fight began), or a player's name. |
 
 ### Radio
@@ -361,13 +362,13 @@ Flow: in; out: none (ends the flow).
 |---|---|---|---|---|
 | input | Title | Text |  | The title on the team's screens (empty: "Mission failed!"). The mission ends. |
 
-### Quest Orbit
+### Mission Orbit
 
 Flow: in; out: Next.
 
 | Kind | Name | Type | Default | What it is |
 |---|---|---|---|---|
-| option | On | Yes/No | `yes` | On: the orbit is the quest's from the next arrival, no normal traffic is built there (like a story orbit), until off or the quest's end. Off: normal again. |
+| option | On | Yes/No | `yes` | On: the orbit is the mission's from the next arrival, no normal traffic is built there (like a story orbit), until off or the mission's end. Off: normal again. |
 | input | Orbit | Orbit |  | The orbit (wire Get Orbit in). |
 
 ### Restrict Travel
@@ -437,6 +438,16 @@ Flow: in; out: Next.
 | input | Orbit | Orbit |  | The waypoint's orbit (wire Get Orbit in). |
 | input | At | Text |  | Game coordinates "x y z" (/pos shows yours): a lockable Waypoint the autopilot flies to; reaching it clears it. |
 
+### Show / Hide System
+
+Flow: in; out: Next.
+
+| Kind | Name | Type | Default | What it is |
+|---|---|---|---|---|
+| option | Action | Choice: Show / Hide / Reset |  | Show: on the star map, its routes and jumps too, whatever was revealed. Hide: off it; a player in it is taken out to the nearest system on the map. Reset: as the map has it again. Kept (and saved) until changed. |
+| input | Players | Text | `@a` | Who: @a everyone, @r a random player, @alive, @space, @docked, @dead, @survivors (never destroyed since the fight began), or a player's name. |
+| input | System | Text |  | The system: its number, its name or a mod's key "mod_id:id". |
+
 ### Start Event
 
 Flow: in; out: none (ends the flow).
@@ -446,13 +457,13 @@ Flow: in; out: none (ends the flow).
 | input | Event | Text |  | The event to start (its graph's file name: in an Events folder or built in). This event ends here. |
 | input | Settings | Text |  | Optional: its settings, "name=value" separated by spaces (e.g. waves=10). |
 
-### Start Quest
+### Start Mission
 
 Flow: in; out: Next.
 
 | Kind | Name | Type | Default | What it is |
 |---|---|---|---|---|
-| input | Quest | Text |  | The quest to start beside this one (its graph's file name), unless it is under way or done. Single player. |
+| input | Quest | Text |  | The story mission to start beside this one (its graph's file name), unless it is under way or done. Single player. |
 
 ### Winner
 
@@ -487,7 +498,7 @@ Flow: in; out: Next.
 
 | Kind | Name | Type | Default | What it is |
 |---|---|---|---|---|
-| option | Name | Text |  | Optional: the checkpoint's name (one word; empty: the node's id). A save keeps the quest as it is here (its variables, objective, target, quest orbits); loading it goes on from here: the On handlers and the Run In Parallel / Every blocks before it start again, so do their music, waypoint, respawn and travel commands. Only on the main flow from Start (not inside a block). Renaming it later sends old saves back to the start. |
+| option | Name | Text |  | Optional: the checkpoint's name (one word; empty: the node's id). A save keeps the mission as it is here (its variables, objective, target, mission orbits); loading it goes on from here: the On handlers and the Run In Parallel / Every blocks before it start again, so do their music, waypoint, respawn and travel commands. Only on the main flow from Start (not inside a block). Renaming it later sends old saves back to the start. |
 
 ### Comment
 
@@ -553,13 +564,15 @@ Flow: no input (starts a flow of its own); out: Next.
 | Kind | Name | Type | Default | What it is |
 |---|---|---|---|---|
 | option | Description | Text |  | What the event is (written as # lines at the top of the script). |
-| option | Kind | Choice: Event / BarMission / Quest |  | Event: started by /event (with a Mission title it is offered as a bar mission, as before). Bar Mission: offered by a Space Lounge visitor (multiplayer squads and single player). Quest: single player, like the story: starts by itself when Starts when holds, lasts across saves (Checkpoint), shows its Mission title and objective in the Missions window; Mission Complete finishes it for good, Mission Failed loads the last save. |
-| option | Starts when | Text |  | A quest: the condition that starts it, checked every second in a game (an expression: "campaign >= 20", "visited(Kepler Prime)", "quest(first_contact) == 2", "credits > 50000"). Empty: at once; "never": only by another graph's Start Quest. |
+| option | Kind | Choice: Event / BarMission / StoryMission |  | Event: started by /event (with a Mission title it is offered as a bar mission, as before). Bar Mission: offered by a Space Lounge visitor (multiplayer squads and single player). Story Mission: single player, like the story: starts by itself when Starts when holds, lasts across saves (Checkpoint), shows its Mission title and objective in the Missions window; Mission Complete finishes it for good, Mission Failed loads the last save. |
+| option | Starts when | Text |  | A story mission: the condition that starts it, checked every second in a game (an expression: "campaign >= 20", "visited(Kepler Prime)", "quest(first_contact) == 2", "credits > 50000"). Empty: at once; "never": only by another graph's Start Mission. |
 | option | Mission title | Text |  | Set it to offer this event as a bar mission: a visitor in the multiplayer Space Lounge offers it, and it runs for the squad that takes it (its selectors, counts, triggers and scoreboard cover only them). Empty: only /event starts it, for everyone. |
 | option | Offer text | Text |  | What the visitor says about the job. |
 | option | Client | Text |  | Who offers it: a story character (Keith, "Keith as Bob"), a mod's character ("vega", "frontier_systems:vega"), or a race and a name ("vossk K'ekki", "terran female Jane"). Empty: someone of the station's race. |
 | option | Reward | Number |  | Credits for Mission Complete, split evenly across the team. |
 | option | Offered at | Text |  | Stations whose bars offer it (numbers or names, commas between). Empty: every station. |
+| option | Offer chance % | Number | `35` | How many of those stations' bars offer it, in percent. Each station decides for 30 minutes (docking again doesn't roll it anew), and once a team takes it there it isn't offered there again for 30 minutes. 100: every bar, always. |
+| option | Who can take it | Choice: OneInUniverse / OnePerStation / Anyone |  | One In Universe: while a squad is on it, no bar anywhere offers it to another squad. One Per Station: a squad taking it at a station takes it out of that bar for 30 minutes; other stations still offer it. Anyone: any number of squads, at the same station too. |
 | option | Min pilots | Number | `1` | The squad needs at least this many pilots. |
 | option | Max pilots | Number | `4` | And at most this many. |
 
@@ -800,32 +813,33 @@ leading `/`, the dedicated server's console without it. `[players]` is a player'
 | /w | <player> <text> | a private message to one player |
 | /invite | <player> | invites a player docked here to your squad |
 | /leave |  | leaves your arena queue or match, else your squad |
-| /kick | <player> [minutes] [reason] | admins: removes a player from the session (with profiles: ops too, and they can't rejoin for the minutes, default 5) |
-| /tp | [players] <player / station [x y z / dock]> | admins: teleports you or a player to a player, an orbit (x y z in game units) or a hangar (dock) |
+| /kick | <player> [minutes] [reason] | admins: removes a player (with profiles: can't rejoin for the minutes, default 5) |
+| /tp | [players] <player / station [x y z / dock]> | admins: teleports a player to a player, an orbit (x y z) or a hangar (dock) |
 | /tphere | <player> | admins: brings a player to you |
 | /kill | [players] | admins: destroys ships in space (yourself by default) |
 | /heal | [players] | admins: repairs hull, shield and armor (yourself by default) |
 | /give | [players] <item> [amount] [mount] | admins: items into the hold (an item's number or name) |
 | /credits | [players] <amount> | admins: gives credits (negative: takes them) |
-| /spawn | [players] <ship / object / wreck> [race] [count] [enemy / friendly / neutral / standing] [turrets <item,item>] [named <name>] [at x y z] | admins: NPC ships (a number or name; enemy by default) or an object (assemblies.json name), ahead or at x y z; named: their name on the HUD |
+| /spawn | [players] <ship / object / wreck> [race] [count] [enemy / friendly / neutral / standing] [turrets <item,item>] [named <name>] [at x y z] | admins: NPC ships or an object, ahead or at x y z (enemy by default; named: a HUD name) |
 | /ship | [players] <ship / own> | admins: flies any ship of the debug Ships tab (its number or name; own = back) |
 | /ammo | [players] | admins: every mounted secondary to 50 |
 | /reveal | [players] | admins: every system on the star map |
+| /system | [players] <system> <show / hide / reset> | admins: shows or hides a system on their star map until reset |
 | /peace | [players] | admins: neutral standings, no station grudges |
 | /cheat | [players] <god / ammo / cooldown / primary / boost / onehit / locks / shopping / jumps> [on / off] | admins: a debug toggle for a player, this session only (toggled without on / off) |
 | /title | [players] <text> [/ subtitle] [for <seconds>] | admins: a big title on screen ("clear" removes it) |
 | /timer | [players] <seconds / m:ss> [label] | admins: a countdown on screen ("stop" removes it) |
-| /dialog | [players] <speaker> : <text> [/ [speaker :] next page ...] | admins: a conversation; speakers: a story character (Keith as Bob), a mod's character (mod_id:vega), a race and a name (vossk K'ekki), or player; %player% = the reader |
+| /dialog | [players] <speaker> : <text> [/ [speaker :] next page ...] | admins: a conversation; speaker: a story character, mod_id:id, a race and name, or player |
 | /reward | [players] <credits / item [amount]> [+ more ...] [/ title] | admins: a mission payout (credits and / or items) in the reward box |
 | /pvp | <on / off> | admins: free for all, every pilot an enemy of every other (squadmates excepted) |
 | /respawn | [players] <station [x y z] [spread <units>] [delay <seconds>] / off> | admins: where destroyed ships come back in space (not docked), until off |
 | /restrict | [players] <jumps / docking / all / off> | admins: no jumps (planet, gate, Khador) and / or no docking, until off |
-| /flightstyle | [players] <es2 / gof2 / player> | admins: some players' flight model (es2 or gof2) for now, over the session's /flightmodel; player gives it back |
+| /flightstyle | [players] <es2 / gof2 / player> | admins: some players' flight model (es2 / gof2) for now; player gives it back |
 | /provoke | [players] [race] [within <metres>] | admins: the NPC ships around them turn on them and their squad (a race, a distance) |
 | /radio | [players] <speaker> : <text> | admins: a radio call in flight (a face, a name, gone by itself); speakers as /dialog |
 | /waypoint | [players] <station x y z / off> | admins: a waypoint to fly to (game coordinates in a station's orbit; /pos shows yours) |
-| /cutscene | [players] <start [nobars] [freeze] [invulnerable] / end> | admins: cinematic mode in flight (no HUD or controls, letterbox bars; freeze holds the ship) until end |
-| /camera | [players] <place [to place] [over s] [look place] [follow] [fov deg] [shake 0-1] / chase> | admins: a camera shot; places: player [right up forward], station [x y z], x y z, ship <name> [x y z]; chase ends it |
+| /cutscene | [players] <start [nobars] [freeze] [invulnerable] / end> | admins: cinematic mode in flight (no HUD or controls, letterbox) until end |
+| /camera | [players] <place [to place] [over s] [look place] [follow] [fov deg] [shake 0-1] / chase> | admins: a camera shot; places as /npc (player, station, x y z, ship <name>); chase ends it |
 | /npc | [players] <ship> <goto place / route place / place ... [loop] / follow / escort / attack <player / ship "name"> / flee / dock / hold / resume / jump / speed n> [speed n] [radius r] [fight] [then hold / resume / vanish / jump] | admins: orders for spawned ships by name: fly somewhere, follow / escort, attack, flee, dock, hold, resume |
 | /fade | [players] <out / in> [seconds] [rrggbb colour] / clear | admins: fades the screen to a colour (out, held) or back (in) |
 | /letterbox | [players] <on / off> | admins: the cinema bars at the top and bottom of the screen |
@@ -836,7 +850,7 @@ leading `/`, the dedicated server's console without it. `[players]` is a player'
 | /news | <text / clear> | admins: a GalNet item on every station's news ticker ("clear" empties the news) |
 | /mute | <players> [minutes] | admins: blocks a player's chat (for the session or some minutes) |
 | /unmute | <players> | admins: lets a muted player chat again |
-| /admin | <player> | host: makes a player an admin for this session (with profiles: the master admin, for good) |
+| /admin | <player> | host: makes a player an admin (with profiles: the master admin, for good) |
 | /unadmin | <player> | host: takes a player's admin rights away |
 | /tempban | <player> <minutes> [reason] | ops: bans a pilot and their devices for some minutes |
 | /ban | <player> [reason] | admins: bans a pilot and their devices for good |
@@ -848,7 +862,7 @@ leading `/`, the dedicated server's console without it. `[players]` is a player'
 | /say | <text> | admins: an announcement under your role |
 | /disband | <TAG> | admins: ends a faction |
 | /deleteprofile | <profile> | master: deletes an offline pilot's profile |
-| /flightmodel | [gof2 / es2 / player] | admins: the flight model everyone flies: gof2 (the game's, the default), es2 (EVERSPACE 2 style) or player (each player's own option) |
+| /flightmodel | [gof2 / es2 / player] | admins: the flight model for everyone: gof2, es2 or player (each player's own) |
 | /settings |  | admins: the server's settings |
 | /set | <key> <value> | admins: changes a server setting (saved) |
 | /web |  | ops: a one-time login code for the server's web admin |

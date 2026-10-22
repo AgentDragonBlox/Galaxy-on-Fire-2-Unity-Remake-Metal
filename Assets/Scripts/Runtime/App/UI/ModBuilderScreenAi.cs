@@ -113,7 +113,7 @@ namespace GoF2Remake.UI
                 (int)ModBuilderMcp.Permission, n => { ModBuilderMcp.Permission = (ModBuilderMcp.Permissions)n; sound(false); });
             var pn = Note(aiPage, ModBuilderMcp.Permission switch
             {
-                ModBuilderMcp.Permissions.ReadOnly => T("mbAiPermReadText", "The AI can look and check quests, but not change anything."),
+                ModBuilderMcp.Permissions.ReadOnly => T("mbAiPermReadText", "The AI can look and check missions, but not change anything."),
                 ModBuilderMcp.Permissions.AskEveryChange => T("mbAiPermAskText", "Every change waits for your Yes (5 minutes, then No)."),
                 ModBuilderMcp.Permissions.AllowEverything => T("mbAiPermAllText", "The AI changes, tests and removes without asking. Undo still takes every change back."),
                 _ => T("mbAiPermRemoveText", "The AI makes changes at once; removing an entry waits for your Yes."),

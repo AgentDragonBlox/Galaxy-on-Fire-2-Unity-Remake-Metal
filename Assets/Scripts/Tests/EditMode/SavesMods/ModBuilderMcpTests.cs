@@ -25,7 +25,7 @@ namespace GoF2Remake.Tests
         public void SchemaHasEveryStepTypeAndItsKeys()
         {
             var schema = QuestSchema.Build();
-            Assert.AreEqual("gof2quest", (string)schema["properties"]["format"]["const"]);
+            Assert.AreEqual("gof2mission", (string)schema["properties"]["format"]["const"]);
             foreach (var t in QuestSteps.Types)
             {
                 var def = StepSchema(schema, t.type);
@@ -70,12 +70,27 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
+        public void TheOldQuestNamesStillWork()
+        {
+            var m = typeof(ModBuilderMcp).GetMethod("FromOldNames", BindingFlags.NonPublic | BindingFlags.Static);
+            var args = new JObject { ["kind"] = "quests", ["quest"] = new JObject { ["title"] = "T" } };
+            Assert.AreEqual("compile_mission", m.Invoke(null, new object[] { "compile_quest", args }));
+            Assert.AreEqual("missions", (string)args["kind"]);
+            Assert.IsNotNull(args["mission"]);
+            Assert.IsNull(args["quest"]);
+            Assert.AreEqual("get_mission_schema", m.Invoke(null, new object[] { "get_quest_schema", new JObject() }));
+            var play = new JObject { ["mode"] = "quest" };
+            Assert.AreEqual("play_test", m.Invoke(null, new object[] { "play_test", play }));
+            Assert.AreEqual("mission", (string)play["mode"]);
+        }
+
+        [Test]
         public void ToolsListHasEveryToolWithItsAnnotations()
         {
             var a = Dispatch(Rpc("tools/list"), out _);
             var tools = ((JArray)a["result"]["tools"]).OfType<JObject>().ToDictionary(t => (string)t["name"]);
             foreach (var name in new[] { "builder_status", "search_content", "list_entries", "get_entries", "put_entry", "delete_entry",
-                                         "list_files", "read_file", "write_file", "compile_quest", "validate", "get_quest_schema",
+                                         "list_files", "read_file", "write_file", "compile_mission", "validate", "get_mission_schema",
                                          "play_test", "end_play_test", "get_log", "screenshot", "undo", "redo", "show_kind",
                                          "view_model", "view_texture", "list_textures", "select_entry", "view", "hardpoint", "engines",
                                          "test_fly", "end_test_fly", "weapon_range", "switch_hangar", "list_projects", "create_project",

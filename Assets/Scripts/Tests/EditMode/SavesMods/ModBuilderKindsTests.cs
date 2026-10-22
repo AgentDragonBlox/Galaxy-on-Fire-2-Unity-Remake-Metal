@@ -59,14 +59,32 @@ namespace GoF2Remake.Tests
             Assert.IsTrue(back.GameOptions.Single().Default);
             Assert.AreEqual("kinds_test:kepler_prime", back.Campaign.StartStation);
             Assert.AreEqual("the_signal", back.Quests.Single().Name);
-            Assert.IsTrue(File.Exists(Path.Combine(p.Folder, "events", "the_signal.gof2quest")));
+            Assert.IsTrue(File.Exists(Path.Combine(p.Folder, "events", "the_signal.gof2mission")));
             // The files are the mods' own: the game's parsers read them.
             Assert.IsTrue(File.Exists(Path.Combine(p.Folder, "systems.json")) && File.Exists(Path.Combine(p.Folder, "interiors.json")));
 
             // A removed quest's file goes with the next save.
             back.Quests.Clear();
             back.Save();
-            Assert.IsFalse(File.Exists(Path.Combine(p.Folder, "events", "the_signal.gof2quest")));
+            Assert.IsFalse(File.Exists(Path.Combine(p.Folder, "events", "the_signal.gof2mission")));
+        }
+
+        [Test]
+        public void AnOldQuestFileIsReadAndWrittenBackAsAMission()
+        {
+            var p = ModProject.Create("Old quest file", "tests");
+            string events = Path.Combine(p.Folder, "events");
+            Directory.CreateDirectory(events);
+            File.WriteAllText(Path.Combine(events, "first_signal.gof2quest"),
+                new JObject { ["format"] = "gof2quest", ["title"] = "First signal", ["kind"] = "quest", ["steps"] = new JArray() }.ToString());
+            var back = ModProject.Load(p.Folder);
+            Assert.IsNull(back.LoadError);
+            Assert.AreEqual("first_signal", back.Quests.Single().Name);
+            back.Save();
+            Assert.IsTrue(File.Exists(Path.Combine(events, "first_signal.gof2mission")), "written as a .gof2mission");
+            Assert.IsFalse(File.Exists(Path.Combine(events, "first_signal.gof2quest")), "the old file goes");
+            StringAssert.Contains("\"gof2mission\"", File.ReadAllText(Path.Combine(events, "first_signal.gof2mission")));
+            Assert.IsTrue(QuestFile.Is("{ \"format\": \"gof2mission\" }") && QuestFile.Is("{ \"format\": \"gof2quest\" }"), "both formats read");
         }
 
         [Test]

@@ -1,6 +1,6 @@
 // ModBuilderMcpTools.cs
 // The Mod Builder MCP server's tools (part of ModBuilderMcp): what an AI assistant can do in the open builder.
-//   builder_status   the project, the kind shown, a play test's game state (station, credits, quests and their objectives)
+//   builder_status   the project, the kind shown, a play test's game state (station, credits, missions and their objectives)
 //   search_content   the game's, this project's and other mods' content by kind (ModRefs: the values the files use)
 //   list_entries / get_entries / put_entry / delete_entry   the project's entries in the mod files' own JSON, through
 //                    ModProject.CaptureState / RestoreState (an undo step; a removal asks the player)
@@ -42,16 +42,16 @@ namespace GoF2Remake.UI
             ("blueprints", "blueprints.json", "id", ModBuilder.Kind.Blueprints),
             ("kits", "shipkits.json", "id (a kit of ship parts; a ships.json ship flies it with kit / kitType / build)", ModBuilder.Kind.Kits),
             ("gameOptions", "gameoptions.json", "id", ModBuilder.Kind.Campaigns),
-            ("quests", "events/<name>.gof2quest", "name (the file name: letters, digits, _)", ModBuilder.Kind.Quests),
+            ("missions", "events/<name>.gof2mission", "name (the file name: letters, digits, _)", ModBuilder.Kind.Quests),
             ("campaign", "campaign.json", "(one per mod)", ModBuilder.Kind.Campaigns),
             ("manifest", "mod.json", "(the mod itself: name, description, version, author, website, credits, dependencies)", ModBuilder.Kind.Ships),
         };
 
         static readonly string[] KindNames = Kinds.Select(k => k.kind).ToArray();
-        static readonly string[] RefKinds = { "item", "ship", "system", "station", "character", "quest", "music", "interior" };
+        static readonly string[] RefKinds = { "item", "ship", "system", "station", "character", "mission", "music", "interior" };
         static readonly string[] FileFolders = { "models", "textures", "icons", "portraits", "fx", "sky", "cards", "music", "sounds", "voices", "text", "events", "templates" };
-        static readonly string[] FileExtensions = { ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".dds", ".aei", ".glb", ".aem", ".ogg", ".wav", ".mp3", ".json", ".gof2event", ".gof2quest", ".txt", ".md" };
-        static readonly string[] TextExtensions = { ".json", ".gof2event", ".gof2quest", ".txt", ".md" };
+        static readonly string[] FileExtensions = { ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".dds", ".aei", ".glb", ".aem", ".ogg", ".wav", ".mp3", ".json", ".gof2event", ".gof2mission", ".gof2quest", ".txt", ".md" };
+        static readonly string[] TextExtensions = { ".json", ".gof2event", ".gof2mission", ".gof2quest", ".txt", ".md" };
 
         static JObject Enum(params string[] values) => new JObject { ["type"] = "string", ["enum"] = new JArray(values) };
 
@@ -80,13 +80,13 @@ namespace GoF2Remake.UI
             new Tool
             {
                 name = "builder_status", title = "Builder status", readOnly = true,
-                description = "The open project (id, name, its entries per kind), the kind the builder shows, whether a play test runs and, during one, the game's state (scene, station, credits, quests under way with their objectives).",
+                description = "The open project (id, name, its entries per kind), the kind the builder shows, whether a play test runs and, during one, the game's state (scene, station, credits, missions under way with their objectives).",
                 input = Input(), run = (a, c) => c.Json(Status(), "status"),
             },
             new Tool
             {
                 name = "search_content", title = "Search the game's and the mods' content", readOnly = true,
-                description = "Finds content to refer to: the game's, this project's own and every other installed mod's (using another mod's makes it a dependency when the project is validated). 'value' is what the mod files and quests use (a game number, or a key \"mod_id:id\"). Kinds: item, ship, system, station, character (speakers too), quest, music (the game's tracks a music/<name> replaces, and new ones), interior, sound (the game's sound effects a sounds/<name> replaces, and the project's new ones a quest's Sound step plays) and voice (the game's voice lines with their speaker and English line: voices/<clip> or voices/<language>/<clip> named like one replaces it, the story's included; and the project's own lines).",
+                description = "Finds content to refer to: the game's, this project's own and every other installed mod's (using another mod's makes it a dependency when the project is validated). 'value' is what the mod files and missions use (a game number, or a key \"mod_id:id\"). Kinds: item, ship, system, station, character (speakers too), mission, music (the game's tracks a music/<name> replaces, and new ones), interior, sound (the game's sound effects a sounds/<name> replaces, and the project's new ones a mission's Sound step plays) and voice (the game's voice lines with their speaker and English line: voices/<clip> or voices/<language>/<clip> named like one replaces it, the story's included; and the project's own lines).",
                 input = Input(("kind", Enum(RefKinds.Concat(AudioRefKinds).ToArray()), "what to search", true), ("query", "string", "words that must all appear (empty: all)", false),
                               ("limit", "integer", "at most this many (default 40)", false)),
                 run = SearchContent,
@@ -94,13 +94,13 @@ namespace GoF2Remake.UI
             new Tool
             {
                 name = "list_entries", title = "List the project's entries", readOnly = true,
-                description = "The project's entries of a kind with their identity (id / override / quest name) and name.",
+                description = "The project's entries of a kind with their identity (id / override / mission name) and name.",
                 input = Input(("kind", Enum(KindNames), "the kind of entry", true)), run = ListEntries,
             },
             new Tool
             {
                 name = "get_entries", title = "Read entries", readOnly = true,
-                description = "Entries of a kind as their mod-file JSON (all, or those named in 'ids': an id, \"override:<n>\", or a quest's name). With one id and a 'path' (\"steps/2\", \"steps/3/then\", \"stats\"), only that part: what patch_entry's paths point at.",
+                description = "Entries of a kind as their mod-file JSON (all, or those named in 'ids': an id, \"override:<n>\", or a mission's name). With one id and a 'path' (\"steps/2\", \"steps/3/then\", \"stats\"), only that part: what patch_entry's paths point at.",
                 input = Input(("kind", Enum(KindNames), "the kind of entry", true), ("ids", new JObject { ["type"] = "array", ["items"] = new JObject { ["type"] = "string" } }, "which (empty: all)", false),
                               ("path", "string", "with one id: only this part of it", false)),
                 run = GetEntries,
@@ -108,9 +108,9 @@ namespace GoF2Remake.UI
             new Tool
             {
                 name = "put_entry", title = "Write an entry",
-                description = "Adds an entry or replaces the one with the same identity, in the mod files' own JSON (Modding guide; quests: quest.schema.json). ships / items / systems / stations: \"id\" for new content, \"override\" for a change to the game's (or another mod's); characters, interiors, blueprints, gameOptions: \"id\"; quests: give 'name' and the .gof2quest object; campaign: the campaign.json object; manifest: mod.json's fields (the id stays). It becomes an undo step; the answer lists the problems the game finds.",
+                description = "Adds an entry or replaces the one with the same identity, in the mod files' own JSON (Modding guide; missions: mission.schema.json). ships / items / systems / stations: \"id\" for new content, \"override\" for a change to the game's (or another mod's); characters, interiors, blueprints, gameOptions: \"id\"; missions: give 'name' and the .gof2mission object; campaign: the campaign.json object; manifest: mod.json's fields (the id stays). It becomes an undo step; the answer lists the problems the game finds.",
                 input = Input(("kind", Enum(KindNames), "the kind of entry", true), ("entry", new JObject { ["type"] = "object" }, "the entry's JSON", true),
-                              ("name", "string", "quests only: its name (the file name)", false)),
+                              ("name", "string", "missions only: its name (the file name)", false)),
                 run = PutEntry, timeoutSeconds = 60f, ask = a =>
                 {
                     var e = a["entry"] as JObject;
@@ -121,12 +121,12 @@ namespace GoF2Remake.UI
             new Tool
             {
                 name = "patch_entry", title = "Edit part of an entry",
-                description = "Small edits of one entry in place, the rest left exactly as it is (a quest's graph layout too): prefer it to put_entry for a change to an existing entry. " +
+                description = "Small edits of one entry in place, the rest left exactly as it is (a mission's graph layout too): prefer it to put_entry for a change to an existing entry. " +
                               "'ops' in order, all or none applied: {\"op\": \"set\", \"path\": \"steps/2/pages/0/text\", \"value\": ...} (replace, or add a key; \"-\" appends to a list), " +
                               "{\"op\": \"insert\", \"path\": \"steps/3\", \"value\": {step}} (into a list before that index, \"-\" at the end), {\"op\": \"remove\", \"path\": ...}, " +
                               "{\"op\": \"move\", \"from\": ..., \"path\": ...} (the target path read after the removal), {\"op\": \"test\", \"path\": ..., \"value\": ...} (fails the patch unless equal: guards against editing the wrong step). " +
-                              "Paths are slash-separated keys and list indices into the entry (get_entries with 'path' reads a part). A quest's step inserted without \"pos\" gets a place in its column. One undo step; the answer lists the problems the game finds.",
-                input = Input(("kind", Enum(KindNames), "the kind of entry", true), ("id", "string", "an id, \"override:<n>\", a quest's name (campaign / manifest: none)", false),
+                              "Paths are slash-separated keys and list indices into the entry (get_entries with 'path' reads a part). A mission's step inserted without \"pos\" gets a place in its column. One undo step; the answer lists the problems the game finds.",
+                input = Input(("kind", Enum(KindNames), "the kind of entry", true), ("id", "string", "an id, \"override:<n>\", a mission's name (campaign / manifest: none)", false),
                               ("ops", new JObject { ["type"] = "array", ["items"] = new JObject { ["type"] = "object" } }, "the operations", true)),
                 run = PatchEntry, timeoutSeconds = 60f,
                 ask = a => $"edit {Str(a, "kind") ?? "an entry"}{(Str(a, "id") != null ? $" \"{Str(a, "id")}\"" : "")} ({((a["ops"] as JArray)?.Count ?? 0)} change(s))",
@@ -135,7 +135,7 @@ namespace GoF2Remake.UI
             {
                 name = "delete_entry", title = "Remove an entry", destructive = true,
                 description = "Removes an entry (asks the player in the builder first; an undo step).",
-                input = Input(("kind", Enum(KindNames), "the kind of entry", true), ("id", "string", "an id, \"override:<n>\" or a quest's name", true)),
+                input = Input(("kind", Enum(KindNames), "the kind of entry", true), ("id", "string", "an id, \"override:<n>\" or a mission's name", true)),
                 run = DeleteEntry, timeoutSeconds = 30f, permitsItself = true,
             },
             new Tool
@@ -147,7 +147,7 @@ namespace GoF2Remake.UI
             new Tool
             {
                 name = "read_file", title = "Read a text file", readOnly = true,
-                description = "A text file of the project (JSON, .gof2quest, .gof2event, text/<lang>.json...).",
+                description = "A text file of the project (JSON, .gof2mission, .gof2event, text/<lang>.json...).",
                 input = Input(("path", "string", "its path in the project, e.g. text/de.json", true)), run = ReadFile,
             },
             new Tool
@@ -161,29 +161,29 @@ namespace GoF2Remake.UI
             },
             new Tool
             {
-                name = "compile_quest", title = "Compile a quest", readOnly = true,
-                description = "Turns a quest (one of the project's by name, or a .gof2quest object) into the script the game runs and checks it with the game's own event runner: the problems, and the script.",
-                input = Input(("name", "string", "a quest of the project", false), ("quest", new JObject { ["type"] = "object" }, "or a .gof2quest object", false)),
+                name = "compile_mission", title = "Compile a mission", readOnly = true,
+                description = "Turns a mission (one of the project's by name, or a .gof2mission object) into the script the game runs and checks it with the game's own event runner: the problems, and the script.",
+                input = Input(("name", "string", "a mission of the project", false), ("mission", new JObject { ["type"] = "object" }, "or a .gof2mission object", false)),
                 run = CompileQuest,
             },
             new Tool
             {
                 name = "validate", title = "Validate the project", readOnly = true,
-                description = "The game reads the project again and reports every error and warning of its files, and every quest's and event graph's problems.",
+                description = "The game reads the project again and reports every error and warning of its files, and every mission's and event graph's problems.",
                 input = Input(), run = Validate, timeoutSeconds = 90f,
             },
             new Tool
             {
-                name = "get_quest_schema", title = "The quest format", readOnly = true,
-                description = "The .gof2quest format as a JSON Schema (made from the game's own step table; quests.md in the guide is the same as text).",
-                input = Input(), run = (a, c) => c.Json(QuestSchema.Build(), "quest schema"),
+                name = "get_mission_schema", title = "The mission format", readOnly = true,
+                description = "The .gof2mission format as a JSON Schema (made from the game's own step table; missions.md in the guide is the same as text).",
+                input = Input(), run = (a, c) => c.Json(QuestSchema.Build(), "mission schema"),
             },
             new Tool
             {
                 name = "play_test", title = "Start a play test",
-                description = "Plays the project as a player would: 'station' (docked at the builder's station), 'quest' (with the named quest under way) or 'campaign' (from the project's campaign start). Edits wait until end_play_test. Watch it with screenshot, builder_status and get_log.",
-                input = Input(("mode", Enum("station", "quest", "campaign"), "how to start", true), ("quest", "string", "mode quest: the quest's name", false)),
-                run = PlayTest, timeoutSeconds = 90f, ask = a => $"start a play test ({Str(a, "mode") ?? "station"}{(Str(a, "quest") != null ? ": " + Str(a, "quest") : "")})",
+                description = "Plays the project as a player would: 'station' (docked at the builder's station), 'mission' (with the named mission under way) or 'campaign' (from the project's campaign start). Edits wait until end_play_test. Watch it with screenshot, builder_status and get_log.",
+                input = Input(("mode", Enum("station", "mission", "campaign"), "how to start", true), ("mission", "string", "mode mission: the mission's name", false)),
+                run = PlayTest, timeoutSeconds = 90f, ask = a => $"start a play test ({Str(a, "mode") ?? "station"}{(Str(a, "mission") != null ? ": " + Str(a, "mission") : "")})",
             },
             new Tool
             {
@@ -194,7 +194,7 @@ namespace GoF2Remake.UI
             new Tool
             {
                 name = "get_log", title = "Read the game's log", readOnly = true,
-                description = "The game's log since the server started (newest last): mod loading problems, quest errors, what the game did.",
+                description = "The game's log since the server started (newest last): mod loading problems, mission errors, what the game did.",
                 input = Input(("lines", "integer", "how many (default 80)", false), ("level", Enum("all", "warning", "error"), "the least level (default all)", false),
                               ("contains", "string", "only lines with this text", false)),
                 run = GetLog,
@@ -242,7 +242,7 @@ namespace GoF2Remake.UI
                     {
                         ["ships"] = p.Ships.Count, ["items"] = p.Items.Count, ["characters"] = p.Characters.Count, ["systems"] = p.Systems.Count,
                         ["stations"] = p.Stations.Count, ["interiors"] = p.Interiors.Count, ["blueprints"] = p.Blueprints.Count, ["kits"] = p.Kits.Count,
-                        ["gameOptions"] = p.GameOptions.Count, ["quests"] = p.Quests.Count, ["campaign"] = p.Campaign != null,
+                        ["gameOptions"] = p.GameOptions.Count, ["missions"] = p.Quests.Count, ["campaign"] = p.Campaign != null,
                     },
                     ["dependencies"] = new JArray(p.Dependencies),
                 };
@@ -258,7 +258,7 @@ namespace GoF2Remake.UI
                 {
                     ["station"] = Session.StationIndex, ["stationName"] = db.Stations.Find(s => s.index == Session.StationIndex)?.name,
                     ["docked"] = SceneManager.GetActiveScene().name == "Station", ["credits"] = Session.Credits, ["ship"] = Session.ShipIndex,
-                    ["quests"] = new JArray(EventRunner.Quests().Select(q => new JObject { ["name"] = q.name, ["title"] = q.title, ["objective"] = q.objective, ["target"] = q.target })),
+                    ["missions"] = new JArray(EventRunner.Quests().Select(q => new JObject { ["name"] = q.name, ["title"] = q.title, ["objective"] = q.objective, ["target"] = q.target })),
                     ["questsDone"] = new JArray(Session.GraphQuestsDone),
                     ["cargo"] = new JArray(Session.Cargo.Select(c => new JObject { ["item"] = c.item, ["amount"] = c.amount })),
                 };
@@ -322,7 +322,7 @@ namespace GoF2Remake.UI
             var state = Project.CaptureState();
             var list = new JArray();
             string kind = Kinds[k].kind;
-            if (kind == "quests")
+            if (kind == "missions")
                 foreach (var p in ((JObject)state["quests"]).Properties())
                     list.Add(new JObject { ["name"] = p.Name, ["title"] = p.Value["title"], ["kind"] = p.Value["kind"] ?? "quest", ["steps"] = (p.Value["steps"] as JArray)?.Count ?? 0 });
             else if (kind == "campaign") { if (state["campaign"] is JObject camp) list.Add(new JObject { ["name"] = camp["name"] }); }
@@ -341,7 +341,7 @@ namespace GoF2Remake.UI
             var state = Project.CaptureState();
             string kind = Kinds[k].kind;
             JToken result;
-            if (kind == "quests")
+            if (kind == "missions")
             {
                 var o = new JObject();
                 foreach (var p in ((JObject)state["quests"]).Properties())
@@ -354,8 +354,8 @@ namespace GoF2Remake.UI
             string path = Str(a, "path");
             if (!string.IsNullOrEmpty(path))
             {
-                JToken one = kind == "quests" || kind == "campaign" || kind == "manifest"
-                    ? (kind == "quests" ? (result as JObject)?.Properties().FirstOrDefault()?.Value : result)
+                JToken one = kind == "missions" || kind == "campaign" || kind == "manifest"
+                    ? (kind == "missions" ? (result as JObject)?.Properties().FirstOrDefault()?.Value : result)
                     : (result as JArray)?.FirstOrDefault();
                 if (ids.Count != 1 && kind != "campaign" && kind != "manifest") { c.Fail("path: give exactly one id."); return; }
                 if (one == null || one.Type == JTokenType.Null) { c.Fail($"No {kind} entry \"{ids.FirstOrDefault()}\"."); return; }
@@ -382,14 +382,14 @@ namespace GoF2Remake.UI
             {
                 switch (kind)
                 {
-                    case "quests":
-                        if (string.IsNullOrEmpty(name) || !QuestFile.IsName(name)) return "name: the quest's name (letters, digits, _; it is the file name).";
-                        entry["format"] = "gof2quest";
+                    case "missions":
+                        if (string.IsNullOrEmpty(name) || !QuestFile.IsName(name)) return "name: the mission's name (letters, digits, _; it is the file name).";
+                        entry["format"] = Events.QuestFile.Format;
                         if (!(entry["steps"] is JArray)) entry["steps"] = new JArray();
                         questProblems = new List<string>();
                         QuestFile.Compile(entry, questProblems);
                         ((JObject)state["quests"])[name] = entry;
-                        label = $"quest {name}";
+                        label = $"mission {name}";
                         return null;
                     case "campaign":
                         state["campaign"] = entry;
@@ -417,12 +417,12 @@ namespace GoF2Remake.UI
                         return null;
                     }
                 }
-            }, kind == "quests" ? $"quest {name}" : $"{kind}");
+            }, kind == "missions" ? $"mission {name}" : $"{kind}");
             if (error != null) { c.Fail(error); return; }
-            AnswerAfterReload(c, screen, label, kind == "quests" ? entry : null, questProblems);
+            AnswerAfterReload(c, screen, label, kind == "missions" ? entry : null, questProblems);
         }
 
-        /// <summary>The answer once the game has read the project again: its problems with the files, and a quest's own
+        /// <summary>The answer once the game has read the project again: its problems with the files, and a mission's own
         /// (QuestFile's, then the event runner's on the compiled script).</summary>
         static void AnswerAfterReload(Call c, ModBuilderScreen screen, string label, JObject quest, List<string> questProblems, JObject extra = null)
         {
@@ -484,11 +484,11 @@ namespace GoF2Remake.UI
                 Action<JToken> put;
                 switch (kind)
                 {
-                    case "quests":
+                    case "missions":
                     {
                         var qs = (JObject)state["quests"];
                         target = qs[id ?? ""];
-                        if (target == null) return $"No quest \"{id}\" in the project.";
+                        if (target == null) return $"No mission \"{id}\" in the project.";
                         put = v => qs[id] = v;
                         break;
                     }
@@ -515,14 +515,14 @@ namespace GoF2Remake.UI
                 if (patched == null) return err;
                 if (!(patched is JObject po)) return "The entry must stay an object.";
                 // Its identity stays (a new id is a new entry: put_entry).
-                if (kind != "quests" && kind != "campaign" && kind != "manifest" && Ident(po) != id) return "The id / override can't change by a patch: put_entry the new entry (and delete_entry the old one).";
+                if (kind != "missions" && kind != "campaign" && kind != "manifest" && Ident(po) != id) return "The id / override can't change by a patch: put_entry the new entry (and delete_entry the old one).";
                 if (kind == "manifest")
                     foreach (var p in po.Properties())
                         if (!JToken.DeepEquals(p.Value, target[p.Name]) && !ManifestFields.Contains(p.Name)) return $"mod.json: {p.Name} can't be changed here (the fields: {string.Join(", ", ManifestFields)}).";
-                if (kind == "quests")
+                if (kind == "missions")
                 {
-                    po["format"] = "gof2quest";
-                    // A step put in without a place gets one in its column (only a quest already laid out in the graph), and
+                    po["format"] = Events.QuestFile.Format;
+                    // A step put in without a place gets one in its column (only a mission already laid out in the graph), and
                     // the steps after it in its list move down when it lands on them, as an insert in the graph looks.
                     if (QuestGraph.HasPos(po, "startPos"))
                     {
@@ -537,7 +537,7 @@ namespace GoF2Remake.UI
                 put(po);
                 label = $"{kind} {id ?? kind} patched ({ops.Count} change(s))";
                 return null;
-            }, kind == "quests" ? $"quest {id} edited" : $"{kind} {id} edited");
+            }, kind == "missions" ? $"mission {id} edited" : $"{kind} {id} edited");
             if (error != null) { c.Fail(error); return; }
             AnswerAfterReload(c, screen, label, patchedQuest, questProblems);
         }
@@ -550,7 +550,7 @@ namespace GoF2Remake.UI
             string kind = Kinds[k].kind, id = Str(a, "id");
             if (kind == "manifest") { c.Fail("mod.json can't be removed."); return; }
             var state = Project.CaptureState();
-            bool exists = kind == "quests" ? ((JObject)state["quests"])[id ?? ""] != null
+            bool exists = kind == "missions" ? ((JObject)state["quests"])[id ?? ""] != null
                         : kind == "campaign" ? state["campaign"] is JObject
                         : ((JArray)state[kind]).OfType<JObject>().Any(e => Ident(e) == id);
             if (!exists) { c.Fail($"No {kind} entry \"{id}\"."); return; }
@@ -559,7 +559,7 @@ namespace GoF2Remake.UI
             {
                 string error = screen.ExternalEdit(st =>
                 {
-                    if (kind == "quests") ((JObject)st["quests"]).Remove(id);
+                    if (kind == "missions") ((JObject)st["quests"]).Remove(id);
                     else if (kind == "campaign") st["campaign"] = JValue.CreateNull();
                     else ((JArray)st[kind]).OfType<JObject>().First(e => Ident(e) == id).Remove();
                     return null;
@@ -608,7 +608,7 @@ namespace GoF2Remake.UI
             string full = ProjectPath(Str(a, "path"), false, out string why);
             if (full == null) { c.Fail(why); return; }
             if (!File.Exists(full)) { c.Fail("No such file."); return; }
-            if (!TextExtensions.Contains(Path.GetExtension(full).ToLowerInvariant())) { c.Fail("Only text files (json, gof2quest, gof2event, txt, md)."); return; }
+            if (!TextExtensions.Contains(Path.GetExtension(full).ToLowerInvariant())) { c.Fail("Only text files (json, gof2mission, gof2event, txt, md)."); return; }
             if (new FileInfo(full).Length > 2_000_000) { c.Fail("Over 2 MB."); return; }
             c.Text(File.ReadAllText(full));
         }
@@ -652,13 +652,13 @@ namespace GoF2Remake.UI
 
         static void CompileQuest(JObject a, Call c)
         {
-            JObject quest = a["quest"] as JObject;
+            JObject quest = a["mission"] as JObject;
             string name = Str(a, "name");
             if (quest == null)
             {
                 if (Project == null) { c.Fail("The Mod Builder isn't open."); return; }
                 quest = Project.Quests.FirstOrDefault(q => q.Name == name)?.ToJson();
-                if (quest == null) { c.Fail($"No quest \"{name}\" in the project (or give 'quest')."); return; }
+                if (quest == null) { c.Fail($"No mission \"{name}\" in the project (or give 'mission')."); return; }
             }
             var problems = new List<string>();
             string script = QuestFile.Compile(quest, problems);
@@ -667,7 +667,7 @@ namespace GoF2Remake.UI
                 string runner = EventRunner.CheckScript(script);
                 if (runner != null) problems.Add(runner);
             }
-            c.Json(new JObject { ["ok"] = problems.Count == 0, ["problems"] = new JArray(problems), ["script"] = script }, (name ?? "quest") + (problems.Count == 0 ? " compiles" : ": " + problems[0]));
+            c.Json(new JObject { ["ok"] = problems.Count == 0, ["problems"] = new JArray(problems), ["script"] = script }, (name ?? "mission") + (problems.Count == 0 ? " compiles" : ": " + problems[0]));
         }
 
         static void Validate(JObject a, Call c)
@@ -701,9 +701,9 @@ namespace GoF2Remake.UI
                     var errs = problems.Where(p => !p.warning).Select(p => (p.node != null ? p.node + ": " : "") + p.message).ToList();
                     if (errs.Count > 0) quests[g + " (graph)"] = new JArray(errs);
                 }
-                if (quests.HasValues) o["quests"] = quests;
+                if (quests.HasValues) o["missions"] = quests;
                 o["ok"] = (mod == null || mod.Errors.Count == 0) && !quests.HasValues;
-                c.Json(o, (bool)o["ok"] ? "valid" : $"{mod?.Errors.Count ?? 0} errors, {quests.Count} quests with problems");
+                c.Json(o, (bool)o["ok"] ? "valid" : $"{mod?.Errors.Count ?? 0} errors, {quests.Count} missions with problems");
             });
         }
 
@@ -715,16 +715,16 @@ namespace GoF2Remake.UI
             if (screen == null) { c.Fail(why); return; }
             string mode = Str(a, "mode") ?? "station";
             screen.ExternalSaveNow();
-            if (mode == "quest")
+            if (mode == "mission")
             {
-                string name = Str(a, "quest");
+                string name = Str(a, "mission");
                 var q = Project.Quests.FirstOrDefault(x => x.Name == name);
-                if (q == null && !Project.EventGraphs().Contains(name)) { c.Fail($"No quest \"{name}\" in the project."); return; }
+                if (q == null && !Project.EventGraphs().Contains(name)) { c.Fail($"No mission \"{name}\" in the project."); return; }
                 if (q != null)
                 {
                     var problems = new List<string>();
                     QuestFile.Compile(q.ToJson(), problems);
-                    if (problems.Count > 0) { c.Fail("The quest doesn't compile: " + problems[0]); return; }
+                    if (problems.Count > 0) { c.Fail("The mission doesn't compile: " + problems[0]); return; }
                 }
                 ModBuilder.Reload();
                 why = ModBuilderPlay.StartQuest(name);

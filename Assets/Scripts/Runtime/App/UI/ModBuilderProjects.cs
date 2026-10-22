@@ -57,7 +57,7 @@ namespace GoF2Remake.UI
             ("mbKits", "Ship kits", "Customizable ships: parts (.glb) the players combine in the hangar's Customize screen, with colours and stats. In the hangar.", ModBuilder.Kind.Kits),
             ("mbBlueprints", "Blueprints", "Ships and items built from ingredients, and where they are found. In the hangar.", ModBuilder.Kind.Blueprints),
             ("mbCharacters", "Characters", "Portraits and names for conversations: your own characters, or new looks for the story's. In the Space Lounge.", ModBuilder.Kind.Characters),
-            ("mbQuests", "Quests", "Quests and bar missions as steps: conversations, fights, rewards. In the Space Lounge.", ModBuilder.Kind.Quests),
+            ("mbQuests", "Missions", "Story missions and bar missions as steps: conversations, fights, rewards. In the Space Lounge.", ModBuilder.Kind.Quests),
             ("mbAudio", "Audio", "Replace or add music, sound effects and voice lines. In the Space Lounge.", ModBuilder.Kind.Audio),
             ("mbSystems", "Systems", "New star systems and their routes, placed on the star map.", ModBuilder.Kind.Systems),
             ("mbStations", "Stations", "New stations and changes to the game's: models, rooms, planets. In their own orbit.", ModBuilder.Kind.Stations),
@@ -321,7 +321,7 @@ namespace GoF2Remake.UI
             Part(p.Characters.Count, "mbOneCharacter", "1 character", "mbCharactersN", "{0} characters");
             Part(p.SkinShips().Count, "mbOneSkin", "1 skin", "mbSkinsN", "{0} skins");
             Part(p.Blueprints.Count, "mbOneBlueprint", "1 blueprint", "mbBlueprintsN", "{0} blueprints");
-            Part(p.Quests.Count, "mbOneQuest", "1 quest", "mbQuestsN", "{0} quests");
+            Part(p.Quests.Count, "mbOneQuest", "1 mission", "mbQuestsN", "{0} missions");
             Part(AudioCount(p), "mbOneAudio", "1 sound", "mbAudioN", "{0} sounds");
             Part(p.Systems.Count, "mbOneSystem", "1 system", "mbSystemsN", "{0} systems");
             Part(p.Stations.Count, "mbOneStation", "1 station", "mbStationsN", "{0} stations");
@@ -383,7 +383,7 @@ namespace GoF2Remake.UI
                     ModBuilder.Kind.Skins => Count(selected.SkinShips().Count, "mbOneSkin", "1 skin", "mbSkinsN", "{0} skins"),
                     ModBuilder.Kind.Blueprints => Count(selected.Blueprints.Count, "mbOneBlueprint", "1 blueprint", "mbBlueprintsN", "{0} blueprints"),
                     ModBuilder.Kind.Kits => Count(selected.Kits.Count, "mbOneKit", "1 kit", "mbKitsN", "{0} kits"),
-                    ModBuilder.Kind.Quests => Count(selected.Quests.Count + selected.EventGraphs().Count, "mbOneQuest", "1 quest", "mbQuestsN", "{0} quests"),
+                    ModBuilder.Kind.Quests => Count(selected.Quests.Count + selected.EventGraphs().Count, "mbOneQuest", "1 mission", "mbQuestsN", "{0} missions"),
                     ModBuilder.Kind.Audio => Count(AudioCount(selected), "mbOneAudio", "1 sound", "mbAudioN", "{0} sounds"),
                     ModBuilder.Kind.Systems => Count(selected.Systems.Count, "mbOneSystem", "1 system", "mbSystemsN", "{0} systems"),
                     ModBuilder.Kind.Stations => Count(selected.Stations.Count, "mbOneStation", "1 station", "mbStationsN", "{0} stations"),

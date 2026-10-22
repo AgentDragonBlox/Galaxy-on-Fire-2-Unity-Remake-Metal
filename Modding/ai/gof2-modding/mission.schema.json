@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/JoppieToppie/Galaxy-on-Fire-2-Unity-Remake/Modding/ai/gof2-modding/quest.schema.json",
-  "title": "Galaxy on Fire 2 Remake quest (.gof2quest)",
-  "description": "events/<name>.gof2quest in a mod: a quest, bar mission or event as a tree of steps (Modding/README.md \"Quests made in the Mod Builder\"). The file name is its name.",
+  "$id": "https://github.com/JoppieToppie/Galaxy-on-Fire-2-Unity-Remake/Modding/ai/gof2-modding/mission.schema.json",
+  "title": "Galaxy on Fire 2 Remake mission (.gof2mission)",
+  "description": "events/<name>.gof2mission in a mod: a story mission, bar mission or event as a tree of steps (Modding/README.md \"Missions made in the Mod Builder\"). The file name is its name. Files from before the rename (.gof2quest, format \"gof2quest\") are read too.",
   "type": "object",
   "required": [
     "format",
@@ -10,11 +10,11 @@
   ],
   "properties": {
     "format": {
-      "const": "gof2quest"
+      "const": "gof2mission"
     },
     "title": {
       "$ref": "#/$defs/text",
-      "description": "the title (quests and bar missions need one)"
+      "description": "the title (story and bar missions need one)"
     },
     "kind": {
       "type": "string",
@@ -24,11 +24,11 @@
         "event"
       ],
       "default": "quest",
-      "description": "quest: starts by itself when startsWhen holds; mission: a bar mission offered in the Space Lounges; event: started by /event or another's startevent step"
+      "description": "quest: a story mission, starts by itself when startsWhen holds; mission: a bar mission offered in the Space Lounges; event: started by /event or another's startevent step"
     },
     "startsWhen": {
       "type": "string",
-      "description": "a quest's start: \"\" at once, \"never\" only by a startquest step, else a condition (visited(78), quest(other) == 2, campaign >= 20...)"
+      "description": "a story mission's start: \"\" at once, \"never\" only by a startquest step, else a condition (visited(78), quest(other) == 2, campaign >= 20...)"
     },
     "reward": {
       "type": "integer",
@@ -54,6 +54,21 @@
       },
       "description": "a bar mission is offered at (empty: everywhere)"
     },
+    "chance": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "a bar mission: the percentage of its stations' bars offering it (default 35; each station decides for 30 minutes and drops it for 30 once taken; 100: always)"
+    },
+    "takers": {
+      "type": "string",
+      "enum": [
+        "universe",
+        "station",
+        "any"
+      ],
+      "description": "a bar mission: who can take it: universe (default) one squad at a time anywhere, offered nowhere meanwhile; station: one per station, other stations still offer it; any: any number of squads, at one station too"
+    },
     "players": {
       "type": "array",
       "minItems": 2,
@@ -65,7 +80,7 @@
     },
     "variables": {
       "type": "array",
-      "description": "numbers the quest keeps; {name} in a text shows one",
+      "description": "numbers the mission keeps; {name} in a text shows one",
       "items": {
         "type": "object",
         "required": [
@@ -490,7 +505,7 @@
         {
           "type": "object",
           "title": "At the same time",
-          "description": "Steps that run beside the rest of the quest",
+          "description": "Steps that run beside the rest of the mission",
           "properties": {
             "type": {
               "const": "parallel"
@@ -511,7 +526,7 @@
         {
           "type": "object",
           "title": "Every few seconds",
-          "description": "Steps again and again beside the rest, until the quest ends",
+          "description": "Steps again and again beside the rest, until the mission ends",
           "properties": {
             "type": {
               "const": "every"
@@ -796,7 +811,7 @@
         {
           "type": "object",
           "title": "Set a variable",
-          "description": "A number the quest remembers (its variables)",
+          "description": "A number the mission remembers (its variables)",
           "properties": {
             "type": {
               "const": "set"
@@ -830,7 +845,7 @@
         {
           "type": "object",
           "title": "Checkpoint",
-          "description": "A save goes on from here (only on the quest's own line of steps, not inside a block)",
+          "description": "A save goes on from here (only on the mission's own line of steps, not inside a block)",
           "properties": {
             "type": {
               "const": "checkpoint"
@@ -850,15 +865,15 @@
         },
         {
           "type": "object",
-          "title": "Start a quest",
-          "description": "Another quest beside this one",
+          "title": "Start a mission",
+          "description": "Another mission beside this one",
           "properties": {
             "type": {
               "const": "startquest"
             },
             "quest": {
               "type": "string",
-              "description": "the quest's name (its file name)"
+              "description": "the story mission's name (its file name)"
             },
             "pos": {
               "type": "array",
@@ -872,7 +887,7 @@
         {
           "type": "object",
           "title": "Next event",
-          "description": "Ends this one and starts another event graph or quest",
+          "description": "Ends this one and starts another event graph or mission",
           "properties": {
             "type": {
               "const": "startevent"
@@ -897,14 +912,14 @@
         {
           "type": "object",
           "title": "Complete",
-          "description": "The quest is done, the reward paid",
+          "description": "The mission is done, the reward paid",
           "properties": {
             "type": {
               "const": "complete"
             },
             "reward": {
               "type": "integer",
-              "description": "credits (default: the quest's reward)"
+              "description": "credits (default: the mission's reward)"
             },
             "title": {
               "$ref": "#/$defs/text",
@@ -943,7 +958,7 @@
         {
           "type": "object",
           "title": "Stop",
-          "description": "Ends the quest without a result (an event: its end)",
+          "description": "Ends the mission without a result (an event: its end)",
           "properties": {
             "type": {
               "const": "stop"
@@ -979,6 +994,45 @@
             "objective": {
               "$ref": "#/$defs/text",
               "description": "the objective meanwhile (optional)"
+            },
+            "pos": {
+              "type": "array",
+              "description": "the node's place in the builder's graph view [x, y] (optional)"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "title": "Show / hide a system",
+          "description": "A system on or off the star map (its routes and jumps too), until reset",
+          "properties": {
+            "type": {
+              "const": "system"
+            },
+            "who": {
+              "$ref": "#/$defs/who",
+              "description": "For",
+              "default": "@a"
+            },
+            "system": {
+              "type": [
+                "integer",
+                "string"
+              ],
+              "description": "System; the game's number, its name, or a key \"mod_id:id\""
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "show",
+                "hide",
+                "reset"
+              ],
+              "description": ": show = Show it, hide = Hide it (a player in it is taken out), reset = As the map has it again",
+              "default": "show"
             },
             "pos": {
               "type": "array",
@@ -1065,7 +1119,7 @@
         {
           "type": "object",
           "title": "Quiet orbit",
-          "description": "No normal traffic in an orbit (for the quest's own ships)",
+          "description": "No normal traffic in an orbit (for the mission's own ships)",
           "properties": {
             "type": {
               "const": "questorbit"
@@ -2421,7 +2475,7 @@
             },
             "sound": {
               "type": "string",
-              "description": "Sound; alarm, warning, success, message, info, click, explosion, smallexplosion, jumpgate, khador, charge, lock, boost, shield, timeshift, medal",
+              "description": "Sound; alarm, warning, success, message, info, click, explosion, smallexplosion, jumpgate, khador, charge, lock, boost, shield, timeshift, medal, or a mod sound's name",
               "default": "alarm"
             },
             "pos": {
@@ -3486,7 +3540,7 @@
           "$ref": "#/$defs/wire"
         }
       ],
-      "description": "whom the step is for: @a everyone the quest is for (default), @trigger the player an \"on\" block is about, @alive, @docked, @survivors, @r, or @alive[orbit=<station>]"
+      "description": "whom the step is for: @a everyone the mission is for (default), @trigger the player an \"on\" block is about, @alive, @docked, @survivors, @r, or @alive[orbit=<station>]"
     },
     "wire": {
       "type": "object",

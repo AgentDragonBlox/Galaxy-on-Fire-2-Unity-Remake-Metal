@@ -87,8 +87,8 @@ Menu items (from `Scripts/Editor`), grouped in submenus; **GoF2 > Tools Overview
 - **GoF2 > Scenes > Space Scene**: `Assets/Scenes/Space.unity`, the flight level (see "Space scene"). Also (re)makes `Resources/GoF2Backdrop` and bakes the space skies if missing.
 - **GoF2 > Scenes > Station Scene**: `Assets/Scenes/Station.unity`, the docked station (see "Station scene"). Wires the bar visitor prefabs, glow materials, music, ambience and language tables.
 - **GoF2 > Scenes > Add Post Processing To Open Scene**: global Volume with `Assets/Settings/GoF2_VolumeProfile.asset` (Bloom, threshold 1) + camera post-processing on.
-- **GoF2 > Build > Modding AI Reference** (`ModdingReferenceBuilder`): `Modding/ai/gof2-modding/reference.md`, every number and name of the original game a mod or event graph refers to (Android economy): items with every stat / raw attribute, item categories, attribute numbers, blueprint recipes, ships (model, hangar height), systems (sky), stations (race, planet, model), story steps, story speakers, every assembled model with the texture names a skin replaces, backdrop textures, music, sound effects, the event sound / music words, the built-in event graphs; ship hull sizes and every original ship's hardpoints as `mounts` JSON, the Default economy's differences, what each sky / sun / planet looks like (hand-written tables `SkyLooks` / `SunLooks` / `PlanetLooks`: update them when a texture changes); `voices.md` (every voice clip with its speaker and English line, for `[voice <clip>]`); `quests.md` +
-  `quest.schema.json` (`Events.QuestSchema`, made from `QuestSteps` and `QuestGraph.ValueTypes`: every `.gof2quest` step,
+- **GoF2 > Build > Modding AI Reference** (`ModdingReferenceBuilder`): `Modding/ai/gof2-modding/reference.md`, every number and name of the original game a mod or event graph refers to (Android economy): items with every stat / raw attribute, item categories, attribute numbers, blueprint recipes, ships (model, hangar height), systems (sky), stations (race, planet, model), story steps, story speakers, every assembled model with the texture names a skin replaces, backdrop textures, music, sound effects, the event sound / music words, the built-in event graphs; ship hull sizes and every original ship's hardpoints as `mounts` JSON, the Default economy's differences, what each sky / sun / planet looks like (hand-written tables `SkyLooks` / `SunLooks` / `PlanetLooks`: update them when a texture changes); `voices.md` (every voice clip with its speaker and English line, for `[voice <clip>]`); `missions.md` +
+  `mission.schema.json` (`Events.QuestSchema`, made from `QuestSteps` and `QuestGraph.ValueTypes`: every `.gof2mission` step,
   field, kind and default, a JSON Schema 2020-12 with shared `$defs` who / text / value / wire; a new step row there is in
   them at the next run); `events.md` (`ModdingEventsReference`: every event graph node's options and ports, read from `EventGraphNodes.cs` by a small tokenizer, so keep the node classes in that file's style, plus every command from `NetCommands.Reference`); and `guide.md`, a copy of `Modding/README.md`. For the AI modding guide (modders kept asking for ids). Run it again after changing the game data; headless: `Unity.exe -batchmode -nographics -projectPath . -executeMethod GoF2Remake.EditorTools.ModdingReferenceBuilder.Batch -quit`.
 - **GoF2 > Build > Combat Assets**: `Resources/GoF2Combat/CombatAssets` (`CombatAssets`). Also run by Create Space Scene.
@@ -3258,7 +3258,7 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   ...Systems, ...Kinds the dispatch) and `ModBuilderSpaceView` over the Space scene (FlightHud hands it Update while
   `ModBuilder.InSpace`; `SpaceLevel.HoldForBuilder`: the player's ship held, no traffic, the chase camera off; its own orbit
   camera; ...SpaceViewFx). Project files: `ProjectSystem` / `ProjectStation` / `ProjectInterior` (ProjectWorld.cs),
-  `ProjectBlueprint` / `ProjectCampaign` / `ProjectGameOption` (ProjectGame.cs), `ProjectQuest` (events/*.gof2quest), audio as
+  `ProjectBlueprint` / `ProjectCampaign` / `ProjectGameOption` (ProjectGame.cs), `ProjectQuest` (events/*.gof2mission), audio as
   files (music/, sounds/, voices/); all in the undo steps. **References** (`ModRefs`): every picker of other content
   (`PickRef` / `RefField`) lists the game's, the project's own (by key) and every other installed mod's (read from its files,
   on or off); another mod's pick makes it a dependency (`ModProject.AddDependency`, with the installed version as the lowest),
@@ -3269,7 +3269,14 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   way; the pause / station menu's Back to Mod Builder, a death or a failed quest end it (`EndPlayTest`: the builder's game
   as it opened). Blueprints: product, ingredients, skin ship, autocomplete, condition, lounge / derelict / drops. Campaign:
   the card, start, equipment, cargo, standing, story quest, mod-only galaxy / items / ships, traffic ships; new-game options.
-  Quests: `.gof2quest` step lists compiled by `Events.QuestFile` (EventRunner reads the extension; steps dialog, radio,
+  Missions (called quests until 2026-10-23, the user's request: "Mission" everywhere a player or modder reads it; the
+  code keeps its Quest names): `.gof2mission` files with the format `gof2mission` (`QuestFile.Extension` / `Format`,
+  `ProjectQuest`'s copies a layer below), the old `.gof2quest` / `gof2quest` still read (`LegacyExtension` /
+  `LegacyFormat`) and written back as `.gof2mission` by the builder (the old file deleted, `ModProject.WriteQuests`); the
+  kinds are Story mission (the file's kind "quest", `EventKind.StoryMission`), Bar mission and Event; the MCP tools
+  `compile_mission` / `get_mission_schema`, the entry kind `missions` and the argument `mission`, the old names mapped in
+  `ModBuilderMcp.FromOldNames`; the expressions `quest(name)`, the steps `startquest` / `questorbit` and campaign.json's
+  `"quest"` unchanged (mods use them). `.gof2mission` step lists compiled by `Events.QuestFile` (EventRunner reads the extension; steps dialog, radio,
   objective, goto, fight, cargo, reward, give, wait, waituntil, checkpoint, music, title, waypoint, startquest, complete,
   fail, command; the expressions `docked(station)` / `inorbit(station)` added for them). Audio: game tracks / sounds
   replaced (`Resources/GoF2ModBuilder/SoundNames.txt`, Assets/Audio's SFX folders), new tracks, voice lines, ▶ previews.
@@ -3350,7 +3357,7 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   the mode (`livePermission` for the HTTP thread). Tools: builder_status, search_content (`ModRefs`: the game's, the project's, other mods'),
   list_entries / get_entries / put_entry / delete_entry (the mod files' own JSON; put answers after the reload with the
   mod's errors / warnings and a quest's problems, `EventRunner.CheckScript`), list_files / read_file / write_file,
-  compile_quest, validate, get_quest_schema, play_test / end_play_test, get_log (a 600-line ring, the token redacted),
+  compile_mission, validate, get_mission_schema, play_test / end_play_test, get_log (a 600-line ring, the token redacted),
   screenshot, undo / redo, show_kind; and (user's request: the AI should see textures and models and do anything the builder's
   screen does; `ModBuilderMcpVision`) view_model (`UI.ModelViewer`: any model rendered off-screen from named angles,
   `ModelViewer.Angles` front / back / left / right / top / bottom / threequarter / rear, into one contact sheet, like

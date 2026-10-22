@@ -10,7 +10,7 @@ hardpoints placed on the hull in 3D (turrets facing out of the hull where they s
 and test flights against pirates; new items made from a game item (or changes to one) with their own stats and icon (the
 remake-only stats too: missiles and salvos, a turret's range, mining beams, phase cloaks), a turret's model (a game
 turret's or your own `.glb`), resized and moved on its mount, a weapon's projectile, muzzle flash, impact and sounds
-borrowed from the game's other weapons, fitted to the ship to try them out; characters with their portraits, for your quests
+borrowed from the game's other weapons, fitted to the ship to try them out; characters with their portraits, for your missions
 or standing in for a story character; and skins: a game ship's textures replaced, with its originals saved for you to paint
 over. A new ship's shop icon is rendered from its model
 (`icons/<id>.png`; put your own PNG in `icon` and the builder leaves it alone). Each kind of content is edited where it lives
@@ -21,17 +21,17 @@ in the game:
 | Ships, Items, Skins | the hangar | as above; **Test fly** flies them against pirates |
 | Ship kits | the hangar | customizable ships: the kit's slots, its parts (a `.glb` each) with their stats, weapon slots, tier models and hardpoints placed on the hull, paint slots; the turntable shows the kit's ship with the part you picked |
 | Blueprints | the hangar | the product (a ship stands on the turntable), ingredients, autocomplete, where it is found |
-| Campaign | the hangar | the card, the start (station, ship and its equipment, money, standings), its story quest, the galaxy / shops kept to mods; new-game options |
-| Characters, Quests, Audio | the Space Lounge | portraits; quests, bar missions and events in a node graph (or as a list of steps, below), Unity-made event graphs imported; music, sound effects and voice lines, each with ▶ |
+| Campaign | the hangar | the card, the start (station, ship and its equipment, money, standings), its story mission, the galaxy / shops kept to mods; new-game options |
+| Characters, Missions, Audio | the Space Lounge | portraits; story missions, bar missions and events in a node graph (or as a list of steps, below), Unity-made event graphs imported; music, sound effects and voice lines, each with ▶ |
 | Systems | the star map | every system shown: drag yours to their place, their gates, sky, sun, music, stations |
 | Stations, Weapon fx | in space | a station in its own orbit (model, size, turn, rooms, planet); weapons firing from one ship onto another |
 | Hangars & bars | the room itself | a `.glb` room or one of the game's (its markers filled in), the markers clicked into the room, light, fog, lens |
 
-Wherever content names other content (a quest's speaker, a station's system, a blueprint's product, a campaign's ship) the
-picker offers the game's, your project's own (your character can speak in your quest) and **every other installed mod's**:
+Wherever content names other content (a mission's speaker, a station's system, a blueprint's product, a campaign's ship) the
+picker offers the game's, your project's own (your character can speak in your mission) and **every other installed mod's**:
 picking another mod's makes it a dependency of yours (Menu > Dependencies lists them). **Play** in the top bar starts a play
 test: the game as a player has it with your mod on, from the builder's station, from your campaign's start or with one of
-your quests under way; the pause menu's (or the station menu's) Back to Mod Builder ends it, and so does a death.
+your missions under way; the pause menu's (or the station menu's) Back to Mod Builder ends it, and so does a death.
 **Undo** / **Redo** in the top bar (Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z) step back and forth through your edits, files you replaced
 or removed included, until you close the project. Menu > **Optimize models and textures** (or **Optimize…** beside a ship's
 model) makes a big download small: every texture inside your `.glb` models scaled down to 1K, 2K or 4K and stored as a JPEG
@@ -55,8 +55,8 @@ Menu has **Mod details** (website, credits, the Mods screen's picture) and **Tra
 your items, ships, systems and stations in each language, `text/<lang>.json`); the Skins kind's **Other textures…** replaces
 any game texture (a station's, a planet's, a sun's, a ring's) and turns your retextured planets into stars (`backdrop.json`).
 **AI tools** in the top bar (Windows) is a switch for an MCP server: your own AI assistant (Claude Code, Claude Desktop,
-other MCP apps) can then look up content, write entries and files, check quests, play-test the open project, look at models
-and textures, aim the builder's camera, place hardpoints and room markers, set the test loadout, test-fly, play a quest
+other MCP apps) can then look up content, write entries and files, check missions, play-test the open project, look at models
+and textures, aim the builder's camera, place hardpoints and room markers, set the test loadout, test-fly, play a mission
 through by itself and export
 (`Modding/ai/README.md` says how to connect; off by default, this computer only, with a token). Its **Permissions** say
 what waits for your Yes: Read only, Ask always, Ask to remove (the default) or Allow all, so an assistant can also build
@@ -84,13 +84,13 @@ What mods can do so far:
   that only appears with it, or only later in the game (after leaving Mido, after the Supernova...).
 - **Change existing ships**: armour, cargo, price, slots, handling, and their model.
 - **Tune the flight, for either flight style**: items and ships that fly faster, turn quicker or boost harder in the
-  original flight, in free flight (the EVERSPACE 2-style option) or both, and campaigns, ships, new-game options and quests
+  original flight, in free flight (the EVERSPACE 2-style option) or both, and campaigns, ships, new-game options and missions
   that decide which of the two the game flies with (see [Flight styles](#flight-styles)).
 - **Add star systems and stations**: on the star map, linked by jumpgates, with their own orbits, shops and bars, their own
   station models (glTF / GLB), planets and suns, and their own hangars and bars to dock in.
-- **Add quests and bar missions**: story chains and side jobs made as event graphs in the Unity Editor, with dialogue,
+- **Add story missions and bar missions**: story chains and side jobs made as event graphs in the Unity Editor, with dialogue,
   voice-over, objectives, map markers, checkpoints that saves keep, rewards and failure.
-- **Add and replace music**: replace any of the game's tracks, or add new ones for your systems, stations and quests.
+- **Add and replace music**: replace any of the game's tracks, or add new ones for your systems, stations and missions.
 - **Replace sound effects**: any of the game's sounds, from the guns to the menu clicks and the voices.
 - **Reskin ships and objects**: replace any of the game's textures, for example a ship's hull paint.
 - **Build on other mods**: a story mod can use the ships, items and systems of a mod it depends on.
@@ -1026,10 +1026,10 @@ bonuses instead.
 | `flightStyle` | `"free"` or `"original"`: this ship always flies so, whatever the player's option (`"player"` or no field: the player's). |
 | `flight` | Bonuses in % for both styles: `topSpeed`, `turnRate`, `strafeSpeed`, `acceleration` (free flight only: the original has none), and `boostFactor` (free flight's boost in hundredths of the top speed). `original` / `free` inside it: the same, for one style only. |
 
-**Who decides the style**, first match: an event or quest (the **Set Flight Model** node, `/flightstyle`), the ship flown,
+**Who decides the style**, first match: an event or mission (the **Set Flight Model** node, `/flightstyle`), the ship flown,
 the mod campaign (`campaign.json`'s `"flightStyle"`), a new-game option that is on (`gameoptions.json`'s `"flightStyle"`), then
 the player's own option. The Options page says so while a mod decides, and the key layout follows the style in use. Touch,
-tilt and VR always fly the original. Quests can ask with `freeflight` (1 in free flight, 0 in the original).
+tilt and VR always fly the original. Missions can ask with `freeflight` (1 in free flight, 0 in the original).
 
 In the original a top speed bonus speeds the boost up too, and a turn rate bonus keeps the time the ship takes to reach its
 turn rate. Free flight's top speed, turn rate and acceleration otherwise come from the ship's handling (with its Steering
@@ -1079,7 +1079,7 @@ New star systems and their stations. Both are lists: `"id"` adds one, `"override
 | `race` | Who owns it: 0 Terran, 1 Vossk, 2 Nivelian, 3 Midorian. It sets the hangars, bars, music, traffic, shops and the jumpgate. |
 | `security` | 0 (lawless) to 3 (secure): how many raiders show up. |
 | `visible` | On the star map from the start (default true). A hidden system can't be reached yet. |
-| `available` | A condition (the expressions of [Conditions](#conditions)) for a system that comes and goes: while it holds the system is on the star map, while it doesn't it is hidden, whatever was revealed, with its routes and jumps. A player inside when it disappears is told so and, 4 seconds later, taken to the nearest system on the map. For example `"available": "quest(smuggler_run) == 1"`: only while that quest or bar mission is under way. |
+| `available` | A condition (the expressions of [Conditions](#conditions)) for a system that comes and goes: while it holds the system is on the star map, while it doesn't it is hidden, whatever was revealed, with its routes and jumps. A player inside when it disappears is told so and, 4 seconds later, taken to the nearest system on the map. For example `"available": "quest(smuggler_run) == 1"`: only while that story mission or bar mission is under way. |
 | `position` | `[x, y, z]` on the star map. The original systems lie between 15 and 94 (x), 2 and 96 (y) and 10 and 90 (z). |
 | `sky` | Which of the original skies (nebula and sun) it uses, 0 to 18. |
 | `gates` | The systems its jumpgate reaches (numbers, or `"mod_id:system_id"`). Routes work both ways: the other system gets the route back. |
@@ -1091,9 +1091,9 @@ New star systems and their stations. Both are lists: `"id"` adds one, `"override
 
 Changing a system (`"override"`): `name`, `security`, `visible`, `available`, `sky`, `sunTexture`, `sunColor`, `skybox`, the music, and `gates` (added to its routes; links original systems too).
 
-Events and quests can also show or hide a system themselves: the `system` step (Show / hide a system), the graph's **Show /
+Events and missions can also show or hide a system themselves: the `system` step (Show / hide a system), the graph's **Show /
 Hide System** node, or the command `system [players] <system> <show | hide | reset>` (the system by number, name or
-`"mod_id:system_id"`). It holds, and is saved, until the same system is reset, and it wins over `available`. A quest that
+`"mod_id:system_id"`). It holds, and is saved, until the same system is reset, and it wins over `available`. A mission that
 shows a system for its mission hides (or resets) it again in its last steps, including the failure branch.
 
 ### Skies
@@ -1186,7 +1186,7 @@ story off.
 | `equipment` | What is mounted on the ship: items, or `{ "item", "amount" }` (a secondary weapon's amount is its ammo). Default: nothing. |
 | `cargo` | What is in the hold: `{ "item", "amount" }`. |
 | `standing` | `[Terran / Vossk, Nivelian / Midorian]` from -100 to 100 (positive leans toward the first race). Default `[30, 0]`. |
-| `quest` | An event graph (a quest, see [Quests and bar missions](#quests-and-bar-missions)) that starts with the game: the campaign's story. Its other quests start by their own conditions as usual. |
+| `quest` | An event graph (a mission, see [Story missions and bar missions](#story-missions-and-bar-missions)) that starts with the game: the campaign's story. Its other missions start by their own conditions as usual. |
 | `galaxy` | `"mod"`: only this mod's star systems and those of the mods it depends on exist in this game (the map, missions, the news); `"all"` (default): the whole galaxy. |
 | `items` | `"mod"`: shops and bar sellers offer only mods' items (sell the player anything they find; mining still brings the game's ores). Default `"all"`. Give the campaign its own goods and energy cells if it needs them. |
 | `ships` | `"mod"`: dealers sell only mods' ships. Default `"all"`. |
@@ -1230,7 +1230,7 @@ installed has every option off.
 
 ## Conditions
 
-Several fields take a condition: `available` on items, ships and blueprints, and the quests' "Starts when". It is written in
+Several fields take a condition: `available` on items, ships and blueprints, and the missions' "Starts when". It is written in
 the event graphs' expression language and is checked when it matters (a shop's stock, a lounge's visitors, a kill...):
 
 | Word | |
@@ -1240,7 +1240,7 @@ the event graphs' expression language and is checked when it matters (a shop's s
 | `systemsvisited` | How many star systems the player has docked in (2 or more: they have left Mido). |
 | `campaign` | The story step (-1 in free play and mod campaigns). |
 | `rank`, `credits`, `kills`, `station`, `system`, `ship` | The player's rank, credits, kills, where they are docked / flying, the ship they fly. |
-| `visited(station)`, `has(item)`, `cargo(item)`, `quest(name)` | A station docked at; how many of an item the player has (mounted too) / has in the hold; a quest under way (1) or done (2). |
+| `visited(station)`, `has(item)`, `cargo(item)`, `quest(name)` | A station docked at; how many of an item the player has (mounted too) / has in the hold; a mission under way (1) or done (2). |
 | `docked(station)`, `inorbit(station)` | How many of the players are docked at that station now / alive in its orbit (single player: 1 or 0). |
 
 Combine them with `and`, `or`, `not`, comparisons and arithmetic:
@@ -1291,7 +1291,7 @@ autocomplete), and the product is made at the station where the first ingredient
 | `available` | A [condition](#conditions) before any source offers it. |
 | `unlocked` | `true`: the player knows it as soon as it is available (the next docking), without finding it. |
 | `lounge` | A Space Lounge visitor sells it: `chance` % each time a bar fills with new visitors, for `price` (default half the product's price), in `systemRace` systems (-1 = any). |
-| `derelict` | `chance` % of the orbits visited hold a derelict freighter (`race`: terran, vossk, nivelian, midorian or any) to dock at and hack; it leaves the blueprint in a data container. `stations`: only in those orbits (station numbers or `"mod_id:station_id"`; then `chance` defaults to 100, always there). `position`: `[ x, y, z ]` in game units (what `/pos` shows in that orbit), else somewhere out in front of the station. Hacking it also fires the quests' and events' `hacked` trigger. |
+| `derelict` | `chance` % of the orbits visited hold a derelict freighter (`race`: terran, vossk, nivelian, midorian or any) to dock at and hack; it leaves the blueprint in a data container. `stations`: only in those orbits (station numbers or `"mod_id:station_id"`; then `chance` defaults to 100, always there). `position`: `[ x, y, z ]` in game units (what `/pos` shows in that orbit), else somewhere out in front of the station. Hacking it also fires the missions' and events' `hacked` trigger. |
 | `drops` | A ship the player destroys may leave it in a data container: `race` (terran, vossk, nivelian, midorian, pirate, void, specter or any), `chance` % per kill (decimals allowed). |
 
 A blueprint found in a data container is learnt when the tractor beam pulls the container in ("Blueprint found: ..."). A
@@ -1383,7 +1383,7 @@ The keys are `items.<id>.name` / `items.<id>.description`, `ships.<id>.name` / `
 language, then English, then the plain text. Language codes: `en`, `de`, `fr`, `es`, `it`, `pt`, `ru`, `pl`, `nl`,
 `ar`, `ja`, `ko`, `zh`, `hi`.
 
-## Quests and bar missions
+## Story missions and bar missions
 
 Story content is made with **event graphs**, the same node graphs the multiplayer events use (`.gof2event` files, made in
 the Unity Editor of the remake's project: **Assets > Create > GoF2 > Event Graph**; older `.gof2netevent` files still work, and
@@ -1402,9 +1402,9 @@ my_story/
 The file name (without `.gof2event`) is the graph's name; keep it one word. The graph's **Start** node decides what it is
 (its **Kind**):
 
-- **Quest** works like the game's own story chain. It starts by itself once **Starts when** holds, checked every second in a
+- **Story Mission** works like the game's own story chain. It starts by itself once **Starts when** holds, checked every second in a
   game (an expression: `campaign >= 20`, `visited(Kernstal)`, `quest(first_signal) == 2`, `credits > 50000`; empty = at once,
-  `never` = only when another graph's **Start Quest** node starts it). Its **Mission title** and current objective show in the
+  `never` = only when another graph's **Start Mission** node starts it). Its **Mission title** and current objective show in the
   Missions window's Story panel. **Mission Complete** pays the reward and finishes it for good. **Mission Failed** works like
   failing a story mission: "Mission failed!", then the last save is loaded.
 - **Bar Mission** is offered by a visitor in the Space Lounges (**Offered at**: station names or numbers, empty = every
@@ -1420,14 +1420,14 @@ The file name (without `.gof2event`) is the graph's name; keep it one word. The 
   takes it together.
 - **Event** is a multiplayer game mode started by an admin's `/event`.
 
-Nodes made for quests:
+Nodes made for missions:
 
 | Node | |
 |---|---|
-| **Checkpoint** | What a save keeps: the quest's variables, objective, target and quest orbits as they are here. Loading a save goes on from the last checkpoint. Put one after each step the player shouldn't have to repeat. Only on the main flow from Start, not inside an If / While / Repeat / parallel block. |
+| **Checkpoint** | What a save keeps: the mission's variables, objective, target and mission orbits as they are here. Loading a save goes on from the last checkpoint. Put one after each step the player shouldn't have to repeat. Only on the main flow from Start, not inside an If / While / Repeat / parallel block. |
 | **Set Objective** | The objective in the Missions window (`\n` = a new line) and, with a **Get Orbit** wired in, the target station: the gold story icon on the star map and the HUD, and the window's **Show on map**. |
-| **Quest Orbit** | That orbit becomes the quest's: no normal traffic is built there (like the story's own mission orbits), so the graph can spawn exactly the ships it wants. |
-| **Start Quest** | Starts another quest beside this one (a chain of quests, or a bar mission leading into one). |
+| **Mission Orbit** | That orbit becomes the mission's: no normal traffic is built there (like the story's own mission orbits), so the graph can spawn exactly the ships it wants. |
+| **Start Mission** | Starts another mission beside this one (a chain of missions, or a bar mission leading into one). |
 
 Everything else is the event graphs' toolbox: **Dialog** (conversations with portraits, see [Voice-over](#voice-over)), **Radio**,
 **Spawn** (ships, friendly or hostile, named; objects as scenery; `wreck`: a hackable freighter wreck), **Wait Until**, **On**
@@ -1456,29 +1456,29 @@ limited to a station like the others), with the player as `@trigger` and the wre
 In multiplayer the wreck is in the games it was spawned for (each player of `@a` gets their own); the other players see it
 but can't dock at it. Spawn it for one player (`@trigger`, `@p`) when a squad shares the orbit.
 
-Mod quests run beside the game's own story. A quest whose mod is turned off waits in the save until the mod is back.
+Mod missions run beside the game's own story. A mission whose mod is turned off waits in the save until the mod is back.
 
-### Quests made in the Mod Builder
+### Missions made in the Mod Builder
 
-The Mod Builder's Quests kind makes quests, bar missions and events without the Unity Editor, in a **node graph** like
+The Mod Builder's Missions kind makes story missions, bar missions and events without the Unity Editor, in a **node graph** like
 the Editor's: a Start node, every step a node, the white wires the order they run in, a block's outputs (If's Then / Else,
 an Ask's answers...) the steps it runs. Drag the canvas to move around, the wheel to zoom; drag from an output onto a node
 to wire it (onto the empty canvas: a new step there, or cut the wire); drag a wired input away to cut it; double-click
 the canvas for a new step; Delete removes the selected node; **Tidy up** lays the graph out. The panel on the right edits
-the selected node (or the quest's settings), **Edit as JSON…** included. A node reached by no wire is drawn faded: it
+the selected node (or the mission's settings), **Edit as JSON…** included. A node reached by no wire is drawn faded: it
 doesn't run. **Value nodes** (+ Value: a number, the game's state, a variable, maths, a comparison, and / or / not,
-random, min / max, the players, an orbit, ships alive, a ship's distance, cargo, docked at, visited, a quest's state)
+random, min / max, the players, an orbit, ships alive, a ship's distance, cargo, docked at, visited, a mission's state)
 wire into the small square inputs of a step's fields (conditions, numbers, stations, whom it is for) or into each other.
 **List view** shows the same as an outline of steps. **Import an event graph…** reads a `.gof2event` from the Unity Editor:
 converted into the builder's nodes (where they stood on the Unity canvas; the lines the builder has no node for stay
 Command nodes, so it runs the same) or added as it is.
 
-It writes `events/<name>.gof2quest`, which the game turns into an event graph's script when it loads it (**Show the script**
+It writes `events/<name>.gof2mission`, which the game turns into an event graph's script when it loads it (**Show the script**
 shows it). It can be written by hand too:
 
 ```json
 {
-    "format": "gof2quest", "title": "The first signal", "kind": "quest", "startsWhen": "visited(78)", "reward": 5000,
+    "format": "gof2mission", "title": "The first signal", "kind": "quest", "startsWhen": "visited(78)", "reward": 5000,
     "variables": [ { "name": "waves", "value": 2 } ],
     "steps": [
         { "type": "dialog", "pages": [ { "speaker": "Keith", "text": "A signal! {waves} waves of them.", "voice": "signal_1" }, { "speaker": "my_mod:vega", "text": "Come." } ] },
@@ -1497,15 +1497,15 @@ shows it). It can be written by hand too:
 ```
 
 `kind` is `quest`, `mission` (a bar mission: `offer`, `client`, `stations`, `players` [min, max] as the Start node's) or
-`event` (started by `/event <name>` or another one's Next event step). `variables`: numbers the quest keeps (`setting`: true
-lets `/event name x=3` change it); a text shows one in braces (`{waves}`). Without `complete` / `fail` a quest completes after
-its last step (`"autoComplete": false` turns that off). Every step takes `who` (whom it is for: `@a` everyone the quest is for,
+`event` (started by `/event <name>` or another one's Next event step). `variables`: numbers the mission keeps (`setting`: true
+lets `/event name x=3` change it); a text shows one in braces (`{waves}`). Without `complete` / `fail` a mission completes after
+its last step (`"autoComplete": false` turns that off). Every step takes `who` (whom it is for: `@a` everyone the mission is for,
 the default; `@trigger` the player a When block is about; any selector). The steps:
 
 | Group | Steps (fields) |
 |---|---|
 | Story | `dialog` (pages: speaker, text, voice), `radio` (speaker, text, voice), `objective` (text, station), `title` (title, subtitle, seconds), `note` (text: a comment) |
-| Flow | `wait` (seconds), `waituntil` (condition, timeout), `if` (condition, `then`, `else`), `while` (condition, `steps`), `repeat` (count, as, `steps`), `parallel` (`steps`: beside the rest), `every` (seconds, `steps`), `on` (trigger: died, docked, launched, kill, cleared, entered, near, respawned, hacked, joined, left, pvpkill; station; near: at "x y z", radius; `steps`), `ask` / `vote` (question, speaker, seconds, `answers`: [{ text, steps }]; a vote's `none` runs when nobody voted), `random` (`branches`: [{ weight, steps }]), `set` (variable, value), `checkpoint` (name), `startquest` (quest), `startevent` (event, settings), `complete` (reward, title), `fail` (title), `stop` |
+| Flow | `wait` (seconds), `waituntil` (condition, timeout), `if` (condition, `then`, `else`), `while` (condition, `steps`), `repeat` (count, as, `steps`), `parallel` (`steps`: beside the rest), `every` (seconds, `steps`), `on` (trigger: died, docked, launched, kill, cleared, entered, near, respawned, hacked, joined, left, pvpkill; station; near: at "x y z", radius; `steps`), `ask` / `vote` (question, speaker, seconds, `answers`: [{ text, steps }]; a vote's `none` runs when nobody voted), `random` (`branches`: [{ weight, steps }]), `set` (variable, value), `checkpoint` (name), `startquest` (mission), `startevent` (event, settings), `complete` (reward, title), `fail` (title), `stop` |
 | Places | `goto` (station, `dock` true: docked there, false: in its orbit, objective), `waypoint` (station, at), `target` (station), `questorbit` (station, on), `system` (system, action: show / hide / reset), `restrict` (what: jumps / docking / all / off), `respawn` (station, at, spread, delay), `teleport` (station, dock, at) |
 | Ships | `fight` (station, ships: ship / count / race / behaviour, name, quiet; ends when none is left), `spawn` (ship, count, race, behaviour, name, at, turrets), `wreck` (race, name, at: a hackable freighter wreck), `shipgoto` (ship, to, speed, radius, fight, then), `shiproute` (ship, route "place / place", loop, ...), `shipfollow` (ship, leader, offset, escort, speed), `shipattack` (ship, target), `shipaction` (ship, action: hold / resume / jump / dock / flee, seconds), `provoke` (race, within) |
 | The player | `reward` (credits, items, title), `give` (item, amount, mount), `cargo` (item, amount, station: waits until the hold has it), `credits` (amount), `ship` (hull, own), `heal`, `ammo`, `kill`, `reveal`, `peace` |
@@ -1547,7 +1547,7 @@ flee seconds 5`, `/npc Blue Wing dock`, `/npc Blue Wing hold | resume | jump | s
 
 ### Cutscenes
 
-The **Cutscene** nodes stage a scene in flight. They work in quests, bar missions and multiplayer events alike.
+The **Cutscene** nodes stage a scene in flight. They work in story missions, bar missions and multiplayer events alike.
 
 | Node | |
 |---|---|
@@ -1573,7 +1573,7 @@ Look At "ship Pirate Boss", Follow, Seconds 0)  ->  Radio (the boss's threat)  -
 To "player -2500 400 1500", Seconds 3)  ->  Wait 3  ->  End Cutscene
 ```
 
-The cutscene ends with the graph too (a quest finished or failed, an event stopped), so the player is never left stuck in it.
+The cutscene ends with the graph too (a mission finished or failed, an event stopped), so the player is never left stuck in it.
 The same in typed commands (multiplayer admins): `/cutscene start freeze`, `/camera player 0 300 4000 to station 0 2000 20000 over 5
 look station`, `/camera chase`, `/fade out 1 ffffff`, `/letterbox on`, `/cutscene end`; a ship name with spaces goes in
 "quotes" there (`ship "Pirate Boss"`).
@@ -1660,7 +1660,7 @@ per sound bank), for example `Target_Lock_v08` (a ship lock), `Blaster_Nsaan_01`
 files. Voices are sounds too: a voice line's file name replaces that line (the German voices are the same names with `de_`
 in front, so each language is replaced on its own). Music has its own `music` folder (above).
 
-**Add a sound**: any other name is a new sound of your own. The quests' **Sound** step and the event graphs' **Play Sound**
+**Add a sound**: any other name is a new sound of your own. The missions' **Sound** step and the event graphs' **Play Sound**
 node (its **Mod sound** field) play it by that name, so does `/sound <name>`.
 
 A sound the game picks at random from several files (most shots and explosions) needs each file replaced to always sound

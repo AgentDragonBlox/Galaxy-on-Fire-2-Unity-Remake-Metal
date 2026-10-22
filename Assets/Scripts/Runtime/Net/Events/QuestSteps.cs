@@ -287,9 +287,9 @@ namespace GoF2Remake.Events
             Block("repeat", "Repeat", "Steps a number of times",
                 new[] { new QuestBlock("steps", "Do") }, F("count", QuestFieldKind.Expression, "How many times", 3),
                 F("as", QuestFieldKind.Variable, "Count in a variable (optional)", optional: true)),
-            Block("parallel", "At the same time", "Steps that run beside the rest of the quest",
+            Block("parallel", "At the same time", "Steps that run beside the rest of the mission",
                 new[] { new QuestBlock("steps", "Do") }),
-            Block("every", "Every few seconds", "Steps again and again beside the rest, until the quest ends",
+            Block("every", "Every few seconds", "Steps again and again beside the rest, until the mission ends",
                 new[] { new QuestBlock("steps", "Do") }, F("seconds", QuestFieldKind.Float, "Every (seconds)", 10, min: 0.25f)),
             Block("on", "When something happens", "Steps each time the player is destroyed, docks, kills a ship, gets near a point...",
                 new[] { new QuestBlock("steps", "Do") },
@@ -309,7 +309,7 @@ namespace GoF2Remake.Events
                 fields = new[] { Who(), F("speaker", QuestFieldKind.Speaker, "Asked by", optional: true), F("question", QuestFieldKind.LongText, "Question"),
                                  F("seconds", QuestFieldKind.Float, "Time to vote (seconds)", 30, min: 3f) } },
             new QuestStepType { type = "random", group = "flow", english = "Random", what = "One of several branches, by chance", branches = true },
-            Plain("set", "flow", "Set a variable", "A number the quest remembers (its variables)", r =>
+            Plain("set", "flow", "Set a variable", "A number the mission remembers (its variables)", r =>
             {
                 string v = r.S("variable").ToLowerInvariant(), e = r.E("value");
                 if (!QuestFile.IsName(v)) { r.Problem("name the variable (letters, digits, _)."); return null; }
@@ -317,16 +317,16 @@ namespace GoF2Remake.Events
                 return $"set {v} = {e}";
             }, F("variable", QuestFieldKind.Variable, "Variable"), F("value", QuestFieldKind.Expression, "Value (an expression)", "0")),
             new QuestStepType { type = "checkpoint", group = "flow", english = "Checkpoint", what = "A save goes on from here", topOnly = true, custom = true },
-            Custom("startquest", "flow", "Start a quest", "Another quest beside this one", F("quest", QuestFieldKind.Quest, "Quest")),
-            Plain("startevent", "flow", "Next event", "Ends this one and starts another event graph or quest", r =>
+            Custom("startquest", "flow", "Start a mission", "Another mission beside this one", F("quest", QuestFieldKind.Quest, "Mission")),
+            Plain("startevent", "flow", "Next event", "Ends this one and starts another event graph or mission", r =>
             {
                 string e = r.S("event");
                 if (e.Length == 0 || e.Contains(" ")) { r.Problem("pick the event."); return null; }
                 return QuestReader.Join("startevent", e, r.S("settings"));
             }, F("event", QuestFieldKind.Event, "Event"), F("settings", QuestFieldKind.Text, "Its settings (name=value ...)", optional: true)),
-            Custom("complete", "flow", "Complete", "The quest is done, the reward paid"),
+            Custom("complete", "flow", "Complete", "The mission is done, the reward paid"),
             Custom("fail", "flow", "Fail", "Mission failed"),
-            Plain("stop", "flow", "Stop", "Ends the quest without a result (an event: its end)", r => "stop"),
+            Plain("stop", "flow", "Stop", "Ends the mission without a result (an event: its end)", r => "stop"),
 
             // ---- places ----
             Custom("goto", "places", "Go to a station", "Waits until the player docks there (or reaches its orbit)"),
@@ -345,7 +345,7 @@ namespace GoF2Remake.Events
             }, Who(), F("station", QuestFieldKind.Station, "Station"), F("at", QuestFieldKind.Xyz, "At (x y z, game units from the station; empty: cleared)", optional: true)),
             Plain("target", "places", "Map target", "The gold story icon on the map and the HUD", r => "target " + (r.Ref("station") is var s && s.Length > 0 ? s : "off"),
                F("station", QuestFieldKind.Station, "Station (empty: none)", optional: true)),
-            Plain("questorbit", "places", "Quiet orbit", "No normal traffic in an orbit (for the quest's own ships)", r =>
+            Plain("questorbit", "places", "Quiet orbit", "No normal traffic in an orbit (for the mission's own ships)", r =>
             {
                 string s = r.Ref("station");
                 if (s.Length == 0) { r.Problem("pick the station."); return null; }

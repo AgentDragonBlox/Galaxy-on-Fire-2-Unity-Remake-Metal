@@ -29,7 +29,7 @@ namespace GoF2Remake.Events
     public enum EventGameValue { Enemies, Ships, Players, InSpace, Docked, Dead, Time, TopPoints, MissionStation, Campaign, Credits, Rank, Station, System, Ship, Kills }
     /// <summary>The Start node's kind: an event (/event; a bar mission when it has a Mission title, as before), a bar
     /// mission, or a quest (single player, like the story: starts by itself, lasts across saves).</summary>
-    public enum EventKind { Event, BarMission, Quest }
+    public enum EventKind { Event, BarMission, StoryMission }
     /// <summary>A bar mission's Who can take it: one squad at a time in the whole universe, one per station (other stations'
     /// bars still offer it), or any number of squads (several at one station too).</summary>
     public enum EventMissionTakers { OneInUniverse, OnePerStation, Anyone }
@@ -190,7 +190,7 @@ namespace GoF2Remake.Events
                 string missionTitle = Clean(start, Get(start, "MissionTitle", false));
                 var kind = (EventKind)(int.TryParse(Get(start, "Kind", false), out int kindValue) ? kindValue : 0);   // graphs from before the option: an event
                 if (kind == EventKind.BarMission && missionTitle.Length == 0) Error(start, "A bar mission needs its Mission title (what the visitor offers).");
-                if (kind == EventKind.Quest)
+                if (kind == EventKind.StoryMission)
                 {
                     // A quest (EventRunner: "mission kind quest"): its title in the Missions window, when it starts.
                     if (missionTitle.Length > 0) Raw("mission title " + missionTitle);
@@ -229,10 +229,10 @@ namespace GoF2Remake.Events
                     }
                     Raw("");
                 }
-                if (kind != EventKind.Quest && missionTitle.Length == 0
+                if (kind != EventKind.StoryMission && missionTitle.Length == 0
                     && graph.nodes.Any(n => n.kind == "EventCheckpointNode" || n.kind == "EventSetObjectiveNode" || n.kind == "EventQuestOrbitNode"))
-                    Warning(start, "Checkpoints, objectives and quest orbits only matter in quests and bar missions (the Start node's Kind).");
-                if (missionTitle.Length == 0 && kind != EventKind.Quest && graph.nodes.Any(n => n.kind == "EventMissionCompleteNode" || n.kind == "EventMissionFailedNode"))
+                    Warning(start, "Checkpoints, objectives and mission orbits only matter in story and bar missions (the Start node's Kind).");
+                if (missionTitle.Length == 0 && kind != EventKind.StoryMission && graph.nodes.Any(n => n.kind == "EventMissionCompleteNode" || n.kind == "EventMissionFailedNode"))
                     Warning(start, "Mission Complete / Failed without a Mission title: the event isn't offered in the bars (in an /event they end it for everyone).");
                 int declared = 0;
                 foreach (var v in graph.variables)
@@ -472,14 +472,14 @@ namespace GoF2Remake.Events
                     case "EventQuestOrbitNode":
                     {
                         string station = inputs.TryGetValue((n.id, "Orbit"), out var orbit) && orbit.node.kind == "EventGetOrbitNode" ? Orbit(orbit.node) : "";
-                        if (station.Length == 0) Error(n, "Wire a Get Orbit into Orbit: the quest's orbit.");
+                        if (station.Length == 0) Error(n, "Wire a Get Orbit into Orbit: the mission's orbit.");
                         Line("questorbit " + station + (Bool(n, "On") ? "" : " off"));
                         break;
                     }
                     case "EventStartQuestNode":
                     {
                         string name = Text(n, "Quest");
-                        if (name.Length == 0 || name.Contains(" ")) Error(n, "Start Quest needs a quest's name (one word, the graph's file name).");
+                        if (name.Length == 0 || name.Contains(" ")) Error(n, "Start Mission needs a story mission's name (one word, the graph's file name).");
                         Line("startquest " + name);
                         break;
                     }

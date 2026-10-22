@@ -86,10 +86,10 @@ namespace GoF2Remake.UI
                     PickInterior(room);
                     return null;
                 }
-                case "quests":
+                case "missions":
                 {
                     var q = Project.Quests.FirstOrDefault(x => x.Name == id);
-                    if (q == null && !Project.EventGraphs().Contains(id)) return $"No quest \"{id}\" in the project.";
+                    if (q == null && !Project.EventGraphs().Contains(id)) return $"No mission \"{id}\" in the project.";
                     if (options?["graph"] is JValue g && g.Type == JTokenType.Boolean) GraphMode = (bool)g;
                     if (options?["wide"] is JValue w && w.Type == JTokenType.Boolean) GraphWide = (bool)w;
                     currentQuest = q; currentGraph = q == null ? id : null; currentStep = null;

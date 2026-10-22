@@ -108,11 +108,11 @@ namespace GoF2Remake.UI
                  () => Run(() => { ModBuilderPlay.Start(); return null; })),
             };
             if (Project.Campaign != null)
-                choices.Add((T("mbPlayCampaign", "Play the campaign") + "\n" + T("mbPlayCampaignSub", "From its start: its station, ship and story quest"), null, () => Run(ModBuilderPlay.StartCampaign)));
+                choices.Add((T("mbPlayCampaign", "Play the campaign") + "\n" + T("mbPlayCampaignSub", "From its start: its station, ship and story mission"), null, () => Run(ModBuilderPlay.StartCampaign)));
             foreach (var q in Project.Quests)
             {
                 var quest = q;
-                choices.Add((string.Format(T("mbPlayQuestN", "Play \"{0}\""), q.Title ?? q.Name) + "\n" + T("mbPlayQuestSub", "With the quest under way from its first step"), null,
+                choices.Add((string.Format(T("mbPlayQuestN", "Play \"{0}\""), q.Title ?? q.Name) + "\n" + T("mbPlayQuestSub", "With the mission under way from its first step"), null,
                              () => Run(() => ModBuilderPlay.StartQuest(quest.Name))));
             }
             ShowPicker(T("mbPlay", "Play"), choices);

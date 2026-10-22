@@ -5,7 +5,7 @@
 //   view_texture    a project image or a game texture (by name, optionally of a model) as an image: scaled, a normal map
 //                   decoded to an ordinary RGB normal map, the alpha on a checkerboard, as a mask or kept
 //   list_textures   a model's textures with their roles and sizes, and which the project replaces
-//   select_entry    an entry of any kind picked in the builder (its page, the turntable / room / orbit / quest graph shows it)
+//   select_entry    an entry of any kind picked in the builder (its page, the turntable / room / orbit / mission graph shows it)
 //   view            the builder's camera from a named side, zoomed, or reset; with a screenshot
 //   hardpoint       the Ships kind's hardpoints: listed, added onto the hull from a side, snapped onto it, selected,
 //                   mirrored, removed
@@ -15,7 +15,7 @@
 //   room_marker     the Hangars & bars kind's markers: listed, placed where a line from a point inside the room meets its
 //                   surface (or at a position), removed
 //   press / steer / ui_buttons / ui_click   in a play test or test flight: keys, game actions and the stick held for a while,
-//                   the UI's buttons by their text (McpInput), so a quest can be played through
+//                   the UI's buttons by their text (McpInput), so a mission can be played through
 //   view's 'map'    the Systems kind's star map centred on a system
 // Each goes through the builder's own screens and methods (ModBuilderScreenAi's hooks); changes through the permission gate.
 
@@ -36,7 +36,7 @@ namespace GoF2Remake.UI
 {
     public static partial class ModBuilderMcp
     {
-        static readonly string[] SelectKinds = { "ships", "items", "characters", "skins", "blueprints", "kits", "gameOptions", "campaign", "interiors", "quests", "systems", "stations", "weaponFx" };
+        static readonly string[] SelectKinds = { "ships", "items", "characters", "skins", "blueprints", "kits", "gameOptions", "campaign", "interiors", "missions", "systems", "stations", "weaponFx" };
         static readonly string[] AngleNames = ModelViewer.Angles.Select(a => a.name).ToArray();
 
         static JObject StrArray(string description) => new JObject { ["type"] = "array", ["items"] = new JObject { ["type"] = "string" }, ["description"] = description };
@@ -80,8 +80,8 @@ namespace GoF2Remake.UI
                 name = "select_entry", title = "Show an entry in the builder",
                 description = "Picks an entry as a click on its row would, going to its kind first: its page shows, and the turntable, room, map or orbit shows it. " +
                               "Kinds: " + string.Join(", ", SelectKinds) + " (skins: the game ship's number; weaponFx: an item, fired on the range). " +
-                              "Options: ships {\"tab\": \"ship\" | \"hardpoints\" | \"loadout\"}, quests {\"graph\": true for the node graph, \"wide\": true}. 'capture' adds a screenshot.",
-                input = Input(("kind", Enum(SelectKinds), "the kind", true), ("id", "string", "an id, \"override:<n>\", a quest's name or a skinned ship's number", true),
+                              "Options: ships {\"tab\": \"ship\" | \"hardpoints\" | \"loadout\"}, missions {\"graph\": true for the node graph, \"wide\": true}. 'capture' adds a screenshot.",
+                input = Input(("kind", Enum(SelectKinds), "the kind", true), ("id", "string", "an id, \"override:<n>\", a mission's name or a skinned ship's number", true),
                               ("options", new JObject { ["type"] = "object" }, "per kind (see above)", false),
                               ("capture", "boolean", "answer with a screenshot (default true)", false), ("clean", "boolean", "the screenshot without the builder's panels", false)),
                 run = SelectEntry, timeoutSeconds = 90f, noAsk = true,
@@ -552,7 +552,7 @@ namespace GoF2Remake.UI
         {
             "ships" => ModBuilder.Kind.Ships, "items" => ModBuilder.Kind.Items, "characters" => ModBuilder.Kind.Characters,
             "skins" => ModBuilder.Kind.Skins, "blueprints" => ModBuilder.Kind.Blueprints, "kits" => ModBuilder.Kind.Kits, "gameOptions" => ModBuilder.Kind.Campaigns,
-            "campaign" => ModBuilder.Kind.Campaigns, "interiors" => ModBuilder.Kind.Interiors, "quests" => ModBuilder.Kind.Quests,
+            "campaign" => ModBuilder.Kind.Campaigns, "interiors" => ModBuilder.Kind.Interiors, "missions" => ModBuilder.Kind.Quests,
             "systems" => ModBuilder.Kind.Systems, "stations" => ModBuilder.Kind.Stations, "weaponFx" => ModBuilder.Kind.WeaponFx,
             _ => throw new ArgumentException("kind: one of " + string.Join(", ", SelectKinds)),
         };
@@ -767,7 +767,7 @@ namespace GoF2Remake.UI
                 list.Add(new JObject
                 {
                     ["id"] = p.Id, ["name"] = p.Name, ["version"] = p.Version, ["open"] = Project != null && p.Folder == Project.Folder,
-                    ["ships"] = p.Ships.Count, ["items"] = p.Items.Count, ["quests"] = p.Quests.Count, ["error"] = p.LoadError,
+                    ["ships"] = p.Ships.Count, ["items"] = p.Items.Count, ["missions"] = p.Quests.Count, ["error"] = p.LoadError,
                 });
             c.Json(new JObject { ["projects"] = list }, $"{list.Count} projects");
         }

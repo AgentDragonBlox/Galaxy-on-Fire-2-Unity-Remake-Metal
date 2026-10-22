@@ -94,7 +94,7 @@ namespace GoF2Remake.UI
             if (ModManager.BuilderProject != null) Portrait.ShowCharacter(box, DefOf(c), false);
 
             Text(characterPage, T("mbName", "Name"), c.Name, 40, v => { c.Name = v.Trim(); CharacterEdited(); RebuildCharacters(); BuildCharacterPage(); });
-            Note(characterPage, string.Format(T("mbCharacterKey", "Quests and events speak through it as {0}:{1} or by its name."), Project.Id, c.Id));
+            Note(characterPage, string.Format(T("mbCharacterKey", "Missions and events speak through it as {0}:{1} or by its name."), Project.Id, c.Id));
 
             Heading(characterPage, T("mbPortrait", "Portrait"));
             var prow = Add(characterPage, new VisualElement(), "mbv-row");

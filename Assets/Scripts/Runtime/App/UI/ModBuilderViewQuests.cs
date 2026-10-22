@@ -43,8 +43,8 @@ namespace GoF2Remake.UI
 
         void BuildQuestsPanels(VisualElement left, VisualElement right)
         {
-            questList = ListPanel(left, T("mbQuests", "Quests"));
-            Act(left, T("mbNewQuest", "+ New quest"), () => NewQuest("quest"), "mbv-add");
+            questList = ListPanel(left, T("mbQuests", "Missions"));
+            Act(left, T("mbNewQuest", "+ New story mission"), () => NewQuest("quest"), "mbv-add");
             Act(left, T("mbNewMission", "+ New bar mission"), () => NewQuest("mission"), "mbv-add");
             Act(left, T("mbNewEvent", "+ New event"), () => NewQuest("event"), "mbv-add");
             Act(left, T("mbImportGraph", "Import an event graph…"), ImportGraph, "mbv-add");
@@ -152,15 +152,15 @@ namespace GoF2Remake.UI
                 if (QuestGraph.Incoming(sel).port != null)
                     Act(tools, T("mbCutWireIn", "Cut its wire in"), () => { QuestGraph.Detach(q.Json, sel); graph.Rebuild(); MarkDirty(); BuildQuestPage(); }, "mbv-step");
                 Act(tools, T("mbDelete", "Delete"), graph.DeleteSelected, "mbv-danger");
-                Act(tools, T("mbQuestSettings", "Quest settings"), () => graph.Select(null), "mbv-step");
-                JsonButton(questPage, sel, () => { graph.Rebuild(); BuildQuestPage(); }, T("mbJsonStepNote", "The step's fields (Modding/README.md, \"Quests made in the Mod Builder\")."));
+                Act(tools, T("mbQuestSettings", "Mission settings"), () => graph.Select(null), "mbv-step");
+                JsonButton(questPage, sel, () => { graph.Rebuild(); BuildQuestPage(); }, T("mbJsonStepNote", "The step's fields (Modding/README.md, \"Missions made in the Mod Builder\")."));
                 int index = QuestGraph.AllSteps(q.Json).ToList().IndexOf(sel) + 1;
                 BuildStep(questPage, q, sel, def, index.ToString(CultureInfo.InvariantCulture), 0);
                 Note(questPage, T("mbGraphWiredNote", "A field with a dot takes a wire from a value node (+ Value)."));
                 return;
             }
             BuildQuestSettings(q);
-            JsonButton(questPage, q.Json, () => { graph.Rebuild(); RebuildQuests(); BuildQuestPage(); }, T("mbJsonQuestNote", "The whole .gof2quest: settings, steps, loose chains and value nodes."));
+            JsonButton(questPage, q.Json, () => { graph.Rebuild(); RebuildQuests(); BuildQuestPage(); }, T("mbJsonQuestNote", "The whole .gof2mission: settings, steps, loose chains and value nodes."));
             int loose = (q.Json["loose"] as JArray)?.Count ?? 0;
             if (loose > 0) Note(questPage, string.Format(T("mbLooseNote", "{0} chain(s) aren't wired: they don't run until wired to Start or a step."), loose));
         }
@@ -171,7 +171,7 @@ namespace GoF2Remake.UI
             Heading(questPage, t != null ? T("mbValue_" + t.type, t.english) : (string)v["type"]);
             var tools = Row(questPage);
             Act(tools, T("mbDelete", "Delete"), graph.DeleteSelected, "mbv-danger");
-            Act(tools, T("mbQuestSettings", "Quest settings"), () => graph.Select(null), "mbv-step");
+            Act(tools, T("mbQuestSettings", "Mission settings"), () => graph.Select(null), "mbv-step");
             if (t == null) return;
             void Changed(bool rebuild) { MarkDirty(); RedrawGraphSoon(); if (rebuild) BuildQuestPage(); }
             foreach (var (key, label, choices, def) in t.options)
@@ -193,7 +193,7 @@ namespace GoF2Remake.UI
                 else if (key == "item")
                     RefField(questPage, T("mbItem", "Item"), RefKind.Item, cur, x => { v[key] = ProjectEntry.RefToken(x ?? "22"); Changed(true); }, clear: false);
                 else if (key == "name" && t.type == "quest")
-                    RefField(questPage, T("mbQuestField", "Quest"), RefKind.Quest, cur, x => { if (x != null) { v[key] = x; Changed(true); } }, clear: false);
+                    RefField(questPage, T("mbQuestField", "Mission"), RefKind.Quest, cur, x => { if (x != null) { v[key] = x; Changed(true); } }, clear: false);
                 else Text(questPage, T("mbValueOpt_" + key, label), cur, 200, x => { v[key] = x.Trim(); Changed(false); });
             }
             foreach (var (key, kindOf, label, def) in t.inputs)
@@ -241,16 +241,16 @@ namespace GoF2Remake.UI
                 }
             }
             if (Project.Quests.Count == 0 && graphs.Count == 0)
-                Note(questList, T("mbNoQuests", "No quests yet. A quest starts by itself; a bar mission is offered in a Space Lounge; an event runs by /event."));
+                Note(questList, T("mbNoQuests", "No missions yet. A story mission starts by itself; a bar mission is offered in a Space Lounge; an event runs by /event."));
         }
 
         static int CountSteps(JArray steps) => ProjectQuest.All(steps, Lists).Count();
 
         static IEnumerable<JArray> Lists(JObject st) => QuestSteps.Children(st).Select(c => c.list);
 
-        static string KindName(string kind) => kind == "mission" ? T("mbBarMission", "Bar mission") : kind == "event" ? T("mbEvent", "Event") : T("mbQuest", "Quest");
+        static string KindName(string kind) => kind == "mission" ? T("mbBarMission", "Bar mission") : kind == "event" ? T("mbEvent", "Event") : T("mbQuest", "Story mission");
 
-        void NewQuest(string kind) => AskText(kind == "mission" ? T("mbNewMission", "+ New bar mission") : kind == "event" ? T("mbNewEvent", "+ New event") : T("mbNewQuest", "+ New quest"),
+        void NewQuest(string kind) => AskText(kind == "mission" ? T("mbNewMission", "+ New bar mission") : kind == "event" ? T("mbNewEvent", "+ New event") : T("mbNewQuest", "+ New story mission"),
             T("mbTitleField", "Title"), "", title =>
         {
             var q = Project.AddQuest(title, kind == "mission");
@@ -400,7 +400,7 @@ namespace GoF2Remake.UI
             if (currentGraph != null) { BuildGraphPage(currentGraph); return; }
             var q = currentQuest;
             UpdateQuestGraph();
-            if (q == null) { Note(questPage, T("mbPickQuest", "Add a quest or a bar mission on the left to start.")); return; }
+            if (q == null) { Note(questPage, T("mbPickQuest", "Add a story mission or a bar mission on the left to start.")); return; }
             if (GraphMode) { BuildGraphInspector(q); return; }
             var top = Row(questPage);
             Act(top, T("mbPlayQuest", "Play it"), () => PlayQuest(q), "mbv-play");
@@ -424,9 +424,9 @@ namespace GoF2Remake.UI
         void BuildQuestSettings(ProjectQuest q)
         {
             Text(questPage, T("mbTitleField", "Title"), q.Title, 60, v => { q.Title = v.Trim(); QuestEdited(); RebuildQuests(); });
-            Note(questPage, string.Format(T("mbQuestName", "Its name for other quests and the campaign: {0}"), q.Name));
+            Note(questPage, string.Format(T("mbQuestName", "Its name for other missions and the campaign: {0}"), q.Name));
             string[] kinds = { "quest", "mission", "event" };
-            Segments(questPage, T("mbKind", "Kind"), new[] { T("mbQuest", "Quest"), T("mbBarMission", "Bar mission"), T("mbEvent", "Event") }, Array.IndexOf(kinds, q.Kind),
+            Segments(questPage, T("mbKind", "Kind"), new[] { T("mbQuest", "Story mission"), T("mbBarMission", "Bar mission"), T("mbEvent", "Event") }, Array.IndexOf(kinds, q.Kind),
                      n => { q.Kind = kinds[n]; QuestEdited(true); RebuildQuests(); });
             if (q.Kind == "quest") BuildStartsWhen(q);
             else if (q.Kind == "mission") BuildMissionOffer(q);
@@ -460,7 +460,7 @@ namespace GoF2Remake.UI
                 q.Variables.Add(new JObject { ["name"] = name, ["value"] = 0 });
                 QuestEdited(true);
             }), "mbv-add");
-            Note(questPage, T("mbVariablesNote", "Numbers the quest remembers: set them, test them (kills > goal), show them as {wave}."));
+            Note(questPage, T("mbVariablesNote", "Numbers the mission remembers: set them, test them (kills > goal), show them as {wave}."));
         }
 
         static JToken Num(string s) =>
@@ -659,7 +659,7 @@ namespace GoF2Remake.UI
 
         static readonly (string value, string english)[] WhoChoices =
         {
-            ("@a", "Everyone the quest is for"), ("@trigger", "The player a When block is about"), ("@alive", "Players alive in space"),
+            ("@a", "Everyone the mission is for"), ("@trigger", "The player a When block is about"), ("@alive", "Players alive in space"),
             ("@docked", "Players docked"), ("@survivors", "Players never destroyed since the fight began"), ("@r", "A random player"),
         };
 
@@ -882,7 +882,7 @@ namespace GoF2Remake.UI
                 string type = (string)st["type"];
                 if (type != "spawn" && type != "fight") continue;
                 string n = (string)st["name"];
-                if (string.IsNullOrWhiteSpace(n) && type == "fight") n = "Quest Enemy " + ++enemies;
+                if (string.IsNullOrWhiteSpace(n) && type == "fight") n = "Mission Enemy " + ++enemies;
                 else if (type == "fight") enemies++;
                 if (!string.IsNullOrWhiteSpace(n) && !names.Contains(n.Trim())) names.Add(n.Trim());
             }
@@ -1019,13 +1019,13 @@ namespace GoF2Remake.UI
                 }
                 case "checkpoint":
                     Text(card, T("mbCheckpointName", "Name (optional; a save remembers it)"), S("name"), 40, v => SetS("name", v?.Trim().Replace(' ', '_')));
-                    Note(card, T("mbCheckpointNote", "Loading a save goes on from here; keep checkpoints on the quest's main line."));
+                    Note(card, T("mbCheckpointNote", "Loading a save goes on from here; keep checkpoints on the mission's main line."));
                     break;
                 case "startquest":
-                    RefField(card, T("mbQuestField", "Quest"), RefKind.Quest, S("quest"), v => SetS("quest", v), clear: false, filter: e => e.value != q.Name);
+                    RefField(card, T("mbQuestField", "Mission"), RefKind.Quest, S("quest"), v => SetS("quest", v), clear: false, filter: e => e.value != q.Name);
                     break;
                 case "complete":
-                    Int(card, T("mbRewardOwn", "Reward (-1 = the quest's)"), I("reward", -1), -1, 999999999, v => { if (v < 0) st.Remove("reward"); else st["reward"] = v; QuestEdited(); });
+                    Int(card, T("mbRewardOwn", "Reward (-1 = the mission's)"), I("reward", -1), -1, 999999999, v => { if (v < 0) st.Remove("reward"); else st["reward"] = v; QuestEdited(); });
                     Text(card, T("mbBoxTitle", "Title of the box (optional)"), S("title"), 60, v => SetS("title", v));
                     break;
                 case "fail":
@@ -1059,7 +1059,7 @@ namespace GoF2Remake.UI
             if (value != null) Act(row, "✕", () => set(null), "mbv-step");
         }
 
-        static readonly string[] StartModes = { "At once", "After a quest", "After a visit", "After a story step", "Never", "Condition" };
+        static readonly string[] StartModes = { "At once", "After a mission", "After a visit", "After a story step", "Never", "Condition" };
 
         void BuildStartsWhen(ProjectQuest q)
         {
@@ -1076,7 +1076,7 @@ namespace GoF2Remake.UI
             {
                 case 1:
                     Matches(w, @"^quest\((.+)\)\s*==\s*2$", out string after);
-                    RefField(questPage, T("mbAfterQuest", "When this quest is done"), RefKind.Quest, after, v => { if (v != null) { q.StartsWhen = $"quest({v}) == 2"; QuestEdited(true); } }, clear: false,
+                    RefField(questPage, T("mbAfterQuest", "When this mission is done"), RefKind.Quest, after, v => { if (v != null) { q.StartsWhen = $"quest({v}) == 2"; QuestEdited(true); } }, clear: false,
                              filter: e => e.value != q.Name);
                     break;
                 case 2:
