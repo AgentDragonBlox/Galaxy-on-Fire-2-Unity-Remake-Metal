@@ -76,6 +76,14 @@ namespace GoF2Remake.UI
             root.AddToClassList("mbv-root");
             if (sheet != null) root.styleSheets.Add(sheet);
             parent.Add(root);
+            // W A S D typed into the builder's text fields are the UI's Navigate too: the field keeps them and its focus (the
+            // station menu does the same for its root; over the flight HUD nothing else would).
+            root.RegisterCallback<NavigationMoveEvent>(e =>
+            {
+                if (!TextFieldKeys.IsTyping(e, root.focusController?.focusedElement as VisualElement)) return;
+                e.StopPropagation();
+                root.focusController?.IgnoreEvent(e);
+            }, TrickleDown.TrickleDown);
             BuildViewport(root);
 
             // ---- top bar ----

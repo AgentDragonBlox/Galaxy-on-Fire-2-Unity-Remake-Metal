@@ -1962,6 +1962,14 @@ namespace GoF2Remake.UI
         void OnNavigate(NavigationMoveEvent e)
         {
             if (GoF2Remake.Multiplayer.NetChat.Typing) return;   // the arrows move the chat line's cursor
+            // A letter typed into a text field (the UI's Navigate takes W A S D too): the field keeps it and its focus. The
+            // Mod Builder's fields sit in this root, and an S in a name moved the focus to the menu (a user's report).
+            if (TextFieldKeys.IsTyping(e, root.focusController?.focusedElement as VisualElement))
+            {
+                e.StopPropagation();
+                root.focusController?.IgnoreEvent(e);
+                return;
+            }
             // The multiplayer window walks its own tabs and buttons (MultiplayerWindow.OnNavigate), as Update yields its
             // keys to it: without this the arrows moved the menu behind it and its Squad tab could never be reached.
             // A navigation event only travels through what has the focus, so opened with the mouse (the focus still on a
