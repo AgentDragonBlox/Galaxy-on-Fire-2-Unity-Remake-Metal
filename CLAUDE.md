@@ -193,7 +193,13 @@ The game stores every object as several meshes (hull, `_lights_add`, `_emissive`
   (generic ships, the battleship, jumpgates, asteroids) keeps its LODGroup while on; off, the group is cut to LOD 0 culled
   where the last level was and the lower-only renderers get `forceRenderingOff` (= the binary's always-LOD-0). Every other
   object gets made levels (`LodMeshes`: the Mod Builder optimizer's `MeshSimplifier` after joining vertices alike in every
-  byte; level 1 = 50 %, level 2 = 20 % of the triangles; a level keeping over 85 % of the one above is dropped; meshes under
+  byte, in its `seams` / `borders` mode: a seam point collapses with all its copies at once, each onto a copy of the
+  neighbour it shares a triangle with, and a point on one open border only along it, the border edges' upright planes
+  in its quadric; the optimizer keeps both locked. The game's models split 93-97 % of their points by hard edges and UV
+  seams and 17-41 % lie on open panel edges: with both locked 142 of 147 hull meshes got no level, now 63 do (347k ->
+  235k triangles at level 1: the add-on ships, Vossk battleship, carriers, plasma array ~30-50 %); the stations stay
+  whole, being flat-shaded (a copy per face, so no copy has a partner along an edge) or double-sided (non-manifold);
+  level 1 = 50 %, level 2 = 20 % of the triangles; a level keeping over 85 % of the one above is dropped; meshes under
   1000 triangles and additive / light / glow / emissive layers (they sit on the hull) get none): a renderer per level under
   the mesh's own (`<name>_lod_gen1`, a non-readable mesh of only its vertices, so `HullCollision` and the shadow bake's
   "_lod" filters skip it) in a LODGroup: level 1 below 15 %, level 2 below 5 % of the screen's height (Quality's LOD bias

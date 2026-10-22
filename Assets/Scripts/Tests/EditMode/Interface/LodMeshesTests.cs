@@ -3,7 +3,8 @@
 // optimizer's simplifier after its identical vertices are joined (a model with three vertices per triangle is cut like a
 // shared one), level 1 to about half the triangles and level 2 to about a fifth; a level is a mesh of its own with only
 // the vertices it uses; the levels go through a file as indices and come back the same; a changed mesh hashes otherwise;
-// light / glow layers and small meshes get none; the option is on by default on phones only.
+// light / glow layers and small meshes get none; the option is on by default on phones only; a UV seam is cut along itself
+// (each side keeping its own copies) and the mesh stays closed.
 // Expected values: a closed 64 x 32 sphere written with three vertices per triangle: 3968 triangles, 11904 vertices.
 
 using System.Collections.Generic;
@@ -58,6 +59,117 @@ namespace GoF2Remake.Tests
             made.Add(mesh);
             return mesh;
         }
+
+        /// <summary>A closed sphere sharing its vertices, wrapped in a texture: the meridian at u 0 has a second copy at u 1
+        /// (a UV seam, like the game's models have nearly everywhere).</summary>
+        Mesh SeamSphere(int segments, int rings)
+        {
+            var pos = new List<Vector3> { Vector3.up };
+            var uv = new List<Vector2> { new Vector2(0.5f, 1f) };
+            for (int r = 1; r < rings; r++)
+                for (int s = 0; s <= segments; s++)
+                {
+                    float th = Mathf.PI * r / rings, ph = 2f * Mathf.PI * s / segments;
+                    pos.Add(new Vector3(Mathf.Sin(th) * Mathf.Cos(ph), Mathf.Cos(th), Mathf.Sin(th) * Mathf.Sin(ph)));
+                    uv.Add(new Vector2((float)s / segments, 1f - (float)r / rings));
+                }
+            pos.Add(Vector3.down);
+            uv.Add(new Vector2(0.5f, 0f));
+            // s == segments is the copy column: the same points as s == 0 (by the same sum: bit for bit).
+            for (int r = 1; r < rings; r++) pos[1 + (r - 1) * (segments + 1) + segments] = pos[1 + (r - 1) * (segments + 1)];
+            int V(int r, int s) => 1 + (r - 1) * (segments + 1) + s;
+            int bottom = pos.Count - 1;
+            var idx = new List<int>();
+            for (int s = 0; s < segments; s++) idx.AddRange(new[] { 0, V(1, s + 1), V(1, s) });
+            for (int r = 1; r < rings - 1; r++)
+                for (int s = 0; s < segments; s++)
+                {
+                    idx.AddRange(new[] { V(r, s), V(r, s + 1), V(r + 1, s) });
+                    idx.AddRange(new[] { V(r, s + 1), V(r + 1, s + 1), V(r + 1, s) });
+                }
+            for (int s = 0; s < segments; s++) idx.AddRange(new[] { bottom, V(rings - 1, s), V(rings - 1, s + 1) });
+            var mesh = new Mesh { name = "test_seam_hull", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            mesh.SetVertices(pos);
+            mesh.SetNormals(pos.Select(v => v.normalized).ToList());
+            mesh.SetUVs(0, uv);
+            mesh.SetTriangles(idx, 0);
+            mesh.RecalculateBounds();
+            made.Add(mesh);
+            return mesh;
+        }
+
+        [Test]
+        public void ASeamIsCutAlongItselfAndStaysClosed()
+        {
+            var mesh = SeamSphere(64, 32);
+            Assert.AreEqual(3968, LodMeshes.Triangles(mesh));
+            var c = LodMeshes.Capture(mesh);
+            var levels = LodMeshes.Simplify(c);
+            Assert.AreEqual(2, levels.Length, "level 1 and level 2, the seam no longer holding the mesh");
+            Assert.LessOrEqual(levels[1][0].Length / 3, 3968 / 5 + 8, "level 2 about a fifth");
+            var uv = mesh.uv;
+            var full = mesh.triangles;
+            float side = Mathf.Sign(UvAreas(full, uv).Sum());
+            float whole = UvAreas(full, uv).Sum(x => Mathf.Abs(x));
+            foreach (var level in levels)
+            {
+                var tris = level[0];
+                var edges = new Dictionary<(Vector3, Vector3), int>();
+                for (int t = 0; t < tris.Length; t += 3)
+                    for (int k = 0; k < 3; k++)
+                    {
+                        Vector3 a = c.positions[tris[t + k]], b = c.positions[tris[t + (k + 1) % 3]];
+                        var key = Before(a, b) ? (a, b) : (b, a);
+                        edges.TryGetValue(key, out int n);
+                        edges[key] = n + 1;
+                    }
+                Assert.IsTrue(edges.Values.All(n => n == 2), "closed: every edge between two triangles, no crack along the seam");
+                // A triangle reaching across the seam (one side's copy with the other side's) would lie turned over in the
+                // texture, or cover more of it than the sphere does.
+                Assert.IsTrue(UvAreas(tris, uv).All(x => x * side > -1e-7f), "every triangle the right way round in the texture");
+                Assert.Less(UvAreas(tris, uv).Sum(x => Mathf.Abs(x)), whole * 1.02f, "and covering no more of it than the sphere");
+            }
+        }
+
+        [Test]
+        public void AnOpenPanelIsCutAlongItsBorderAndKeepsItsOutline()
+        {
+            const int cells = 40;
+            var pos = new List<Vector3>();
+            for (int y = 0; y <= cells; y++)
+                for (int x = 0; x <= cells; x++)
+                    pos.Add(new Vector3(x, 0.02f * Mathf.Sin(x * 0.7f) * Mathf.Sin(y * 0.5f), y));
+            var idx = new List<int>();
+            int V(int x, int y) => y * (cells + 1) + x;
+            for (int y = 0; y < cells; y++)
+                for (int x = 0; x < cells; x++)
+                {
+                    idx.AddRange(new[] { V(x, y), V(x, y + 1), V(x + 1, y) });
+                    idx.AddRange(new[] { V(x + 1, y), V(x, y + 1), V(x + 1, y + 1) });
+                }
+            var mesh = new Mesh { name = "test_panel", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            mesh.SetVertices(pos);
+            mesh.SetTriangles(idx, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            made.Add(mesh);
+            var levels = LodMeshes.Simplify(LodMeshes.Capture(mesh));
+            Assert.AreEqual(2, levels.Length, "the open border no longer holds it");
+            Assert.LessOrEqual(levels[1][0].Length / 3, 3200 / 5 + 8, "level 2 about a fifth");
+            foreach (int corner in new[] { V(0, 0), V(cells, 0), V(0, cells), V(cells, cells) })
+                Assert.Contains(corner, levels[1][0], "the panel's corners stay where they are: the outline holds");
+        }
+
+        static IEnumerable<float> UvAreas(int[] tris, Vector2[] uv)
+        {
+            for (int t = 0; t < tris.Length; t += 3)
+            {
+                Vector2 a = uv[tris[t]], b = uv[tris[t + 1]], c = uv[tris[t + 2]];
+                yield return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) * 0.5f;
+            }
+        }
+
+        static bool Before(Vector3 a, Vector3 b) => a.x != b.x ? a.x < b.x : a.y != b.y ? a.y < b.y : a.z < b.z;
 
         [Test]
         public void ASphereWithThreeVerticesPerTriangleGetsTwoLevels()

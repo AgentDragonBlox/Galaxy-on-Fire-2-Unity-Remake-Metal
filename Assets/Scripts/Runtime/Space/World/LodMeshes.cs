@@ -1,7 +1,9 @@
 // LodMeshes.cs
 // Remake (the user's request 2026-10-22, "Levels of detail" in Options > Graphics, AutoLods): the lower levels of detail of a
 // mesh, made by the Mod Builder optimizer's polygon reduction (MeshSimplifier: quadric edge collapse over the mesh's own
-// vertices, seams and open edges kept). One mesh in, its levels out:
+// vertices; seams and open borders collapsed only along themselves, each side keeping its own vertices: the game's models
+// split nearly every point by hard edges and UV seams and are built of open panels, and with those locked 142 of their 147
+// hull meshes got no level). One mesh in, its levels out:
 //   Capture   (main thread) the mesh's vertices as raw bytes (every stream), its positions and its triangles per submesh;
 //   Simplify  (any thread) vertices alike in every byte joined first (a model with three vertices per triangle is otherwise
 //             all seams to the simplifier), then level 1 at Ratios[0] of the triangles, level 2 cut from level 1 to Ratios[1];
@@ -32,7 +34,7 @@ namespace GoF2Remake.Visuals
         /// <summary>Meshes with fewer triangles get no levels: nothing to win.</summary>
         public const int MinTriangles = 1000;
         /// <summary>Bumped when Ratios / MinGain / the simplifier change: the mods' cached levels are made again.</summary>
-        public const int ParamsVersion = 1;
+        public const int ParamsVersion = 2;
 
         /// <summary>A mesh read for the simplifier (plain data, any thread).</summary>
         public sealed class Captured
@@ -131,7 +133,7 @@ namespace GoF2Remake.Visuals
             {
                 var next = new int[cur.Length][];
                 for (int s = 0; s < cur.Length; s++)
-                    next[s] = cur[s].Length >= 12 ? MeshSimplifier.Simplify(c.positions, cur[s], ratio / prev) : (int[])cur[s].Clone();
+                    next[s] = cur[s].Length >= 12 ? MeshSimplifier.Simplify(c.positions, cur[s], ratio / prev, seams: true, borders: true) : (int[])cur[s].Clone();
                 int tris = Count(next);
                 if (tris > curTris * MinGain) break;   // the seams and edges held it: not worth a level
                 levels.Add(next);
