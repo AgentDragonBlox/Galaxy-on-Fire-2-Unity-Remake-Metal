@@ -5,7 +5,8 @@
 // V-Sync, field of view the original's 1.22 rad, hangar shadows "All ships", hangar depth of field off, vibration 100 %,
 // mouse dead zone 8 %, tutorials off, story step on, auto-play dialogue on, the rules' "on / off by default"...); the stick
 // dead zone is the Input System's own default (0.125). Clamps: the setters' ranges, checked as invariants. The reset
-// groups: "Default settings" per tab (Settings' key lists) and for every tab (ResetToDefaults, the language kept).
+// groups: "Default settings" per tab (Settings' key lists) and for every tab (ResetToDefaults, the language kept). A row's
+// own default without changing it (Settings.TryDefault, OptionControl's reset).
 // Every PlayerPrefs value is put back afterwards (DataUiTestKit.PrefsSnapshot).
 
 using System.Linq;
@@ -348,6 +349,20 @@ namespace GoF2Remake.Tests
                 Assert.AreEqual(after + 1, fired);
             }
             finally { Settings.Changed -= Count; }
+        }
+    
+        [Test]
+        public void ARowsDefaultIsReadWithoutChangingTheOption()
+        {
+            Settings.MasterVolume = 0.3f;
+            Settings.FieldOfView = 80f;
+            Assert.IsTrue(Settings.TryDefault(() => Settings.MasterVolume, out float master));
+            Assert.AreEqual(1f, master);
+            Assert.IsTrue(Settings.TryDefault(() => Settings.FieldOfView, out float fov));
+            Assert.AreEqual(1.22f * Mathf.Rad2Deg, fov, 0.5f, "the original's 1.22 rad");
+            Assert.AreEqual(0.3f, Settings.MasterVolume, 1e-5f, "the option itself unchanged");
+            Assert.AreEqual(80f, Settings.FieldOfView, 1e-5f);
+            Assert.IsFalse(Settings.TryDefault(() => 42f, out _), "a getter that reads no option has no default");
         }
     }
 }

@@ -45,6 +45,8 @@ namespace GoF2Remake.UI
         readonly VisualElement panel, frame, frameBox, gridLines;
         readonly VisualElement[] bars = new VisualElement[4];
         readonly List<OptionControl> rows = new List<OptionControl>();
+        Label panelHint;
+        InputKind? hintKind;
         readonly Action<bool> sound;
         int selected;
 
@@ -104,13 +106,7 @@ namespace GoF2Remake.UI
             frameBox.AddToClassList("photo-frame-box");
             gridLines = new VisualElement { pickingMode = PickingMode.Ignore };
             gridLines.AddToClassList("photo-grid");
-            for (int i = 0; i < 4; i++)
-            {
-                var l = new VisualElement { pickingMode = PickingMode.Ignore };
-                l.AddToClassList(i < 2 ? "photo-grid-v" : "photo-grid-h");
-                if (i < 2) l.style.left = Length.Percent(i == 0 ? 33.333f : 66.667f); else l.style.top = Length.Percent(i == 2 ? 33.333f : 66.667f);
-                gridLines.Add(l);
-            }
+            gridLines.generateVisualContent += DrawGuides;
             frameBox.Add(gridLines);
             frame.Add(frameBox);
             frame.RegisterCallback<GeometryChangedEvent>(_ => LayoutFrame());
@@ -135,6 +131,9 @@ namespace GoF2Remake.UI
                 rows.Add(c);
                 scroll.Add(c.Root);
             }
+            panelHint = new Label { pickingMode = PickingMode.Ignore };
+            panelHint.AddToClassList("photo-panel-hint");
+            panel.Add(panelHint);
             overlay.Add(panel);
 
             // After a screenshot: where it went, and (desktop) a button / O to show it in the file browser.
@@ -164,60 +163,87 @@ namespace GoF2Remake.UI
             yield return new OptionDef { id = "mode", kind = OptionKind.Choice, segmented = true, label = () => T("photoCamera", "Camera"),
                 choices = () => new[] { T("photoOrbit", "Orbit"), T("photoFree", "Free") },
                 getIndex = () => PhotoSettings.Free ? 1 : 0, setIndex = i => SetFree(i == 1) };
+            // Every row but the camera mode has its default (PhotoSettings.Reset) for its own reset (OptionControl).
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoFov", "Field of view"), min = PhotoSettings.MinFov, max = PhotoSettings.MaxFov,
-                get = () => PhotoSettings.Fov, set = v => PhotoSettings.Fov = v, format = v => $"{Mathf.RoundToInt(v)}°" };
-            yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoRoll", "Roll"), min = -45f, max = 45f,
-                get = () => PhotoSettings.Roll, set = v => PhotoSettings.Roll = Mathf.Abs(v) < 0.75f ? 0f : v, format = v => $"{Mathf.RoundToInt(v)}°" };
+                get = () => PhotoSettings.Fov, set = v => PhotoSettings.Fov = v, format = v => $"{Mathf.RoundToInt(v)}°",
+                defaultValue = () => PhotoSettings.DefaultFov,
+                description = () => T("photoFovHelp", "The picture's height as an angle: smaller zooms in like a longer lens, larger takes in more like a wider one.") };
+            yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoRoll", "Roll"), min = -180f, max = 180f,
+                get = () => PhotoSettings.Roll, set = v => PhotoSettings.Roll = SnapRoll(v), format = v => $"{Mathf.RoundToInt(v)}°", defaultValue = () => 0f };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoSpeed", "Free camera speed"), min = 0.1f, max = 5f,
-                get = () => PhotoSettings.Speed, set = v => PhotoSettings.Speed = v, format = v => $"x{v:0.0}", visible = () => PhotoSettings.Free };
+                get = () => PhotoSettings.Speed, set = v => PhotoSettings.Speed = v, format = v => $"x{v:0.0}", visible = () => PhotoSettings.Free,
+                defaultValue = () => 1f };
             yield return new OptionDef { kind = OptionKind.Choice, label = () => T("photoDof", "Depth of field"),
                 choices = () => new[] { T("photoDofGame", "Default"), T("photoOff", "Off"), T("photoDofShip", "On the ship"), T("photoDofManual", "Manual") },
-                getIndex = () => (int)PhotoSettings.Dof, setIndex = i => PhotoSettings.Dof = (PhotoSettings.DofMode)i };
+                getIndex = () => (int)PhotoSettings.Dof, setIndex = i => PhotoSettings.Dof = (PhotoSettings.DofMode)i, defaultValue = () => 0f };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoFocus", "Focus distance"), min = 0f, max = 1f,
-                get = () => PhotoSettings.Focus, set = v => PhotoSettings.Focus = v, format = _ => Metres(PhotoSettings.FocusMetres),
+                get = () => PhotoSettings.Focus, set = v => PhotoSettings.Focus = v, format = v => Metres(PhotoSettings.FocusMetresOf(v)),
+                fromShown = PhotoSettings.FocusOfMetres, defaultValue = () => 0.5f,
                 visible = () => PhotoSettings.Dof == PhotoSettings.DofMode.Manual };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoBlur", "Blur"), min = 0f, max = 1f,
-                get = () => PhotoSettings.Blur, set = v => PhotoSettings.Blur = v, format = Pct,
+                get = () => PhotoSettings.Blur, set = v => PhotoSettings.Blur = v, format = Pct, defaultValue = () => 0.5f,
                 visible = () => PhotoSettings.Dof >= PhotoSettings.DofMode.Ship };
             yield return new OptionDef { kind = OptionKind.Choice, label = () => T("photoBloom", "Bloom"),
                 choices = () => new[] { T("photoDofGame", "Default"), T("photoOff", "Off"), T("photoCustom", "Custom") },
-                getIndex = () => (int)PhotoSettings.Bloom, setIndex = i => PhotoSettings.Bloom = (PhotoSettings.BloomMode)i };
+                getIndex = () => (int)PhotoSettings.Bloom, setIndex = i => PhotoSettings.Bloom = (PhotoSettings.BloomMode)i, defaultValue = () => 0f };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoBloomAmount", "Bloom amount"), min = 0f, max = 3f,
-                get = () => PhotoSettings.BloomAmount, set = v => PhotoSettings.BloomAmount = v, format = v => $"x{v:0.0}",
+                get = () => PhotoSettings.BloomAmount, set = v => PhotoSettings.BloomAmount = v, format = v => $"x{v:0.0}", defaultValue = () => 1f,
                 visible = () => PhotoSettings.Bloom == PhotoSettings.BloomMode.Custom };
             // The sun's flare is the flight HUD's (LensFlareView), so there is none to switch in the hangar.
             yield return new OptionDef { kind = OptionKind.Choice, label = () => T("photoFlare", "Lens flare"),
                 choices = () => new[] { T("photoDofGame", "Default"), T("photoOff", "Off"), T("photoOn", "On") },
-                getIndex = () => (int)PhotoSettings.Flare, setIndex = i => PhotoSettings.Flare = (PhotoSettings.FlareMode)i,
+                getIndex = () => (int)PhotoSettings.Flare, setIndex = i => PhotoSettings.Flare = (PhotoSettings.FlareMode)i, defaultValue = () => 0f,
                 visible = () => !hangar };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoExposure", "Exposure"), min = -3f, max = 3f,
-                get = () => PhotoSettings.Exposure, set = v => PhotoSettings.Exposure = Mathf.Abs(v) < 0.05f ? 0f : v, format = v => Signed(Mathf.Round(v * 10f) / 10f, " EV") };
+                get = () => PhotoSettings.Exposure, set = v => PhotoSettings.Exposure = Mathf.Abs(v) < 0.05f ? 0f : v, format = v => Signed(Mathf.Round(v * 10f) / 10f, " EV"),
+                defaultValue = () => 0f };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoContrast", "Contrast"), min = -50f, max = 50f,
-                get = () => PhotoSettings.Contrast, set = v => PhotoSettings.Contrast = Mathf.Abs(v) < 1f ? 0f : v, format = v => Signed(Mathf.Round(v)) };
+                get = () => PhotoSettings.Contrast, set = v => PhotoSettings.Contrast = Mathf.Abs(v) < 1f ? 0f : v, format = v => Signed(Mathf.Round(v)),
+                defaultValue = () => 0f };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoSaturation", "Saturation"), min = -100f, max = 100f,
-                get = () => PhotoSettings.Saturation, set = v => PhotoSettings.Saturation = Mathf.Abs(v) < 1f ? 0f : v, format = v => Signed(Mathf.Round(v)) };
+                get = () => PhotoSettings.Saturation, set = v => PhotoSettings.Saturation = Mathf.Abs(v) < 1f ? 0f : v, format = v => Signed(Mathf.Round(v)),
+                defaultValue = () => 0f, description = () => T("photoSaturationHelp", "-100 is black and white.") };
+            // The white balance in kelvin, as photo editors show it (PhotoSettings.Kelvin); the slider stays URP's -100..100.
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoTemperature", "Temperature"), min = -100f, max = 100f,
-                get = () => PhotoSettings.Temperature, set = v => PhotoSettings.Temperature = Mathf.Abs(v) < 2f ? 0f : v, format = v => Signed(Mathf.Round(v)) };
+                get = () => PhotoSettings.Temperature, set = v => PhotoSettings.Temperature = Mathf.Abs(v) < 2f ? 0f : v, format = PhotoSettings.KelvinText,
+                fromShown = PhotoSettings.TemperatureOfKelvin, defaultValue = () => 0f,
+                description = () => T("photoTemperatureHelp", "The white balance in kelvin, as photo editors show it: 6500 K leaves the colours as they are, more is warmer, less is cooler.") };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoTint", "Tint"), min = -100f, max = 100f,
-                get = () => PhotoSettings.Tint, set = v => PhotoSettings.Tint = Mathf.Abs(v) < 2f ? 0f : v, format = v => Signed(Mathf.Round(v)) };
+                get = () => PhotoSettings.Tint, set = v => PhotoSettings.Tint = Mathf.Abs(v) < 2f ? 0f : v, format = v => Signed(Mathf.Round(v)),
+                defaultValue = () => 0f, description = () => T("photoTintHelp", "The white balance's other axis: below 0 greener, above 0 more magenta.") };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoVignette", "Vignette"), min = 0f, max = 0.6f,
-                get = () => PhotoSettings.Vignette, set = v => PhotoSettings.Vignette = v, format = v => Pct(v / 0.6f) };
+                get = () => PhotoSettings.Vignette, set = v => PhotoSettings.Vignette = v, format = v => Pct(v / 0.6f), defaultValue = () => 0f };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoGrain", "Film grain"), min = 0f, max = 1f,
-                get = () => PhotoSettings.Grain, set = v => PhotoSettings.Grain = v, format = Pct };
+                get = () => PhotoSettings.Grain, set = v => PhotoSettings.Grain = v, format = Pct, defaultValue = () => 0f };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoAberration", "Chromatic aberration"), min = 0f, max = 1f,
-                get = () => PhotoSettings.Aberration, set = v => PhotoSettings.Aberration = v, format = Pct };
+                get = () => PhotoSettings.Aberration, set = v => PhotoSettings.Aberration = v, format = Pct, defaultValue = () => 0f };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoDistortion", "Lens distortion"), min = -1f, max = 1f,
-                get = () => PhotoSettings.Distortion, set = v => PhotoSettings.Distortion = Mathf.Abs(v) < 0.02f ? 0f : v, format = v => Signed(Mathf.Round(v * 100f)) };
+                get = () => PhotoSettings.Distortion, set = v => PhotoSettings.Distortion = Mathf.Abs(v) < 0.02f ? 0f : v,
+                format = v => Signed(Mathf.Round(v * 100f), " %"), defaultValue = () => 0f,
+                description = () => T("photoDistortionHelp", "Above 0 the picture bulges out from the middle (barrel), below 0 it pinches in (pincushion).") };
             yield return new OptionDef { kind = OptionKind.Toggle, label = () => T("photoHideShip", "Hide the ship"),
-                getBool = () => PhotoSettings.HideShip, setBool = v => PhotoSettings.HideShip = v };
-            yield return new OptionDef { kind = OptionKind.Toggle, label = () => T("photoGrid", "Grid (thirds)"),
-                getBool = () => PhotoSettings.Grid, setBool = v => PhotoSettings.Grid = v };
+                getBool = () => PhotoSettings.HideShip, setBool = v => PhotoSettings.HideShip = v, defaultValue = () => 0f };
+            yield return new OptionDef { kind = OptionKind.Choice, label = () => T("photoGuides", "Guides"), defaultValue = () => 0f,
+                choices = () => new[] { T("photoOff", "Off"), T("photoGuideThirds", "Thirds"), T("photoGuideQuarters", "Quarters"),
+                                        T("photoGuideGolden", "Golden ratio"), T("photoGuideSpiral", "Golden spiral"),
+                                        T("photoGuideTriangles", "Golden triangles"), T("photoGuideDiagonals", "Diagonals"),
+                                        T("photoGuideCentre", "Centre") },
+                getIndex = () => (int)PhotoSettings.Guides, setIndex = i => PhotoSettings.Guides = (PhotoGuides.Mode)i };
+            // The spiral flipped toward any of the four corners (PhotoGuides: corner 0 = lower right); the triangles lie
+            // along one of the two diagonals (even / odd corners).
+            yield return new OptionDef { kind = OptionKind.Choice, label = () => T("photoGuideDirection", "Guide direction"),
+                choices = () => PhotoSettings.Guides == PhotoGuides.Mode.GoldenTriangles
+                    ? new[] { T("photoGuideDiagonalDown", "Top left to bottom right"), T("photoGuideDiagonalUp", "Top right to bottom left") }
+                    : new[] { T("photoGuideLowerRight", "Lower right"), T("photoGuideLowerLeft", "Lower left"),
+                              T("photoGuideUpperRight", "Upper right"), T("photoGuideUpperLeft", "Upper left") },
+                getIndex = () => PhotoSettings.Guides == PhotoGuides.Mode.GoldenTriangles ? PhotoSettings.GuideCorner & 1 : PhotoSettings.GuideCorner,
+                setIndex = i => PhotoSettings.GuideCorner = i, visible = () => PhotoGuides.Turns(PhotoSettings.Guides), defaultValue = () => 0f };
             yield return new OptionDef { kind = OptionKind.Choice, label = () => T("photoFrame", "Frame"),
                 choices = () => { var c = (string[])PhotoSettings.FrameNames.Clone(); c[0] = T("photoFrameFull", "Full screen"); return c; },
-                getIndex = () => PhotoSettings.Frame, setIndex = i => PhotoSettings.Frame = i };
+                getIndex = () => PhotoSettings.Frame, setIndex = i => PhotoSettings.Frame = i, defaultValue = () => 0f };
             yield return new OptionDef { kind = OptionKind.Choice, segmented = true, label = () => T("photoSize", "Screenshot size"),
                 choices = () => new[] { T("photoSizeScreen", "Screen"), "x2", "x4" },
-                getIndex = () => PhotoSettings.Size, setIndex = i => PhotoSettings.Size = i };
+                getIndex = () => PhotoSettings.Size, setIndex = i => PhotoSettings.Size = i, defaultValue = () => 0f };
             yield return new OptionDef { kind = OptionKind.Button, label = () => T("photoReset", "RESET"),
                 action = () => { PhotoSettings.Reset(); Refresh(); Changed?.Invoke(); } };
         }
@@ -309,10 +335,24 @@ namespace GoF2Remake.UI
 
         void Highlight()
         {
+            UpdatePanelHint();
             bool keys = InputMode.Current != InputKind.Touch;
             for (int i = 0; i < rows.Count; i++) rows[i].Field.EnableInClassList("options-selected", keys && PanelOpen && i == selected);
             if (keys && PanelOpen && selected < rows.Count && panel.Q<ScrollView>() is ScrollView sv && sv.contentContainer.Contains(rows[selected].Root))
                 sv.ScrollTo(rows[selected].Root);
+        }
+
+        /// <summary>Under the rows: how to type a value and put one back (OptionControl), for the input in use.</summary>
+        void UpdatePanelHint()
+        {
+            if (panelHint == null || hintKind == InputMode.Current) return;
+            hintKind = InputMode.Current;
+            panelHint.text = hintKind switch
+            {
+                InputKind.Gamepad => T("photoHintPad", "X: back to the default"),
+                InputKind.Touch => T("photoHintTouch", "Tap a value to type it, the arrow beside it puts back the default"),
+                _ => T("photoHintKeys", "Click a value or type a number to set it, Backspace puts back the default"),
+            };
         }
 
         void Move(int dir)
@@ -355,6 +395,7 @@ namespace GoF2Remake.UI
         {
             backTaken = false;
             if (!active) return false;
+            if (PanelOpen) UpdatePanelHint();
             if (kb != null && kb.oKey.wasPressedThisFrame && notice.resolvedStyle.display != DisplayStyle.None) ShowSaved();
             if ((kb != null && kb.tabKey.wasPressedThisFrame) || (pad != null && pad.selectButton.wasPressedThisFrame)) ToggleSettings();
             if (!PanelOpen)
@@ -499,10 +540,60 @@ namespace GoF2Remake.UI
             }
             UpdateEffects();
             ShowShip(!PhotoSettings.HideShip);
-            frame.EnableInClassList("photo-frame--shown", PhotoSettings.FrameAspect > 0f || PhotoSettings.Grid);
-            gridLines.style.display = PhotoSettings.Grid ? DisplayStyle.Flex : DisplayStyle.None;
+            bool guides = PhotoSettings.Guides != PhotoGuides.Mode.Off;
+            frame.EnableInClassList("photo-frame--shown", PhotoSettings.FrameAspect > 0f || guides);
+            gridLines.style.display = guides ? DisplayStyle.Flex : DisplayStyle.None;
+            if (guides && (PhotoSettings.Guides != drawnGuides || PhotoSettings.GuideCorner != drawnCorner))
+            {
+                drawnGuides = PhotoSettings.Guides;
+                drawnCorner = PhotoSettings.GuideCorner;
+                gridLines.MarkDirtyRepaint();
+            }
             if (InputMode.Current == InputKind.Touch) Highlight();
             if (noticeMs > 0f && (noticeMs -= Time.unscaledDeltaTime * 1000f) <= 0f) notice.style.display = DisplayStyle.None;
+        }
+
+        PhotoGuides.Mode drawnGuides;
+        int drawnCorner = -1;
+        static readonly Color GuideLine = new Color(1f, 1f, 1f, 0.6f), GuideShadow = new Color(0f, 0f, 0f, 0.35f),
+                              GuideFaint = new Color(1f, 1f, 1f, 0.25f);
+
+        /// <summary>The guides over the frame box (PhotoGuides, in its pixels): each line on a dark edge so it reads over
+        /// the sun as well as space; the spiral's rectangles fainter.</summary>
+        void DrawGuides(MeshGenerationContext ctx)
+        {
+            var r = gridLines.contentRect;
+            if (PhotoSettings.Guides == PhotoGuides.Mode.Off || r.width < 2f || r.height < 2f) return;
+            var faint = new List<Vector2[]>();
+            var lines = PhotoGuides.Lines(PhotoSettings.Guides, r.width, r.height, PhotoSettings.GuideCorner, faint);
+            var p = ctx.painter2D;
+            p.lineJoin = LineJoin.Round;
+            p.lineCap = LineCap.Round;
+            Stroke(p, faint, GuideFaint, 1f);
+            Stroke(p, lines, GuideShadow, 4f);
+            Stroke(p, lines, GuideLine, 1.5f);
+        }
+
+        static void Stroke(Painter2D p, List<Vector2[]> lines, Color color, float width)
+        {
+            p.strokeColor = color;
+            p.lineWidth = width;
+            foreach (var l in lines)
+            {
+                if (l.Length < 2) continue;
+                p.BeginPath();
+                p.MoveTo(l[0]);
+                for (int i = 1; i < l.Length; i++) p.LineTo(l[i]);
+                p.Stroke();
+            }
+        }
+
+        /// <summary>The roll slider holds level and the quarter turns (within 0.75 degrees), -180..180.</summary>
+        public static float SnapRoll(float v)
+        {
+            v = Mathf.Clamp(v, -180f, 180f);
+            float quarter = Mathf.Round(v / 90f) * 90f;
+            return Mathf.Abs(v - quarter) < 0.75f ? quarter : v;
         }
 
         /// <summary>The saved screenshot's notice: its path, and the button where the system's file browser can show it.</summary>

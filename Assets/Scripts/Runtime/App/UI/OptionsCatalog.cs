@@ -39,6 +39,13 @@ namespace GoF2Remake.UI
         public Func<float> get;
         public Action<float> set;
         public Func<float, string> format;
+        /// <summary>Optional: a number the player typed into the value box (as the box shows it: degrees, kelvin, metres,
+        /// percent...) to the slider's value. Without it the box's numbers map in a straight line onto the range, from what
+        /// 'format' shows at its two ends (OptionControl.FromShown).</summary>
+        public Func<float, float> fromShown;
+        /// <summary>Optional: the row's default (a slider's value, a choice's index, a toggle as 1 / 0) for its own reset.
+        /// Without it a row kept in Settings takes Settings' (Settings.TryDefault); any other has none.</summary>
+        public Func<float> defaultValue;
 
         // Toggle
         public Func<bool> getBool;

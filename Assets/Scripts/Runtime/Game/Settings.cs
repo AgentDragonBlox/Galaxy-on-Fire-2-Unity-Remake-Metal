@@ -484,8 +484,23 @@ namespace GoF2Remake.Data
         // PlayerPrefs reads go through a cache: game code reads some options every frame.
         static readonly Dictionary<string, float> cache = new Dictionary<string, float>();
 
+        /// <summary>Remake (the options' per-row reset, OptionControl): what 'read' (an option's getter) gives with every
+        /// option at its default, each Get answering its fallback. False when 'read' reads no option at all (a row not
+        /// kept in Settings, e.g. the photo panel's).</summary>
+        public static bool TryDefault<T>(Func<T> read, out T value)
+        {
+            value = default;
+            if (read == null) return false;
+            defaultReads = 0;
+            try { value = read(); return defaultReads > 0; }
+            catch (Exception) { return false; }
+            finally { defaultReads = -1; }
+        }
+        static int defaultReads = -1;   // >= 0 while TryDefault reads: the options read meanwhile
+
         static float Get(string key, float fallback)
         {
+            if (defaultReads >= 0) { defaultReads++; return fallback; }
             if (cache.TryGetValue(key, out var v)) return v;
             v = PlayerPrefs.GetFloat(Prefix + key, fallback);
             cache[key] = v;

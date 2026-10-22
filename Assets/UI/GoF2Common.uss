@@ -165,9 +165,55 @@
 }
 
 .option-slider:focus > .option-slider-value,
-.autopilot-menu-item--selected > .option-slider-value {
+.autopilot-menu-item--selected > .option-slider-value,
+.options-selected > .option-slider-value {
     color: var(--gof-amber);
     border-color: var(--gof-amber);
+}
+
+/* The value takes a typed number (OptionControl.BeginEdit): it lights up under the mouse, and the edit box lies over it at
+   its size (OptionControl.PlaceEdit), the text white on a dark box with an amber outline. */
+.can-hover .option-slider > .option-slider-value:hover {
+    border-color: var(--gof-amber);
+    color: var(--gof-amber);
+}
+
+.option-slider-edit {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+}
+
+.option-slider-edit .unity-text-element {
+    -unity-text-align: middle-center;
+}
+
+.option-slider-edit > .unity-base-text-field__input {
+    margin: 0;
+    padding: 0 4px;
+    font-size: var(--text-small);
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    color: var(--gof-text);
+    background-color: rgba(0, 0, 0, 0.55);
+    border-width: 1px;
+    border-color: var(--gof-amber);
+    border-radius: 4px;
+}
+
+/* A changed slider's reset arrow before its value (drawn by OptionControl.DrawReset in this colour); its room is kept
+   while hidden, so the rows' values line up. */
+.option-slider-reset {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    margin-right: var(--space-xs);
+    color: var(--gof-text-dim);
+}
+
+.can-hover .option-slider-reset:hover {
+    color: var(--gof-amber);
 }
 
 .option-slider-mute {
@@ -1703,6 +1749,15 @@
     margin: 8px 8px 4px 8px;
 }
 
+/* Under the rows: how to type a value and put one back (PhotoTools.UpdatePanelHint). */
+.photo-panel-hint {
+    flex-shrink: 0;
+    margin: 8px 8px 0 8px;
+    white-space: normal;
+    font-size: var(--text-caption);
+    color: var(--gof-text-dim);
+}
+
 .photo-frame {
     display: none;
     position: absolute;
@@ -1733,22 +1788,6 @@
     top: 0;
     right: 0;
     bottom: 0;
-}
-
-.photo-grid-v {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background-color: rgba(255, 255, 255, 0.35);
-}
-
-.photo-grid-h {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background-color: rgba(255, 255, 255, 0.35);
 }
 
 .orbit-view--clean .photo-panel,

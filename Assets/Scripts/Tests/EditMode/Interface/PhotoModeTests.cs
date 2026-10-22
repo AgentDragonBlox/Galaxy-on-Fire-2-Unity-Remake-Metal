@@ -3,7 +3,9 @@
 // Freeze", 2026-10-17): the free camera (World.FreeCamera) flies anywhere within reach of the ship and above the floor; the
 // frame cuts the screenshot (PhotoSettings.FrameRect); Reset (the bloom, lens flare, white balance, chromatic
 // aberration and lens distortion too); Action Freeze's lens flare setting over the Graphics option; the hangar orbit takes the free pose, roll and field of view
-// and keeps them through the blend back (World.HangarInspect).
+// and keeps them through the blend back (World.HangarInspect); the composition guides (PhotoGuides) and the roll's full
+// turn with its level and quarter-turn snaps (PhotoTools.SnapRoll); the white balance's temperature in kelvin
+// (PhotoSettings.Kelvin) and a value typed into a row's box (OptionControl.TryNumber / EditText).
 
 using GoF2Remake.Data;
 using GoF2Remake.UI;
@@ -198,6 +200,96 @@ namespace GoF2Remake.Tests
                 Assert.AreEqual(0f, insp.FovDeg);
             }
             finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void TheGridGuidesSitAtThirdsQuartersAndTheGoldenRatio()
+        {
+            var thirds = PhotoGuides.Lines(PhotoGuides.Mode.Thirds, 900f, 600f, 0);
+            Assert.AreEqual(4, thirds.Count);
+            Assert.AreEqual(300f, thirds[0][0].x, 1e-3f);
+            Assert.AreEqual(200f, thirds[1][0].y, 1e-3f);
+            Assert.AreEqual(400f, thirds[3][0].y, 1e-3f);
+            Assert.AreEqual(6, PhotoGuides.Lines(PhotoGuides.Mode.Quarters, 900f, 600f, 0).Count);
+            var golden = PhotoGuides.Lines(PhotoGuides.Mode.GoldenRatio, 1000f, 1000f, 0);
+            Assert.AreEqual(381.966f, golden[0][0].x, 0.01f);
+            Assert.AreEqual(618.034f, golden[2][0].x, 0.01f);
+            Assert.IsEmpty(PhotoGuides.Lines(PhotoGuides.Mode.Off, 900f, 600f, 0));
+        }
+
+        [Test]
+        public void TheGoldenSpiralIsOneCurveWindingTowardItsCorner()
+        {
+            for (int corner = 0; corner < 4; corner++)
+            {
+                var faint = new System.Collections.Generic.List<Vector2[]>();
+                var lines = PhotoGuides.Lines(PhotoGuides.Mode.GoldenSpiral, 1618f, 1000f, corner, faint);
+                Assert.AreEqual(1, lines.Count, "one curve");
+                Assert.AreEqual(PhotoGuides.SpiralTurns, faint.Count, "a cut per quarter arc");
+                var c = lines[0];
+                for (int i = 1; i < c.Length; i++) Assert.Less(Vector2.Distance(c[i - 1], c[i]), 80f, "no jump between the arcs");
+                foreach (var p in c) Assert.IsTrue(p.x >= -0.01f && p.x <= 1618.01f && p.y >= -0.01f && p.y <= 1000.01f, "inside the frame");
+                // Corner 0 winds in toward the lower right (y down), bit 0 mirrors it left, bit 1 up.
+                var end = c[c.Length - 1];
+                Assert.AreEqual((corner & 1) == 0, end.x > 809f, $"corner {corner}: left / right");
+                Assert.AreEqual((corner & 2) == 0, end.y > 500f, $"corner {corner}: top / bottom");
+            }
+            // A portrait frame is cut along its long side too: the first cut is a horizontal line.
+            var portrait = new System.Collections.Generic.List<Vector2[]>();
+            PhotoGuides.Lines(PhotoGuides.Mode.GoldenSpiral, 600f, 970f, 0, portrait);
+            Assert.AreEqual(portrait[0][0].y, portrait[0][1].y, 1e-3f);
+        }
+
+        [Test]
+        public void TheGoldenTrianglesMeetTheDiagonalAtARightAngleOnTheScreen()
+        {
+            foreach (int corner in new[] { 0, 1 })
+            {
+                var l = PhotoGuides.Lines(PhotoGuides.Mode.GoldenTriangles, 1920f, 1080f, corner);
+                Assert.AreEqual(3, l.Count);
+                var diagonal = l[0][1] - l[0][0];
+                for (int i = 1; i < 3; i++) Assert.AreEqual(0f, Vector2.Dot(diagonal, l[i][1] - l[i][0]), 1e-1f, $"corner {corner}, line {i}");
+            }
+        }
+
+        [Test]
+        public void TheRollTurnsAllTheWayAndHoldsLevelAndTheQuarterTurns()
+        {
+            Assert.AreEqual(180f, PhotoTools.SnapRoll(240f));
+            Assert.AreEqual(-180f, PhotoTools.SnapRoll(-179.5f));
+            Assert.AreEqual(90f, PhotoTools.SnapRoll(90.4f));
+            Assert.AreEqual(0f, PhotoTools.SnapRoll(-0.5f));
+            Assert.AreEqual(135f, PhotoTools.SnapRoll(135f));
+        }
+    
+        [Test]
+        public void TheTemperatureIsShownInKelvinAndTypedBack()
+        {
+            Assert.AreEqual(6504f, PhotoSettings.Kelvin(0f), 5f, "URP's neutral white point is D65");
+            Assert.AreEqual("6500 K", PhotoSettings.KelvinText(0f));
+            Assert.That(PhotoSettings.Kelvin(-100f), Is.InRange(2400f, 2800f), "cooler light corrected for: warmer below");
+            Assert.That(PhotoSettings.Kelvin(100f), Is.InRange(30000f, 40000f));
+            for (float t = -100f; t < 100f; t += 5f) Assert.Less(PhotoSettings.Kelvin(t), PhotoSettings.Kelvin(t + 5f), "rises with the slider");
+            foreach (float k in new[] { 3200f, 5000f, 6500f, 9000f, 20000f })
+                Assert.AreEqual(k, PhotoSettings.Kelvin(PhotoSettings.TemperatureOfKelvin(k)), k * 0.001f);
+            Assert.AreEqual(-100f, PhotoSettings.TemperatureOfKelvin(1000f), "clamped to the range");
+        }
+
+        [Test]
+        public void ATypedValueIsReadInTheBoxsUnit()
+        {
+            Assert.IsTrue(OptionControl.TryNumber("46°", out float deg)); Assert.AreEqual(46f, deg);
+            Assert.IsTrue(OptionControl.TryNumber("+0.5 EV", out float ev)); Assert.AreEqual(0.5f, ev);
+            Assert.IsTrue(OptionControl.TryNumber("-12", out float neg)); Assert.AreEqual(-12f, neg);
+            Assert.IsTrue(OptionControl.TryNumber("x1,5", out float comma)); Assert.AreEqual(1.5f, comma);
+            Assert.IsTrue(OptionControl.TryNumber("1.2 km", out float km)); Assert.AreEqual(1200f, km, 1e-3f);
+            Assert.IsTrue(OptionControl.TryNumber("−30 %", out float minus)); Assert.AreEqual(-30f, minus);
+            Assert.IsFalse(OptionControl.TryNumber("abc", out _));
+            Assert.AreEqual("46", OptionControl.EditText("46°"));
+            Assert.AreEqual("0.5", OptionControl.EditText("+0.5 EV"));
+            Assert.AreEqual("1200", OptionControl.EditText("1.2 km"));
+            Assert.AreEqual("6500", OptionControl.EditText("6500 K"));
+            Assert.AreEqual(0.5f, PhotoSettings.FocusOfMetres(PhotoSettings.FocusMetresOf(0.5f)), 1e-4f);
         }
     }
 }
