@@ -64,7 +64,7 @@ namespace GoF2Remake.UI
         static Label Text(int size, Color colour, FontStyle style)
         {
             var l = new Label { pickingMode = PickingMode.Ignore, enableRichText = true };
-            l.style.fontSize = size;
+            l.style.fontSize = UiLayout.Type(size);
             l.style.color = colour;
             l.style.unityFontStyleAndWeight = style;
             l.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -108,7 +108,7 @@ namespace GoF2Remake.UI
             else if (m.phase == NetArena.Phase.Countdown) big = secs > 0 ? secs.ToString() : Localization.Extra("mpArenaFight", "FIGHT!");
             else if (level != null && level.Health != null && level.Health.Dead) big = Localization.Extra("mpArenaRespawn", "Respawning...");
             banner.style.display = big != null ? DisplayStyle.Flex : DisplayStyle.None;
-            banner.style.fontSize = m.result != null ? 26 : 40;
+            banner.style.fontSize = UiLayout.Type(m.result != null ? 26 : 40);
             if (big != null) banner.text = big;
         }
 

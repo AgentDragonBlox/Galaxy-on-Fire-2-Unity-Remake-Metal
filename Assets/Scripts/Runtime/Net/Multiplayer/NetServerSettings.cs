@@ -53,10 +53,10 @@ namespace GoF2Remake.Multiplayer
         {
             new Setting { key = "name", option = "-name", label = "Name in the server browser", kind = Kind.Text, note = "after a restart",
                           get = () => DedicatedServer.ListName, apply = v => DedicatedServer.ListName = NetGame.Clean(v).Length > 0 ? v.Trim() : DedicatedServer.DefaultListName },
-            new Setting { key = "password", option = "-password", label = "Password (\"-\" = none)", kind = Kind.Password, note = "the browser's tag after a restart",
+            new Setting { key = "password", option = "-password", label = "Password", kind = Kind.Password, note = "\"-\" = none; the browser's tag after a restart",
                           get = () => NetGame.HasPassword ? "set" : "none", apply = v => NetGame.HostPassword = v == "-" ? "" : NetGame.CleanPassword(v) },
             Num("maxplayers", "-maxplayers", "Player limit", 2, NetGame.MaxPlayersLimit, () => NetGame.MaxPlayers, v => NetGame.MaxPlayers = v,
-                "online, a higher limit than at the start needs a restart"),
+                "online: a higher limit needs a restart"),
             Flag("allowdebug", "-allowdebug", "Players may use the Debug menu", () => NetGame.HostAllowsDebug,
                  v => { NetGame.HostAllowsDebug = v; NetState.Instance?.SetDebugAllowed(v); }),
             Flag("freepvp", "-freepvp", "Players may fight anywhere", () => NetGame.FreePvp,
@@ -66,7 +66,7 @@ namespace GoF2Remake.Multiplayer
             Num("maxclaims", "-maxclaims", "Stations per faction", 0, 100, () => NetFactions.MaxClaims, v => NetFactions.MaxClaims = v),
             Num("claimdays", "-claimdays", "Days before an unvisited claim lapses", 1, 3650, () => NetFactions.LapseDays, v => NetFactions.LapseDays = v),
             Num("siegecost", "-siegecost", "Siege cost", 0, int.MaxValue, () => NetFactions.SiegeCost, v => NetFactions.SiegeCost = v),
-            new Setting { key = "toll", option = "-toll", label = "Toll at a faction's station: credits, or N% of the pilot's credits (0 = none)", kind = Kind.Text,
+            new Setting { key = "toll", option = "-toll", label = "Toll at faction stations", kind = Kind.Text, note = "credits, or N% of the pilot's credits; 0 = none",
                           get = () => NetFactions.TollText(NetFactions.Toll),
                           apply = v => { int t = NetFactions.ParseToll(v) ?? throw new FormatException(); NetFactions.Toll = t; NetState.Instance?.SetToll(t); } },
         });
@@ -82,7 +82,7 @@ namespace GoF2Remake.Multiplayer
                 if (bit == NetRules.KaamoStacking)
                     list.Insert(at++, Num(NetRules.KaamoLevelKey, NetRules.KaamoLevelFlag, NetRules.KaamoLevelLabel,
                         SessionRules.MinKaamoLevel, SessionRules.MaxKaamoLevel, () => NetRules.HostKaamoLevel, NetRules.SetKaamoLevel,
-                        "profiles above it are cut back at sign-in"));
+                        "higher profiles are cut back at sign-in"));
             }
             list.Insert(at++, new Setting
             {

@@ -104,7 +104,7 @@ namespace GoF2Remake.UI
             }
             var choices = new List<(string, Texture2D, Action)>
             {
-                (T("mbPlayHere", "Play from this station") + "\n" + T("mbPlayHereSub", "Dock, fly, trade: your systems, stations, ships and bar missions are in the game"), null,
+                (T("mbPlayHere", "Play from this station") + "\n" + T("mbPlayHereSub", "Play the game with your mod in it"), null,
                  () => Run(() => { ModBuilderPlay.Start(); return null; })),
             };
             if (Project.Campaign != null)
@@ -168,16 +168,37 @@ namespace GoF2Remake.UI
             placeHint = Add(root, new Label { pickingMode = PickingMode.Ignore }, "mbv-place-hint");
             // The engines: the turntable ship's engine glow and exhaust as in flight, a slider from off through the throttle to
             // a boost at its right end.
+            // The view panel (the user's request, 2026-10-22: tidier and toggleable): a header that folds it to one bar (kept for
+            // the next runs, PlayerPrefs mb_view_panel), then the engines and the camera as two sections.
             var engines = uiEngines = Add(root, new VisualElement(), "mbv-engines", "mbv-panel");
-            var engineRow = Add(engines, new VisualElement(), "mbv-engines-row");
+            var head = Add(engines, new Button { focusable = false }, "mbv-view-head");
+            Add(head, new Label(T("mbView", "View").ToUpperInvariant()) { pickingMode = PickingMode.Ignore }, "mbv-view-head-title", "gof-semibold");
+            var fold = Add(head, new Label { pickingMode = PickingMode.Ignore }, "mbv-view-head-fold");
+            var body = Add(engines, new VisualElement(), "mbv-view-body");
+            void SetOpen(bool open)
+            {
+                body.style.display = open ? DisplayStyle.Flex : DisplayStyle.None;
+                engines.EnableInClassList("mbv-engines--closed", !open);
+                fold.text = open ? "↑" : "↓";
+                head.tooltip = open ? T("mbViewHide", "Hide the view panel") : T("mbViewShow", "Show the view panel");
+            }
+            head.clicked += () =>
+            {
+                sound(false);
+                bool open = body.style.display == DisplayStyle.None;
+                PlayerPrefs.SetInt("mb_view_panel", open ? 1 : 0);
+                SetOpen(open);
+            };
+            SetOpen(PlayerPrefs.GetInt("mb_view_panel", 1) == 1);
+            var engineRow = Add(body, new VisualElement(), "mbv-engines-row");
             Add(engineRow, new Label(T("mbEngines", "Engines").ToUpperInvariant()), "mbv-engines-title", "gof-semibold");
             engineValue = Add(engineRow, new Label(), "mbv-engines-value");
-            engineSlider = Add(engines, new Slider(0f, 1f) { value = 0f, focusable = false }, "mbv-engines-slider");
+            engineSlider = Add(body, new Slider(0f, 1f) { value = 0f, focusable = false }, "mbv-engines-slider");
             engineSlider.RegisterValueChangedCallback(e => { engineLevel = e.newValue; ApplyEngines(); });
             ApplyEngines();
-            // The views: the ship from the front, back, sides and above (ModelViewer.Angles, the AI tools' angles), centred.
-            Add(engines, new Label(T("mbView", "View").ToUpperInvariant()), "mbv-engines-title", "mbv-views-title", "gof-semibold");
-            var views = Add(engines, new VisualElement(), "mbv-views");
+            // The camera: the ship from the front, back, sides and above (ModelViewer.Angles, the AI tools' angles), centred.
+            Add(body, new Label(T("mbCamera", "Camera").ToUpperInvariant()), "mbv-engines-title", "mbv-views-title", "gof-semibold");
+            var views = Add(body, new VisualElement(), "mbv-views");
             foreach (var (angle, key, english) in ViewButtons)
             {
                 var b = Add(views, new Button(() => ShowAngle(angle)) { text = T(key, english).ToUpperInvariant(), focusable = false },
@@ -187,6 +208,7 @@ namespace GoF2Remake.UI
             // Orbit: back around the ship's centre after a pan (the middle click's; touch had no way back from two fingers).
             var orbit = Add(views, new Button(CentreOrbit) { text = T("mbViewOrbit", "Orbit").ToUpperInvariant(), focusable = false },
                             "mbv-view-button", "gof-semibold");
+            orbit.tooltip = T("mbViewOrbitHint", "Back around the ship's centre after a pan");
             orbit.RegisterCallback<PointerDownEvent>(_ => sound(true), TrickleDown.TrickleDown);
             testFly = Add(root, new Button(StartTestFlight) { text = T("mbTestFly", "Test fly").ToUpperInvariant() }, "mbv-testfly", "gof-semibold");
             testFly.RegisterCallback<PointerDownEvent>(_ => sound(true), TrickleDown.TrickleDown);
@@ -373,7 +395,7 @@ namespace GoF2Remake.UI
                 shipList.Add(row);
             }
             if (Project.Ships.Count == 0)
-                Note(shipList, T("mbNoShips", "No ships yet. Add a new ship from a .glb model, or change one of the game's ships."));
+                Note(shipList, T("mbNoShips", "No ships yet. Add one from a .glb model, or change a game ship."));
         }
 
         static string ShipName(ProjectShip s, Database db) =>
@@ -409,7 +431,7 @@ namespace GoF2Remake.UI
             var s = Current;
             if (s == null) { Note(ship, T("mbPickShip", "Add a ship on the left to start.")); return; }
             JsonButton(ship, s.Json, () => { s.ReadMounts(); SaveNow(); RequestReload(false); RebuildShips(); BuildShipPage(); BuildHardpointsPage(); },
-                       T("mbJsonShipNote", "ships.json's fields: also materials (per mesh), throttleGlow / extraGlows, dealer, lounge, npcTurrets, priceDefault, engineGlowColor / Radius, available."));
+                       T("mbJsonShipNote", "Also in ships.json: materials, glows, dealer, lounge, npcTurrets, available."));
             var db = Database.Shared;
             var original = s.IsOverride ? db.Ship(s.OverrideIndex) : null;
             Heading(ship, s.IsOverride ? string.Format(T("mbChanges", "Changes {0}"), GameNames.Ship(s.OverrideIndex)) : T("mbNewShipSub", "New ship"));
@@ -490,7 +512,7 @@ namespace GoF2Remake.UI
                 TurnRow("mbYawAxis", "Turn (yaw)", () => s.ModelYaw, v => s.ModelYaw = v);
                 TurnRow("mbPitchAxis", "Tip (pitch)", () => s.ModelPitch, v => s.ModelPitch = v);
                 TurnRow("mbRollAxis", "Roll", () => s.ModelRoll, v => s.ModelRoll = v);
-                Note(ship, T("mbYawNote", "Turn the model until its nose points along the arrow on the floor and its top faces up."));
+                Note(ship, T("mbYawNote", "Turn the model until its nose follows the floor arrow and its top faces up."));
                 // The model's place on the ship's pivot (game units; the hardpoints stay where they are).
                 Add(ship, new Label(T("mbOffset", "Position (units from the pivot)").ToUpperInvariant()), "mbv-label");
                 var off = s.ModelOffset;
@@ -528,7 +550,7 @@ namespace GoF2Remake.UI
         {
             Heading(ship, T("mbTextures", "Textures"));
             if (!s.HullTexturesEditable) { Note(ship, T("mbTexturesManual", "This ship's materials are set by hand in ships.json.")); return; }
-            Note(ship, T("mbTexturesNote", "Only for a model without textures of its own (it shows white): image maps for the whole hull (PNG, JPG, TGA, BMP, DDS; stored as PNG)."));
+            Note(ship, T("mbTexturesNote", "Only for a model without textures (it shows white): maps for the whole hull."));
             foreach (var (role, english) in TextureRoles)
             {
                 string r = role;
@@ -622,7 +644,7 @@ namespace GoF2Remake.UI
                 b.style.borderLeftColor = ModBuilderGizmo.TypeColours[t];
                 b.EnableInClassList("mbv-type-button--on", placing == type);
             }
-            Note(hardpoints, T("mbPointsHelp", "Drag a point or its arrows to move it (Ctrl snaps). Drag elsewhere to turn the view, wheel to zoom. Delete removes, M mirrors."));
+            Note(hardpoints, T("mbPointsHelp", "Drag a point or its arrows (Ctrl snaps). Drag elsewhere to turn, wheel to zoom. Delete removes, M mirrors."));
 
             for (int t = 0; t < 3; t++)
             {
@@ -652,7 +674,7 @@ namespace GoF2Remake.UI
                 hardpoints.Add(row);
             }
             if (s.Mounts.Count == 0) Note(hardpoints, T("mbNoPoints", "No hardpoints: pick a kind above, then click on the hull."));
-            if (s.IsKitShip) Note(hardpoints, T("mbKitShipPoints", "A customizable ship's hardpoints come from its kit's parts (Ship kits). These are only for a kind no part of a build has."));
+            if (s.IsKitShip) Note(hardpoints, T("mbKitShipPoints", "A kit ship's hardpoints come from its parts; these only cover kinds no part has."));
             BuildSelectedPoint();
         }
 
@@ -672,7 +694,7 @@ namespace GoF2Remake.UI
             px = Int(xyz, "X", m.position_engine[0], -200000, 200000, v => { m.position_engine[0] = v; OnMountEdited(type); });
             py = Int(xyz, "Y", m.position_engine[1], -200000, 200000, v => { m.position_engine[1] = v; OnMountEdited(type); });
             pz = Int(xyz, "Z", m.position_engine[2], -200000, 200000, v => { m.position_engine[2] = v; OnMountEdited(type); });
-            Note(selectedBox, T("mbXyzNote", "Game units from the ship's centre: X toward the pilot's left, Y up, Z forward (20 units = 1 m)."));
+            Note(selectedBox, T("mbXyzNote", "Game units from the centre: X left, Y up, Z forward (20 = 1 m)."));
             var acts = Add(selectedBox, new VisualElement(), "mbv-row");
             Act(acts, T("mbMirror", "Mirror"), Mirror);
             Act(acts, T("mbCentre", "Centre X"), () => { m.position_engine[0] = 0; OnMountEdited(type); RefreshPoints(); });
@@ -695,7 +717,7 @@ namespace GoF2Remake.UI
                     else Status(T("mbTurretNoHull", "No hull found at that point."), true);
                 });
                 var g = new Vector3(-up.x, up.y, up.z);
-                Note(selectedBox, string.Format(T("mbTurretFacesNote", "Facing {0:0.##}, {1:0.##}, {2:0.##} (X left, Y up, Z forward). Placing or dragging it over the hull turns it to the surface."), g.x, g.y, g.z));
+                Note(selectedBox, string.Format(T("mbTurretFacesNote", "Facing {0:0.##}, {1:0.##}, {2:0.##}. Dragging it over the hull turns it to the surface."), g.x, g.y, g.z));
             }
             if (type == 3)
             {
@@ -721,7 +743,7 @@ namespace GoF2Remake.UI
                     MarkDirty();
                 });
                 if (kind == ModBuilder.Kind.Ships && Current.IsOverride && string.IsNullOrEmpty(Current.Model))
-                    Note(selectedBox, T("mbEngineOriginal", "With the game's own model the flame is part of the model: only the exhaust particles move."));
+                    Note(selectedBox, T("mbEngineOriginal", "With the game's own model the flame is part of it: only the particles move."));
             }
         }
 
@@ -945,7 +967,7 @@ namespace GoF2Remake.UI
             Project.SetLoadout(s, DefaultLoadout(Database.Shared, s));
             RequestReload(false);
             RebuildPages();
-            Status(T("mbLayoutDone", "Placed a first set of hardpoints. Move them onto the hull in Hardpoints."), false);
+            Status(T("mbLayoutDone", "Placed a first set of hardpoints; move them onto the hull."), false);
         }
 
         // ---- ships ---------------------------------------------------------------------------------------------------
@@ -1176,6 +1198,7 @@ namespace GoF2Remake.UI
         {
             // Exit pressed: the project is closed and the main menu is loading; nothing here is rebuilt any more.
             if (!ModBuilder.Active) return;
+            UpdateRemoveButtons();
             float dt = Time.unscaledDeltaTime * 1000f;
             bool flying = level.PlayerFlying;
             UpdateUiAnimation(flying);
@@ -1217,7 +1240,7 @@ namespace GoF2Remake.UI
             float target = flying ? 0f : 1f;
             if (!uiStateTaken) { uiStateTaken = true; uiShown = target; ApplyUiAnimation(); return; }
             if (uiShown == target) return;
-            uiShown = Mathf.MoveTowards(uiShown, target, Time.unscaledDeltaTime * 1000f / UiAnimMs);
+            uiShown = GoF2Remake.Data.Settings.ReduceMotion ? target : Mathf.MoveTowards(uiShown, target, Time.unscaledDeltaTime * 1000f / UiAnimMs);   // "Reduce motion": at once
             ApplyUiAnimation();
         }
 
@@ -1284,7 +1307,7 @@ namespace GoF2Remake.UI
             if (boundTransform == null)
             {
                 gizmo.Bind(null, null);
-                Status(T("mbNoPreview", "The ship couldn't be built for the preview. Check its model, or reopen the project."), true);
+                Status(T("mbNoPreview", "The ship couldn't be built for the preview: check its model."), true);
                 ShowProblems();
                 return;
             }

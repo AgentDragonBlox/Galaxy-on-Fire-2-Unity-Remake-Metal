@@ -868,9 +868,9 @@ namespace GoF2Remake.Multiplayer
                 response.Approved = false;
                 response.Reason = theirVersion == Version
                     ? string.Format(Localization.Extra("mpWrongBuild",
-                        "This game runs a different build of version {0}. Both need the same game files to play together."), Version)
+                        "This game runs another build of {0}: both need the same game files."), Version)
                     : string.Format(Localization.Extra("mpWrongVersion",
-                        "This game runs version {0}, yours is {1}. Both need the same version to play together."),
+                        "This game runs version {0}, yours is {1}: both need the same version."),
                         Version, theirVersion.Length > 0 ? theirVersion : Localization.Extra("mpOlderVersion", "an older one"));
                 Debug.Log($"NetGame: turned away client {request.ClientNetworkId}, version '{theirVersion}' / '{theirs}' (this one {Version} / {Protocol})");
                 return;

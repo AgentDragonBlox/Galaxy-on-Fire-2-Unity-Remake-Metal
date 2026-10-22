@@ -20,7 +20,9 @@
 
 .dialogue-box {
     width: 820px;
+    max-width: 94%;
     height: 520px;
+    max-height: 92%;   /* the 720-unit panel and larger text sizes: the page scrolls inside */
     background-color: var(--gof-panel);
     border-width: 1px;
     border-color: var(--gof-line);
@@ -40,7 +42,7 @@
 
 .dialogue-speaker {
     flex-grow: 1;
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 3px;
     color: #FFFFFF;
 }
@@ -58,7 +60,7 @@
 
 .dialogue-text {
     white-space: normal;
-    font-size: 24px;
+    font-size: var(--text-subhead);
     color: var(--gof-text);
 }
 
@@ -74,21 +76,22 @@
     min-width: 178px;
     height: 56px;
     margin: 0;
-    font-size: 22px;
+    font-size: var(--text-label);
     letter-spacing: 3px;
     color: var(--gof-text);
-    background-color: rgba(4, 10, 18, 0.55);
-    border-width: 2px;
-    border-color: var(--gof-cyan-soft);
-    border-radius: 4px;
+    background-color: var(--button-fill);
+    border-width: var(--button-border);
+    border-color: var(--button-line);
+    border-radius: var(--button-radius);
     -unity-text-align: middle-center;
-    padding: 0 18px;
+    padding: 0 16px;
 }
 
 .can-hover .dialogue-button:hover,
 .dialogue-button:focus {
-    border-color: var(--gof-amber);
+    border-color: var(--button-focus-line);
     color: #FFFFFF;
+    background-color: var(--button-focus-fill);
 }
 
 .dialogue-button--primary {
@@ -115,7 +118,7 @@
     height: 36px;
     min-width: 104px;
     margin: 0;
-    padding: 0 14px 0 4px;
+    padding: 0 16px 0 4px;
     background-color: rgba(4, 10, 18, 0.55);
     border-width: 1px;
     border-color: var(--gof-cyan-soft);
@@ -127,7 +130,7 @@
 .dialogue-auto-label {
     margin: 0;
     padding: 0;
-    font-size: 16px;
+    font-size: var(--text-caption);
     letter-spacing: 2px;
     color: rgba(255, 255, 255, 0.6);
     -unity-text-align: middle-left;
@@ -143,7 +146,7 @@
 }
 
 .dialogue-auto-dot {
-    margin: 0 9px 0 9px;
+    margin: 0 8px 0 8px;
     width: 10px;
     height: 10px;
     border-radius: 5px;
@@ -172,8 +175,8 @@
     width: 26px;
     height: 26px;
     border-radius: 13px;
-    font-size: 14px;
-    margin: 0 6px 0 0;
+    font-size: var(--text-caption);
+    margin: 0 8px 0 0;
     padding: 0;
 }
 
@@ -199,7 +202,7 @@
 
 .dialogue-confirm-box {
     width: 520px;
-    padding: 30px 36px;
+    padding: 32px 36px;
     background-color: var(--gof-panel);
     border-width: 1px;
     border-color: var(--gof-line);
@@ -208,9 +211,9 @@
 }
 
 .dialogue-confirm-text {
-    font-size: 24px;
+    font-size: var(--text-subhead);
     color: var(--gof-text);
-    margin-bottom: 24px;
+    margin-bottom: var(--space-xl);
 }
 
 .dialogue-confirm-buttons {
@@ -219,7 +222,7 @@
 }
 
 .dialogue-confirm-buttons .dialogue-button {
-    margin-left: 12px;
+    margin-left: var(--space-m);
 }
 
 /* ---- portrait (160x200: background, parts 2, 1, 0, 3, frame) ---------------------------------- */
@@ -286,21 +289,21 @@
 }
 
 .radio-speaker {
-    font-size: 21px;
+    font-size: var(--text-label);
     letter-spacing: 3px;
     color: #FFFFFF;
 }
 
 .radio-body {
     flex-direction: row;
-    padding: 5px;
+    padding: var(--space-xs);
 }
 
 .radio-text {
     flex-grow: 1;
     flex-shrink: 1;
-    margin: 7px 10px 10px 14px;
+    margin: 8px 8px 8px 16px;
     white-space: normal;
-    font-size: 22px;
+    font-size: var(--text-label);
     color: var(--gof-text);
 }

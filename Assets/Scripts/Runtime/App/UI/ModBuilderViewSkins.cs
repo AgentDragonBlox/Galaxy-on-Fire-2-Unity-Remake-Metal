@@ -68,7 +68,7 @@ namespace GoF2Remake.UI
             var box = Add(modal, new VisualElement(), "mbv-modal-box", "mbv-modal-box--list", "mbv-panel");
             Heading(box, T("mbOtherTextures", "Other textures…"));
             var scroll = Add(box, new ScrollView(ScrollViewMode.Vertical), "mbv-picker-scroll");
-            Note(scroll, T("mbOtherTexturesNote", "A picture named like one of the game's textures replaces it everywhere: a station's (station_078_midorian_diffuse), a planet's (planet_003_big), a sun's, a ring's, an object's. Modding/ai/gof2-modding/reference.md lists every model's texture names."));
+            Note(scroll, T("mbOtherTexturesNote", "A picture named like a game texture replaces it everywhere; reference.md lists the names."));
             foreach (var name in Project.OtherTextures())
             {
                 string n = name;
@@ -235,8 +235,8 @@ namespace GoF2Remake.UI
             // The project's new ship on a game model: every texture is replaced on it alone.
             bool ownShip = ModProject.ShipSkinScope(Project.OwnSkinShip(ship)) != null;
             Note(skinPage, ownShip
-                ? T("mbSkinNoteOwnShip", "This ship flies one of the game's models: a texture you replace here changes this ship only, the game's ship of that model and the other ships on it keep theirs. Keep the original's layout: save the original, paint over it, then replace it with your image (PNG, JPG, TGA, BMP, DDS or the game's .aei; 2048 x 2048 like the originals looks best).")
-                : T("mbSkinNote", "A texture you replace changes every ship of this model: yours, the NPCs' and the shops'. Keep the original's layout: save the original, paint over it, then replace it with your image (PNG, JPG, TGA, BMP, DDS or the game's .aei; 2048 x 2048 like the originals looks best)."));
+                ? T("mbSkinNoteOwnShip", "Changes this ship only. Save the original, paint over it, then replace it (2048 x 2048 looks best).")
+                : T("mbSkinNote", "Changes every ship of this model. Save the original, paint over it, then replace it (2048 x 2048 looks best)."));
             var list = SkinTexturesOf(ship);
             if (list.Count == 0) { Note(skinPage, T("mbNoTextures", "This ship has no textures that can be replaced.")); return; }
             foreach (var t in list)
@@ -260,10 +260,10 @@ namespace GoF2Remake.UI
                     .EnableInClassList("mbv-skin-role--on", own != null);
                 Add(info, new Label(t.name), "mbv-skin-name");
                 if (t.shared && !ownShip)
-                    Add(info, new Label(string.Format(T("mbSharedTextureOf", "Shared by all {0}. \"{1} only\" changes it on this ship alone; \"All {0}\" changes it on every one of them."),
+                    Add(info, new Label(string.Format(T("mbSharedTextureOf", "Shared by all {0}. \"{1} only\" changes this ship; \"All {0}\" changes them all."),
                                                       group, shipName)), "mbv-note", "mbv-note--warn");
                 if (t.role.EndsWith("etallic / smoothness"))
-                    Add(info, new Label(T("mbMetallicHint", "Red: how metallic (the game's ships: none, so it looks black); alpha: how shiny.")), "mbv-note");
+                    Add(info, new Label(T("mbMetallicHint", "Red: how metallic (the game's ships: none). Alpha: how shiny.")), "mbv-note");
                 else if (t.normal)
                     Add(info, new Label(T("mbNormalHint", "An ordinary RGB normal map (the saved original is one).")), "mbv-note");
                 var buttons = Add(info, new VisualElement(), "mbv-row");
@@ -300,7 +300,7 @@ namespace GoF2Remake.UI
                     System.IO.Directory.CreateDirectory(dir);
                     Application.OpenURL("file:///" + dir.Replace('\\', '/'));
                 });
-            Note(skinPage, T("mbTemplatesNote", "Saved originals go to the project's templates folder, which isn't part of the exported mod."));
+            Note(skinPage, T("mbTemplatesNote", "Saved originals go to the project's templates folder, not the exported mod."));
         }
 
         readonly Dictionary<string, Texture2D> normalThumbs = new Dictionary<string, Texture2D>();

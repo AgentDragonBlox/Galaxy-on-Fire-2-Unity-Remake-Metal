@@ -95,6 +95,32 @@ namespace GoF2Remake.UI
             return label;
         }
 
+        /// <summary>
+        /// Rework (docs/UI-DESIGN.md "Button prompts"): a controller glyph inside a button, before its label, shown only while
+        /// a controller is the input (GoF2InputGlyphs.uss .pad-only, under the root's input-gamepad). 'focusOnly': only on
+        /// the focused / selected button (A, which presses whichever has the focus); its space is kept meanwhile, so the
+        /// label doesn't move as the focus does. B for a Back / No / Cancel button is always shown (B always presses it).
+        /// The text moves into a label (WithGlyphs): set it with SetText from then on. Called again: nothing new.
+        /// </summary>
+        public static Label PadPrompt(Button button, PadButton pad, bool focusOnly = false)
+        {
+            if (button == null) return null;
+            if (button.Q(className: "pad-only") != null) return button.Q<Label>(className: "glyph-button-label");
+            var g = Pad(pad);
+            g.AddToClassList("pad-only");
+            if (focusOnly) g.AddToClassList("pad-focus-only");
+            return WithGlyphs(button, g);
+        }
+
+        /// <summary>A button's text, also once PadPrompt / WithGlyphs moved it into a label.</summary>
+        public static void SetText(Button button, string text)
+        {
+            if (button == null) return;
+            var label = button.Q<Label>(className: "glyph-button-label");
+            if (label != null) label.text = text;
+            else button.text = text;
+        }
+
         static Label Text(string text, string cls)
         {
             var l = new Label(text) { pickingMode = PickingMode.Ignore };

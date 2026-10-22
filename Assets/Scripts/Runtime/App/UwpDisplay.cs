@@ -79,6 +79,7 @@ namespace GoF2Remake
         /// <summary>App thread: the real size, when the player's own differs.</summary>
         static void Apply(int w, int h, string source, string device)
         {
+            if (device.StartsWith("Xbox")) GoF2Remake.UI.UiLayout.TvDetected = true;   // a TV across the room: the larger UI
             if (Screen.width == w && Screen.height == h) return;
             Debug.Log($"UwpDisplay: {Screen.width} x {Screen.height} -> {w} x {h} ({source}, device {device})");
             Screen.SetResolution(w, h, Screen.fullScreenMode);

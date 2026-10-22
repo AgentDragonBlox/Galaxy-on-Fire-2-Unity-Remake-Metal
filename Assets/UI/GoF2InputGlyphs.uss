@@ -19,8 +19,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin-top: 6px;
-    padding: 7px 12px 3px 12px;
+    margin-top: var(--space-s);
+    padding: 8px 12px 3px 12px;
     background-color: rgba(4, 10, 18, 0.5);
     border-width: 2px;
     border-color: rgba(150, 158, 166, 0.7);
@@ -46,13 +46,13 @@
 .hints-popup .hint-keys {
     min-width: 150px;
     justify-content: flex-end;
-    margin-right: 14px;
+    margin-right: var(--space-l);
 }
 
 .hints-popup .hint-label {
     margin: 0;
     padding: 0;
-    font-size: 17px;
+    font-size: var(--text-small);
     white-space: nowrap;
     -unity-text-align: middle-left;
 }
@@ -63,7 +63,7 @@
 }
 
 .hint-label {
-    font-size: 17px;
+    font-size: var(--text-small);
     letter-spacing: 2px;
     color: var(--gof-text-dim);
     margin: 3px 0 0 0;
@@ -73,11 +73,11 @@
 }
 
 .keycap {
-    min-width: 34px;
-    height: 34px;
+    min-width: var(--glyph-key);
+    height: var(--glyph-key);
     padding: 0 8px;
     margin: 0 2px;
-    font-size: 16px;
+    font-size: var(--text-caption);
     color: var(--gof-text);
     -unity-text-align: middle-center;
     border-width: 2px;
@@ -92,11 +92,11 @@
 }
 
 .pad-face {
-    width: 36px;
-    height: 36px;
+    width: var(--glyph-face);
+    height: var(--glyph-face);
     margin: 0 2px;
-    border-radius: 18px;
-    font-size: 18px;
+    border-radius: var(--glyph-face-r);
+    font-size: var(--text-small);
     color: #0B1016;
     -unity-text-align: middle-center;
 }
@@ -126,50 +126,50 @@
 }
 
 .pad-stick {
-    width: 40px;
-    height: 40px;
+    width: var(--glyph-stick);
+    height: var(--glyph-stick);
     margin: 0 2px;
-    border-radius: 20px;
+    border-radius: var(--glyph-stick-r);
     border-width: 3px;
     border-color: rgba(216, 236, 247, 0.6);
-    font-size: 13px;
+    font-size: var(--text-caption);
     color: var(--gof-text);
     -unity-text-align: middle-center;
 }
 
 .pad-trigger {
     min-width: 42px;
-    height: 32px;
-    padding: 0 6px;
+    height: var(--glyph-trigger);
+    padding: 0 8px;
     margin: 0 2px;
     border-radius: 6px;
     border-top-left-radius: 14px;
     border-top-right-radius: 14px;
     background-color: rgba(216, 236, 247, 0.85);
-    font-size: 14px;
+    font-size: var(--text-caption);
     color: #0B1016;
     -unity-text-align: middle-center;
 }
 
 .pad-bumper {
-    min-width: 40px;
-    height: 26px;
-    padding: 0 6px;
+    min-width: 44px;
+    height: var(--glyph-bumper);
+    padding: 0 8px;
     margin: 0 2px;
-    border-radius: 13px;
+    border-radius: var(--glyph-bumper-r);
     background-color: rgba(216, 236, 247, 0.85);
-    font-size: 13px;
+    font-size: var(--text-caption);
     color: #0B1016;
     -unity-text-align: middle-center;
 }
 
 .pad-menu {
-    height: 30px;
-    padding: 0 10px;
+    height: var(--glyph-menu);
+    padding: 0 8px;
     margin: 0 2px;
-    border-radius: 15px;
+    border-radius: var(--glyph-menu-r);
     background-color: rgba(216, 236, 247, 0.85);
-    font-size: 12px;
+    font-size: var(--text-caption);
     letter-spacing: 1px;
     color: #0B1016;
     -unity-text-align: middle-center;
@@ -190,4 +190,79 @@
 
 .glyph-button-glyph {
     margin: 0 12px 0 0;
+}
+
+/* Rework: a menu's always-visible button prompts (MenuKeys.Bar; docs/UI-DESIGN.md "Button prompts"): one line, each
+   prompt its keys then its label, no boxes, right-aligned; keyboard and controller only (hidden on touch in code). */
+.prompt-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.prompt-bar .hint {
+    flex-direction: row;
+    align-items: center;
+    margin: 4px 0 4px 24px;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.prompt-bar .hint-label {
+    margin: 0 0 0 8px;
+    font-size: var(--text-small);
+    -unity-text-align: middle-left;
+}
+
+/* In a window's footer, beside its buttons: it gives way first when the footer is short of room. */
+.prompt-bar--footer {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+/* Under a station window (Missions, Status): the strip between the window's bottom and the screen's, as the hangar's
+   hint row. */
+.prompt-bar--below {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    min-height: 96px;
+    justify-content: center;
+    align-content: center;   /* a second line at a large text size */
+}
+
+/* A row of its own under a panel's footer (the in-game Options pages). */
+.prompt-bar--row {
+    flex-shrink: 0;
+    margin-top: var(--space-s);
+    padding-top: var(--space-s);
+    border-top-width: 1px;
+    border-top-color: var(--gof-line);
+}
+
+/* Rework: a button's own controller glyph (InputGlyph.PadPrompt), only while a controller is the input; A only on the
+   focused / selected button, its space kept on the others so the label stays put. */
+.pad-only {
+    display: none;
+}
+
+.input-gamepad .pad-only {
+    display: flex;
+}
+
+.input-gamepad .pad-focus-only {
+    visibility: hidden;
+}
+
+.input-gamepad :focus > .pad-focus-only,
+.input-gamepad .autopilot-menu-item--selected > .pad-focus-only,
+.input-gamepad .options-selected > .pad-focus-only {
+    visibility: visible;
+}
+
+.glyph-button > .pad-only {
+    margin: 0 8px 0 0;
 }

@@ -41,7 +41,7 @@ namespace GoF2Remake.UI
             s.position = Position.Absolute;
             s.top = 64; s.left = 0; s.right = 0;
             s.unityTextAlign = TextAnchor.MiddleCenter;
-            s.fontSize = 18;
+            s.fontSize = UiLayout.Type(18);
             s.color = new Color(1f, 0.45f, 0.35f);
             s.unityFontStyleAndWeight = FontStyle.Bold;
             s.unityTextOutlineColor = Color.black; s.unityTextOutlineWidth = 1f;

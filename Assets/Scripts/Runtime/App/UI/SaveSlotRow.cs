@@ -1,7 +1,7 @@
 // SaveSlotRow.cs
 // One save slot row (MenuTouchWindow::drawLoadSaveMenu 0x14bfbc), shared by the main menu's Load list and the station
 // menu's Save game list: index, "Auto-save" (486) / "Slot N", the preview (RecordHandler::recordStoreWritePreview:
-// station, system, ship, difficulty and economy, credits, playing time) or "-BLANK-" (174). Styles: .slot-* in GoF2Common.uss.
+// station, system, ship, difficulty and economy, credits, playing time) or "Empty slot" (the original's 174 "-BLANK-"). Styles: .slot-* in GoF2Common.uss.
 // Remake (players' suggestion): a used row is deleted by holding it (a tap / click held, or Delete / the controller's X
 // held while it is selected) for HoldSeconds; the row fills red meanwhile (SaveGame.Delete keeps a copy in Saves/Deleted).
 
@@ -53,7 +53,7 @@ namespace GoF2Remake.UI
                 sub.AddToClassList("slot-sub");
                 info.Add(sub);
             }
-            var state = new Label(save == null ? Localization.Get(174)   // -BLANK-
+            var state = new Label(save == null ? Localization.Extra("slotEmpty", "Empty slot")   // the original: 174 "-BLANK-"
                 : $"{save.credits:N0} Cr  ·  {(int)(save.playSeconds / 3600)}:{(int)(save.playSeconds / 60) % 60:00} h");
             state.AddToClassList("slot-state");
 

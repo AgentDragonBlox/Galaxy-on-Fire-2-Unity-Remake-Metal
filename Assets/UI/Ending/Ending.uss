@@ -26,7 +26,7 @@
     margin-top: 80px;
     -unity-text-align: upper-center;
     white-space: normal;
-    font-size: 26px;
+    font-size: var(--text-heading);
     color: var(--gof-text);
 }
 

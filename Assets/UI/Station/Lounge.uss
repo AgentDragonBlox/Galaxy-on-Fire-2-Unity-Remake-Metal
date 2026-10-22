@@ -26,7 +26,7 @@
 .lounge-tag {
     position: absolute;
     translate: -50% -100%;
-    padding: 6px 14px;
+    padding: 8px 16px;
     background-color: rgba(4, 10, 18, 0.72);
     border-width: 1px;
     border-color: var(--gof-cyan-soft);
@@ -41,7 +41,7 @@
 }
 
 .lounge-tag-name {
-    font-size: 20px;
+    font-size: var(--text-body);
     letter-spacing: 1px;
     color: #FFFFFF;
 }
@@ -49,7 +49,7 @@
 .lounge-tag-mark {
     width: 12px;
     height: 12px;
-    margin-left: 8px;
+    margin-left: var(--space-s);
     border-radius: 6px;
     background-color: var(--gof-amber);
 }
@@ -81,8 +81,8 @@
     flex-direction: row;
     align-items: center;
     margin: 3px 0;
-    padding: 10px 16px;
-    background-color: rgba(4, 10, 18, 0.55);
+    padding: 8px 16px;
+    background-color: rgba(4, 10, 18, 0.85);   /* a scrim: over the lit bars 0.55 left the names unreadable */
     border-width: 0;
     border-left-width: 3px;
     border-left-color: rgba(0, 0, 0, 0);
@@ -103,12 +103,12 @@
 }
 
 .lounge-row-name {
-    font-size: 22px;
+    font-size: var(--text-label);
     color: #FFFFFF;
 }
 
 .lounge-row-sub {
-    font-size: 16px;
+    font-size: var(--text-small);
     color: var(--gof-text-dim);
 }
 
@@ -148,7 +148,7 @@
 .chat-header {
     flex-direction: row;
     align-items: center;
-    padding: 12px 18px 10px 20px;
+    padding: 12px 16px 8px 20px;
     background-color: rgba(62, 200, 255, 0.08);
     border-bottom-width: 1px;
     border-bottom-color: var(--gof-line);
@@ -159,13 +159,13 @@
 }
 
 .chat-name {
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 3px;
     color: #FFFFFF;
 }
 
 .chat-sub {
-    font-size: 16px;
+    font-size: var(--text-small);
     letter-spacing: 1px;
     color: var(--gof-text-dim);
 }
@@ -189,7 +189,7 @@
 
 .chat-text {
     white-space: normal;
-    font-size: 23px;
+    font-size: var(--text-subhead);
     color: var(--gof-text);
 }
 
@@ -199,8 +199,8 @@
 
 .chat-choice {
     margin: 2px 0;
-    padding: 10px 18px;
-    font-size: 21px;
+    padding: 8px 16px;
+    font-size: var(--text-label);
     letter-spacing: 1px;
 }
 
@@ -215,13 +215,15 @@
 
 /* ---- missions window --------------------------------------------------------------------- */
 
+/* Rework (docs/UI-DESIGN.md): the whole width like the hangar window (the station info gives way), the prompt strip
+   under it. */
 .missions-window {
     display: none;
     position: absolute;
-    left: 520px;
+    left: 48px;
     right: 40px;
     top: 120px;
-    bottom: 110px;
+    bottom: 96px;
     background-color: var(--gof-panel);
     border-width: 1px;
     border-color: var(--gof-line);
@@ -234,7 +236,7 @@
 }
 
 .missions-title {
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 5px;
     color: #FFFFFF;
     padding: 12px 8px;
@@ -250,26 +252,26 @@
 .missions-section {
     flex-grow: 1;
     flex-basis: 0;
-    padding-right: 16px;
+    padding-right: var(--space-l);
 }
 
 .missions-section--right {
     padding-right: 0;
-    padding-left: 16px;
+    padding-left: var(--space-l);
     border-left-width: 1px;
     border-left-color: var(--gof-line);
 }
 
 .missions-heading {
-    font-size: 22px;
+    font-size: var(--text-label);
     letter-spacing: 4px;
     color: var(--gof-amber);
-    margin-bottom: 10px;
+    margin-bottom: var(--space-s);
 }
 
 .missions-client {
     flex-direction: row;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-s);
 }
 
 .missions-client-lines {
@@ -285,11 +287,11 @@
 .missions-footer {
     flex-direction: row;
     justify-content: flex-end;
-    padding-top: 10px;
+    padding-top: var(--space-s);
 }
 
 .missions-footer .chat-choice {
-    margin-left: 12px;
+    margin-left: var(--space-m);
 }
 
 .missions-discard {
@@ -300,9 +302,9 @@
 /* Modified: the Missions window's tabs as the hangar's (HangarWindow.uss .hangar-tab): no title before them, plain text,
    the active one white over an amber line. */
 .missions-tab {
-    margin: 0 6px 0 0;
+    margin: 0 8px 0 0;
     padding: 12px 28px;
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 4px;
     color: var(--gof-text-dim);
     background-color: rgba(0, 0, 0, 0);
@@ -338,7 +340,7 @@
 .wanted-row {
     margin: 2px 0;
     padding: 8px 12px;
-    font-size: 20px;
+    font-size: var(--text-body);
     -unity-text-align: middle-left;
     color: var(--gof-text-dim);
     background-color: rgba(255, 255, 255, 0.03);
@@ -376,11 +378,6 @@
     display: none;
 }
 
-/* Phones: the side panel is narrower. */
-.layout-phone .missions-window {
-    left: 450px;
-}
-
 /* #82: the chat keeps clear of the bottom-right corner (rounded screens, the hint row) and of the screen's middle, where
    the bar camera frames the visitor talked to (StationLevel.ChatFrameY). */
 .layout-phone .chat-window {
@@ -411,26 +408,26 @@
     bottom: 40px;
     min-width: 200px;
     padding: 16px 28px;
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 5px;
     -unity-text-align: middle-center;
     color: var(--gof-text);
-    background-color: rgba(4, 10, 18, 0.7);
-    border-width: 2px;
-    border-color: var(--gof-cyan-soft);
-    border-radius: 4px;
+    background-color: var(--button-fill);
+    border-width: var(--button-border);
+    border-color: var(--button-line);
+    border-radius: var(--button-radius);
 }
 
 .lounge-back:focus,
 .can-hover .lounge-back:hover {
     color: #FFFFFF;
-    border-color: var(--gof-amber);
-    background-color: rgba(255, 166, 48, 0.2);
+    border-color: var(--button-focus-line);
+    background-color: var(--button-focus-fill);
 }
 
 .lounge-back:active {
-    background-color: var(--gof-amber);
-    color: #0B1016;
+    background-color: var(--button-press-fill);
+    color: var(--button-press-text);
 }
 
 /* Modified: the lounge's camera intro (StationMenu: lounge-intro until lounge-open): the hangar's menu hidden at once. */
@@ -448,4 +445,30 @@
 .chat-open .lounge-back,
 .missions-open .lounge-back {
     display: none;
+}
+
+/* Rework (docs/UI-DESIGN.md "Button prompts"): the lounge's keys (select a visitor, talk, back) at the bottom right, while
+   the visitor list is up (not during the intro, a chat or the Missions window). */
+.lounge-prompts {
+    display: none;
+    position: absolute;
+    right: 40px;
+    bottom: 40px;
+}
+
+.lounge-open .lounge-prompts {
+    display: flex;
+}
+
+.lounge-intro .lounge-prompts,
+.chat-open .lounge-prompts,
+.missions-open .lounge-prompts,
+.status-open .lounge-prompts {
+    display: none;
+}
+
+/* Rework (docs/UI-DESIGN.md "Type scale"): a block of running text at most about 80 characters wide, also in the full-width
+   Missions window on an ultrawide screen. */
+.missions-window .chat-text {
+    max-width: 960px;
 }

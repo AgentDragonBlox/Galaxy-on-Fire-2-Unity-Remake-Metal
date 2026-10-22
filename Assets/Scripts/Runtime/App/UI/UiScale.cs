@@ -28,14 +28,5 @@ namespace GoF2Remake.UI
 
         /// <summary>The large variant: the text would be well under BodyInches (phones, handhelds).</summary>
         public static bool Large(VisualElement e) => Physical(e) >= 1.3f;
-
-        /// <summary>The same from the screen's height and the panel's reference height (a panel's layout pass, before its
-        /// scaling has applied): the screens' root class "ui-large" (MainMenu, StationMenu, FlightHud).</summary>
-        public static bool Large(float screenHeight, float referenceHeight)
-        {
-            float dpi = Screen.dpi;
-            if (dpi <= 0f || screenHeight <= 0f || referenceHeight <= 0f) return false;
-            return BodyInches / (BodyUnits * (screenHeight / referenceHeight) / dpi) >= 1.3f;
-        }
     }
 }

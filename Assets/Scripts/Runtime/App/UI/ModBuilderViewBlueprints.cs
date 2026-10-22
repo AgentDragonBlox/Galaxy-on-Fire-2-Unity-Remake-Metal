@@ -60,7 +60,7 @@ namespace GoF2Remake.UI
                         b == currentBlueprint, () => { currentBlueprint = b; RebuildBlueprints(); BuildBlueprintPage(); }, BlueprintIcon(b));
             }
             if (Project.Blueprints.Count == 0)
-                Note(blueprintList, T("mbNoBlueprints", "No blueprints yet. A blueprint builds a ship or an item from goods, ores and other items, like the game's own in the hangar's Blueprints tab."));
+                Note(blueprintList, T("mbNoBlueprints", "No blueprints yet. A blueprint builds a ship or item from goods and items."));
             ShowBlueprintShip();
         }
 
@@ -119,8 +119,8 @@ namespace GoF2Remake.UI
             Heading(blueprintPage, b.IsShip ? T("mbShipBlueprint", "Ship blueprint") : T("mbItemBlueprint", "Item blueprint"));
             RefField(blueprintPage, b.IsShip ? T("mbBuildsShip", "Builds the ship") : T("mbBuildsItem", "Builds the item"), rk, b.Product,
                      v => { if (v != null) { b.SetProduct(b.IsShip, v); BlueprintEdited(true); } }, clear: false);
-            Note(blueprintPage, b.IsShip ? T("mbBlueprintShipNote", "The finished ship waits at the station where it was built and replaces the player's ship there like a purchase.")
-                                         : T("mbBlueprintItemNote", "A secondary weapon comes 10 at a time, like the game's. An item that has a blueprint already gets this one instead."));
+            Note(blueprintPage, b.IsShip ? T("mbBlueprintShipNote", "The ship waits where it was built and replaces the player's there.")
+                                         : T("mbBlueprintItemNote", "Secondaries come 10 at a time; this replaces an item's own blueprint."));
 
             Heading(blueprintPage, T("mbIngredients", "Ingredients"));
             var ingredients = b.Ingredients;
@@ -150,7 +150,7 @@ namespace GoF2Remake.UI
             {
                 RefField(blueprintPage, T("mbRequiresShip", "Only while flying (a skin)"), RefKind.Ship, b.RequiresShip, v => { b.RequiresShip = v; BlueprintEdited(); },
                          T("mbAnyShip", "any ship"));
-                Note(blueprintPage, T("mbRequiresShipNote", "Set: it is built only while flying that ship, which it then replaces (its Kaamo Club upgrades stay): a new look for a ship."));
+                Note(blueprintPage, T("mbRequiresShipNote", "Set: built only while flying that ship, which it replaces (a new look)."));
             }
 
             Heading(blueprintPage, T("mbAutocomplete", "Autocomplete"));
@@ -184,7 +184,7 @@ namespace GoF2Remake.UI
                     b.Lounge = lounge;
                     BlueprintEdited();
                 });
-                Note(blueprintPage, T("mbLoungeNote", "The chance each time a bar fills with new visitors; no price = half the product's."));
+                Note(blueprintPage, T("mbLoungeNote", "The chance each time a bar gets new visitors; no price = half the product's."));
             }
             // A derelict to hack.
             var derelict = b.Derelict;
@@ -243,7 +243,7 @@ namespace GoF2Remake.UI
                 Act(row, "✕", () => { var l = b.Drops; l.RemoveAt(n); b.Drops = l; BlueprintEdited(); }, "mbv-step");
             }
             Act(blueprintPage, T("mbAddDrop", "+ Add a drop"), () => { var l = b.Drops; l.Add(("pirate", 1f)); b.Drops = l; BlueprintEdited(); }, "mbv-add");
-            Note(blueprintPage, T("mbDropsNote", "A ship the player destroys may leave it in a data container (tap the race to change it). Every source stops once the player knows the blueprint."));
+            Note(blueprintPage, T("mbDropsNote", "A destroyed ship may drop it in a data container; sources stop once it's known."));
         }
 
         /// <summary>A condition field (the event graphs' expressions: Modding/README.md "Conditions"), checked as it is typed.</summary>
@@ -251,7 +251,7 @@ namespace GoF2Remake.UI
         {
             var f = Text(parent, label, value, 300, v => set(string.IsNullOrWhiteSpace(v) ? null : v.Trim()));
             f.textEdition.placeholder = T("mbAlways", "always");
-            Note(parent, T("mbConditionNote", "Empty = always. For example: won(main), systemsvisited >= 2, credits > 100000, visited(Kernstal), quest(my_quest) == 2, option(my_mod:hard_mode)."));
+            Note(parent, T("mbConditionNote", "Empty = always. E.g. won(main), credits > 100000, quest(my_quest) == 2."));
         }
     }
 }

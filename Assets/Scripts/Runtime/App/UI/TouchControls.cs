@@ -77,6 +77,9 @@ namespace GoF2Remake.UI
         // Actions (FlightHud).
         public Func<bool> FirePressed;             // true = the press was an action (no shooting)
         public Action SecondaryReleased, BoostReleased, CameraReleased, MenuReleased, TurretReleased;
+        /// <summary>The camera button went down / was let go off it (FreeLookCamera.CameraDown / CameraUp: a hold switches the
+        /// cockpit view).</summary>
+        public Action CameraPressed, CameraCancelled;
         public Action PausePressed, PauseReleased, LevelOut, CycleSecondary;
         // The weapon strip (remake): the mounted secondaries in mount order, an item's ammo, the selection, a pick.
         public Func<List<int>> SecondaryList;
@@ -163,7 +166,7 @@ namespace GoF2Remake.UI
             knob = Image(layer, knobOff, false);
             HookStick();
             cluster = Image(layer, clusterBottom, false);
-            camera = Button(Image(layer, camOff[3]), null, () => CameraReleased?.Invoke());
+            camera = Button(Image(layer, camOff[3]), () => CameraPressed?.Invoke(), () => CameraReleased?.Invoke(), () => CameraCancelled?.Invoke());
             turret = Button(Image(layer, turretOff), null, () => TurretReleased?.Invoke());
             menu = Button(Image(layer, menuOff), null, () => MenuReleased?.Invoke());
             secondary = Image(layer, secOff);
@@ -246,7 +249,7 @@ namespace GoF2Remake.UI
 
         /// <summary>A button acting on press / on release over it (MGame::OnTouchEnd acts on the element under the finger:
         /// releasing after sliding off does nothing); lit while held.</summary>
-        VisualElement Button(VisualElement e, Action down, Action up)
+        VisualElement Button(VisualElement e, Action down, Action up, Action cancelled = null)
         {
             int pointer = -1;
             e.RegisterCallback<PointerDownEvent>(ev =>
@@ -264,9 +267,10 @@ namespace GoF2Remake.UI
                 bool over = e.ContainsPoint(ev.localPosition);
                 Release();
                 if (over) up?.Invoke();
+                else cancelled?.Invoke();
                 ev.StopPropagation();
             });
-            e.RegisterCallback<PointerCancelEvent>(ev => { if (ev.pointerId == pointer) Release(); });
+            e.RegisterCallback<PointerCancelEvent>(ev => { if (ev.pointerId == pointer) { Release(); cancelled?.Invoke(); } });
             e.RegisterCallback<PointerCaptureOutEvent>(_ => { if (pointer >= 0) { pointer = -1; held.Remove(e); } });
             void Release()
             {

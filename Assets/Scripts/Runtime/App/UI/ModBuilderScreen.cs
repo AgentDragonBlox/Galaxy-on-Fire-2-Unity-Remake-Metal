@@ -90,6 +90,31 @@ namespace GoF2Remake.UI
             new DragScroll(kindsScroll);
             var kinds = Add(kindsScroll, new VisualElement(), "mbv-kinds");
             foreach (var (k, e, kd) in KindTabs) KindTab(kinds, T(k, e), kd);
+            // Rework: the strip cut kinds off with no sign of them (12 don't fit at 16:9, half at 1:1). When it overflows a
+            // More button after it lists them all (the options' drop-down, the current one ticked); a pick scrolls the strip
+            // to its tab.
+            this.kindsScroll = kindsScroll;
+            kindsMore = TopButton(top, T("mbMoreKinds", "More") + "  ↓", OpenKindList, "mbv-kinds-more");
+            kindsMore.style.display = DisplayStyle.None;
+            void Fit()
+            {
+                // The tabs' own extent (the strip itself is sized to the view, its tabs run past it).
+                float end = kinds.childCount > 0 ? kinds[kinds.childCount - 1].layout.xMax : 0f;
+                // The row as wide as its tabs: sized to the view, the ScrollView had nothing to scroll, and a picked kind past
+                // the view's end stayed out of sight (the theme has no default ScrollView styles to size the content).
+                if (end > 0f && Mathf.Abs(kinds.resolvedStyle.minWidth.value - end) > 0.5f)
+                {
+                    kinds.style.minWidth = end;
+                    kindsScroll.contentContainer.style.minWidth = end;
+                    int at = (int)kind;   // the current kind's tab in view, now that there is something to scroll
+                    if (at >= 0 && at < kindTabs.Length && kindTabs[at] != null)
+                        kindsScroll.schedule.Execute(() => { if (kindsScroll.contentContainer.Contains(kindTabs[at])) kindsScroll.ScrollTo(kindTabs[at]); });
+                }
+                bool over = end > kindsScroll.contentViewport.layout.width + 1f;
+                kindsMore.style.display = over ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+            kinds.RegisterCallback<GeometryChangedEvent>(_ => Fit());
+            kindsScroll.RegisterCallback<GeometryChangedEvent>(_ => Fit());
             undoButton = TopButton(top, T("mbUndo", "Undo"), () => UndoRedo(false), "mbv-undo-button");
             redoButton = TopButton(top, T("mbRedo", "Redo"), () => UndoRedo(true), "mbv-redo-button");
             // The AI tools (the MCP server's tab) aren't content: their own button, again = back to the kind before.
@@ -161,6 +186,27 @@ namespace GoF2Remake.UI
             return b;
         }
 
+        ScrollView kindsScroll;
+        Button kindsMore;
+
+        /// <summary>The More button: every kind in the drop-down list.</summary>
+        void OpenKindList()
+        {
+            if (ChoicePopup.IsOpenFor(kindsMore)) { ChoicePopup.Close(); return; }
+            var names = new string[KindTabs.Length];
+            int current = -1;
+            for (int i = 0; i < KindTabs.Length; i++)
+            {
+                names[i] = T(KindTabs[i].key, KindTabs[i].english).ToUpperInvariant();
+                if (KindTabs[i].kind == kind) current = i;
+            }
+            ChoicePopup.Open(kindsMore, names, current, i =>
+            {
+                var k = KindTabs[i].kind;
+                if (k != kind) { sound(false); SelectKind(k); }
+            });
+        }
+
         void KindTab(VisualElement parent, string text, ModBuilder.Kind k)
         {
             // The name and the badge as two labels: a Button with text of its own and children lays them over each other.
@@ -186,9 +232,21 @@ namespace GoF2Remake.UI
             return r;
         }
 
+        /// <summary>A field's label: a help text in brackets at its end ("Flame size (game units; 24 by default)") goes dim and
+        /// smaller on a line under the name, so the narrow label column doesn't wrap the name itself; short units ("(t)",
+        /// "(%)", "(optional)") stay as they are.</summary>
+        internal static string FieldLabel(string label)
+        {
+            if (string.IsNullOrEmpty(label) || !label.EndsWith(")")) return label;
+            int open = label.LastIndexOf(" (", StringComparison.Ordinal);
+            if (open <= 0 || label.Length - open - 3 <= 10) return label;
+            string note = label.Substring(open + 2, label.Length - open - 3);
+            return label.Substring(0, open) + "\n<color=#9FB3C0>" + note + "</color>";   // dim, at the label's size (never under the caption)
+        }
+
         protected TextField Text(VisualElement parent, string label, string value, int max, Action<string> set, bool multi = false)
         {
-            var f = Add(parent, new TextField(label) { value = value ?? "", maxLength = max, multiline = multi, isDelayed = true }, "mbv-field");
+            var f = Add(parent, new TextField(FieldLabel(label)) { value = value ?? "", maxLength = max, multiline = multi, isDelayed = true }, "mbv-field");
             if (multi) f.AddToClassList("mbv-field--multi");
             f.RegisterValueChangedCallback(e => set(e.newValue));
             return f;
@@ -196,7 +254,7 @@ namespace GoF2Remake.UI
 
         protected IntegerField Int(VisualElement parent, string label, int value, int min, int max, Action<int> set)
         {
-            var f = Add(parent, new IntegerField(label) { value = value, isDelayed = true }, "mbv-field");
+            var f = Add(parent, new IntegerField(FieldLabel(label)) { value = value, isDelayed = true }, "mbv-field");
             f.RegisterValueChangedCallback(e =>
             {
                 int v = Mathf.Clamp(e.newValue, min, max);
@@ -208,7 +266,7 @@ namespace GoF2Remake.UI
 
         protected FloatField Float(VisualElement parent, string label, float value, float min, float max, Action<float> set)
         {
-            var f = Add(parent, new FloatField(label) { value = value, isDelayed = true }, "mbv-field");
+            var f = Add(parent, new FloatField(FieldLabel(label)) { value = value, isDelayed = true }, "mbv-field");
             f.RegisterValueChangedCallback(e =>
             {
                 float v = Mathf.Clamp(e.newValue, min, max);
@@ -236,6 +294,20 @@ namespace GoF2Remake.UI
                 var b = Act(row, labels[i], () => pick(n), "mbv-seg");
                 b.EnableInClassList("mbv-seg--on", i == current);
             }
+        }
+
+        float nextRemoveCheck;
+
+        /// <summary>Four times a second: the shown kind's Remove buttons only while one of its list's rows is picked (they looked
+        /// usable over an empty list; every kind's list is ListRow's mbv-ship-row).</summary>
+        protected void UpdateRemoveButtons()
+        {
+            if (Time.unscaledTime < nextRemoveCheck) return;
+            nextRemoveCheck = Time.unscaledTime + 0.25f;
+            int k = (int)kind;
+            if (k < 0 || k >= leftGroups.Length || leftGroups[k] == null) return;
+            bool picked = leftGroups[k].Q(className: "mbv-ship-row--on") != null;
+            leftGroups[k].Query<Button>(className: "mbv-remove").ForEach(b => b.SetEnabled(picked));
         }
 
         /// <summary>A list row with an icon, a name and a line under it (the left panels' lists).</summary>
@@ -296,6 +368,8 @@ namespace GoF2Remake.UI
             if (k == ModBuilder.Kind.AiTools && was != ModBuilder.Kind.AiTools && (int)was >= 0) kindBeforeAi = was;
             kind = k;
             aiButton?.EnableInClassList("mbv-top-button--on", k == ModBuilder.Kind.AiTools);
+            // Over the star map the panels go opaque: the systems' names read through them (Systems).
+            uiTop?.parent?.EnableInClassList("mbv-on-map", ModBuilder.PlaceOf(k) == ModBuilder.Place.Map);
             ModBuilder.OpenKind = k;
             for (int i = 0; i < ModBuilder.KindCount; i++)
             {
@@ -305,6 +379,10 @@ namespace GoF2Remake.UI
             }
             ShowKind(k, was);
             if (k == ModBuilder.Kind.AiTools) ShowAiTools();
+            // The strip shows the picked kind's tab (picked from the More list, or by a kind of another place).
+            var tab = (int)k >= 0 && (int)k < kindTabs.Length ? kindTabs[(int)k] : null;
+            if (tab != null && kindsScroll != null)
+                kindsScroll.schedule.Execute(() => { if (kindsScroll.contentContainer.Contains(tab)) kindsScroll.ScrollTo(tab); });
         }
 
         /// <summary>The kinds this screen edits (the others are another scene's).</summary>
@@ -470,7 +548,7 @@ namespace GoF2Remake.UI
             modal.Clear();
             var box = Add(modal, new VisualElement(), "mbv-modal-box", "mbv-modal-box--list", "mbv-panel");
             Heading(box, T("mbEditJson", "Edit as JSON…"));
-            Note(box, note ?? T("mbEditJsonNote", "Every field the modding guide (Modding/README.md) lists for this kind of entry can be written here, also the ones the builder has no field for."));
+            Note(box, note ?? T("mbEditJsonNote", "Any field the modding guide lists for this entry can go here."));
             var error = Add(box, new Label(), "mbv-note", "mbv-warn");
             error.style.display = DisplayStyle.None;
             var scroll = Add(box, new ScrollView(ScrollViewMode.Vertical), "mbv-picker-scroll");
@@ -530,7 +608,7 @@ namespace GoF2Remake.UI
                 {
                     if (ModRefs.Use(Project, entry))
                     {
-                        Status(string.Format(T("mbDependencyAdded", "\"{0}\" is now a dependency of this mod: it is on whenever this mod is."), entry.group), false);
+                        Status(string.Format(T("mbDependencyAdded", "\"{0}\" is now a dependency: it is on whenever this mod is."), entry.group), false);
                         RequestReload(false);
                     }
                     pick(entry);
@@ -576,7 +654,7 @@ namespace GoF2Remake.UI
         protected void PickRaw(string title, string filterName, string[] extensions, Action<ModImport.Picked> handle)
         {
             if (picking || Project == null) return;
-            if (!ModImport.Available) { Status(T("mbNoPicker", "This device has no file picker: put the file into the project's folder instead."), true); return; }
+            if (!ModImport.Available) { Status(T("mbNoPicker", "No file picker here: put the file into the project's folder."), true); return; }
             picking = true;
             var poll = ModImport.Pick(title, filterName, extensions);
             ModImport.Picked picked = null;
@@ -605,7 +683,7 @@ namespace GoF2Remake.UI
 
         /// <summary>A .glb model (glTF binary).</summary>
         protected void PickGlb(string title, Action<string> use) => PickFile(title, "glTF binary model", "glb", new byte[] { (byte)'g', (byte)'l', (byte)'T', (byte)'F' },
-            T("mbNotGlb", "That isn't a .glb model (glTF binary). In Blender: File > Export > glTF 2.0, format glTF Binary."), use);
+            T("mbNotGlb", "That isn't a .glb model. In Blender: File > Export > glTF 2.0, glTF Binary."), use);
 
         /// <summary>The picker for an image (ImageImport: PNG, JPG, TGA, BMP, DDS, the game's .aei): 'use' gets it as a PNG
         /// (a temporary file, copied into the project by 'use').</summary>
@@ -672,7 +750,7 @@ namespace GoF2Remake.UI
             Add(row, new Label($"{T("mbPreview", "Picture")}: {Project.PreviewImage ?? T("mbNone", "none")}"), "mbv-inline-label");
             if (ModImport.Available)
                 Act(row, T("mbChoose", "Choose…"), () => PickImage(T("mbPreview", "Picture"), png => { Project.SetPreviewImage(png); MarkDirty(); ShowModDetails(); }), "mbv-step");
-            Note(scroll, T("mbPreviewNote", "The picture beside the mod in the Mods screen (preview.png; about 16:9)."));
+            Note(scroll, T("mbPreviewNote", "The picture beside the mod in the Mods screen (preview.png, 16:9)."));
             Act(box, T("mbClose", "Close"), CloseModal);
             modal.AddToClassList("mbv-modal--shown");
         }
@@ -689,7 +767,7 @@ namespace GoF2Remake.UI
             var scroll = Add(box, new ScrollView(ScrollViewMode.Vertical), "mbv-picker-scroll");
             var texts = Project.Texts(lang);
             var all = Project.TranslatableTexts();
-            if (all.Count == 0) Note(scroll, T("mbNothingToTranslate", "Nothing to translate yet: the names and descriptions of the project's items, ships, systems and stations show here."));
+            if (all.Count == 0) Note(scroll, T("mbNothingToTranslate", "Nothing to translate yet: names and descriptions of items, ships, systems and stations show here."));
             foreach (var (key, english) in all)
             {
                 Caption(scroll, key);
@@ -698,7 +776,7 @@ namespace GoF2Remake.UI
                 string k = key;
                 Text(scroll, lang.ToUpperInvariant(), cur, 600, v => { Project.SetText(lang, k, v); MarkDirty(); }, key.EndsWith(".description"));
             }
-            Note(scroll, T("mbTranslationsNote", "Empty = the English. Quests and characters carry their languages in their own texts; the game's language list: Options > Language."));
+            Note(scroll, T("mbTranslationsNote", "Empty = English. Quests and characters carry their own languages."));
             Act(box, T("mbClose", "Close"), CloseModal);
             modal.AddToClassList("mbv-modal--shown");
         }
@@ -710,7 +788,7 @@ namespace GoF2Remake.UI
             modal.Clear();
             var box = Add(modal, new VisualElement(), "mbv-modal-box", "mbv-modal-box--list", "mbv-panel");
             Heading(box, T("mbDependencies", "Dependencies"));
-            Note(box, T("mbDependenciesNote", "Mods whose content this one uses. They are turned on with it (and here in the builder). Picking another mod's ship, item, station or character anywhere adds it here."));
+            Note(box, T("mbDependenciesNote", "Mods whose content this one uses; picking another mod's content adds it here."));
             var deps = Project.Dependencies;
             var named = Project.ModsNamed();
             foreach (var d in deps)

@@ -380,8 +380,8 @@ namespace GoF2Remake.UI
                     if (hp.maxShield > 0) AddStat(X("statShield", "Shield"), $"{Mathf.RoundToInt(hp.shield)} / {hp.maxShield}");
                 }
                 detailText.text = host != null && host.Spec.capital == SpawnSpec.CapitalVossk
-                    ? X("resupplyRepairTextVossk", "The battleship's deck crew patch your hull and replace the armor plating. The shield recharges by itself.")
-                    : X("resupplyRepairText", "The carrier's deck crew patch your hull and replace the armor plating. The shield recharges by itself.");
+                    ? X("resupplyRepairTextVossk", "The deck crew patch your hull and replace your armor. Shields recharge by themselves.")
+                    : X("resupplyRepairText", "The deck crew patch your hull and replace your armor. Shields recharge by themselves.");
                 ItemInfo.FillModLines(detailMods, Session.ShipMods);
                 return;
             }

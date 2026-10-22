@@ -13,12 +13,15 @@
 // Remake: with several manual turrets (custom ships) the Turret mode is visited once per turret, in mount order
 // (Standard -> Turret 1 -> Turret 2 -> Free look); the turrets are looked up on the player each time, so a hull swap's new
 // turrets are found.
-// Remake: the cockpit view (2, text 219 "Cockpit", the eye icon 0x4be / 0x4bf) is reachable: Standard -> Cockpit -> Turret ->
-// Free look -> Standard (not in VR, which flies from the seat already). ChaseCamera places it (firstPerson). It stays the
-// mode through what takes the camera over (launch / arrival, cutscenes, jumps, mining, object docking, death, Action
-// Freeze: the chase camera is off meanwhile and comes back in it), and the last one of Standard / Cockpit the camera button
-// reached is kept for the next flights (PlayerPrefs flight_camera_cockpit); the turret view or free look ending by itself
-// goes back to it (Base).
+// Remake: the cockpit view (2, text 219 "Cockpit", the eye icon 0x4be / 0x4bf) is reachable, but not by the cycle
+// (players' feedback, 2026-10-22: the button's first press went to the cockpit, and they wanted the orbit view at once):
+// holding the camera button half a second (the key, the controller's D-pad up, the touch button) or the "Cockpit view"
+// binding (F2) switches between the chase view and the cockpit, and the cycle runs from whichever of the two is the ship
+// view: it -> Turret -> Free look -> it (the button then acts on release). Not in VR, which flies from the seat already.
+// ChaseCamera places it (firstPerson). It stays the mode through what takes the camera over (launch / arrival,
+// cutscenes, jumps, mining, object docking, death, Action Freeze: the chase camera is off meanwhile and comes back in it),
+// and the ship view picked last is kept for the next flights (PlayerPrefs flight_camera_cockpit); the turret view or free
+// look ending by itself goes back to it (Base).
 
 using System;
 using GoF2Remake.Data;
@@ -113,9 +116,8 @@ namespace GoF2Remake.Flight
 
         /// <summary>MGame::nextCamId: the mode the camera button leads to (remake: Turret again while another manual turret
         /// follows).</summary>
-        public Mode Next => Current == Mode.Standard ? (VrFlags.Enabled ? AfterCockpit : Mode.FirstPerson)
-                          : Current == Mode.FirstPerson ? AfterCockpit
-                          : Current == Mode.Turret ? (turretIndex + 1 < Manual().Count ? Mode.Turret : Mode.FreeLook) : Mode.Standard;
+        public Mode Next => ShipView ? AfterCockpit
+                          : Current == Mode.Turret ? (turretIndex + 1 < Manual().Count ? Mode.Turret : Mode.FreeLook) : Base;
         Mode AfterCockpit => TurretMode ? Mode.Turret : Mode.FreeLook;
 
         /// <summary>The camera button (touch, V, D-pad up).</summary>
@@ -142,6 +144,38 @@ namespace GoF2Remake.Flight
             }
             if (Current == Mode.Turret && turretIndex + 1 < Manual().Count) { EnterTurret(turretIndex + 1, true); return; }
             Set(Next);
+            RememberBase();
+        }
+
+        /// <summary>Holding the camera button this long switches the ship view (ToggleCockpit) instead of cycling.</summary>
+        const float CockpitHoldSeconds = 0.5f;
+        float cameraDownAt = -1f;
+        bool cameraHoldUsed;
+
+        /// <summary>The camera button went down (the key, the controller, the touch button): a tap cycles on release, a hold
+        /// switches to or from the cockpit view (Update).</summary>
+        public void CameraDown()
+        {
+            cameraDownAt = Time.unscaledTime;
+            cameraHoldUsed = false;
+        }
+
+        /// <summary>The camera button came up: a tap's cycle ('cycle' false: only let go, e.g. while mining).</summary>
+        public void CameraUp(bool cycle = true)
+        {
+            bool tap = cameraDownAt >= 0f && !cameraHoldUsed;
+            cameraDownAt = -1f;
+            if (tap && cycle) Cycle();
+        }
+
+        /// <summary>The chase view <-> the cockpit view (the "Cockpit view" binding, a held camera button); from a turret view
+        /// or free look straight into the other ship view.</summary>
+        public void ToggleCockpit()
+        {
+            if (VrFlags.Enabled || Blocked != null && Blocked()) return;
+            var to = Base == Mode.FirstPerson ? Mode.Standard : Mode.FirstPerson;
+            if (heldLook) { heldFrom = to; Cockpit = to == Mode.FirstPerson; return; }   // free look by the held key: back into it
+            Set(to);
             RememberBase();
         }
 
@@ -225,7 +259,15 @@ namespace GoF2Remake.Flight
             bool halted = Time.timeScale <= 0f;
             // Not under a menu either (Navigation.PressesBlocked): in a multiplayer session the game doesn't pause, and the
             // pause / autopilot / secondary weapon menus' D-pad up cycled the camera (Discord report, 2026-10-17).
-            if (!halted && !Navigation.PressesBlocked && cycleAction.WasPressedThisFrame()) Cycle();
+            // A tap cycles on release, a hold switches the cockpit view (CameraDown / CameraUp, also the touch button's).
+            if (!halted && !Navigation.PressesBlocked && cycleAction.WasPressedThisFrame()) CameraDown();
+            if (cycleAction.WasReleasedThisFrame() && cameraDownAt >= 0f) CameraUp(!halted && !Navigation.PressesBlocked);
+            if (cameraDownAt >= 0f && !cameraHoldUsed && Time.unscaledTime - cameraDownAt >= CockpitHoldSeconds)
+            {
+                cameraHoldUsed = true;
+                if (!halted && !Navigation.PressesBlocked) ToggleCockpit();
+            }
+            if (!halted && !Navigation.PressesBlocked && GameControls.CockpitView.WasPressedThisFrame()) ToggleCockpit();
             // Remake: free look while a key is held (GameControls.FreeLookHold, EVERSPACE 2's Alt in the free-flight layout):
             // from the standard view, back to it on release.
             if (!halted && !Navigation.InputHalted)

@@ -60,7 +60,7 @@ namespace GoF2Remake.UI
             {
                 case 0:
                     Heading(audioPage, T("mbMusic", "Music"));
-                    Note(audioPage, T("mbMusicNote", "A file named like one of the game's tracks plays instead of it everywhere. Any other name is a new track: quests, systems and stations can play it."));
+                    Note(audioPage, T("mbMusicNote", "Named like a game track: it replaces it. Any other name is a new track."));
                     var mrow = Row(audioPage);
                     Act(mrow, T("mbReplaceTrack", "+ Replace a game track"), () =>
                     {
@@ -77,7 +77,7 @@ namespace GoF2Remake.UI
                     break;
                 case 1:
                     Heading(audioPage, T("mbSounds", "Sound effects"));
-                    Note(audioPage, T("mbSoundsNote", "A file named like one of the game's sounds plays instead of it everywhere. A sound the game picks from several files (most shots) needs each replaced. A weapon's own shot is set on the item (Weapon fx)."));
+                    Note(audioPage, T("mbSoundsNote", "Named like a game sound: it replaces it everywhere. A weapon's shot is set on its item."));
                     Act(audioPage, T("mbReplaceSound", "+ Replace a game sound"), () =>
                     {
                         var choices = new List<(string, Texture2D, Action)>();
@@ -96,7 +96,7 @@ namespace GoF2Remake.UI
                     break;
                 default:
                     Heading(audioPage, T("mbVoices", "Voice lines"));
-                    Note(audioPage, T("mbVoicesNote", "Lines for your quests' conversations and radio calls (each page names its line; a quest's \"Sound file…\" puts its file here). German ones in voices/de, played when the voice language is German."));
+                    Note(audioPage, T("mbVoicesNote", "Lines for your quests' conversations and radio; German ones go in voices/de."));
                     var vrow = Row(audioPage);
                     Act(vrow, T("mbNewVoice", "+ Voice line"), () => NewVoice(ModProject.VoicesFolder), "mbv-add");
                     Act(vrow, T("mbNewVoiceDe", "+ German line"), () => NewVoice(ModProject.VoicesFolder + "/de"), "mbv-add");

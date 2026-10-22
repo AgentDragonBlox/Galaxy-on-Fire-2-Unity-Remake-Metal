@@ -155,7 +155,7 @@ namespace GoF2Remake.Tests
         }
 
         static IEnumerable<OptionPage> SettingsPages() =>
-            new[] { OptionPage.Sound, OptionPage.Graphics, OptionPage.Controls, OptionPage.Gameplay, OptionPage.Language };
+            new[] { OptionPage.Sound, OptionPage.Graphics, OptionPage.Controls, OptionPage.Gameplay, OptionPage.Accessibility, OptionPage.Language };
 
         [TestCaseSource(nameof(SettingsPages))]
         public void DefaultSettingsForATabResetsEveryOptionOnIt(OptionPage page)

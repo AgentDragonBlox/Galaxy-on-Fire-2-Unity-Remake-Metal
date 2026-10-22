@@ -56,7 +56,7 @@ namespace GoF2Remake.UI
                         it == currentFx, () => { currentFx = it; RebuildFx(); BuildFxPage(); RestartRange(); }, n >= 0 ? ItemInfo.ItemIcon(n) : ItemInfo.ItemIcon(it.Original));
             }
             if (weapons.Count == 0)
-                Note(fxList, T("mbNoFxItems", "No weapons yet: make one in the Items kind (in the hangar), or change a game weapon's look here."));
+                Note(fxList, T("mbNoFxItems", "No weapons yet: make one in Items, or change a game weapon's look here."));
         }
 
         void PickGameWeapon()
@@ -105,7 +105,7 @@ namespace GoF2Remake.UI
         {
             fxPage.Clear();
             var it = currentFx;
-            if (it == null) { Note(fxPage, T("mbPickFx", "Pick a weapon on the left. The range in front fires it again and again.")); return; }
+            if (it == null) { Note(fxPage, T("mbPickFx", "Pick a weapon on the left; the range fires it again and again.")); return; }
             var original = Database.Shared.Item(it.Original);
             Heading(fxPage, !string.IsNullOrEmpty(it.Name) ? it.Name : GameNames.Item(it.Original));
             if (original != null) Note(fxPage, $"{ItemInfo.Category(original)}  ·  {string.Format(T("mbBasedOnShort", "based on {0}"), GameNames.Item(it.Original))}");
@@ -158,7 +158,7 @@ namespace GoF2Remake.UI
                 if (n == 0) { Fx(it, true).Remove("shotLoops"); DropEmptyFx(it); } else Fx(it, true)["shotLoops"] = n == 1;
                 FxEdited();
             });
-            Note(fxPage, T("mbFxNote", "What the weapon does stays its base item's: a beam stays a beam, a homing missile homes. Every gun of the item uses its look: yours, NPCs', turrets'."));
+            Note(fxPage, T("mbFxNote", "The weapon still works like its base item; every gun of the item uses this look."));
         }
 
         List<(string, Texture2D, Action)> WeaponChoices(Action<int> pick)
@@ -291,7 +291,7 @@ namespace GoF2Remake.UI
             });
             if (!(t is JObject o))
             {
-                Note(fxPage, T("mbTrailNote", "Rockets and missiles trail white smoke, thermo guns a coloured flame; Own gives any weapon one."));
+                Note(fxPage, T("mbTrailNote", "Rockets trail smoke, thermo guns a flame; Own gives any weapon one."));
                 return;
             }
             float Num(string k, float d) => o[k] is JValue v && (v.Type == JTokenType.Float || v.Type == JTokenType.Integer) ? (float)v : d;

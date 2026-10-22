@@ -93,7 +93,7 @@ namespace GoF2Remake.UI
                 string s = text?.Invoke();
                 if (string.IsNullOrEmpty(s)) return;
                 var l = new Label(s) { pickingMode = PickingMode.Ignore };
-                l.style.fontSize = 16f;
+                l.style.fontSize = UiLayout.Type(18f);   // the small step: running text (docs/UI-DESIGN.md "Type scale")
                 l.style.whiteSpace = WhiteSpace.Normal;
                 l.style.color = new Color(0.85f, 0.92f, 0.97f);
                 body = l;

@@ -50,16 +50,16 @@ namespace GoF2Remake.Tests
         static readonly string[] RowIds =
         {
             "steer", "throttle", "brake", "boost", "roll", "levelOut", "strafeLeft", "strafeRight", "dodgeLeft", "dodgeRight", "drill",
-            "firePrimary", "fireSecondary", "switchSecondary", "camera", "autoTurret", "unlockTarget", "action", "autopilotMenu", "actionsMenu",
+            "firePrimary", "fireSecondary", "switchSecondary", "camera", "cockpitView", "autoTurret", "unlockTarget", "action", "autopilotMenu", "actionsMenu",
             "fastForward", "wingmen", "khadorDrive", "cloak", "timeExtender", "mouseSteering", "chat", "chatSend", "chatChannel",
             "screenshot", "hudToggle", "multiplayerWindow", "distressCall",
             "thrust", "strafe", "hover", "dampeners", "freeLookHold",   // free flight (PR #87)
         };
 
         [Test]
-        public void ThereAreThirtyEightFlightRows()
+        public void ThereAreThirtyNineFlightRows()
         {
-            Assert.AreEqual(38, GameControls.Rows.Count);
+            Assert.AreEqual(39, GameControls.Rows.Count);
             CollectionAssert.AreEqual(RowIds, GameControls.Rows.Select(r => r.id).ToArray(), "in the options' order (the overrides are kept by action name)");
             foreach (var r in GameControls.Rows)
             {

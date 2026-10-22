@@ -88,7 +88,7 @@ namespace GoF2Remake.Tests
         /// <summary>Every Settings key stored as a float (the five reset groups but the voice language, plus the tilt
         /// calibration, which no group resets).</summary>
         public static IEnumerable<string> SettingFloatKeys =>
-            Settings.SoundKeys.Concat(Settings.GraphicsKeys).Concat(Settings.ControlsKeys).Concat(Settings.GameplayKeys)
+            Settings.SoundKeys.Concat(Settings.GraphicsKeys).Concat(Settings.ControlsKeys).Concat(Settings.GameplayKeys).Concat(Settings.AccessibilityKeys)
                 .Concat(new[] { "tiltCalX", "tiltCalZ", "tiltCalibrated" }).Distinct();
 
         /// <summary>Settings' PlayerPrefs read cache (private): emptied after the prefs are written behind its back.</summary>

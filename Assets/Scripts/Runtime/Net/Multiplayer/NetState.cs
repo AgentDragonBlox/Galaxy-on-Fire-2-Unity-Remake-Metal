@@ -654,6 +654,15 @@ namespace GoF2Remake.Multiplayer
         [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
         void NoticeToRpc(string text, RpcParams rpc = default) => NetChat.Notice(text);
 
+        [Rpc(SendTo.SpecifiedInParams, InvokePermission = RpcInvokePermission.Server)]
+        void FactionLineRpc(string from, string text, bool own, RpcParams rpc = default) => NetChat.ReceiveFaction(from, text, own);
+
+        /// <summary>Server: a faction member's chat line to one player (the chat's Faction channel).</summary>
+        internal void TellFactionLine(ulong client, string from, string text, bool own)
+        {
+            if (IsServer && !string.IsNullOrEmpty(text)) FactionLineRpc(from, text, own, RpcTarget.Single(client, RpcTargetUse.Temp));
+        }
+
         /// <summary>Server: a notice in one player's chat.</summary>
         internal void Notify(ulong client, string text)
         {

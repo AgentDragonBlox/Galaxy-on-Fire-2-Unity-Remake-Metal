@@ -20,7 +20,7 @@ namespace GoF2Remake.UI
 {
     public sealed class OptionsView
     {
-        static readonly OptionPage[] PageOrder = { OptionPage.Sound, OptionPage.Graphics, OptionPage.Controls, OptionPage.Bindings, OptionPage.Gameplay, OptionPage.Language };
+        static readonly OptionPage[] PageOrder = { OptionPage.Sound, OptionPage.Graphics, OptionPage.Controls, OptionPage.Bindings, OptionPage.Gameplay, OptionPage.Accessibility, OptionPage.Language };
 
         sealed class Tab
         {
@@ -92,13 +92,6 @@ namespace GoF2Remake.UI
                 Root.Add(tab.scroll);
                 tabs.Add(tab);
             }
-            // Modified: an "i" with the page's keys at the tab row's right end (MenuKeys: select, change a value, switch tab
-            // with Q / E or LB / RB, confirm, back).
-            var keysIcon = MenuKeys.KeysIcon(() => MenuKeys.Content(MenuKeys.Rows.Select | MenuKeys.Rows.Change | MenuKeys.Rows.Tabs
-                                                                    | MenuKeys.Rows.Confirm | MenuKeys.Rows.Back));
-            keysIcon.style.marginLeft = new StyleLength(StyleKeyword.Auto);
-            keysIcon.style.marginBottom = 6f;
-            tabRow.Add(keysIcon);
             foreach (var def in defs)
             {
                 if (def.menuOnly) continue;   // only in the main menu (the save folder)
@@ -125,6 +118,7 @@ namespace GoF2Remake.UI
             BackButton.AddToClassList("menu-button");
             BackButton.AddToClassList("back-button");
             BackButton.AddToClassList("gof-semibold");
+            InputGlyph.PadPrompt(BackButton, PadButton.B);   // B for a controller (docs/UI-DESIGN.md "Button prompts")
             footer.Add(BackButton);
             DefaultsButton = new Button(OpenResetPrompt) { text = T(497), focusable = focusableRows };
             DefaultsButton.AddToClassList("menu-button");
@@ -146,6 +140,11 @@ namespace GoF2Remake.UI
             ResetAllButton.AddToClassList("options-reset-all");
             prompt.style.display = DisplayStyle.None;
             footer.Add(prompt);
+            // Rework: the page's keys (select, change a value, switch tab, confirm, back) as a prompt row under the footer
+            // (docs/UI-DESIGN.md "Button prompts"; it was an "i" at the tab row's end).
+            prompts = MenuKeys.Bar(MenuKeys.Rows.Select | MenuKeys.Rows.Change | MenuKeys.Rows.Tabs | MenuKeys.Rows.Confirm | MenuKeys.Rows.Back);
+            prompts.AddToClassList("prompt-bar--row");
+            Root.Add(prompts);
 
             SelectTab(0, false);
             // Modified: the language row (OptionsCatalog "language") changes the table while this page is open: re-label it
@@ -160,7 +159,7 @@ namespace GoF2Remake.UI
         {
             title.text = T(31);
             foreach (var tab in tabs) tab.button.text = OptionsCatalog.PageTitle(tab.page).ToUpperInvariant();
-            BackButton.text = "‹  " + T(170);
+            InputGlyph.SetText(BackButton, "‹  " + T(170));
             DefaultsButton.text = T(497);
             question.text = OptionsCatalog.ResetQuestion;
             CancelButton.text = Localization.Get(425).ToUpperInvariant();
@@ -171,6 +170,7 @@ namespace GoF2Remake.UI
 
         readonly VisualElement prompt;
         readonly Label question;
+        readonly VisualElement prompts;
         public readonly Button CancelButton, ResetTabButton, ResetAllButton;
 
         Button PromptButton(string text, Action action)

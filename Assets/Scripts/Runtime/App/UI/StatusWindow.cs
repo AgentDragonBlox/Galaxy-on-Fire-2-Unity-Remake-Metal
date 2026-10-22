@@ -63,10 +63,11 @@ namespace GoF2Remake.UI
             help.style.position = Position.Relative;
             help.style.width = help.style.height = 34f;
             close.parent.Insert(close.parent.IndexOf(close), help);
-            // Modified: an "i" with the window's keys (MenuKeys: select, switch tab with Q / E or LB / RB, confirm, back) left of the "?".
-            var keys = MenuKeys.KeysIcon(() => MenuKeys.Content(MenuKeys.Rows.Select | MenuKeys.Rows.Tabs | MenuKeys.Rows.Confirm | MenuKeys.Rows.Back), 34f);
-            keys.AddToClassList("window-help");
-            close.parent.Insert(close.parent.IndexOf(help), keys);
+            // Rework: the window's keys (select, switch tab with Q / E or LB / RB, confirm, back) as a prompt row in the strip
+            // under the window, like the hangar's hint row (docs/UI-DESIGN.md "Button prompts"; it was an "i").
+            var prompts = MenuKeys.Bar(MenuKeys.Rows.Select | MenuKeys.Rows.Tabs | MenuKeys.Rows.Confirm | MenuKeys.Rows.Back);
+            prompts.AddToClassList("prompt-bar--below");
+            close.parent.parent.Add(prompts);
             scroll = root.Q<ScrollView>("medalScroll");
             scroll.verticalScrollerVisibility = ScrollerVisibility.Auto;
             scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;

@@ -207,7 +207,7 @@ namespace GoF2Remake.Multiplayer
             if (amount > 0) Session.Credits += amount;
             if (TollStation == station) TollStation = -1;
             NetChat.Notice(string.Format(Localization.Extra("mpTollRefused",
-                "The toll wasn't taken: your saved game holds fewer than {0:N0} credits. Dock to save it; until then the station's fighters treat you as unpaid."), amount));
+                "Toll refused: your saved game holds under {0:N0} credits. Dock to save; until then you're unpaid."), amount));
             NetProfileClient.Upload();
             RefreshStationCredits();
         }

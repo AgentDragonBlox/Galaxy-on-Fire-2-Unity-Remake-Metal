@@ -33,6 +33,12 @@
 // the cursor, selection). The line never selects all on focus: after a send the next line's letters showed highlighted.
 // Nothing writes to the keyboard while it is up (PhoneKeyboard's header: on GameActivity a write restarts the IME, which ends
 // a held Backspace's repeat); the row's buttons (Local / Global, Send, close) keep the typing and the keyboard.
+// Opening (remake rework, players' request, like Minecraft): in flight Enter opens the chat too (in a session Enter is no
+// longer the action prompt's second key, F stays; the station keeps Enter for its menus), and "/" (the typed character,
+// so any keyboard layout) opens it with the "/" already in the line, ready for a command; neither while a menu, a
+// conversation or another text field has the keys. The channel key cycles Local, Global and, for a faction's member,
+// Faction (NetChat.NextChannel: its lines go as the server's /f, in green). Esc closes only the chat: the menus' Esc reads
+// (NetChat.Keys) stay off on the frame it closes and the next.
 // The Chat button sits next to the Multiplayer button (MultiplayerWindow moves it: left of it in the station's top bar, at
 // its height in the flight HUD's column), the size of the Menu button.
 // Styles: Resources/GoF2Net/Chat.uss.
@@ -70,6 +76,9 @@ namespace GoF2Remake.UI
         bool open, hooked, large;
         float nextScaleCheck;
         int focusTries, swallowFrame = -1, openFrame = -10, suspendFrame = -10, rowPressFrame = -10;
+        bool slashTyped;                // "/" this frame (Keyboard.onTextInput): open with it in the line
+        UnityEngine.InputSystem.Keyboard textHooked;
+        NetChat.Channel shownChannel = (NetChat.Channel)(-1);
 
         /// <summary>The panel on 'parent' (again after a UI reload), on the HUD's own GameObject.</summary>
         public static void Attach(GameObject host, VisualElement parent)
@@ -90,6 +99,8 @@ namespace GoF2Remake.UI
             stats?.RemoveFromHierarchy();
             box = new VisualElement { name = "chat", pickingMode = PickingMode.Ignore };
             box.AddToClassList("chat");
+            // The station: its own place, the bottom centre between the side menu and Launch (Chat.uss .chat--station).
+            box.EnableInClassList("chat--station", host != null && host.GetComponent<StationMenu>() != null);
             var sheet = Resources.Load<StyleSheet>("GoF2Net/Chat");
             if (sheet != null) box.styleSheets.Add(sheet);
 
@@ -202,6 +213,7 @@ namespace GoF2Remake.UI
         void OnDestroy()
         {
             if (hooked) { NetChat.Added -= OnAdded; GoF2Remake.Flight.GameControls.Changed -= RefreshKeys; }
+            if (textHooked != null) textHooked.onTextInput -= OnTextInput;
             if (open) NetChat.DropTyping();   // the scene's actions go with it (not enabled again)
             CloseKeyboard();
         }
@@ -273,8 +285,10 @@ namespace GoF2Remake.UI
         {
             if (e.keyCode == KeyCode.Escape) { Close(); Swallow(e); return; }
             // The chat key that opened the line types its letter a moment later (the text arrives after the focus): the
-            // characters of the first frames after opening stay out (nobody types that fast).
-            if (Time.frameCount - openFrame <= 2 && e.character != '\0') { Swallow(e); return; }
+            // characters of the first frames after opening stay out (nobody types that fast), and so does the Enter that
+            // opened it (else it sent the empty line, which closes the chat).
+            if (Time.frameCount - openFrame <= 2 && (e.character != '\0' || e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter))
+            { Swallow(e); return; }
             // A command being typed: Tab completes / cycles it (before the channel key, Tab by default).
             if (e.keyCode == KeyCode.Tab && (completionLine != null || (field.value.Length > 0 && field.value[0] == '/')))
             {
@@ -330,7 +344,16 @@ namespace GoF2Remake.UI
             suggest.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
             if (!show) return;
             int picked = completionLine != null ? completionIndex : -1;
-            for (int i = 0; i < matches.Count; i++)
+            // A window of rows that follows Tab's pick (players' report: cycling past the screen's edge hid the picked
+            // command), "N more" above / below it.
+            int rows = SuggestRows;
+            if (picked < 0) suggestTop = 0;
+            else if (picked < suggestTop) suggestTop = picked;
+            else if (picked >= suggestTop + rows) suggestTop = picked - rows + 1;
+            suggestTop = Mathf.Clamp(suggestTop, 0, Mathf.Max(0, matches.Count - rows));
+            int end = Mathf.Min(matches.Count, suggestTop + rows);
+            if (suggestTop > 0) suggest.Add(MoreRow("↑", suggestTop));
+            for (int i = suggestTop; i < end; i++)
             {
                 var m = matches[i];
                 var line = new Label($"<b>{m.label}</b>   <color=#9fb3c0>{m.description}</color>") { pickingMode = PickingMode.Ignore };
@@ -338,9 +361,31 @@ namespace GoF2Remake.UI
                 line.EnableInClassList("chat-suggest-row--picked", i == picked);
                 suggest.Add(line);
             }
+            if (end < matches.Count) suggest.Add(MoreRow("↓", matches.Count - end));
             var hint = new Label(Localization.Extra("mpCmdTabHint", "Tab complete  ·  Enter run")) { pickingMode = PickingMode.Ignore };
             hint.AddToClassList("chat-suggest-hint");
             suggest.Add(hint);
+        }
+
+        /// <summary>Open with 'text' in the line, the cursor after it ("/": a command).</summary>
+        void Open(string text)
+        {
+            Open();
+            field.value = text;
+            field.schedule.Execute(() => field.SelectRange(text.Length, text.Length));
+            RefreshSuggestions();
+        }
+
+        /// <summary>Command rows shown at once: fewer on a phone (the keyboard takes half the screen).</summary>
+        int SuggestRows => SoftKeyboard ? 3 : large ? 5 : 8;
+
+        int suggestTop;   // the first command row shown (RefreshSuggestions)
+
+        static Label MoreRow(string arrow, int count)
+        {
+            var l = new Label($"{arrow}  " + string.Format(Localization.Extra("mpCmdMore", "{0} more"), count)) { pickingMode = PickingMode.Ignore };
+            l.AddToClassList("chat-suggest-more");
+            return l;
         }
 
         void Open()
@@ -401,9 +446,7 @@ namespace GoF2Remake.UI
                 string w = string.Format(m.own ? Localization.Extra("mpWhisperTo", "To {0}") : Localization.Extra("mpWhisperFrom", "From {0}"), m.from);
                 return $"<color=#d6a2ff>[{w}]</color> {m.text}";
             }
-            string tag = m.channel == NetChat.Channel.Global ? Localization.Extra("mpChatGlobal", "Global") : Localization.Extra("mpChatLocal", "Local");
-            string color = m.channel == NetChat.Channel.Global ? "#f0b35a" : "#8fd8ff";
-            return $"<color={color}>[{tag}]</color> <b>{m.from}</b>: {m.text}";
+            return $"<color={NetChat.ChannelColor(m.channel)}>[{NetChat.ChannelName(m.channel)}]</color> <b>{m.from}</b>: {m.text}";
         }
 
         /// <summary>The field lost the focus: no more typing (the game's keys back), the draft kept for the next Open.</summary>
@@ -421,7 +464,7 @@ namespace GoF2Remake.UI
 
         void ToggleChannel()
         {
-            NetChat.Sending = NetChat.Sending == NetChat.Channel.Global ? NetChat.Channel.Local : NetChat.Channel.Global;
+            NetChat.NextChannel();
             RefreshChannel();
             if (open) focusTries = FocusFrames;   // the line takes the focus back (Update); the keyboard stays up
         }
@@ -430,10 +473,8 @@ namespace GoF2Remake.UI
         void RefreshKeys()
         {
             if (tab == null) return;
-            string key = GoF2Remake.Flight.GameControls.KeyText(GoF2Remake.Flight.GameControls.Chat, false);
-            // The key as a hint after the name, not on phones (no keyboard to press it on).
-            bool showKey = key.Length > 0 && !Application.isMobilePlatform;
-            tab.text = Localization.Extra("mpChat", "Chat").ToUpperInvariant() + (showKey ? $"  <color=#8fd8ff>{key}</color>" : "");
+            // The name alone (players' report: "CHAT B" read as part of the name; Enter and "/" open it too).
+            tab.text = Localization.Extra("mpChat", "Chat").ToUpperInvariant();
             string sendKey = GoF2Remake.Flight.GameControls.KeyText(GoF2Remake.Flight.GameControls.ChatSend, false);
             string channelKey = GoF2Remake.Flight.GameControls.KeyText(GoF2Remake.Flight.GameControls.ChatChannel, false);
             var hints = new System.Collections.Generic.List<string>();
@@ -447,9 +488,11 @@ namespace GoF2Remake.UI
 
         void RefreshChannel()
         {
-            bool global = NetChat.Sending == NetChat.Channel.Global;
-            channel.text = (global ? Localization.Extra("mpChatGlobal", "Global") : Localization.Extra("mpChatLocal", "Local")).ToUpperInvariant();
-            channel.EnableInClassList("chat-channel--global", global);
+            var c = NetChat.SendingNow;
+            shownChannel = c;
+            channel.text = NetChat.ChannelName(c).ToUpperInvariant();
+            channel.EnableInClassList("chat-channel--global", c == NetChat.Channel.Global);
+            channel.EnableInClassList("chat-channel--faction", c == NetChat.Channel.Faction);
         }
 
         void OnAdded(NetChat.Message m)
@@ -491,6 +534,40 @@ namespace GoF2Remake.UI
             }
         }
 
+        bool InStation => host != null && host.GetComponent<StationMenu>() != null;
+
+        /// <summary>Nothing else has the keys: no menu, conversation, question or other text field (Enter, "/" and B open
+        /// the chat only then; a menu's own Enter / typing stays its own).</summary>
+        bool CanOpenByKey()
+        {
+            if (GoF2Remake.Flight.GameControls.BlocksMenus || GoF2Remake.Events.EventScreen.QuestionOpen) return false;
+            if (TextFieldKeys.InTextField(box.focusController?.focusedElement as VisualElement)) return false;
+            // Flight: a paused game, a menu, conversation or map (Navigation.InputHalted).
+            return InStation || !GoF2Remake.Flight.Navigation.InputHalted;
+        }
+
+        /// <summary>Enter opens the chat in flight (the station's menus keep Enter as their confirm).</summary>
+        bool EnterOpens()
+        {
+            var k = NetChat.Keys;
+            return !InStation && k != null && (k.enterKey.wasPressedThisFrame || k.numpadEnterKey.wasPressedThisFrame);
+        }
+
+        /// <summary>The typed characters (layout-aware: "/" is Shift+7 on a German keyboard), watched for "/".</summary>
+        void HookTextInput()
+        {
+            var k = UnityEngine.InputSystem.Keyboard.current;
+            if (k == textHooked) return;
+            if (textHooked != null) textHooked.onTextInput -= OnTextInput;
+            textHooked = k;
+            if (k != null) k.onTextInput += OnTextInput;
+        }
+
+        void OnTextInput(char c)
+        {
+            if (c == '/' && !open && !NetChat.Typing) slashTyped = true;
+        }
+
         /// <summary>The /netstats overlay, refreshed 4 times a second while it shows.</summary>
         void UpdateStats(bool session)
         {
@@ -517,7 +594,15 @@ namespace GoF2Remake.UI
             UpdateStats(session);
             if (!session || window) { if (open) Suspend(); return; }
             PollKeyboard();
-            if (!open && !NetChat.Typing && GoF2Remake.Flight.GameControls.Chat.WasPressedThisFrame()) Open();   // rebindable (B)
+            if (NetChat.SendingNow != shownChannel) RefreshChannel();   // left the faction: back on Local
+            HookTextInput();
+            bool slash = slashTyped;
+            slashTyped = false;
+            if (!open && !NetChat.Typing && CanOpenByKey())
+            {
+                if (slash) Open("/");
+                else if (GoF2Remake.Flight.GameControls.Chat.WasPressedThisFrame() || EnterOpens()) Open();   // rebindable (B); Enter in flight
+            }
             // Opening: the cursor goes into the line as soon as the row can take the focus.
             if (open && focusTries > 0)
             {

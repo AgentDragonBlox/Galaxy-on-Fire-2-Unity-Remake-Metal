@@ -1,6 +1,6 @@
 // MenuKeys.cs
-// Modified: the "i" with a menu's keys and the "?" with what a page is for, as one-line helpers (OptionInfo's icons and
-// window). The keys window holds the HUDs' hint boxes (GoF2InputGlyphs.uss .hint, laid out as a list by .hints-popup),
+// Modified: a menu's keys as a prompt row (Bar; Rework, docs/UI-DESIGN.md "Button prompts": they were an "i" to open) and
+// the "?" with what a page is for, as one-line helpers (OptionInfo's icons and window). The keys window holds the HUDs' hint boxes (GoF2InputGlyphs.uss .hint, laid out as a list by .hints-popup),
 // built each time it opens for the input in use (the keyboard's keys on touch). Used by the Debug pages (the station's and
 // the pause menu's), the in-game Options page, the Missions and Status windows and the main menu.
 
@@ -55,6 +55,56 @@ namespace GoF2Remake.UI
         public static VisualElement Content(Rows rows)
         {
             var c = Popup();
+            AddHints(c, rows);
+            return c;
+        }
+
+        /// <summary>
+        /// Rework (Docs: docs/UI-DESIGN.md "Button prompts"): the menu's keys as an always visible prompt row ("[A] CONFIRM
+        /// [B] BACK"), the guidelines' way (XAG 112, Steam Deck: prompts on screen, for the input in use) instead of the
+        /// "i" that had to be opened. Rebuilt when the input, the controller style or the language changes; hidden on touch
+        /// (the buttons are tapped) and while the button hints option is off. 'rows' is read at every rebuild, so a
+        /// window's prompts can follow its state (a tab with a list, a dialog).
+        /// </summary>
+        public static VisualElement Bar(Func<Rows> rows)
+        {
+            var bar = new VisualElement { pickingMode = PickingMode.Ignore };
+            bar.AddToClassList("prompt-bar");
+            void Build()
+            {
+                bar.Clear();
+                bool show = InputMode.Current != InputKind.Touch && Settings.InputHints;
+                bar.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+                if (show) AddHints(bar, rows());
+            }
+            Action rebuild = Build;
+            bar.userData = rebuild;
+            bar.RegisterCallback<AttachToPanelEvent>(_ =>
+            {
+                InputMode.Changed += rebuild;
+                InputMode.StyleChanged += rebuild;
+                Localization.Changed += rebuild;
+                Settings.Changed += rebuild;
+                Build();
+            });
+            bar.RegisterCallback<DetachFromPanelEvent>(_ =>
+            {
+                InputMode.Changed -= rebuild;
+                InputMode.StyleChanged -= rebuild;
+                Localization.Changed -= rebuild;
+                Settings.Changed -= rebuild;
+            });
+            Build();
+            return bar;
+        }
+
+        public static VisualElement Bar(Rows rows) => Bar(() => rows);
+
+        /// <summary>A Bar built again now (its window's state changed what it lists).</summary>
+        public static void Refresh(VisualElement bar) => (bar?.userData as Action)?.Invoke();
+
+        static void AddHints(VisualElement c, Rows rows)
+        {
             bool pad = InputMode.Current == InputKind.Gamepad;
             string select = X("hudSelect", "SELECT"), tabs = X("hudSwitchTab", "SWITCH TAB");
             string side = (rows & Rows.MoveChange) != 0 ? X("hudMoveChange", "MOVE / CHANGE")
@@ -67,14 +117,13 @@ namespace GoF2Remake.UI
                 if ((rows & Rows.Tabs) != 0) c.Add(Hint(tabs, InputGlyph.Pad(PadButton.LeftBumper), InputGlyph.Pad(PadButton.RightBumper)));
                 if ((rows & Rows.Confirm) != 0) c.Add(Hint(X("hudConfirm", "CONFIRM"), InputGlyph.Pad(PadButton.A)));
                 if ((rows & Rows.Back) != 0) c.Add(Hint(X("hudBack", "BACK"), InputGlyph.Pad(PadButton.B)));
-                return c;
+                return;
             }
             if ((rows & Rows.Select) != 0) c.Add(Hint(select, InputGlyph.Key("↑"), InputGlyph.Key("↓")));
             if (side != null) c.Add(Hint(side, InputGlyph.Key("←"), InputGlyph.Key("→")));
             if ((rows & Rows.Tabs) != 0) c.Add(Hint(tabs, InputGlyph.Key("Q"), InputGlyph.Key("E")));
             if ((rows & Rows.Confirm) != 0) c.Add(Hint(X("hudConfirm", "CONFIRM"), InputGlyph.Key("ENTER", true)));
             if ((rows & Rows.Back) != 0) c.Add(Hint(X("hudBack", "BACK"), InputGlyph.Key("ESC")));
-            return c;
         }
 
         /// <summary>An "i" (the keys icon) in the layout (not over it), 'size' square; 'content' builds its window.</summary>
@@ -97,19 +146,19 @@ namespace GoF2Remake.UI
             return icon;
         }
 
-        /// <summary>The Debug pages' "i" and "?" at the right end of their tab row (in place of the "Q ◂ ▸ E" line).</summary>
+        /// <summary>The Debug pages' "?" at the right end of their tab row; their keys as a prompt row under the page
+        /// (DebugPrompts).</summary>
         public static void AddDebugIcons(VisualElement tabRow)
         {
-            var keys = KeysIcon(() => Content(Rows.Select | Rows.MoveChange | Rows.Tabs | Rows.Confirm | Rows.Back));
-            keys.style.marginLeft = new StyleLength(StyleKeyword.Auto);
-            keys.style.marginRight = 12f;
-            keys.style.marginBottom = 6f;
-            tabRow.Add(keys);
             var help = HelpIcon(DebugHelp);
+            help.style.marginLeft = new StyleLength(StyleKeyword.Auto);
             help.style.marginRight = 6f;
             help.style.marginBottom = 6f;
             tabRow.Add(help);
         }
+
+        /// <summary>The Debug pages' keys (select, move / change, switch tab, confirm, back) as a prompt row.</summary>
+        public static VisualElement DebugPrompts() => Bar(Rows.Select | Rows.MoveChange | Rows.Tabs | Rows.Confirm | Rows.Back);
 
         /// <summary>What the Debug page is for, tab by tab (the tabs' own names).</summary>
         static string DebugHelp()

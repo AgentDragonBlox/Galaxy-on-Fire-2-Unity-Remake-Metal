@@ -38,9 +38,6 @@ namespace GoF2Remake.UI
             instance = go.AddComponent<FpsCounter>();
             instance.runtimePanel = Instantiate(assets.panelSettings);
             instance.runtimePanel.sortingOrder = assets.panelSettings.sortingOrder + 100;   // over the HUDs, menus and the map
-            instance.runtimePanel.referenceResolution = new Vector2Int(1920, 1080);
-            instance.runtimePanel.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
-            instance.runtimePanel.match = 1f;
             instance.emptyTree = ScriptableObject.CreateInstance<VisualTreeAsset>();
             var pr = go.AddComponent<PanelRenderer>();
             pr.panelSettings = instance.runtimePanel;
@@ -71,6 +68,7 @@ namespace GoF2Remake.UI
         void OnUIReload(PanelRenderer renderer, VisualElement rootElement, int version)
         {
             root = rootElement;
+            UiLayout.Keep(runtimePanel, root);   // docs/UI-DESIGN.md "Scaling"
             root.pickingMode = PickingMode.Ignore;
             root.style.position = Position.Absolute;
             root.style.left = root.style.top = root.style.right = root.style.bottom = 0;
@@ -80,7 +78,7 @@ namespace GoF2Remake.UI
             placedAt = -1;
             label = new Label { pickingMode = PickingMode.Ignore };
             var s = label.style;
-            s.fontSize = 15;
+            s.fontSize = UiLayout.Type(15);
             s.color = new Color(0.85f, 1f, 0.85f);
             s.backgroundColor = new Color(0f, 0f, 0f, 0.55f);
             s.paddingLeft = s.paddingRight = 6;

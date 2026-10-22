@@ -12,13 +12,21 @@ using UnityEngine.UIElements;
 
 namespace GoF2Remake.UI
 {
+    [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class SafeArea
     {
-        /// <summary>The insets in pixels of a w x h screen: x left, y right, z top, w bottom. None for a panel drawn into a
-        /// texture (VR, the item window): that texture has no cutouts.</summary>
+        /// <summary>The insets in pixels of a w x h screen: x left, y right, z top, w bottom: the device's cutouts, the TV
+        /// edge margin and the interface width's side bands (UiLayout.OptionInsets). None for a panel drawn into a texture
+        /// (VR, the item window): that texture has no cutouts.</summary>
         public static Vector4 Pixels(float w, float h, bool offscreen)
         {
             if (offscreen || w <= 0f || h <= 0f) return Vector4.zero;
+            return UiLayout.OptionInsets(w, h, Device(w, h));
+        }
+
+        /// <summary>The device's own insets alone (the notch, the home indicator, punch holes).</summary>
+        public static Vector4 Device(float w, float h)
+        {
             var raw = Screen.safeArea;
             var sa = Rect.MinMaxRect(Mathf.Clamp(raw.xMin, 0f, w), Mathf.Clamp(raw.yMin, 0f, h),
                                      Mathf.Clamp(raw.xMax, 0f, w), Mathf.Clamp(raw.yMax, 0f, h));
@@ -53,6 +61,19 @@ namespace GoF2Remake.UI
                                  Action<Vector4> applied = null)
         {
             if (root == null || target == null) return;
+            // The pixels -> units conversion reads the root's laid-out width, which a new scale (a resolution change, the
+            // Interface size option) only reaches a layout pass later: done again whenever the root's size changes, or the
+            // insets were the old scale's (a TV's 5 % margin came out three times too wide after a 32:9 screen).
+            if (!pendingByRoot.TryGetValue(root, out var state))
+            {
+                state = new Pending();
+                pendingByRoot.Add(root, state);
+                root.RegisterCallback<GeometryChangedEvent>(e =>
+                {
+                    if (e.oldRect.width != e.newRect.width && state.again != null) state.again();
+                });
+            }
+            state.again = () => Apply(root, target, w, h, offscreen, mode, applied);
             root.schedule.Execute(() =>
             {
                 if (!(root.layout.width > 0f)) { Apply(root, target, w, h, offscreen, mode, applied); return; }
@@ -81,6 +102,10 @@ namespace GoF2Remake.UI
                 applied?.Invoke(px);
             }).ExecuteLater(1);
         }
+
+        sealed class Pending { public Action again; }
+        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<VisualElement, Pending> pendingByRoot =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<VisualElement, Pending>();
 
         /// <summary>The class an edge-anchored element of a full-screen overlay carries to be kept clear of the cutouts
         /// (KeepClear): the overlay itself stays full screen (photo mode's frame bars must match the screenshot).</summary>

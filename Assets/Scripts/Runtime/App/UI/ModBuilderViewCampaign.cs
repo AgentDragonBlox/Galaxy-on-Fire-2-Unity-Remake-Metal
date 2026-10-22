@@ -134,7 +134,7 @@ namespace GoF2Remake.UI
             var c = Project.Campaign;
             if (c == null)
             {
-                Note(campaignPage, T("mbNoCampaign", "A campaign is a new game of its own: it shows as a card beside the game's three campaigns in Start new game and starts the player where you say, with the GoF2 story off. Make one on the left, or add new-game options (switches on the Game options panel your content can ask for)."));
+                Note(campaignPage, T("mbNoCampaign", "A campaign is a new game of its own, a card in Start new game. Make one on the left, or add new-game options."));
                 return;
             }
             JsonButton(campaignPage, c.Json, () => { SaveNow(); RequestReload(false); BuildCampaignPage(); });
@@ -177,14 +177,14 @@ namespace GoF2Remake.UI
             Heading(campaignPage, T("mbStory", "Story"));
             RefField(campaignPage, T("mbStoryQuest", "Its story quest (starts with the game)"), RefKind.Quest, c.Quest, v => { c.Quest = v; MarkDirty(); BuildCampaignPage(); },
                      T("mbNoQuest", "none"));
-            Note(campaignPage, T("mbStoryQuestNote", "Made in the Quests kind (in the Space Lounge). Its other quests start by their own conditions."));
+            Note(campaignPage, T("mbStoryQuestNote", "Made in Quests; the mod's other quests start by their own conditions."));
 
             Heading(campaignPage, T("mbWorld", "The world"));
             var wrow = Row(campaignPage);
             FlagButton(wrow, T("mbModGalaxy", "Only mods' systems"), c.ModOnly("galaxy"), v => c.SetModOnly("galaxy", v), () => BuildCampaignPage());
             FlagButton(wrow, T("mbModItems", "Only mods' items"), c.ModOnly("items"), v => c.SetModOnly("items", v), () => BuildCampaignPage());
             FlagButton(wrow, T("mbModShips", "Only mods' ships"), c.ModOnly("ships"), v => c.SetModOnly("ships", v), () => BuildCampaignPage());
-            Note(campaignPage, T("mbModWorldNote", "Only this mod's and its dependencies' star systems exist; shops sell only mods' items; dealers only mods' ships."));
+            Note(campaignPage, T("mbModWorldNote", "Only this mod's systems exist; shops sell only mods' items and ships."));
             Caption(campaignPage, T("mbTraffic", "Ships the NPC fighters fly"));
             foreach (var race in TrafficRaces)
             {
@@ -195,7 +195,7 @@ namespace GoF2Remake.UI
                 Act(row, "+", () => PickRef(RefKind.Ship, T("mbTrafficShip", "A ship they fly"), e => { var l = c.TrafficShips(r); if (!l.Contains(e.value)) l.Add(e.value); c.SetTrafficShips(r, l); MarkDirty(); BuildCampaignPage(); }), "mbv-step");
                 if (ships.Count > 0) Act(row, "✕", () => { c.SetTrafficShips(r, null); MarkDirty(); BuildCampaignPage(); }, "mbv-step");
             }
-            Note(campaignPage, T("mbCampaignTry", "Export the mod and turn it on in the Mod Browser: the campaign's card shows in Start new game."));
+            Note(campaignPage, T("mbCampaignTry", "Export the mod and turn it on: its card shows in Start new game."));
         }
 
         /// <summary>An item's reference: the project's own or another mod's by its key, a game item by its number.</summary>
@@ -238,7 +238,7 @@ namespace GoF2Remake.UI
             var row = Row(campaignPage);
             FlagButton(row, T("mbShowTitle", "Name on the card"), o.ShowTitle, v => o.ShowTitle = v, () => BuildCampaignPage());
             FlagButton(row, T("mbOnByDefault", "On by default"), o.Default, v => o.Default = v, () => { RebuildCampaign(); BuildCampaignPage(); });
-            Note(campaignPage, string.Format(T("mbOptionNote", "A switch on the Game options panel when a new game starts. Your items', ships', blueprints' and quests' conditions ask for it with option({0})."), Project.Key(o.Id)));
+            Note(campaignPage, string.Format(T("mbOptionNote", "A switch on the Game options panel; conditions ask for it with option({0})."), Project.Key(o.Id)));
         }
     }
 }

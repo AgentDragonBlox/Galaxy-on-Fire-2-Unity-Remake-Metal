@@ -219,6 +219,7 @@ namespace GoF2Remake.UI
         VisualElement root, touch, labels, systemHeader, keyBox, hints, dialog, mapSafe, sideButtons;
         /// <summary>The screen size and safe area the map's corners were last kept clear for (SafeArea).</summary>
         Rect lastSafeArea;
+        int lastLayout = -1;
         Vector2Int lastSafeScreen;
         Label energyLine;
         Button backButton, keyButton, zoomButton, voidButton, dialogYes, dialogNo;
@@ -289,10 +290,7 @@ namespace GoF2Remake.UI
                 baseSortingOrder = panelRenderer.panelSettings.sortingOrder;   // the shared asset's, before the copy takes its place
                 runtimePanel = Instantiate(panelRenderer.panelSettings);
                 runtimePanel.sortingOrder = panelRenderer.panelSettings.sortingOrder + 20;   // above the HUD / station menu
-                runtimePanel.referenceResolution = new Vector2Int(1920, 1080);
-                runtimePanel.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
-                runtimePanel.match = 1f;
-                panelRenderer.panelSettings = runtimePanel;
+                panelRenderer.panelSettings = runtimePanel;   // scaled by UiLayout in UpdateSafeArea
             }
             InputMode.Changed += ApplyInputMode;
         }
@@ -356,18 +354,9 @@ namespace GoF2Remake.UI
             }
             RefreshStationTitle();
             // Modified: the map's help (the station's first-visit hint) behind a "?" at the header's right, the size of
-            // the title (OptionInfo: 1 s of the mouse on it, or a press). Only while there is one (SetHelp). Left of it an "i"
-            // with the key hints (in place of the hint boxes along the bottom).
+            // the title (OptionInfo: 1 s of the mouse on it, or a press). Only while there is one (SetHelp). The key hints are
+            // the boxes along the bottom (Rework, docs/UI-DESIGN.md "Button prompts": they were an "i" here).
             var header = root.Q(className: "map-header");
-            if (header != null && header.Q(name: "mapKeys") == null)
-            {
-                var keys = OptionInfo.Icon(HintsContent, Resources.Load<Texture2D>("GoF2Hud/option_keys"));
-                keys.name = "mapKeys";
-                keys.AddToClassList("map-keys");
-                keys.style.position = Position.Relative;
-                keys.style.width = keys.style.height = 40f;
-                header.Add(keys);
-            }
             if (header != null && header.Q(name: "mapHelp") == null)
             {
                 var help = OptionInfo.Icon(() => HelpText);
@@ -1421,16 +1410,6 @@ namespace GoF2Remake.UI
             view.style.display = station ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        /// <summary>Modified: the "i" window's key hints: the same rows as the hint bar (keys, then the label), for the
-        /// keyboard or the controller in use (the keyboard's on touch). It asks AddHints for them instead of pointing the
-        /// 'hints' field at its own box, which also re-ran the map buttons' own state.</summary>
-        VisualElement HintsContent()
-        {
-            var c = MenuKeys.Popup();
-            AddHints(c, InputMode.Current == InputKind.Gamepad ? InputKind.Gamepad : InputKind.KeyboardMouse);
-            return c;
-        }
-
         /// <summary>Modified: the help text the header's "?" shows (null: no "?").</summary>
         /// <summary>Modified: what the "?" shows: the text SetHelp gave, else the map's own help (the station's first-visit
         /// hint 628 / 631, its key variant off touch), so the flight's map (K, the Khador Drive) has it too.</summary>
@@ -1650,9 +1629,11 @@ namespace GoF2Remake.UI
             if (mapSafe == null) return;
             var rt = runtimePanel != null ? runtimePanel.targetTexture : null;
             var size = rt != null ? new Vector2Int(rt.width, rt.height) : new Vector2Int(Screen.width, Screen.height);
-            if (size == lastSafeScreen && Screen.safeArea == lastSafeArea) return;
+            if (size == lastSafeScreen && Screen.safeArea == lastSafeArea && lastLayout == UiLayout.Revision) return;
             lastSafeScreen = size;
             lastSafeArea = Screen.safeArea;
+            lastLayout = UiLayout.Revision;
+            UiLayout.Configure(runtimePanel, root, Mathf.Max(1, size.x), Mathf.Max(1, size.y));   // docs/UI-DESIGN.md "Scaling"
             SafeArea.Apply(root, mapSafe, Mathf.Max(1, size.x), Mathf.Max(1, size.y), rt != null, SafeArea.Mode.Position);
         }
 

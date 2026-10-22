@@ -81,6 +81,7 @@ namespace GoF2Remake.UI
         Button currentTabButton;
         /// <summary>The text's scale: 1, or LargeScale on a small high-density screen.</summary>
         static float scale = 1f;
+        VisualElement scrim;
         const float LargeScale = 1.45f;
 
         static readonly Color Panel = new Color(0.02f, 0.04f, 0.07f, 0.93f), Accent = new Color(0.56f, 0.85f, 1f),
@@ -258,7 +259,8 @@ namespace GoF2Remake.UI
             w.translate = new Translate(new Length(-50, LengthUnit.Percent), new Length(-50, LengthUnit.Percent));
             w.minWidth = 560;
             ApplyWindowSize();
-            w.backgroundColor = Panel;
+            w.backgroundColor = new Color(Panel.r, Panel.g, Panel.b, 1f);   // opaque: at 0.96 the station labels behind still read through
+            window.AddToClassList("mpw-window");   // High contrast's solid panel (GoF2Common.uss)
             w.borderTopWidth = w.borderBottomWidth = w.borderLeftWidth = w.borderRightWidth = 1;
             w.borderTopColor = w.borderBottomColor = w.borderLeftColor = w.borderRightColor = new Color(Accent.r, Accent.g, Accent.b, 0.45f);
             w.paddingTop = w.paddingBottom = 12; w.paddingLeft = w.paddingRight = 18;
@@ -276,7 +278,13 @@ namespace GoF2Remake.UI
 
             var head = Row();
             head.style.justifyContent = Justify.SpaceBetween;
+            head.style.flexWrap = Wrap.NoWrap;          // the × stays at the right; the tabs take a second line instead
+            head.style.alignItems = Align.FlexStart;
             tabs = Row();
+            tabs.AddToClassList("tab-row");   // the shared tab row (docs/UI-DESIGN.md "Tabs")
+            tabs.style.flexGrow = 1;
+            tabs.style.flexShrink = 1;
+            tabs.style.marginRight = 12;
             head.Add(tabs);
             head.Add(Btn("×", Close, "squad-button--leave"));
             window.Add(head);
@@ -297,6 +305,15 @@ namespace GoF2Remake.UI
             build.style.alignSelf = Align.FlexEnd;
             build.style.marginTop = 4;
             window.Add(build);
+            // Rework: a modal's backdrop under it (it lay over the station's labels and the cargo plate); a press on it closes
+            // the window.
+            scrim = new VisualElement();
+            scrim.style.position = Position.Absolute;
+            scrim.style.left = scrim.style.right = scrim.style.top = scrim.style.bottom = 0;
+            scrim.style.backgroundColor = new Color(0f, 0f, 0f, 0.6f);
+            scrim.style.display = DisplayStyle.None;
+            scrim.RegisterCallback<PointerDownEvent>(e => { Close(); e.StopPropagation(); });
+            parent.Add(scrim);
             parent.Add(window);
             BuildTabs();
         }
@@ -328,8 +345,11 @@ namespace GoF2Remake.UI
                 if (t == Tab.Chat) name = Localization.Extra("mpChat", "Chat");
                 if (t == Tab.Squad) name = Localization.Extra("mpTabSquad", "Squad");
                 if (t == Tab.Trade) name = Localization.Extra("mpTabTrade", "Trade");
-                var b = Btn(name, () => SelectTab(t), t == tab ? "squad-button--accept" : null);
-                b.style.marginRight = 8;
+                // Rework (docs/UI-DESIGN.md "Tabs"): the shared tab look (it was a row of small boxed buttons).
+                var b = new Button(() => SelectTab(t)) { text = name.ToUpperInvariant() };
+                b.AddToClassList("tab-button");
+                b.AddToClassList("gof-semibold");
+                b.EnableInClassList("tab-button--active", t == tab);
                 tabs.Add(b);
                 if (t == tab) currentTabButton = b;
             }
@@ -363,7 +383,9 @@ namespace GoF2Remake.UI
         {
             var w = window.style;
             // Large: under the top-right buttons (the flight HUD's pause button, the station's Menu): its × overlapped them.
-            w.width = new Length(large ? 96 : 64, LengthUnit.Percent);
+            // Rework: 84 % up to 1500 units (64 % took the seven tabs onto two lines on a TV, at 1:1 and on phones).
+            w.width = new Length(large ? 96 : 84, LengthUnit.Percent);
+            w.maxWidth = large ? StyleKeyword.None : new StyleLength(1500f);
             w.top = new Length(raised ? 1 : large ? 55 : 50, LengthUnit.Percent);
             w.height = new Length(raised ? 50 : large ? 82 : 78, LengthUnit.Percent);
             w.translate = new Translate(new Length(-50, LengthUnit.Percent), new Length(raised ? 0 : -50, LengthUnit.Percent));
@@ -414,6 +436,7 @@ namespace GoF2Remake.UI
             isOpen = true;
             confirmLeave = false;
             window.style.display = DisplayStyle.Flex;
+            if (scrim != null) { scrim.style.display = DisplayStyle.Flex; scrim.BringToFront(); }
             window.BringToFront();
             if (InputMode.Current == InputKind.Gamepad) FocusLater(currentTabButton);
             status.text = "";
@@ -427,6 +450,7 @@ namespace GoF2Remake.UI
             isOpen = false;
             pressedSince = -1f;
             if (window != null) window.style.display = DisplayStyle.None;
+            if (scrim != null) scrim.style.display = DisplayStyle.None;
             if (window?.focusController?.focusedElement is VisualElement f) f.Blur();
         }
 
@@ -537,7 +561,7 @@ namespace GoF2Remake.UI
             if (tab == Tab.Squad) { BuildSquad(); scroll.scrollOffset = new Vector2(0f, y); return; }   // no snapshot needed
             if (tab == Tab.Trade) { BuildTrade(); scroll.scrollOffset = new Vector2(0f, y); return; }
             var s = NetPanel.Latest;
-            if (s == null) { body.Add(Text(Localization.Extra("mpPanelLoading", "Asking the server..."), 16, Dim)); return; }
+            if (s == null) { var wait = Text(Localization.Extra("mpPanelLoading", "Asking the server..."), 16, Dim); UiBusy.Mark(wait, true); body.Add(wait); return; }
             switch (tab)
             {
                 case Tab.Faction: BuildFaction(s); break;
@@ -563,8 +587,8 @@ namespace GoF2Remake.UI
 
         void BuildFaction(NetPanel.State s)
         {
-            if (!s.profiles) { body.Add(Text(Localization.Extra("mpPanelNoProfiles", "Factions need a server that keeps player profiles (a dedicated server)."), 16, Dim)); return; }
-            if (s.guest) { body.Add(Text(Localization.Extra("mpPanelGuest", "You play as a guest here: factions need a profile (see the Profile tab)."), 16, Dim)); return; }
+            if (!s.profiles) { body.Add(Text(Localization.Extra("mpPanelNoProfiles", "Factions need a dedicated server with player profiles."), 16, Dim)); return; }
+            if (s.guest) { body.Add(Text(Localization.Extra("mpPanelGuest", "You're a guest here: factions need a profile (Profile tab)."), 16, Dim)); return; }
             foreach (var inv in s.factionInvites)
             {
                 var parts = inv.Split('|');
@@ -581,7 +605,7 @@ namespace GoF2Remake.UI
                 row.Add(Field(Localization.Extra("mpPanelName", "Name"), nameText, NetFactions.MaxNameLength, 260, v => nameText = v));
                 row.Add(Btn(Localization.Extra("mpPanelCreateButton", "Create"), () => Send($"/faction create {tagText.Trim()} {nameText.Trim()}"), "squad-button--accept"));
                 body.Add(row);
-                body.Add(Text(Localization.Extra("mpPanelCreateHint", "A tag of 2-4 letters or digits shows before your members' names. Or ask a faction to invite you."), 14, Dim));
+                body.Add(Text(Localization.Extra("mpPanelCreateHint", "A 2-4 character tag shows before members' names. Or ask a faction to invite you."), 14, Dim));
                 FactionList(s);
                 return;
             }
@@ -755,7 +779,7 @@ namespace GoF2Remake.UI
             string suffix = voids ? " voids" : "";
 
             Section(Localization.Extra("mpPanelDuel", "Duel (1v1)"));
-            body.Add(Text(string.Format(Localization.Extra("mpPanelDuelHint", "First to {0} kills or the most after {1} minutes. Both pilots must be docked."),
+            body.Add(Text(string.Format(Localization.Extra("mpPanelDuelHint", "First to {0} kills, or the most after {1} min. Both pilots docked."),
                                         NetArena.DuelKills, Mathf.RoundToInt(NetArena.DuelSeconds / 60f)), 14, Dim));
             foreach (var p in s.pilots)
             {
@@ -768,7 +792,7 @@ namespace GoF2Remake.UI
             if (s.pilots.Count <= 1) body.Add(Text(Localization.Extra("mpPanelNobody", "Nobody else is online."), 14, Dim));
 
             Section(Localization.Extra("mpPanelFfa", "Free-for-all"));
-            body.Add(Text(string.Format(Localization.Extra("mpPanelFfaHint", "First to {0} kills or the most after {1} minutes; up to {2} pilots. It starts 30 s after a second pilot joins."),
+            body.Add(Text(string.Format(Localization.Extra("mpPanelFfaHint", "First to {0} kills, or the most after {1} min; up to {2} pilots."),
                                         NetArena.FfaKills, Mathf.RoundToInt(NetArena.FfaSeconds / 60f), NetArena.FfaMaxPlayers), 14, Dim));
             var ffa = Row();
             if (s.queue > 0)
@@ -793,15 +817,15 @@ namespace GoF2Remake.UI
         void BuildProfile(NetPanel.State s)
         {
             if (!s.profiles) { body.Add(Text(Localization.Extra("mpPanelNoProfilesHere", "This server doesn't keep player profiles: nothing is saved."), 16, Dim)); return; }
-            if (s.guest) body.Add(Text(Localization.Extra("mpPanelGuestLong", "You play as a guest: the server has no room for another profile, so nothing is saved. With a link code from another device you can use its profile."), 16, Bad));
+            if (s.guest) body.Add(Text(Localization.Extra("mpPanelGuestLong", "You're a guest: nothing is saved. A link code from another device uses its profile."), 16, Bad));
             else
             {
                 body.Add(Text(string.Format(Localization.Extra("mpPanelProfile", "Profile {0}  ·  {1} device(s)"), s.profileId, s.devices), 18, Color.white));
-                body.Add(Text(s.controller ? Localization.Extra("mpPanelControls", "This device plays the profile. Progress is saved on docking, every minute and when leaving.")
-                                           : Localization.Extra("mpPanelWatches", "Another device of yours plays the profile: this one only watches from the station."), 15, s.controller ? Dim : Bad));
+                body.Add(Text(s.controller ? Localization.Extra("mpPanelControls", "This device plays the profile; it saves on docking, every minute and when leaving.")
+                                           : Localization.Extra("mpPanelWatches", "Another of your devices plays the profile; this one only watches."), 15, s.controller ? Dim : Bad));
                 if (!s.controller) body.Add(Btn(Localization.Extra("mpPanelTakeControl", "Take control (the other device must be docked)"), () => Send("/control"), "squad-button--accept"));
                 Section(Localization.Extra("mpPanelOtherDevice", "Use this profile on another device"));
-                body.Add(Text(Localization.Extra("mpPanelLinkHint", "Get a code here, then join this server on the other device and enter it there (5 minutes)."), 14, Dim));
+                body.Add(Text(Localization.Extra("mpPanelLinkHint", "Get a code here, then enter it on your other device within 5 minutes."), 14, Dim));
                 if (s.controller) body.Add(Btn(Localization.Extra("mpPanelGetCode", "Get a link code"), () => Send("/link"), "squad-button--accept"));
             }
             Section(Localization.Extra("mpPanelLinkHere", "Use another device's profile here"));
@@ -815,7 +839,7 @@ namespace GoF2Remake.UI
             if (!s.guest && s.role < NetModeration.Master)
             {
                 Section(Localization.Extra("mpPanelClaimServer", "Claim this server"));
-                body.Add(Text(Localization.Extra("mpPanelClaimHint", "For the server's owner: its admin token is in the server's log (and admin_token.txt beside its profiles)."), 14, Dim));
+                body.Add(Text(Localization.Extra("mpPanelClaimHint", "Server owner: the admin token is in the server's log and admin_token.txt."), 14, Dim));
                 var claim = Row();
                 claim.Add(Field(Localization.Extra("mpPanelToken", "Admin token"), tokenText, 64, 260, v => tokenText = v));
                 claim.Add(Btn(Localization.Extra("mpPanelClaimButton", "Claim"), () => { Send($"/claimadmin {tokenText.Trim()}"); tokenText = ""; }, "squad-button--accept"));
@@ -834,9 +858,13 @@ namespace GoF2Remake.UI
                 string key = row.key;
                 var line = Row();
                 line.style.marginBottom = 4;
-                var label = Text(row.label + (row.note.Length > 0 ? $"  ({row.note})" : "") + (row.cli ? "  · " + Localization.Extra("mpPanelFromCli", "set by the launcher") : ""), 15, row.cli ? Dim : Color.white);
-                label.style.width = 380;
-                line.Add(label);
+                // The name, then its note dim under it ("after a restart"; bracketed after the name it wrapped every row).
+                var labels = new VisualElement();
+                labels.style.width = 380;
+                labels.Add(Text(row.label, 15, row.cli ? Dim : Color.white));
+                string note = row.note + (row.cli ? (row.note.Length > 0 ? " · " : "") + Localization.Extra("mpPanelFromCli", "set by the launcher") : "");
+                if (note.Length > 0) labels.Add(Text(note, 14, Dim));
+                line.Add(labels);
                 if (row.kind == (int)NetServerSettings.Kind.Toggle)
                 {
                     bool on = row.value == "on";
@@ -900,7 +928,7 @@ namespace GoF2Remake.UI
             opts.Add(Field(Localization.Extra("mpPanelReason", "Reason"), reasonText, 80, 320, v => reasonText = v));
             opts.Add(Field(Localization.Extra("mpPanelMinutes", "Minutes"), minutesText, 6, 110, v => minutesText = v));
             body.Add(opts);
-            body.Add(Text(string.Format(Localization.Extra("mpPanelAdminHint", "Kick: the pilot can't come back for the minutes (0 = at once). Ban: for the minutes{0}."),
+            body.Add(Text(string.Format(Localization.Extra("mpPanelAdminHint", "Kick: away for the minutes (0 = can rejoin). Ban: for the minutes{0}."),
                                         admin ? Localization.Extra("mpPanelAdminHintAdmin", ", or for good") : string.Format(Localization.Extra("mpPanelAdminHintOp", " (ops: at most {0} hours)"), NetModeration.MaxOpBanMinutes / 60)), 14, Dim));
 
             Section(Localization.Extra("mpPanelPilotsOnline", "Pilots online"));
@@ -1024,7 +1052,7 @@ namespace GoF2Remake.UI
             var members = NetSquad.Members();
             Section(Localization.Extra("mpSquadTitle", "Your squad"));
             if (members.Count == 0)
-                body.Add(Text(Localization.Extra("mpSquadEmptyHint", "You aren't in a squad. Invite a pilot docked here (below), or accept an invitation. A squad shares its bar mission and rewards, its members can't hurt each other, and they can call each other for help."), 15, Dim));
+                body.Add(Text(Localization.Extra("mpSquadEmptyHint", "Not in a squad. Invite a pilot docked here, or accept an invitation."), 15, Dim));
             else
             {
                 foreach (var m in members)
@@ -1045,7 +1073,7 @@ namespace GoF2Remake.UI
                 leave.Add(Btn(Localization.Extra("mpLeaveSquad", "Leave squad"), () => { NetSquad.Leave(); squadKey = ""; }, "squad-button--leave"));
                 body.Add(leave);
                 if (!inSpace)
-                    body.Add(Text(Localization.Extra("mpSquadDistressHint", "Distress calls are made in space: here in flight, the squad window on the right, the actions menu (E), or /sos in the chat. A squadmate's call shows here and in flight with a Help button."), 14, Dim));
+                    body.Add(Text(Localization.Extra("mpSquadDistressHint", "Call for help in space: the Distress call button, or /sos in the chat."), 14, Dim));
             }
 
             Section(Localization.Extra("mpSquadPilotsHere", "Pilots docked here"));
@@ -1062,7 +1090,7 @@ namespace GoF2Remake.UI
                 body.Add(row);
             }
             if (shown == 0)
-                body.Add(Text(me != null && me.InHangar ? Localization.Extra("mpSquadNobodyHere", "No other pilot is docked here. Squads form in a hangar: meet at a station.")
+                body.Add(Text(me != null && me.InHangar ? Localization.Extra("mpSquadNobodyHere", "No other pilot is docked here: meet at a station to form a squad.")
                                                        : Localization.Extra("mpSquadDockFirst", "Squads form while docked: dock at the same station as the other pilot."), 15, Dim));
         }
 
@@ -1108,7 +1136,7 @@ namespace GoF2Remake.UI
             var title = Text(string.Format(Localization.Extra("mpTradeWith", "Trading with {0}"), v.partnerName), 22, Accent);
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             body.Add(title);
-            body.Add(Text(Localization.Extra("mpTradeHint", "Put credits and goods from your hold into your offer. Any change takes back both accepts; the trade happens once you both accept the same offers."), 14, Dim));
+            body.Add(Text(Localization.Extra("mpTradeHint", "Add credits and goods to your offer. Any change resets both accepts."), 14, Dim));
 
             bool open = v.phase == NetTrade.Phase.Open;
             var cols = Row();
@@ -1171,7 +1199,7 @@ namespace GoF2Remake.UI
             foreach (var s in draft.items) outgoing += s.amount;
             int over = Shop.CargoLoad() - outgoing + incoming - Shop.MaxLoad(NetGame.Db);
             if (incoming > 0 && over > 0)
-                body.Add(Text(string.Format(Localization.Extra("mpTradeOverload", "This puts {0} t more in your hold than it carries: sell or store some before you launch."), over), 14, Bad));
+                body.Add(Text(string.Format(Localization.Extra("mpTradeOverload", "{0} t over your hold's capacity: sell or store some before launch."), over), 14, Bad));
             var buttons = Row();
             if (open)
             {
@@ -1203,7 +1231,7 @@ namespace GoF2Remake.UI
                 }
                 body.Add(row);
             }
-            if (shown == 0) body.Add(Text(Localization.Extra("mpTradeEmptyHold", "Nothing in your hold can be traded. Demount equipment in the hangar to trade it."), 15, Dim));
+            if (shown == 0) body.Add(Text(Localization.Extra("mpTradeEmptyHold", "Nothing in your hold can be traded. Demount equipment to trade it."), 15, Dim));
         }
 
         /// <summary>No trade open: the pilots docked here to trade with.</summary>
@@ -1212,7 +1240,7 @@ namespace GoF2Remake.UI
             Section(Localization.Extra("mpTradePilots", "Trade with a pilot docked here"));
             if (!docked)
             {
-                body.Add(Text(Localization.Extra("mpTradeDockFirst", "Trades happen in a hangar: dock at the same station as the other pilot."), 15, Dim));
+                body.Add(Text(Localization.Extra("mpTradeDockFirst", "Dock at the same station as the other pilot to trade."), 15, Dim));
                 return;
             }
             int shown = 0;
@@ -1226,8 +1254,8 @@ namespace GoF2Remake.UI
                 else row.Add(Btn(Localization.Extra("mpTradeButton", "Trade"), () => { NetTradeClient.Ask(target); tradeKey = ""; }, "squad-button--accept"));
                 body.Add(row);
             }
-            if (shown == 0) body.Add(Text(Localization.Extra("mpTradeNobodyHere", "No other pilot is docked here. Trades happen in a hangar: meet at a station."), 15, Dim));
-            body.Add(Text(Localization.Extra("mpTradeWhat", "You trade credits and the goods in your hold (equipment too, once demounted). Ships and story items can't be traded."), 14, Dim));
+            if (shown == 0) body.Add(Text(Localization.Extra("mpTradeNobodyHere", "No other pilot is docked here: meet at a station to trade."), 15, Dim));
+            body.Add(Text(Localization.Extra("mpTradeWhat", "Trade credits and cargo; ships and story items can't be traded."), 14, Dim));
         }
 
         /// <summary>A column of the Trade tab's two (the offers side by side).</summary>
@@ -1263,7 +1291,7 @@ namespace GoF2Remake.UI
             chatPane.Add(chatScroll);
             foreach (var m in NetChat.Messages) AddChatLine(m);
 
-            var hint = Text(Localization.Extra("mpChatWindowHint", "Enter sends · a line starting with / is a command (/help lists them) · /w <pilot> <text> whispers"), 13, Dim);
+            var hint = Text(Localization.Extra("mpChatWindowHint", "Enter send · /help commands · /w <pilot> whisper"), 13, Dim);
             hint.style.marginTop = 6;
             chatPane.Add(hint);
 
@@ -1330,7 +1358,7 @@ namespace GoF2Remake.UI
         {
             if (chatScroll == null || m == null) return;
             var l = new Label(ChatView.Format(m)) { pickingMode = PickingMode.Ignore };
-            l.style.fontSize = Mathf.Round(16 * scale);
+            l.style.fontSize = Mathf.Round(UiLayout.Type(18) * scale);   // running text: the small step, not the caption
             l.style.whiteSpace = WhiteSpace.Normal;
             l.style.marginBottom = 2;
             l.style.color = m.channel == NetChat.Channel.Notice ? Dim : m.own ? new Color(1f, 1f, 1f, 0.8f) : Color.white;
@@ -1358,23 +1386,24 @@ namespace GoF2Remake.UI
 
         void ToggleChannel()
         {
-            NetChat.Sending = NetChat.Sending == NetChat.Channel.Global ? NetChat.Channel.Local : NetChat.Channel.Global;
+            NetChat.NextChannel();
             RefreshChannel();
         }
 
         void RefreshChannel()
         {
             if (chatChannel == null) return;
-            bool global = NetChat.Sending == NetChat.Channel.Global;
-            chatChannel.text = (global ? Localization.Extra("mpChatGlobal", "Global") : Localization.Extra("mpChatLocal", "Local")).ToUpperInvariant();
-            chatChannel.style.color = global ? new Color(0.94f, 0.7f, 0.35f) : Accent;
+            var c = NetChat.SendingNow;
+            chatChannel.text = NetChat.ChannelName(c).ToUpperInvariant();
+            chatChannel.style.color = c == NetChat.Channel.Global ? new Color(0.94f, 0.7f, 0.35f)
+                                    : c == NetChat.Channel.Faction ? new Color(0.56f, 0.89f, 0.56f) : Accent;
         }
 
         /// <summary>The Admin tab of a session without profiles (hosted fresh from the menu): kick, mute and session admins
         /// (NetCommands); bans, ops and the profile list need profiles, which the tab says.</summary>
         void BuildAdminFresh(NetPanel.State s, bool master)
         {
-            body.Add(Text(Localization.Extra("mpPanelFreshAdmin", "A fresh world keeps nothing: bans, ops, factions and the profile list need World: Persistent on the Host card (or a dedicated server). Kicks, mutes and session admins work here."), 14, Dim));
+            body.Add(Text(Localization.Extra("mpPanelFreshAdmin", "A fresh world keeps nothing: bans, ops and factions need World: Persistent. Kicks and mutes work."), 14, Dim));
             var opts = Row();
             opts.Add(Field(Localization.Extra("mpPanelReason", "Reason"), reasonText, 80, 320, v => reasonText = v));
             opts.Add(Field(Localization.Extra("mpPanelMinutes", "Minutes"), minutesText, 6, 110, v => minutesText = v));
@@ -1443,7 +1472,9 @@ namespace GoF2Remake.UI
         static Label Text(string text, int size, Color colour)
         {
             var l = new Label(text) { pickingMode = PickingMode.Ignore };
-            l.style.fontSize = Mathf.Round(size * scale);
+            // Rework (docs/UI-DESIGN.md "Type scale"): nothing under the small-text step (18) but the build line; the window's
+            // 14 / 15 / 16 descriptions were the caption's 16, small for their room.
+            l.style.fontSize = Mathf.Round(UiLayout.Type(size <= 12 ? size : Mathf.Max(size, 18)) * scale);
             l.style.color = colour;
             l.style.whiteSpace = WhiteSpace.Normal;
             return l;
@@ -1463,6 +1494,7 @@ namespace GoF2Remake.UI
                                 TouchScreenKeyboardType keyboard = TouchScreenKeyboardType.Default)
         {
             var f = new TextField { value = value, maxLength = max, keyboardType = keyboard };
+            f.AddToClassList("gof-field");   // the shared field box (GoF2Common.uss): without it the values read as labels
             f.textEdition.placeholder = label;
             TextFieldKeys.Guard(f);   // typed keys stay in the field (no menu navigation, no game keys)
             PhoneKeyboard.Attach(f);  // phones: the game's own keyboard (a held Backspace repeats)

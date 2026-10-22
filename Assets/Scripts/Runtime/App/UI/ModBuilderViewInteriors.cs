@@ -69,7 +69,7 @@ namespace GoF2Remake.UI
                 ListRow(interiorList, r.Id, sub, r == currentInterior, () => PickInterior(r), null, null);
             }
             if (Project.Interiors.Count == 0)
-                Note(interiorList, T("mbNoRooms", "No rooms yet. A station can have its own hangar and Space Lounge: a .glb room, or one of the game's rooms to start from."));
+                Note(interiorList, T("mbNoRooms", "No rooms yet. A station can have its own hangar and Space Lounge."));
         }
 
         /// <summary>Another room picked: the scene shows it (rebuilt when it isn't the one shown).</summary>
@@ -130,7 +130,7 @@ namespace GoF2Remake.UI
             RebuildInteriors();
             BuildInteriorPage();
             ShowInteriorInScene();
-            Status(T("mbRoomNeedsMarkers", "Place its markers: the model's own named nodes count, or click them into the room on the right."), false);
+            Status(T("mbRoomNeedsMarkers", "Place its markers: named nodes in the model count, or click them in."), false);
         });
 
         static readonly (string asm, string name, bool bar)[] GameRooms =
@@ -225,7 +225,7 @@ namespace GoF2Remake.UI
             var r = currentInterior;
             if (r == null) { Note(interiorPage, T("mbPickRoom", "Add a room on the left to start.")); return; }
             JsonButton(interiorPage, r.Json, () => { SaveNow(); RequestReload(false); RebuildInteriors(); BuildInteriorPage(); },
-                       T("mbJsonRoomNote", "interiors.json's fields: also materials, gateSpan, cruise, near / far, markers."));
+                       T("mbJsonRoomNote", "Also in interiors.json: materials, gateSpan, cruise, near / far, markers."));
             Heading(interiorPage, r.IsBar ? T("mbBarRoom", "Space Lounge bar") : T("mbHangarRoom", "Hangar"));
             Note(interiorPage, string.Format(T("mbRoomKey", "Stations use it as \"{0}\"."), InteriorKey(r)));
 
@@ -238,8 +238,8 @@ namespace GoF2Remake.UI
 
             // ---- markers ----
             Heading(interiorPage, T("mbMarkers", "Markers"));
-            Note(interiorPage, r.IsBar ? T("mbBarMarkersNote", "Required: camera, camera_target and at least one visitor spot. Click Place, then click in the room (a floor for the visitors).")
-                                       : T("mbHangarMarkersNote", "Required: pad (the floor your ship stands on) and camera. Click Place, then click in the room; a camera can take the free camera's place."));
+            Note(interiorPage, r.IsBar ? T("mbBarMarkersNote", "Needs camera, camera_target and a visitor spot. Click Place, then the room.")
+                                       : T("mbHangarMarkersNote", "Needs pad (where your ship stands) and camera. Click Place, then the room."));
             int ci = 0;
             foreach (var (name, required) in MarkerList(r))
             {
@@ -319,7 +319,7 @@ namespace GoF2Remake.UI
             // ---- where it is used ----
             Heading(interiorPage, T("mbUsedAt", "Used at"));
             string key = InteriorKey(r);
-            if (Project.Stations.Count == 0) Note(interiorPage, T("mbNoStationsForRoom", "Make a station (Stations kind, in space), or change one of the game's, to use this room there."));
+            if (Project.Stations.Count == 0) Note(interiorPage, T("mbNoStationsForRoom", "Make or change a station (Stations kind) to use this room there."));
             foreach (var st in Project.Stations)
             {
                 var s = st;
@@ -348,7 +348,7 @@ namespace GoF2Remake.UI
         void SetMarkerFromView(ProjectInterior r, string name)
         {
             var room = RoomTransform;
-            if (room == null || gameCamera) { Status(T("mbFromViewFree", "Use the free camera: its place becomes the camera's, the point it turns about the target's."), false); return; }
+            if (room == null || gameCamera) { Status(T("mbFromViewFree", "Use the free camera: its place becomes the camera's, its pivot the target."), false); return; }
             var cam = level.MainCamera.transform;
             bool target = name.EndsWith("_target");
             var world = target ? roomPivot : cam.position;

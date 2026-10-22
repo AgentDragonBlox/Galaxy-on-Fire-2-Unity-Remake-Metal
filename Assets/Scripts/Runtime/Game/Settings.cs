@@ -350,6 +350,12 @@ namespace GoF2Remake.Data
         /// the HUD messages. Menus, conversations, the radio, the minigames and the touch controls always show.</summary>
         public const int HudFull = 0, HudMinimal = 1, HudOff = 2;
         public static int HudMode { get => Mathf.Clamp(Mathf.RoundToInt(Get("hudMode", HudFull)), HudFull, HudOff); set => Set("hudMode", Mathf.Clamp(value, HudFull, HudOff)); }
+        /// <summary>Remake (docs/UI-DESIGN.md "HUD"): the flight HUD's panels (status bars, readouts, lock plate, messages,
+        /// hints, crosshair) at 70..150 % of their size, apart from the menus' Interface size (FlightHud.ApplyHudLook).</summary>
+        public static int HudScalePercent { get => Mathf.Clamp(Mathf.RoundToInt(Get("hudScale", 100f)), 70, 150); set => Set("hudScale", Mathf.Clamp(value, 70, 150)); }
+        /// <summary>Remake: the flight HUD's markings at 30..100 % opacity (the messages, the radio and the menus stay
+        /// opaque; FlightHud.ApplyHudLook).</summary>
+        public static int HudOpacityPercent { get => Mathf.Clamp(Mathf.RoundToInt(Get("hudOpacity", 100f)), 30, 100); set => Set("hudOpacity", Mathf.Clamp(value, 30, 100)); }
         /// <summary>Remake (players' request, 2026-10-17: the far ship's dot hid the ship): a far ship's on-screen marker
         /// (CombatView, UI.FarShipMarkers). 0 Original: the filled dot over the ship, the ring when locked; 1 Ring: the lock
         /// ring's arcs without its centre around the ship; 2 Small dot: a small dot just above the ship. Locked, the remake's
@@ -376,6 +382,35 @@ namespace GoF2Remake.Data
         /// and the middles of the four sides, top centre by default.</summary>
         public const int FpsTopLeft = 0, FpsTop = 1, FpsTopRight = 2, FpsLeft = 3, FpsRight = 4, FpsBottomLeft = 5, FpsBottom = 6, FpsBottomRight = 7;
         public static int FpsPosition { get => Mathf.Clamp(Mathf.RoundToInt(Get("fpsPosition", FpsTop)), FpsTopLeft, FpsBottomRight); set => Set("fpsPosition", Mathf.Clamp(value, FpsTopLeft, FpsBottomRight)); }
+        /// <summary>Remake: Options > Accessibility "Interface size", a percentage of the automatic UI scale (UiLayout: the device
+        /// class and the pixel floor), 80..150, 100 by default.</summary>
+        public static int UiScalePercent { get => Mathf.Clamp(Mathf.RoundToInt(Get("uiScale", 100f)), 80, 150); set => Set("uiScale", Mathf.Clamp(value, 80, 150)); }
+
+        /// <summary>Remake: Options > Accessibility "Text size", a percentage of the type scale (UiLayout: the root's
+        /// ui-text-N class redefines the --text-* sizes, code takes UiLayout.Type), 100..200 (XAG 101: text to 200 %).</summary>
+        public static int UiTextScalePercent { get => Mathf.Clamp(Mathf.RoundToInt(Get("uiTextScale", 100f)), 100, 200); set => Set("uiTextScale", Mathf.Clamp(value, 100, 200)); }
+
+        /// <summary>Remake: Options > Accessibility "High contrast": opaque panels, brighter secondary text and lines
+        /// (GoF2Common.uss .ui-high-contrast).</summary>
+        public static bool HighContrast { get => GetBool("highContrast", false); set => SetBool("highContrast", value); }
+
+        /// <summary>Remake: Options > Accessibility "Reduce motion": no sliding / fading UI transitions (.ui-reduce-motion,
+        /// the station menu's fly-out).</summary>
+        public static bool ReduceMotion { get => GetBool("reduceMotion", false); set => SetBool("reduceMotion", value); }
+
+        /// <summary>Remake: Options > Accessibility "Colour-blind markers": friendly markers blue instead of green, so they
+        /// stand apart from the red hostile ones for red-green colour blindness (CombatView).</summary>
+        public static bool ColorblindMarkers { get => GetBool("colorblindMarkers", false); set => SetBool("colorblindMarkers", value); }
+
+        /// <summary>Remake: Options > Graphics "Interface width": the HUD and menus in a centred 16:9 or 21:9 band on a wider
+        /// screen, or the full width (UiLayout.OptionInsets).</summary>
+        public const int UiWidth16x9 = 0, UiWidth21x9 = 1, UiWidthFull = 2;
+        public static int UiWidth { get => Mathf.Clamp(Mathf.RoundToInt(Get("uiWidth", UiWidth21x9)), UiWidth16x9, UiWidthFull); set => Set("uiWidth", Mathf.Clamp(value, UiWidth16x9, UiWidthFull)); }
+
+        /// <summary>Remake: Options > Graphics "Screen edge margin", a percentage of the screen kept clear on every side (a TV
+        /// that cuts its edges off); -1 = automatic, 5 % on a TV and none elsewhere (UiLayout.OptionInsets).</summary>
+        public static float UiMarginPercent { get => Mathf.Clamp(Get("uiMargin", -1f), -1f, 10f); set => Set("uiMargin", Mathf.Clamp(value, -1f, 10f)); }
+
         /// <summary>Remake (#40): the story step at the bottom right (StoryStepLabel), for bug reports; off by default.</summary>
         public static bool ShowStoryStep { get => GetBool("showStoryStep", true); set => SetBool("showStoryStep", value); }
 
@@ -406,7 +441,7 @@ namespace GoF2Remake.Data
         {
             "displayMode", "resolutionWidth", "resolutionHeight", "frameRate", "quality", "renderScale", "upscaler", "upscalerQuality",
             "msaa", "brightness", "bloom", "bloomStyle", "hangarShadows", "hangarDof", "lensFlare", "npcPlayerEngines", "fov",
-            "cameraShake", "originalChaseCamera", "showFps", "fpsPosition",
+            "cameraShake", "originalChaseCamera", "uiWidth", "uiMargin", "showFps", "fpsPosition",
         };
         public static readonly string[] ControlsKeys =
         {
@@ -417,10 +452,11 @@ namespace GoF2Remake.Data
         public static readonly string[] GameplayKeys =
         {
             "launchCamera", "hangarFlights", "tutorialHints", "showStoryStep", "pirateEvents", "capitalShips", "kaamoStacking", "kaamoMaxLevel", "kaamoKeepsEquipment", "cloakBay", "informerOriginalRule",
-            "originalTargetLock", "keepEnemyLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "smarterNpcTargeting", "shipCollision", "preciseShipCollision", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "hudMode", "discordPresence",
+            "originalTargetLock", "keepEnemyLock", "modShipTraffic", "dyingCargoMarkers", "cloakLosesPursuers", "empBreaksCloak", "smarterNpcTargeting", "shipCollision", "preciseShipCollision", "autoAdvanceDialogue", "animatedDialogue", "inputHints", "hudMode", "hudScale", "hudOpacity", "discordPresence",
             "farShipMarkers", "markerDistance",
         };
         public static readonly string[] LanguageKeys = { "voiceLanguage" };
+        public static readonly string[] AccessibilityKeys = { "uiScale", "uiTextScale", "highContrast", "reduceMotion", "colorblindMarkers" };
 
         /// <summary>These options back to their defaults.</summary>
         public static void Reset(IEnumerable<string> keys)
@@ -441,7 +477,7 @@ namespace GoF2Remake.Data
         {
             GameHooks.ResetControls?.Invoke();
             var all = new List<string>();
-            foreach (var group in new[] { SoundKeys, GraphicsKeys, ControlsKeys, GameplayKeys, LanguageKeys }) all.AddRange(group);
+            foreach (var group in new[] { SoundKeys, GraphicsKeys, ControlsKeys, GameplayKeys, AccessibilityKeys, LanguageKeys }) all.AddRange(group);
             Reset(all);
         }
 

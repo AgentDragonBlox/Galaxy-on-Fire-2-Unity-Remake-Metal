@@ -81,7 +81,7 @@
 }
 
 .map-name {
-    font-size: 22px;
+    font-size: var(--text-label);
     color: #FFFFFF;
     padding: 0;
     margin: 0;
@@ -112,7 +112,7 @@
     left: -300px;
     width: 600px;
     -unity-text-align: upper-center;
-    font-size: 20px;
+    font-size: var(--text-body);
     color: #FFFFFF;
     padding: 0;
     margin: 0;
@@ -128,14 +128,14 @@
 .map-header {
     flex-direction: row;
     align-items: center;
-    padding: 34px 40px 0 48px;
+    padding: 32px 40px 0 48px;
     /* Modified: as tall as the station's top bar with its Menu button (StationMenu.uss .station-menu-button: 20 px text,
        12 px padding, 2 px border), so the title sits at the same height as the station's name. */
     min-height: 87px;
 }
 
 .map-title {
-    font-size: 34px;
+    font-size: var(--text-title);
     letter-spacing: 6px;
     color: #FFFFFF;
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
@@ -143,28 +143,19 @@
 
 /* Modified: "| MAP" after the station's name (StarMap.SetStationTitle), as the station's view title (StationMenu.uss). */
 .map-view-title {
-    margin-left: 22px;
-    padding-left: 22px;
+    margin-left: var(--space-xl);
+    padding-left: var(--space-xl);
     border-left-width: 2px;
     border-left-color: var(--gof-amber);
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 4px;
     color: var(--gof-text-dim);
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
 }
 
-/* Modified: the key hints' "i" and the help's "?" (StarMap: OptionInfo) at the header's right, the title's height. */
-.map-keys {
-    margin-left: auto;
-}
-
+/* Modified: the help's "?" (StarMap: OptionInfo) at the header's right, the title's height. */
 .map-help {
-    margin-left: 12px;
-}
-
-/* Modified: the key hints live in the "i" window now: the bottom row keeps its place (the footer's layout) unseen. */
-.map-footer > .map-hints {
-    visibility: hidden;
+    margin-left: auto;
 }
 
 /* The "i" window: one hint a line, its keys then its label, no boxes. */
@@ -177,19 +168,19 @@
 }
 
 .system-logo {
-    margin-right: 12px;
+    margin-right: var(--space-m);
 }
 
 .system-name {
-    font-size: 26px;
+    font-size: var(--text-heading);
     color: rgb(255, 128, 0);
-    margin-bottom: 4px;
+    margin-bottom: var(--space-xs);
 }
 
 .system-line {
-    font-size: 20px;
+    font-size: var(--text-body);
     color: #FFFFFF;
-    margin-bottom: 4px;
+    margin-bottom: var(--space-xs);
 }
 
 /* ---- energy line, key legend -------------------------------------------------------------- */
@@ -200,7 +191,7 @@
     right: 0;
     bottom: 124px;
     -unity-text-align: middle-center;
-    font-size: 24px;
+    font-size: var(--text-subhead);
     color: #FFFFFF;
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
 }
@@ -212,8 +203,8 @@
 .key-box {
     display: none;
     /* Modified: in the footer's right-hand column (.map-side), above its buttons. */
-    margin-bottom: 12px;
-    padding: 6px 14px;
+    margin-bottom: var(--space-m);
+    padding: 8px 16px;
     background-color: var(--gof-panel);
     border-width: 1px;
     border-color: var(--gof-line);
@@ -238,7 +229,7 @@
 }
 
 .key-label {
-    font-size: 20px;
+    font-size: var(--text-body);
     color: var(--gof-text);
     padding: 0;
     margin: 0;
@@ -275,7 +266,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 7px 12px 3px 12px;
+    padding: 8px 12px 3px 12px;
     margin: 0 4px;   /* no top margin (GoF2InputGlyphs' 6 px): the row centres on the boxes themselves */
 }
 
@@ -294,21 +285,21 @@
 .map-button {
     min-width: 200px;
     padding: 16px 28px;
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 5px;
     -unity-text-align: middle-center;
     color: var(--gof-text);
-    background-color: rgba(4, 10, 18, 0.7);
-    border-width: 2px;
-    border-color: var(--gof-cyan-soft);
-    border-radius: 4px;
+    background-color: var(--button-fill);
+    border-width: var(--button-border);
+    border-color: var(--button-line);
+    border-radius: var(--button-radius);
 }
 
 /* Modified: the right-hand column's buttons smaller (their two-word labels broke over two lines); Back keeps its size. */
 .map-side-buttons .map-button {
     min-width: 160px;
-    padding: 13px 23px;
-    font-size: 20px;
+    padding: 12px 24px;
+    font-size: var(--text-body);
     letter-spacing: 4px;
     white-space: nowrap;   /* each label on one line: the column takes the widest */
 }
@@ -328,7 +319,7 @@
 #zoomButton,
 #keyButton {
     margin-left: 0;
-    margin-top: 10px;
+    margin-top: var(--space-s);
 }
 
 /* The Khador map's Jump to the Void button (StarMap.AskVoid), in the Void's violet; Modified: on top of the column, as wide
@@ -341,13 +332,13 @@
 .map-button:hover,
 .map-button--focus {
     color: #FFFFFF;
-    border-color: var(--gof-amber);
-    background-color: rgba(255, 166, 48, 0.2);
+    border-color: var(--button-focus-line);
+    background-color: var(--button-focus-fill);
 }
 
 .map-button:active {
-    background-color: var(--gof-amber);
-    color: #0B1016;
+    background-color: var(--button-press-fill);
+    color: var(--button-press-text);
 }
 
 /* ---- ChoiceWindow ------------------------------------------------------------------------ */
@@ -381,7 +372,7 @@
 
 .map-dialog-text {
     white-space: normal;
-    font-size: 24px;
+    font-size: var(--text-subhead);
     color: var(--gof-text);
     margin-bottom: 28px;
 }
@@ -392,6 +383,6 @@
 }
 
 .map-dialog-button {
-    margin-left: 12px;
+    margin-left: var(--space-m);
     min-width: 160px;
 }

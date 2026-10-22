@@ -101,7 +101,7 @@ namespace GoF2Remake.UI
             note = Add(footer, new Label(), "mods-note");
             if (!Application.isMobilePlatform) ActionButton(footer, T("modsOpenFolder", "Open mods folder"),
                 () => ModManager.OpenFolder(selected != null ? ModManager.Find(selected) : null), "mods-footer-button");   // the selected mod's folder
-            if (ModImport.Available) ActionButton(footer, T("modsImport", "Import mod"), Import, "mods-footer-button");
+            if (ModImport.Available) ActionButton(footer, T("modsImport", "Import mod"), Import, "mods-footer-button").AddToClassList("mods-import");
             ActionButton(footer, T("modsRefresh", "Refresh"), () => { ModManager.Scan(); Rebuild(); }, "mods-footer-button");
             // When something looks wrong after a mod changed: the cached textures, hangar shadows and unpacked zips are made again.
             if (rebuildCache != null) ActionButton(footer, T("modsRebuildCache", "Rebuild cache"), rebuildCache, "mods-footer-button");
@@ -161,8 +161,8 @@ namespace GoF2Remake.UI
                 rows[m.Id] = row;
             }
             empty.text = ModImport.Available && Application.isMobilePlatform
-                ? string.Format(T("modsEmptyImport", "No mods installed. Press Import mod and pick a mod's .zip file, or put it into the Mods folder:\n{0}\nthen press Refresh."), Shown(ModManager.MainFolder))
-                : string.Format(T("modsEmpty", "No mods installed. Put a mod's folder or .zip into the Mods folder:\n{0}\nthen press Refresh."), Shown(ModManager.MainFolder));
+                ? string.Format(T("modsEmptyImport", "No mods installed. Press Import mod, or put a mod into:\n{0}\nthen press Refresh."), Shown(ModManager.MainFolder))
+                : string.Format(T("modsEmpty", "No mods installed. Put a mod into:\n{0}\nthen press Refresh."), Shown(ModManager.MainFolder));
             empty.style.display = mods.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
             if (selected == null || !rows.ContainsKey(selected)) selected = mods.FirstOrDefault()?.Id;
             Refresh();
@@ -204,7 +204,7 @@ namespace GoF2Remake.UI
             }
             int enabled = ModManager.Installed.Count(m => ModManager.IsEnabled(m.Id));
             count.text = string.Format(T("modsCount", "{0} installed  ·  {1} on"), ModManager.Installed.Count, enabled);
-            note.text = T("modsNote", "Mods only change your own games: they apply when a game starts or loads. A mod lower in the list wins where two change the same thing.")
+            note.text = T("modsNote", "Mods apply when a game starts or loads. Lower in the list wins.")
                         + (Application.isMobilePlatform ? "\n" + Shown(ModManager.MainFolder) : "");   // no folder button on a phone: where to copy them
 
             var mod = selected != null ? ModManager.Find(selected) : null;
@@ -279,12 +279,14 @@ namespace GoF2Remake.UI
         {
             if (importing) return;
             importing = true;
+            var busy = Panel.Q<Button>(className: "mods-import");
+            UiBusy.Mark(busy, true);   // the picker and the copy can take a while (docs/UI-DESIGN.md "Waiting")
             var poll = ModImport.Pick();
             ModImport.Picked picked = null;
             Panel.schedule.Execute(() =>
             {
                 picked = poll();
-                if (picked != null) { importing = false; Picked(picked); }
+                if (picked != null) { importing = false; UiBusy.Mark(busy, false); Picked(picked); }
             }).Every(200).Until(() => picked != null);
         }
 
@@ -297,7 +299,7 @@ namespace GoF2Remake.UI
             if (manifest == null)
             {
                 ModImport.Discard(p.path);
-                notice(title, T("modsImportNotMod", "That file isn't a mod. Pick a mod's .zip file, with its mod.json inside.")
+                notice(title, T("modsImportNotMod", "That file isn't a mod: pick a mod's .zip with mod.json inside.")
                               + "\n(" + p.name + ": " + error + ")");
                 return;
             }

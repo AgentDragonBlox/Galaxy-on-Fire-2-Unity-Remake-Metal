@@ -78,6 +78,18 @@ namespace GoF2Remake.UI
         VisualElement root, logo, splash, splashLogo, fade, dialog, mainColumn, mainButtons;
         Label pressAnyKey, versionLabel, hintLabel;
         int escFrame = -10, cancelFrame = -10;
+        VisualElement menuPrompts;
+
+        /// <summary>The main menu's prompts: select and confirm, back with a panel open, a value and the tabs on Options.</summary>
+        MenuKeys.Rows MenuPromptRows()
+        {
+            var rows = MenuKeys.Rows.Select | MenuKeys.Rows.Confirm;
+            if (openPanel == null) return rows;
+            rows |= MenuKeys.Rows.Back;
+            if (panels.TryGetValue("optionsPanel", out var options) && openPanel == options) rows |= MenuKeys.Rows.Change | MenuKeys.Rows.Tabs;
+            return rows;
+        }
+
         Button resumeButton, newGameButton, multiplayerButton, loadButton, optionsButton, modsButton, aboutButton, debugButton, exitButton;
         ModBrowser modBrowser;
         VisualElement updateRow;
@@ -259,6 +271,7 @@ namespace GoF2Remake.UI
         VisualElement safeArea;
         Vector2Int lastScreen;
         Rect lastSafeArea;
+        int lastLayout = -1;
 
         // ---- setup ----------------------------------------------------------------------------
 
@@ -318,21 +331,14 @@ namespace GoF2Remake.UI
             pressAnyKey = root.Q<Label>("pressAnyKey");
             versionLabel = root.Q<Label>("versionLabel");
             hintLabel = root.Q<Label>("hintLabel");
-            // Modified: the footer's "↑ ↓ NAVIGATE  ENTER SELECT  ESC BACK" is gone: the same keys (as the HUDs' hint boxes) are in
-            // an "i" at the top right (MenuKeys, KeysContent), shown on the menu (not the splash / title).
+            // Rework (docs/UI-DESIGN.md "Button prompts"): the keys as a prompt row at the footer's right, for the keyboard or
+            // the controller in use (none on touch), following the open panel; the top-right "i" that held them went at the
+            // user's request (2026-10-22).
             hintLabel.style.display = DisplayStyle.None;
-            var keysHost = root.Q("safeArea") ?? root;
-            if (keysHost.Q(name: "menuKeys") == null)
-            {
-                var menuKeys = MenuKeys.KeysIcon(KeysContent, 40f);
-                menuKeys.name = "menuKeys";
-                menuKeys.style.position = Position.Absolute;
-                menuKeys.style.top = 28f;
-                menuKeys.style.right = 36f;
-                keysHost.Add(menuKeys);
-                menuKeys.schedule.Execute(() =>
-                    menuKeys.style.display = screen == MenuState.Menu ? DisplayStyle.Flex : DisplayStyle.None).Every(100);
-            }
+            // Each UI reload builds a new tree: a new bar in its footer (the old one went with the old tree).
+            menuPrompts = MenuKeys.Bar(MenuPromptRows);
+            menuPrompts.AddToClassList("prompt-bar--footer");
+            hintLabel.parent.Add(menuPrompts);
 
             resumeButton = Bind("resumeButton", () => LoadSlot(SaveGame.MostRecentSlot()));
             newGameButton = Bind("newGameButton", () => OpenPanel("campaignPanel"));
@@ -468,6 +474,14 @@ namespace GoF2Remake.UI
 
             ApplySettings();
 
+            // Rework (docs/UI-DESIGN.md "Button prompts"): with a controller, B on every Back and the dialog's No / Cancel,
+            // A on the focused dialog button (InputGlyph.PadPrompt; their texts go through InputGlyph.SetText from here).
+            root.Query<Button>(className: "back-button").ForEach(b => { if (b.name != "optionsDefaults") InputGlyph.PadPrompt(b, PadButton.B); });
+            InputGlyph.PadPrompt(root.Q<Button>("dialogYes"), PadButton.A, true);
+            InputGlyph.PadPrompt(root.Q<Button>("dialogAlt"), PadButton.A, true);
+            InputGlyph.PadPrompt(root.Q<Button>("dialogNo"), PadButton.B);
+            PadKeyboard.Attach(root);   // a controller's keyboard for the text fields (docs/UI-DESIGN.md "Text entry")
+            UiFocus.SkipScrollBars(root);   // no stop on a scroll bar (docs/UI-DESIGN.md "Focus")
             RefreshTexts();
             lastScreen = Vector2Int.zero;
             UpdateLayout();
@@ -538,6 +552,8 @@ namespace GoF2Remake.UI
         {
             if (root == null) return;
             SyncHover();
+            // The layout first: the screen and the options change whatever has the keys (a capture, the controller's keyboard).
+            if (lastScreen != ScreenSize() || lastSafeArea != Screen.safeArea || lastLayout != UiLayout.Revision) UpdateLayout();
             if (GoF2Remake.Flight.GameControls.BlocksMenus) return;
 #if UNITY_WSA
             KeepKeyboardText();
@@ -558,7 +574,6 @@ namespace GoF2Remake.UI
                 && !dialog.ClassListContains("dialog-backdrop--shown"))
                 modBrowser.ToggleSelected();
             UpdateOptionTabs(pad);
-            if (lastScreen != ScreenSize() || lastSafeArea != Screen.safeArea) UpdateLayout();
             KeepControllerFocus();
         }
 
@@ -594,32 +609,19 @@ namespace GoF2Remake.UI
         // ---- aspect ratios ---------------------------------------------------------------------
 
         /// <summary>
-        /// Landscape only. The UI scales to the screen height (1080 units) so text keeps its size whatever the
-        /// aspect ratio; widths then vary from 4:3 to 32:9 and the USS layout classes adapt. Phones get a smaller
-        /// reference resolution (bigger UI) and the device safe area (notch, corners).
+        /// Landscape only. UiLayout scales the UI (a 1080-unit-high design, larger on phones, handhelds and TVs, never under
+        /// 1280 units wide) and sets the USS layout classes; the safe area keeps it clear of cutouts, a TV's edges and,
+        /// on an ultrawide screen, inside the interface width (Options > Graphics).
         /// </summary>
         void UpdateLayout()
         {
             lastScreen = ScreenSize();
             lastSafeArea = Screen.safeArea;
+            lastLayout = UiLayout.Revision;
             bool offscreen = runtimePanel != null && runtimePanel.targetTexture != null;
-            float w = Mathf.Max(1, lastScreen.x), h = Mathf.Max(1, lastScreen.y), aspect = w / h;
-            float inches = Screen.dpi > 0f ? Mathf.Sqrt(w * w + h * h) / Screen.dpi : 20f;
-            // Remake: UnityEngine.Device, the Device Simulator's phone (UnityEngine.Application stays the Editor there, so
-            // the simulator showed the desktop layout); the same values in a build.
-            bool phone = simulatePhone || UnityEngine.Device.Application.isMobilePlatform && inches < 7.5f;
-
-            if (runtimePanel != null)
-            {
-                runtimePanel.referenceResolution = phone ? new Vector2Int(1600, 900) : new Vector2Int(1920, 1080);
-                runtimePanel.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
-                runtimePanel.match = 1f;
-            }
-            root.EnableInClassList("layout-narrow", aspect < 1.55f);
-            root.EnableInClassList("layout-ultrawide", aspect > 2.3f);
-            root.EnableInClassList("layout-phone", phone);
-            root.EnableInClassList("ui-large", UiScale.Large(h, phone ? 900f : 1080f));   // a small high-density screen: bigger lists
-
+            float w = Mathf.Max(1, lastScreen.x), h = Mathf.Max(1, lastScreen.y);
+            // The scale and the layout classes (device, aspect, ui-large) by the shared model, docs/UI-DESIGN.md "Scaling".
+            UiLayout.Configure(runtimePanel, root, w, h, simulatePhone);
             ApplySafeArea(w, h, offscreen);
         }
 
@@ -657,40 +659,6 @@ namespace GoF2Remake.UI
             if (handled || screen != MenuState.Menu) return;
             if (ChoicePopup.IsOpen) { ChoicePopup.Close(); return; }
             Back();
-        }
-
-        /// <summary>Modified: the top-right "i" window: the keys for the input in use: Up / Down navigate, Enter select, Esc
-        /// back (the D-pad, A and B on a controller); on the Options panel also left / right (a value) and Q / E, LB / RB (the
-        /// tabs). Its three labels are Extra keys of their own; they used to be cut out of the localized footer line
-        /// ("↑ ↓  NAVIGATE     ENTER  SELECT     ESC  BACK") by splitting it on runs of spaces, which fell back to the
-        /// English word by word as soon as a translation spaced that line differently.</summary>
-        VisualElement KeysContent()
-        {
-            var c = MenuKeys.Popup();
-            string nav = Localization.Extra("hudNavigate", "NAVIGATE");
-            string select = Localization.Extra("hudSelect", "SELECT");
-            string back = Localization.Extra("hudBack", Localization.Get(170).ToUpperInvariant());
-            bool options = panels.TryGetValue("optionsPanel", out var optionsPanel) && openPanel == optionsPanel;
-            string change = Localization.Extra("hudChangeValue", "CHANGE VALUE"), tabs = Localization.Extra("hudSwitchTab", "SWITCH TAB");
-            if (InputMode.Current == InputKind.Gamepad)
-            {
-                c.Add(MenuKeys.Hint(options ? $"{nav} / {change}" : nav, InputGlyph.Pad(PadButton.DPad)));
-                if (options) c.Add(MenuKeys.Hint(tabs, InputGlyph.Pad(PadButton.LeftBumper), InputGlyph.Pad(PadButton.RightBumper)));
-                c.Add(MenuKeys.Hint(select, InputGlyph.Pad(PadButton.A)));
-                c.Add(MenuKeys.Hint(back, InputGlyph.Pad(PadButton.B)));
-            }
-            else
-            {
-                c.Add(MenuKeys.Hint(nav, InputGlyph.Key("↑"), InputGlyph.Key("↓")));
-                if (options)
-                {
-                    c.Add(MenuKeys.Hint(change, InputGlyph.Key("←"), InputGlyph.Key("→")));
-                    c.Add(MenuKeys.Hint(tabs, InputGlyph.Key("Q"), InputGlyph.Key("E")));
-                }
-                c.Add(MenuKeys.Hint(select, InputGlyph.Key("ENTER", true)));
-                c.Add(MenuKeys.Hint(back, InputGlyph.Key("ESC")));
-            }
-            return c;
         }
 
         /// <summary>The title prompt follows the input scheme: any key on the keyboard, any button on a controller, a tap
@@ -982,6 +950,8 @@ namespace GoF2Remake.UI
             p.AddToClassList("panel--shown");
             p.schedule.Execute(() => p.AddToClassList("panel--visible")).ExecuteLater(16);
             mainColumn.AddToClassList("main-column--dimmed");
+            root.AddToClassList("menu-root--panel");
+            root.schedule.Execute(() => MenuKeys.Refresh(menuPrompts));
             SetFocusable(mainButtons, false);
             RefreshUpdateButton();
             p.schedule.Execute(() => FocusFirst(p)).ExecuteLater(30);
@@ -1023,6 +993,8 @@ namespace GoF2Remake.UI
             HidePanel(closing);
             openPanel = null;
             mainColumn.RemoveFromClassList("main-column--dimmed");
+            root.RemoveFromClassList("menu-root--panel");
+            root.schedule.Execute(() => MenuKeys.Refresh(menuPrompts));
             SetFocusable(mainButtons, true);
             RefreshUpdateButton();
             var target = closing == panels["campaignPanel"] || panels.TryGetValue("debugPanel", out var ap) && closing == ap ? newGameButton
@@ -1079,7 +1051,7 @@ namespace GoF2Remake.UI
             var desc = root.Q<Label>("hardcoreDesc");
             if (desc != null)
                 desc.text = Localization.Extra("hardcoreDesc",
-                    "One life: the game saves only when you dock, and if your ship is destroyed this game's saves are deleted and you return to the main menu.");
+                    "One life: saves only on docking; if your ship is destroyed, this game's saves are deleted.");
         }
 
         // Remake (GitHub #4, NewGamePlus): with a finished game in the save slots, the campaign panel offers New Game+.
@@ -1099,7 +1071,7 @@ namespace GoF2Remake.UI
             var desc = root.Q<Label>("ngPlusDesc");
             if (desc != null && ngPlusSave != null)
                 desc.text = string.Format(Localization.Extra("ngPlusDesc",
-                    "Start again with what you earned in your finished game ({0}, {1}): your credits, blueprints and medals, and the Kaamo Club with your ship, its equipment and cargo and everything stored there. Turn it on, then pick a campaign."),
+                    "Start again with your finished game's ({0}, {1}) credits, blueprints, medals and Kaamo Club."),
                     (Campaign)ngPlusSave.campaign switch { Campaign.Valkyrie => "Valkyrie", Campaign.Supernova => "Supernova", _ => "Galaxy on Fire 2" }, ItemInfo.Credits(ngPlusSave.credits));
         }
 
@@ -1124,7 +1096,7 @@ namespace GoF2Remake.UI
             var desc = root.Q<Label>("kaamoDesc");
             if (desc != null)
                 desc.text = Localization.Extra("kaamoDesc",
-                    "The original's Kaamo Club expansion: the club in the Shima system is yours from day one, without the siege or the 30 million; store as many ships and goods there as you like.");
+                    "Own the Kaamo Club in Shima from the start: no siege, no 30 million.");
         }
 
         /// <summary>Remake: the tutorial popups (Settings.TutorialHints, also in Options > Gameplay) as a game option before the
@@ -1141,7 +1113,7 @@ namespace GoF2Remake.UI
             var desc = root.Q<Label>("tutorialDesc");
             if (desc != null)
                 desc.text = Localization.Extra("tutorialDesc",
-                    "Popups that explain the controls, the hangar, the map and the missions the first time you meet them. Also in Options > Gameplay.");
+                    "Popups explain the controls, hangar, map and missions the first time.");
         }
 
         /// <summary>Remake (players' suggestion): the capital ship enhancements (Settings.CapitalShips, also in Options >
@@ -1158,7 +1130,7 @@ namespace GoF2Remake.UI
             var desc = root.Q<Label>("capitalDesc");
             if (desc != null)
                 desc.text = Localization.Extra("capitalDesc",
-                    "Battleships and carriers get escorts and stronger turrets; carriers and Vossk battleships can be destroyed for loot, carriers launch Inflicts and let trusted pilots dock to resupply. Also in Options > Gameplay.");
+                    "Capital ships get escorts and stronger turrets; carriers and Vossk battleships can be destroyed and docked at.");
         }
 
         // ---- remake: the Mods hub and the Mod Builder ----
@@ -1196,10 +1168,10 @@ namespace GoF2Remake.UI
                 return b;
             }
             modsHubBrowser = Choice(Localization.Extra("modBrowser", "Mod Browser"),
-                Localization.Extra("modBrowserDesc", "The mods installed on this device: turn them on and off, set their order, import new ones."),
+                Localization.Extra("modBrowserDesc", "Turn installed mods on and off, set their order, import new ones."),
                 () => OpenPanel("modsPanel"));
             modsHubBuilder = Choice(Localization.Extra("mbTitle", "Mod Builder"),
-                Localization.Extra("modBuilderDesc", "Make your own mods in the game: ships, items, characters and skins, tried out in the hangar and on a test flight, then exported for the Mod Browser."),
+                Localization.Extra("modBuilderDesc", "Make ships, items, characters and more in the game, test them, then export them."),
                 () => OpenPanel(Modding.ModBuilder.ProjectsPanel));
             var back = new Button(Back) { text = "‹  " + Localization.Get(170).ToUpperInvariant() };
             back.AddToClassList("menu-button");
@@ -1510,10 +1482,10 @@ namespace GoF2Remake.UI
             var text = root.Q<Label>("mpHostText");
             if (text != null)
                 text.text = mode == HostMode.Public
-                    ? Localization.Extra("mpHostPublicText", "Online: anyone can find your universe in the server browser. You also get a join code to share once you're in.")
+                    ? Localization.Extra("mpHostPublicText", "Listed in the server browser; you also get a join code.")
                     : mode == HostMode.Private
-                        ? Localization.Extra("mpHostPrivateText", "Online, not listed: friends anywhere join with the join code you get once you're in.")
-                        : Localization.Extra("mpHostText", "Start a session on this device. Players join with one of your addresses (tap to copy):");
+                        ? Localization.Extra("mpHostPrivateText", "Not listed: friends join with the code you get.")
+                        : Localization.Extra("mpHostText", "Players on your network join with an address (tap to copy):");
         }
 
         /// <summary>While the Multiplayer panel is open: the server list, again every 5 s.</summary>
@@ -1536,7 +1508,7 @@ namespace GoF2Remake.UI
         {
             if (mpServerList == null) yield break;
             serverQueryRunning = true;
-            if (mpServerList.childCount == 0) ServerListNote(Localization.Extra("mpSearching", "Looking for games..."));
+            if (mpServerList.childCount == 0) ServerListNote(Localization.Extra("mpSearching", "Looking for games..."), true);
             var query = GoF2Remake.Multiplayer.NetLobby.Query();
             while (!query.IsCompleted) yield return null;
             serverQueryRunning = false;
@@ -1605,34 +1577,43 @@ namespace GoF2Remake.UI
                     if (joinable && entry.password && GoF2Remake.Multiplayer.NetGame.CleanPassword(GoF2Remake.Multiplayer.NetGame.JoinPassword).Length == 0)
                     {
                         // A password game: the field first (the server checks it).
-                        if (mpStatus != null) mpStatus.text = Localization.Extra("mpEnterPassword", "That game has a password: enter it under Join, then pick the game again.");
+                        SetMpStatus(Localization.Extra("mpEnterPassword", "This game needs a password: enter it under Join."));
                         mpJoinPassword?.Focus();
                     }
                     else if (joinable) WithName(() => StartCoroutine(LeaveForMultiplayer(entry.code)));
                     else if (mpStatus != null)
                         mpStatus.text = entry.Full ? Localization.Extra("mpGameFull", "That game is full.")
                             : entry.SameVersion && missingMods.Count > 0 ? string.Format(Localization.Extra("mpNeedsMods",
-                                "This game uses mods you don't have, or have another version of: {0}. Install the same files in your Mods folder, then join again."), string.Join(", ", missingMods))
+                                "Needs mods you don't have (or another version): {0}."), string.Join(", ", missingMods))
                             : entry.version == GoF2Remake.Multiplayer.NetGame.Version
-                            ? string.Format(Localization.Extra("mpOtherBuildText", "That game runs a different build of version {0}: only the same game files can join."), entry.version)
-                            : string.Format(Localization.Extra("mpOtherVersion", "That game runs version {0}, yours is {1}: only the same version can join."), entry.version, GoF2Remake.Multiplayer.NetGame.Version);
+                            ? string.Format(Localization.Extra("mpOtherBuildText", "That game runs another build of {0}: only the same build can join."), entry.version)
+                            : string.Format(Localization.Extra("mpOtherVersion", "That game runs version {0}, yours is {1}."), entry.version, GoF2Remake.Multiplayer.NetGame.Version);
                 };
                 mpServerList.Add(row);
             }
         }
 
-        void ServerListNote(string text)
+        void ServerListNote(string text, bool busy = false)
         {
             serverListKey = "";
             mpServerList.Clear();
             var note = new Label(text);
             note.AddToClassList("mp-server-empty");
+            UiBusy.Mark(note, busy);
             mpServerList.Add(note);
+        }
+
+        /// <summary>The Multiplayer panel's status line; 'busy' puts the waiting arc before it (docs/UI-DESIGN.md "Waiting").</summary>
+        void SetMpStatus(string text, bool busy = false)
+        {
+            if (mpStatus == null) return;
+            mpStatus.text = text;
+            UiBusy.Mark(mpStatus, busy && !string.IsNullOrEmpty(text));
         }
 
         void OpenMultiplayer()
         {
-            if (mpStatus != null) mpStatus.text = GoF2Remake.Multiplayer.NetGame.Status;   // why the last session ended
+            SetMpStatus(GoF2Remake.Multiplayer.NetGame.Status);   // why the last session ended
             OpenPanel("multiplayerPanel");
             // The first visit: the name first; Back there leaves the panel (#20: with a controller it came back to the
             // prompt on every move).
@@ -1645,12 +1626,12 @@ namespace GoF2Remake.UI
         {
             if (GoF2Remake.Multiplayer.NetGame.Clean(GoF2Remake.Multiplayer.NetGame.PlayerName).Length > 0 || dialogField == null) return false;
             ShowDialog(Localization.Extra("mpNameTitle", "Pilot name"),
-                       Localization.Extra("mpNameText", "Choose the name the other pilots will see. You can change it later at the top of the Multiplayer panel."), then);
+                       Localization.Extra("mpNameText", "The name other pilots see. Change it later at the top of the Multiplayer panel."), then);
             dialogField.value = "";
             dialogField.textEdition.placeholder = Localization.Extra("mpNamePlaceholder", "Your pilot name");
             dialogField.style.display = DisplayStyle.Flex;
-            root.Q<Button>("dialogYes").text = "OK";
-            root.Q<Button>("dialogNo").text = Localization.Get(170).ToUpperInvariant();   // Back
+            InputGlyph.SetText(root.Q<Button>("dialogYes"), "OK");
+            InputGlyph.SetText(root.Q<Button>("dialogNo"), Localization.Get(170).ToUpperInvariant());   // Back
             dialogCheck = () =>
             {
                 string name = GoF2Remake.Multiplayer.NetGame.Clean(dialogField.value);
@@ -1685,7 +1666,7 @@ namespace GoF2Remake.UI
             if (addresses.Count == 0)
             {
                 // No network: hosting still works on this device, but nobody else could join yet.
-                var none = new Label(Localization.Extra("mpNoNetwork", "No network: connect to Wi-Fi (or turn on a hotspot) so others can join."));
+                var none = new Label(Localization.Extra("mpNoNetwork", "No network: connect to Wi-Fi or a hotspot so others can join."));
                 none.AddToClassList("mp-card-text");
                 mpAddressList.Add(none);
             }
@@ -1724,17 +1705,17 @@ namespace GoF2Remake.UI
             if (address == null && Mode != HostMode.Local)
             {
                 // Online: the Relay session (and its listing) is reserved before the fade, so a failure shows here.
-                if (mpStatus != null) mpStatus.text = Localization.Extra("mpOnlineStarting", "Starting an online session...");
+                SetMpStatus(Localization.Extra("mpOnlineStarting", "Starting an online session..."), true);
                 var prep = GoF2Remake.Multiplayer.NetGame.PrepareOnlineHost(Mode == HostMode.Public ? SessionName() : null);
                 while (!prep.IsCompleted) yield return null;
                 if (prep.IsFaulted) GoF2Remake.Multiplayer.NetGame.AbortStart(prep.Exception);
                 if (prep.IsFaulted || !prep.Result)
                 {
-                    if (mpStatus != null) mpStatus.text = GoF2Remake.Multiplayer.NetGame.Status;
+                    SetMpStatus(GoF2Remake.Multiplayer.NetGame.Status);
                     screen = MenuState.Menu;
                     yield break;
                 }
-                if (mpStatus != null) mpStatus.text = "";
+                SetMpStatus("");
                 fade.AddToClassList("fade--on");
                 StartCoroutine(FadeMusic(0f, 1.2f));
                 yield return new WaitForSeconds(1.3f);
@@ -1745,12 +1726,12 @@ namespace GoF2Remake.UI
                 // Only fade out when it can start: a port in use says so at once (with a free one in the port field).
                 if (!GoF2Remake.Multiplayer.NetGame.CanHost())
                 {
-                    if (mpStatus != null) mpStatus.text = GoF2Remake.Multiplayer.NetGame.Status;
+                    SetMpStatus(GoF2Remake.Multiplayer.NetGame.Status);
                     if (GoF2Remake.Multiplayer.NetGame.SuggestedPort > 0 && mpPort != null) mpPort.value = GoF2Remake.Multiplayer.NetGame.SuggestedPort.ToString();
                     screen = MenuState.Menu;
                     yield break;
                 }
-                if (mpStatus != null) mpStatus.text = "";
+                SetMpStatus("");
                 fade.AddToClassList("fade--on");
                 StartCoroutine(FadeMusic(0f, 1.2f));
                 yield return new WaitForSeconds(1.3f);
@@ -1759,7 +1740,7 @@ namespace GoF2Remake.UI
             else
             {
                 // Joining: the menu stays while it connects (a missing host would be a long black screen); the fade once connected.
-                if (mpStatus != null) mpStatus.text = string.Format(Localization.Extra("mpConnecting", "Connecting to {0}..."), address);
+                SetMpStatus(string.Format(Localization.Extra("mpConnecting", "Connecting to {0}..."), address), true);
                 if (GoF2Remake.Multiplayer.NetGame.IsJoinCode(address))
                 {
                     // A join code: Relay finds the session, then it connects like an address.
@@ -1777,7 +1758,7 @@ namespace GoF2Remake.UI
                 }
             }
             while (started && GoF2Remake.Multiplayer.NetGame.Active) yield return null;   // the scene change ends this
-            if (mpStatus != null) mpStatus.text = GoF2Remake.Multiplayer.NetGame.Status;
+            SetMpStatus(GoF2Remake.Multiplayer.NetGame.Status);
             // The port was in use: the free one it found goes into the port field (hosting again uses it).
             if (address == null && GoF2Remake.Multiplayer.NetGame.SuggestedPort > 0 && mpPort != null)
                 mpPort.value = GoF2Remake.Multiplayer.NetGame.SuggestedPort.ToString();
@@ -2142,7 +2123,7 @@ namespace GoF2Remake.UI
             var no = root.Q<Button>("dialogNo");
             var yes = root.Q<Button>("dialogYes");
             no.style.display = DisplayStyle.None;
-            yes.text = "OK";
+            InputGlyph.SetText(yes, "OK");
             Select(yes);
         }
 
@@ -2162,11 +2143,11 @@ namespace GoF2Remake.UI
             ShowDialog(Localization.Get(497), OptionsCatalog.ResetQuestion, () => { OptionsCatalog.ResetPage(page); RefreshTexts(); });
             dialogAlt = () => { Settings.ResetToDefaults(); RefreshTexts(); };
             var yes = root.Q<Button>("dialogYes");
-            yes.text = OptionsCatalog.ResetTabLabel(page).ToUpperInvariant();
+            InputGlyph.SetText(yes, OptionsCatalog.ResetTabLabel(page).ToUpperInvariant());
             var alt = root.Q<Button>("dialogAlt");
-            alt.text = OptionsCatalog.ResetAllLabel.ToUpperInvariant();
+            InputGlyph.SetText(alt, OptionsCatalog.ResetAllLabel.ToUpperInvariant());
             alt.style.display = DisplayStyle.Flex;
-            root.Q<Button>("dialogNo").text = Localization.Get(425).ToUpperInvariant();   // Cancel
+            InputGlyph.SetText(root.Q<Button>("dialogNo"), Localization.Get(425).ToUpperInvariant());   // Cancel
             Select(yes);
         }
 
@@ -2188,15 +2169,15 @@ namespace GoF2Remake.UI
             {
                 // The reset choice: back to Yes / No.
                 alt.style.display = DisplayStyle.None;
-                no.text = Localization.Get(135).ToUpperInvariant();
-                root.Q<Button>("dialogYes").text = Localization.Get(134).ToUpperInvariant();
+                InputGlyph.SetText(no, Localization.Get(135).ToUpperInvariant());
+                InputGlyph.SetText(root.Q<Button>("dialogYes"), Localization.Get(134).ToUpperInvariant());
             }
             dialogAlt = null;
             if (no.style.display == DisplayStyle.None || dialogField != null && dialogField.style.display == DisplayStyle.Flex)
             {
                 no.style.display = StyleKeyword.Null;
-                no.text = Localization.Get(135).ToUpperInvariant();
-                root.Q<Button>("dialogYes").text = Localization.Get(134).ToUpperInvariant();
+                InputGlyph.SetText(no, Localization.Get(135).ToUpperInvariant());
+                InputGlyph.SetText(root.Q<Button>("dialogYes"), Localization.Get(134).ToUpperInvariant());
             }
             if (dialogField != null) dialogField.style.display = StyleKeyword.Null;
             dialog.RemoveFromClassList("dialog-backdrop--shown");
@@ -2266,7 +2247,7 @@ namespace GoF2Remake.UI
         static readonly (string tab, string page)[] OptionPages =
         {
             ("tabSound", "soundPage"), ("tabGraphics", "graphicsPage"), ("tabControls", "controlsPage"), ("tabBindings", "bindingsPage"), ("tabGameplay", "gameplayPage"),
-            ("tabLanguage", "languagePage"),
+            ("tabAccessibility", "accessibilityPage"), ("tabLanguage", "languagePage"),
         };
 
         static string PageName(OptionPage p) => p switch
@@ -2276,6 +2257,7 @@ namespace GoF2Remake.UI
             OptionPage.Controls => "controlsPage",
             OptionPage.Bindings => "bindingsPage",   // remake: the key bindings on their own tab
             OptionPage.Language => "languagePage",   // under the language buttons
+            OptionPage.Accessibility => "accessibilityPage",
             _ => "gameplayPage",
         };
 
@@ -2404,13 +2386,13 @@ namespace GoF2Remake.UI
             if (imported.problem != null)
             {
                 ShowNotice(OriginalImportTitle, Localization.Extra("originalImportFailed", "The save couldn't be imported:") + "\n" + p.name + ": " + imported.problem
-                    + "\n" + Localization.Extra("originalImportHint", "Pick a gof2_save_game_N file from the original game's save folder (Android: Android/data/net.fishlabs.gof2hdallandroid2012/files)."));
+                    + "\n" + Localization.Extra("originalImportHint", "Pick a gof2_save_game_N file from the original game's save folder."));
                 return;
             }
             int slot = OriginalSaveTransfer.FreeSlot();
             if (slot < 0)
             {
-                ShowNotice(OriginalImportTitle, Localization.Extra("originalImportNoSlot", "There is no empty save slot. Delete a save first (hold it in the list)."));
+                ShowNotice(OriginalImportTitle, Localization.Extra("originalImportNoSlot", "No empty save slot: hold a save in the list to delete it."));
                 return;
             }
             string notes = imported.notes.Count > 0 ? "\n(" + string.Join("; ", imported.notes) + ")" : "";
@@ -2433,7 +2415,7 @@ namespace GoF2Remake.UI
         {
             if (dialog.ClassListContains("dialog-backdrop--shown")) return;
             ShowDialog(OriginalExportTitle, Localization.Extra("originalExportAsk",
-                "Every save slot is written as the original Android game's save files (gof2_save_game_N with its preview) into a new folder. Copy them into Android/data/net.fishlabs.gof2hdallandroid2012/files: they load in the community builds (KiritoJPK's, PB-207's); Fishlabs' own build refuses saves made on another phone. Mod items and remake-only progress are left out. Export?"),
+                "Write every slot as original Android save files into a new folder? They load in the community builds; mod items are left out."),
                 () => root.schedule.Execute(() =>
                 {
                     var r = OriginalSaveTransfer.Export();
@@ -2472,7 +2454,12 @@ namespace GoF2Remake.UI
         void RefreshTexts()
         {
             string T(int id) => Localization.Get(id).ToUpperInvariant();
-            void Set(string name, string text) { var e = root.Q<TextElement>(name); if (e != null) e.text = text; }
+            void Set(string name, string text)
+            {
+                var e = root.Q<TextElement>(name);
+                if (e is Button b) InputGlyph.SetText(b, text);   // its text may be in a label beside a glyph (PadPrompt)
+                else if (e != null) e.text = text;
+            }
 
             Set("resumeButton", T(41));
             Set("newGameButton", T(28));
@@ -2487,7 +2474,7 @@ namespace GoF2Remake.UI
             Set("multiplayerButton", mp);
             Set("multiplayerTitle", mp);
             Set("mpBadge", Localization.Extra("mpExperimental", "Experimental").ToUpperInvariant());
-            Set("mpIntro", Localization.Extra("mpIntroShort", "One shared universe: meet other pilots, form squads and fly bar missions together."));
+            Set("mpIntro", Localization.Extra("mpIntroShort", "Meet other pilots, form squads and fly missions together."));
             Set("mpNameLabel", Localization.Extra("mpNameLabel", "Pilot name").ToUpperInvariant());
             if (mpName != null) mpName.textEdition.placeholder = Localization.Extra("mpNamePlaceholder", "Your pilot name");
             Set("mpHostTitle", Localization.Extra("mpHostTitle", "Host a game").ToUpperInvariant());
@@ -2496,7 +2483,7 @@ namespace GoF2Remake.UI
             Set("mpModeLocal", Localization.Extra("mpModeLocal", "Local network").ToUpperInvariant());
             ApplyHostMode();
             var hostPw = root.Q<TextField>("mpHostPassword");
-            if (hostPw != null) hostPw.textEdition.placeholder = Localization.Extra("mpHostPasswordHint", "Password (optional)");
+            if (hostPw != null) hostPw.textEdition.placeholder = Localization.Extra("mpHostPasswordNone", "No password");   // empty: anyone joins
             Set("mpMaxPlayersLabel", Localization.Extra("mpMaxPlayers", "Max players").ToUpperInvariant());
             Set("mpDebugLabel", Localization.Extra("mpDebugMenu", "Debug menu").ToUpperInvariant());
             Set("mpDebugOff", Localization.Extra("mpDebugOff", "Off").ToUpperInvariant());
@@ -2522,32 +2509,32 @@ namespace GoF2Remake.UI
             Set("debugTitle", Localization.Extra("debugTitle", "Debug").ToUpperInvariant());
             Set("debugBack", "‹  " + T(170));
             Set("debugCheatsTitle", Localization.Extra("debugCheats", "Cheats").ToUpperInvariant());
-            Set("debugNote", Localization.Extra("debugNote", "Credits, repair, ammo, energy cells, the map and standing: the Debug page of the pause menu (in flight) and of the station's menu."));
+            Set("debugNote", Localization.Extra("debugNote", "Credits, repairs, ammo and more: the Debug page of the pause and station menus."));
             foreach (var c in debugControls) c.Refresh();
             Set("debugMissionsTitle", Localization.Extra("missionSelect", "Start at mission").ToUpperInvariant());
             if (missionFilter != null) missionFilter.textEdition.placeholder = Localization.Extra("missionSearch", "Search: a step number, a station, a word...");
             Set("difficultyTitle", T(517));
             Set("easyLabel", T(518));
-            Set("easyDesc", Localization.Extra("easyDesc", "Weaker enemies in smaller groups, a shorter cloak cooldown and a smaller toll."));
+            Set("easyDesc", Localization.Extra("easyDesc", "Weaker enemies in smaller groups."));
             Set("normalLabel", T(519));
             Set("normalDesc", Localization.Extra("normalDesc", "The classic Galaxy on Fire 2 experience."));
             Set("hardLabel", T(520));
-            Set("hardDesc", Localization.Extra("hardDesc", "Tougher, harder-hitting enemies in bigger groups; the economy stays as on Normal."));
+            Set("hardDesc", Localization.Extra("hardDesc", "Tougher enemies in bigger groups; the economy as on Normal."));
             Set("economyTitle", Localization.Extra("economyTitle", "Select the economy").ToUpperInvariant());
             Set("gameOptionsTitle", Localization.Extra("gameOptionsTitle", "Game options").ToUpperInvariant());
             Set("gameOptionsStartLabel", Localization.Extra("gameOptionsStart", "Start game").ToUpperInvariant());
             Set("economyDefaultLabel", Session.EconomyName(Economy.Default).ToUpperInvariant());
             Set("economyDefaultDesc", Localization.Extra("economyDefaultDesc",
-                "The original prices of the PC, Mac and iPhone versions: cheap commodities, tractor beams and signatures, smaller blueprint recipes, dearer ships."));
+                "PC / Mac / iPhone prices: cheaper goods and blueprints, dearer ships."));
             Set("economyAndroidLabel", Session.EconomyName(Economy.Android).ToUpperInvariant());
             Set("economyAndroidDesc", Localization.Extra("economyAndroidDesc",
-                "The Android version's prices: commodities, tractor beams, shields and armor far dearer, blueprints need many more ingredients, ships cheaper."));
+                "Android prices: dearer goods and gear, bigger blueprints, cheaper ships."));
             RefreshKaamoToggle();
             RefreshHardcoreToggle();
             RefreshTutorialToggle();
             RefreshCapitalToggle();
             Set("extremeLabel", T(25));
-            Set("extremeDesc", Localization.Extra("extremeDesc", "For veterans who finished the game: tougher enemies and a harsher economy."));
+            Set("extremeDesc", Localization.Extra("extremeDesc", "For veterans: tougher enemies and a harsher economy."));
             Set("loadTitle", T(29));
             Set("exportSavesButton", Localization.Extra("exportSaves", "Export saves").ToUpperInvariant());
             Set("importSavesButton", Localization.Extra("importSaves", "Import saves").ToUpperInvariant());
@@ -2569,6 +2556,7 @@ namespace GoF2Remake.UI
             Set("tabControls", OptionsCatalog.PageTitle(OptionPage.Controls).ToUpperInvariant());
             Set("tabBindings", OptionsCatalog.PageTitle(OptionPage.Bindings).ToUpperInvariant());
             Set("tabGameplay", OptionsCatalog.PageTitle(OptionPage.Gameplay).ToUpperInvariant());
+            Set("tabAccessibility", OptionsCatalog.PageTitle(OptionPage.Accessibility).ToUpperInvariant());
             Set("tabLanguage", T(0));
             Set("optionsDefaults", T(497));
             Set("aboutTitle", T(43));
@@ -2659,7 +2647,10 @@ namespace GoF2Remake.UI
             if (items.Count == 0) return;
             int i = focused != null ? items.IndexOf(focused) : -1;
             int step = e.direction == NavigationMoveEvent.Direction.Up || e.direction == NavigationMoveEvent.Direction.Left ? -1 : 1;
-            int next = i < 0 ? 0 : Mathf.Clamp(i + step, 0, items.Count - 1);
+            // The main list wraps round (docs/UI-DESIGN.md "Navigation": a single-axis list wraps, XAG 112); a panel's
+            // items and a dialog's buttons stop at their ends.
+            bool wrap = scope == mainButtons && vertical;
+            int next = i < 0 ? 0 : wrap ? (i + step + items.Count) % items.Count : Mathf.Clamp(i + step, 0, items.Count - 1);
             items[next].Focus();
             e.StopPropagation();
             root.focusController?.IgnoreEvent(e);
@@ -3020,7 +3011,7 @@ namespace GoF2Remake.UI
                 {
                     if (dialog.ClassListContains("dialog-backdrop--shown")) return;
                     ShowNotice(SaveFolderTitle, string.Format(X("saveFolderUnreachableNotice",
-                        "The save folder {0} can't be reached ({1}).\nYour saves stay on this device and go to the folder once it is back. Options > Gameplay can choose another one."),
+                        "Can't reach the save folder {0} ({1}). Saves stay on this device and sync when it's back."),
                         SaveFolder.DisplayName, r.problem));
                 }).ExecuteLater(300);
             }
@@ -3047,7 +3038,7 @@ namespace GoF2Remake.UI
                 X("saveFolderUseDefault", "This device only"), () =>
                 {
                     SaveFolder.UseDefault();
-                    ShowNotice(SaveFolderTitle, X("saveFolderDefaultDone", "Your saves are kept on this device only again. The folder keeps the copies it has."));
+                    ShowNotice(SaveFolderTitle, X("saveFolderDefaultDone", "Saves are kept on this device only again."));
                     RefreshAfterSaveFolder();
                 });
         }
@@ -3088,13 +3079,13 @@ namespace GoF2Remake.UI
             if (s.localSaves == 0) { Take(SaveFolder.Start.Merge); return; }
             if (s.folderSaves == 0)
                 ShowChoice(SaveFolderTitle,
-                    string.Format(X("saveFolderCopyQuestion", "Copy your {0} saves into {1}? (Start empty sets them aside in Saves/BeforeFolder.)"), s.localSaves, p.name),
+                    string.Format(X("saveFolderCopyQuestion", "Copy your {0} saves into {1}?"), s.localSaves, p.name),
                     X("saveFolderCopy", "Copy them"), () => Take(SaveFolder.Start.Merge),
                     X("saveFolderStartEmpty", "Start empty"), () => Take(SaveFolder.Start.FolderOnly));
             else
                 ShowChoice(SaveFolderTitle,
                     string.Format(X("saveFolderMergeQuestion",
-                        "{0} already holds {1} saves and this device has {2}. Keep the newer save of each slot (the other one goes to Saves/Deleted), or only the folder's (this device's go to Saves/BeforeFolder)?"),
+                        "{0} holds {1} saves, this device {2}. Keep the newer save of each slot, or only the folder's?"),
                         p.name, s.folderSaves, s.localSaves),
                     X("saveFolderMerge", "Keep the newer"), () => Take(SaveFolder.Start.Merge),
                     X("saveFolderUseFolder", "Only the folder's"), () => Take(SaveFolder.Start.FolderOnly));
@@ -3117,11 +3108,11 @@ namespace GoF2Remake.UI
             ShowDialog(title, text, onYes);
             dialogAlt = onAlt;
             var yes = root.Q<Button>("dialogYes");
-            yes.text = yesLabel.ToUpperInvariant();
+            InputGlyph.SetText(yes, yesLabel.ToUpperInvariant());
             var alt = root.Q<Button>("dialogAlt");
-            alt.text = altLabel.ToUpperInvariant();
+            InputGlyph.SetText(alt, altLabel.ToUpperInvariant());
             alt.style.display = DisplayStyle.Flex;
-            root.Q<Button>("dialogNo").text = Localization.Get(425).ToUpperInvariant();   // Cancel
+            InputGlyph.SetText(root.Q<Button>("dialogNo"), Localization.Get(425).ToUpperInvariant());   // Cancel
             Select(yes);
         }
 

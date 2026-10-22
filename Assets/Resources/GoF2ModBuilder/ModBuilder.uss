@@ -67,13 +67,13 @@
 }
 
 .mbv-title {
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 5px;
     color: var(--gof-cyan);
 }
 
 .mbv-project {
-    font-size: 15px;
+    font-size: var(--text-caption);
     color: var(--gof-text-dim);
     white-space: nowrap;
     overflow: hidden;
@@ -86,7 +86,7 @@
     flex-grow: 1;
     flex-shrink: 1;
     min-width: 0;
-    margin-right: 10px;
+    margin-right: var(--space-s);
 }
 
 .mbv-kinds {
@@ -94,24 +94,30 @@
     flex-shrink: 0;
 }
 
+/* The kinds are tabs like the game's (GoF2Common .tab-button: dim text, an amber underline on the active one). */
 .mbv-kind {
     margin: 0 4px 0 0;
-    padding: 6px 8px;
-    font-size: 12px;
+    padding: 8px 8px;
+    font-size: var(--text-caption);
     letter-spacing: 1px;
     white-space: nowrap;
     flex-shrink: 0;
-    color: var(--gof-text);
-    background-color: rgba(255, 255, 255, 0.03);
-    border-width: 1px;
-    border-color: rgba(216, 236, 247, 0.15);
-    border-radius: 2px;
+    color: var(--gof-text-dim);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-bottom-width: 3px;
+    border-bottom-color: rgba(0, 0, 0, 0);
+    border-radius: 0;
     flex-direction: row;
     align-items: center;
 }
 
+.can-hover .mbv-kind:hover > .mbv-kind-name {
+    color: #FFFFFF;
+}
+
 .mbv-kind-name {
-    color: var(--gof-text);
+    color: var(--gof-text-dim);
     white-space: nowrap;
     -unity-text-align: middle-left;
     padding: 0;
@@ -119,13 +125,12 @@
 }
 
 .mbv-kind--on {
-    color: #04121c;
-    background-color: var(--gof-cyan);
-    border-color: var(--gof-cyan);
+    color: #FFFFFF;
+    border-bottom-color: var(--gof-amber);
 }
 
 .mbv-kind--on > .mbv-kind-name {
-    color: #04121c;
+    color: #FFFFFF;
 }
 
 .mbv-kind:disabled {
@@ -133,9 +138,9 @@
 }
 
 .mbv-soon {
-    margin-left: 5px;
+    margin-left: var(--space-xs);
     padding: 0 4px;
-    font-size: 9px;
+    font-size: var(--text-caption);
     white-space: nowrap;
     letter-spacing: 1px;
     color: var(--gof-text-dim);
@@ -149,7 +154,7 @@
 }
 
 .mbv-top-button {
-    margin-left: 10px;
+    margin-left: var(--space-s);
     min-width: 110px;
     flex-shrink: 0;
 }
@@ -162,27 +167,28 @@
 
 .mbv-button {
     margin: 4px 8px 4px 0;
-    padding: 8px 14px;
-    font-size: 15px;
+    padding: 8px 16px;
+    font-size: var(--text-caption);
     letter-spacing: 2px;
     -unity-text-align: middle-center;
     color: var(--gof-text);
-    background-color: var(--gof-cyan-faint);
-    border-width: 1px;
-    border-color: var(--gof-cyan-soft);
-    border-radius: 2px;
+    background-color: var(--button-fill);
+    border-width: var(--button-border-compact);
+    border-color: var(--button-line);
+    border-radius: var(--button-radius);
     transition-duration: 0.15s;
 }
 
 .can-hover .mbv-button:hover,
 .mbv-button:hover {
-    color: #ffffff;
-    border-color: var(--gof-amber);
-    background-color: var(--gof-cyan-soft);
+    color: #FFFFFF;
+    border-color: var(--button-focus-line);
+    background-color: var(--button-focus-fill);
 }
 
 .mbv-button:active {
-    background-color: var(--gof-amber-soft);
+    background-color: var(--button-press-fill);
+    color: var(--button-press-text);
 }
 
 .mbv-button:disabled {
@@ -206,33 +212,33 @@
 
 .mbv-add {
     margin-right: 0;
-    margin-top: 8px;
+    margin-top: var(--space-s);
     -unity-text-align: middle-left;
 }
 
 /* A list's Remove button under its + buttons: their full width. */
 .mbv-remove {
     margin-right: 0;
-    margin-top: 8px;
+    margin-top: var(--space-s);
 }
 
 .mbv-heading {
-    margin: 14px 0 6px 0;
-    font-size: 15px;
+    margin: 16px 0 8px 0;
+    font-size: var(--text-caption);
     letter-spacing: 4px;
     color: var(--gof-cyan);
 }
 
 .mbv-label {
-    margin-top: 8px;
-    font-size: 13px;
+    margin-top: var(--space-s);
+    font-size: var(--text-caption);
     letter-spacing: 2px;
     color: var(--gof-text-dim);
 }
 
 .mbv-note {
-    margin: 4px 0 6px 0;
-    font-size: 14px;
+    margin: 4px 0 8px 0;
+    font-size: var(--text-small);
     color: var(--gof-text-dim);
     white-space: normal;
 }
@@ -240,7 +246,7 @@
 .mbv-inline-label {
     flex-grow: 1;
     flex-shrink: 1;
-    font-size: 15px;
+    font-size: var(--text-caption);
     color: var(--gof-text);
     -unity-text-align: middle-left;
 }
@@ -260,7 +266,7 @@
 .mbv-field > .unity-label {
     min-width: 170px;
     max-width: 170px;
-    font-size: 15px;
+    font-size: var(--text-caption);
     color: var(--gof-text-dim);
     white-space: normal;
 }
@@ -268,8 +274,8 @@
 .mbv-field .unity-base-text-field__input,
 .mbv-field .unity-base-field__input {
     flex-grow: 1;
-    padding: 6px 10px;
-    font-size: 16px;
+    padding: 8px 8px;
+    font-size: var(--text-caption);
     color: var(--gof-text);
     background-color: rgba(0, 0, 0, 0.35);
     border-width: 1px;
@@ -290,7 +296,7 @@
 
 .mbv-row > .mbv-field {
     flex-grow: 1;
-    margin-right: 8px;
+    margin-right: var(--space-s);
 }
 
 .mbv-xyz > .mbv-field > .unity-label {
@@ -310,9 +316,9 @@
 }
 
 .mbv-seg {
-    padding: 6px 10px;
-    font-size: 13px;
-    margin-right: 6px;
+    padding: 8px 8px;
+    font-size: var(--text-caption);
+    margin-right: var(--space-s);
 }
 
 .mbv-seg--on {
@@ -324,7 +330,7 @@
 .mbv-step {
     min-width: 40px;
     padding: 4px 8px;
-    margin-right: 4px;
+    margin-right: var(--space-xs);
 }
 
 /* ---- left: ships ---- */
@@ -335,7 +341,7 @@
     top: 92px;
     bottom: 24px;
     width: 360px;
-    padding: 6px 16px 16px 16px;
+    padding: 8px 16px 16px 16px;
 }
 
 .mbv-ship-scroll {
@@ -348,7 +354,7 @@
     flex-direction: row;
     align-items: center;
     margin: 0;
-    padding: 6px 8px;
+    padding: 8px 8px;
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
     border-left-width: 3px;
@@ -369,7 +375,7 @@
     width: 98px;
     height: 48px;
     flex-shrink: 0;
-    margin-right: 10px;
+    margin-right: var(--space-s);
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -380,7 +386,7 @@
 }
 
 .mbv-ship-name {
-    font-size: 17px;
+    font-size: var(--text-small);
     color: var(--gof-text);
     white-space: nowrap;
     overflow: hidden;
@@ -388,7 +394,7 @@
 }
 
 .mbv-ship-sub {
-    font-size: 12px;
+    font-size: var(--text-small);
     color: var(--gof-text-dim);
     white-space: nowrap;
     overflow: hidden;
@@ -403,7 +409,7 @@
     top: 92px;
     bottom: 128px;
     width: 500px;
-    padding: 10px 18px 14px 18px;
+    padding: 8px 16px 16px 16px;
 }
 
 .mbv-tabs {
@@ -411,18 +417,28 @@
     flex-shrink: 0;
     border-bottom-width: 1px;
     border-bottom-color: var(--gof-line);
-    padding-bottom: 8px;
+    padding-bottom: var(--space-s);
 }
 
 .mbv-tab {
     flex-grow: 1;
-    margin-right: 6px;
+    margin-right: var(--space-s);
 }
 
-.mbv-tab--on {
-    color: #04121c;
-    background-color: var(--gof-cyan);
-    border-color: var(--gof-cyan);
+/* The panels' own tabs (Ship / Hardpoints / Loadout...) the same: the game's tab look, not a filled box. */
+.mbv-root .mbv-tab {
+    color: var(--gof-text-dim);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-bottom-width: 3px;
+    border-bottom-color: rgba(0, 0, 0, 0);
+    border-radius: 0;
+}
+
+.mbv-root .mbv-tab--on {
+    color: #FFFFFF;
+    background-color: rgba(0, 0, 0, 0);
+    border-bottom-color: var(--gof-amber);
 }
 
 .mbv-right-scroll {
@@ -431,13 +447,13 @@
 }
 
 .mbv-page {
-    padding-bottom: 10px;
+    padding-bottom: var(--space-s);
 }
 
 .mbv-add-row > .mbv-type-button {
     border-left-width: 4px;
-    padding-left: 10px;
-    font-size: 13px;
+    padding-left: var(--space-s);
+    font-size: var(--text-caption);
 }
 
 .mbv-type-button--on {
@@ -453,7 +469,7 @@
     flex-direction: row;
     align-items: center;
     margin: 1px 0;
-    padding: 5px 8px;
+    padding: 4px 8px;
     background-color: rgba(0, 0, 0, 0.18);
     border-width: 0;
     border-left-width: 3px;
@@ -474,23 +490,23 @@
     width: 12px;
     height: 12px;
     border-radius: 6px;
-    margin-right: 10px;
+    margin-right: var(--space-s);
 }
 
 .mbv-point-name {
     flex-grow: 1;
-    font-size: 15px;
+    font-size: var(--text-caption);
     color: var(--gof-text);
 }
 
 .mbv-point-pos {
-    font-size: 14px;
+    font-size: var(--text-caption);
     color: var(--gof-text-dim);
 }
 
 .mbv-selected {
-    margin-top: 12px;
-    padding: 4px 12px 10px 12px;
+    margin-top: var(--space-m);
+    padding: 4px 12px 8px 12px;
     background-color: rgba(255, 166, 48, 0.06);
     border-left-width: 3px;
     border-left-color: var(--gof-amber);
@@ -514,22 +530,71 @@
 .mbv-item-icon {
     width: 82px;
     height: 40px;
-    margin-right: 10px;
+    margin-right: var(--space-s);
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .mbv-item-name {
-    font-size: 15px;
+    font-size: var(--text-caption);
     color: var(--gof-text);
 }
 
-/* The engines slider, over the 3D view's top left. */
+/* The view panel over the 3D view's top left (ModBuilderView): a header bar that folds it, then the engines and the
+   camera. Folded, only the bar shows. */
 .mbv-engines {
     position: absolute;
     left: 400px;
     top: 92px;
     width: 300px;
-    padding: 8px 14px 4px 14px;
+    padding: 0 16px 8px 16px;
+}
+
+.mbv-engines--closed {
+    width: auto;
+    padding-bottom: 0;
+}
+
+.mbv-view-head {
+    flex-direction: row;
+    align-items: center;
+    margin: 0 -16px;
+    padding: 8px 16px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 0;
+}
+
+.mbv-view-head {
+    margin-bottom: var(--space-xs);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--gof-line);
+}
+
+.mbv-engines--closed > .mbv-view-head {
+    margin-bottom: 0;
+    border-bottom-width: 0;
+}
+
+.mbv-view-head-title {
+    flex-grow: 1;
+    font-size: var(--text-caption);
+    letter-spacing: 3px;
+    color: var(--gof-cyan);
+}
+
+.mbv-view-head-fold {
+    margin-left: var(--space-m);
+    font-size: var(--text-body);
+    color: var(--gof-text-dim);
+}
+
+.can-hover .mbv-view-head:hover > .mbv-view-head-fold,
+.can-hover .mbv-view-head:hover > .mbv-view-head-title {
+    color: #FFFFFF;
+}
+
+.mbv-view-body {
+    flex-direction: column;
 }
 
 .mbv-engines-row {
@@ -539,13 +604,13 @@
 
 .mbv-engines-title {
     flex-grow: 1;
-    font-size: 14px;
-    letter-spacing: 3px;
-    color: var(--gof-cyan);
+    font-size: var(--text-caption);
+    letter-spacing: 2px;
+    color: var(--gof-text-dim);
 }
 
 .mbv-engines-value {
-    font-size: 14px;
+    font-size: var(--text-caption);
     letter-spacing: 1px;
     color: var(--gof-text);
 }
@@ -560,21 +625,42 @@
 
 /* The view buttons under the engines (ModBuilderView.ShowAngle). */
 .mbv-views-title {
-    margin-top: 6px;
+    margin-top: var(--space-s);
 }
 
 .mbv-views {
     flex-direction: row;
     flex-wrap: wrap;
-    margin: 4px 0 6px 0;
+    margin: 4px -2px 0 -2px;
 }
 
+/* Three to a row, the same size: a grid rather than buttons as wide as their words. */
 .mbv-view-button {
+    width: 31%;
     flex-grow: 1;
     margin: 2px;
-    padding: 5px 6px;
-    font-size: 12px;
-    letter-spacing: 1px;
+    padding: 4px 0;
+    font-size: var(--text-caption);
+    letter-spacing: 0;
+    white-space: nowrap;   /* one line: wrapped, FRONT broke into FRON / T in the narrow panel */
+    -unity-text-align: middle-center;
+    color: var(--gof-text);
+    background-color: var(--button-fill);
+    border-width: var(--button-border-compact);
+    border-color: var(--button-line);
+    border-radius: var(--button-radius);
+}
+
+.can-hover .mbv-view-button:hover,
+.mbv-view-button:focus {
+    color: #FFFFFF;
+    border-color: var(--button-focus-line);
+    background-color: var(--button-focus-fill);
+}
+
+.mbv-view-button:active {
+    color: var(--button-press-text);
+    background-color: var(--button-press-fill);
 }
 
 /* ---- bottom ---- */
@@ -586,7 +672,7 @@
     width: 500px;
     height: 88px;
     margin: 0;
-    font-size: 30px;
+    font-size: var(--text-title);
     letter-spacing: 8px;
     -unity-text-align: middle-center;
     color: #1A0E00;
@@ -605,8 +691,8 @@
     left: 400px;
     right: 540px;
     bottom: 28px;
-    padding: 8px 14px;
-    font-size: 16px;
+    padding: 8px 16px;
+    font-size: var(--text-small);
     color: var(--gof-text);
     white-space: normal;
     background-color: rgba(4, 10, 18, 0.78);
@@ -624,8 +710,8 @@
     left: 400px;
     right: 540px;
     top: 176px;
-    padding: 10px 16px;
-    font-size: 18px;
+    padding: 8px 16px;
+    font-size: var(--text-small);
     -unity-text-align: middle-center;
     color: #1A0E00;
     background-color: rgba(255, 166, 48, 0.92);
@@ -636,14 +722,14 @@
     position: absolute;
     left: 0;
     top: 0;
-    font-size: 15px;
+    font-size: var(--text-caption);
     -unity-font-style: bold;
     -unity-text-outline-width: 0.25px;
     -unity-text-outline-color: rgba(0, 0, 0, 0.9);
 }
 
 .mbv-point-tag--on {
-    font-size: 19px;
+    font-size: var(--text-body);
 }
 
 /* ---- modal ---- */
@@ -667,7 +753,7 @@
 .mbv-modal-box {
     width: 1100px;
     max-height: 82%;
-    padding: 14px 24px 18px 24px;
+    padding: 16px 24px 16px 24px;
 }
 
 .mbv-modal-box--small {
@@ -681,7 +767,7 @@
 
 .mbv-confirm-text {
     margin: 8px 0 16px 0;
-    font-size: 18px;
+    font-size: var(--text-small);
     color: var(--gof-text);
     white-space: normal;
 }
@@ -689,7 +775,7 @@
 .mbv-picker-scroll {
     flex-grow: 1;
     flex-shrink: 1;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-s);
 }
 
 .mbv-picker-grid {
@@ -700,7 +786,7 @@
 .mbv-tile {
     width: 196px;
     margin: 0 8px 8px 0;
-    padding: 8px;
+    padding: var(--space-s);
     align-items: center;
     background-color: rgba(0, 0, 0, 0.25);
     border-width: 1px;
@@ -720,8 +806,8 @@
 }
 
 .mbv-tile-name {
-    margin-top: 4px;
-    font-size: 14px;
+    margin-top: var(--space-xs);
+    font-size: var(--text-caption);
     color: var(--gof-text);
     white-space: normal;
     -unity-text-align: middle-center;
@@ -734,36 +820,38 @@
 .mbv-narrow .mbv-testfly { width: 420px; }
 .mbv-narrow .mbv-status,
 .mbv-narrow .mbv-place-hint { left: 340px; right: 460px; }
-.mbv-narrow .mbv-engines { left: 340px; width: 260px; }
+.mbv-narrow .mbv-engines { left: 340px; width: 280px; }
 .mbv-narrow .mbv-field > .unity-label { min-width: 140px; max-width: 140px; }
 .mbv-narrow .mbv-ship-icon { width: 82px; height: 40px; }
 
-.mbv-compact .mbv-top { padding: 0 14px; height: 68px; }
+.mbv-compact .mbv-top { padding: 0 16px; height: 68px; }
 .mbv-compact .mbv-title-box { min-width: 0; margin-right: 12px; }
-.mbv-compact .mbv-title { font-size: 19px; letter-spacing: 3px; }
-.mbv-compact .mbv-project { max-width: 170px; font-size: 13px; }
-.mbv-compact .mbv-top-button { min-width: 80px; margin-left: 6px; }
-.mbv-compact .mbv-left { left: 12px; top: 80px; bottom: 16px; width: 250px; padding: 4px 10px 10px 10px; }
-.mbv-compact .mbv-right { right: 12px; top: 80px; bottom: 104px; width: 360px; padding: 8px 12px 10px 12px; }
-.mbv-compact .mbv-testfly { right: 12px; bottom: 16px; width: 360px; height: 74px; font-size: 24px; letter-spacing: 6px; }
+.mbv-compact .mbv-title { font-size: var(--text-body); letter-spacing: 3px; }
+.mbv-compact .mbv-project { max-width: 170px; font-size: var(--text-caption); }
+.mbv-compact .mbv-top-button { min-width: 80px; margin-left: 8px; }
+.mbv-compact .mbv-left { left: 12px; top: 80px; bottom: 16px; width: 250px; padding: 4px 8px 8px 8px; }
+.mbv-compact .mbv-right { right: 12px; top: 80px; bottom: 104px; width: 360px; padding: 8px 12px 8px 12px; }
+.mbv-compact .mbv-testfly { right: 12px; bottom: 16px; width: 360px; height: 74px; font-size: var(--text-subhead); letter-spacing: 6px; }
 .mbv-compact .mbv-status,
 .mbv-compact .mbv-place-hint { left: 274px; right: 384px; }
-.mbv-compact .mbv-status { bottom: 18px; font-size: 14px; }
-.mbv-compact .mbv-place-hint { top: 164px; font-size: 15px; }
-.mbv-compact .mbv-engines { left: 274px; top: 80px; width: 220px; }
-.mbv-compact .mbv-button { font-size: 13px; letter-spacing: 1px; padding: 6px 10px; margin: 3px 6px 3px 0; }
+.mbv-compact .mbv-status { bottom: 18px; font-size: var(--text-small); }
+.mbv-compact .mbv-place-hint { top: 164px; font-size: var(--text-small); }
+.mbv-compact .mbv-engines { left: 274px; top: 80px; width: 250px; }
+.mbv-narrow .mbv-engines--closed,
+.mbv-compact .mbv-engines--closed { width: auto; }
+.mbv-compact .mbv-button { font-size: var(--text-caption); letter-spacing: 1px; padding: 8px 8px; margin: 3px 8px 3px 0; }
 .mbv-compact .mbv-tab { margin-right: 4px; }
-.mbv-compact .mbv-heading { font-size: 13px; letter-spacing: 3px; margin: 10px 0 4px 0; }
-.mbv-compact .mbv-note { font-size: 13px; }
-.mbv-compact .mbv-field > .unity-label { min-width: 110px; max-width: 110px; font-size: 13px; }
+.mbv-compact .mbv-heading { font-size: var(--text-caption); letter-spacing: 3px; margin: 8px 0 4px 0; }
+.mbv-compact .mbv-note { font-size: var(--text-small); }
+.mbv-compact .mbv-field > .unity-label { min-width: 130px; max-width: 130px; font-size: var(--text-caption); }
 .mbv-compact .mbv-field .unity-base-text-field__input,
-.mbv-compact .mbv-field .unity-base-field__input { font-size: 14px; padding: 4px 8px; }
+.mbv-compact .mbv-field .unity-base-field__input { font-size: var(--text-caption); padding: 4px 8px; }
 .mbv-compact .mbv-ship-icon { width: 66px; height: 32px; margin-right: 8px; }
-.mbv-compact .mbv-ship-name { font-size: 15px; }
-.mbv-compact .mbv-seg { padding: 4px 7px; font-size: 12px; }
+.mbv-compact .mbv-ship-name { font-size: var(--text-caption); }
+.mbv-compact .mbv-seg { padding: 4px 8px; font-size: var(--text-caption); }
 .mbv-compact .mbv-item-icon { width: 66px; height: 32px; }
 .mbv-compact .mbv-item-name,
-.mbv-compact .mbv-point-name { font-size: 14px; }
+.mbv-compact .mbv-point-name { font-size: var(--text-caption); }
 .mbv-compact .mbv-modal-box { width: 92%; }
 .mbv-compact .mbv-tile { width: 150px; }
 .mbv-compact .mbv-tile-icon { width: 134px; height: 66px; }
@@ -784,28 +872,28 @@
 .mbv-item-head {
     flex-direction: row;
     align-items: center;
-    margin-bottom: 6px;
+    margin-bottom: var(--space-s);
 }
 
 .mbv-item-head-icon {
     width: 120px;
     height: 59px;
     flex-shrink: 0;
-    margin-right: 12px;
+    margin-right: var(--space-m);
     -unity-background-scale-mode: scale-to-fit;
 }
 
 /* Characters: the portrait as a conversation shows it (the game's .portrait rules, UI/Dialogue/Dialogue.uss). */
 .mbv-char-preview {
     align-items: center;
-    margin: 4px 0 10px 0;
+    margin: 4px 0 8px 0;
 }
 
 .mbv-char-preview-name {
-    font-size: 15px;
+    font-size: var(--text-caption);
     letter-spacing: 2px;
     color: var(--gof-text);
-    margin-bottom: 6px;
+    margin-bottom: var(--space-s);
 }
 
 .mbv-portrait {
@@ -845,7 +933,7 @@
     width: 40px;
     height: 50px;
     flex-shrink: 0;
-    margin-right: 10px;
+    margin-right: var(--space-s);
     -unity-background-scale-mode: scale-and-crop;
     background-color: rgba(0, 0, 0, 0.35);
 }
@@ -874,8 +962,8 @@
 .mbv-skin-row {
     flex-direction: row;
     align-items: flex-start;
-    margin: 6px 0 10px 0;
-    padding-bottom: 8px;
+    margin: 8px 0 8px 0;
+    padding-bottom: var(--space-s);
     border-bottom-width: 1px;
     border-bottom-color: rgba(216, 236, 247, 0.08);
 }
@@ -884,7 +972,7 @@
     width: 96px;
     height: 96px;
     flex-shrink: 0;
-    margin-right: 12px;
+    margin-right: var(--space-m);
     background-color: rgba(0, 0, 0, 0.35);
     -unity-background-scale-mode: scale-to-fit;
 }
@@ -896,7 +984,7 @@
 }
 
 .mbv-skin-role {
-    font-size: 12px;
+    font-size: var(--text-caption);
     letter-spacing: 2px;
     color: var(--gof-text-dim);
 }
@@ -906,7 +994,7 @@
 }
 
 .mbv-skin-name {
-    font-size: 13px;
+    font-size: var(--text-caption);
     color: var(--gof-text);
     margin: 2px 0 4px 0;
     white-space: normal;
@@ -915,8 +1003,8 @@
 /* The hangar picker: a heading per kind of hangar, across the grid. */
 .mbv-picker-heading {
     width: 100%;
-    margin: 10px 0 6px 0;
-    font-size: 14px;
+    margin: 8px 0 8px 0;
+    font-size: var(--text-caption);
     letter-spacing: 3px;
     color: var(--gof-amber);
 }
@@ -929,12 +1017,12 @@
 .mbv-undo-button,
 .mbv-redo-button {
     min-width: 0;
-    padding-left: 10px;
-    padding-right: 10px;
+    padding-left: var(--space-s);
+    padding-right: var(--space-s);
 }
 
 .mbv-redo-button {
-    margin-left: 4px;
+    margin-left: var(--space-xs);
 }
 
 /* A skin texture other ships share (the lights, the engine glow). */
@@ -948,9 +1036,9 @@
 }
 
 .mbv-menu-item {
-    margin: 6px 0 0 0;
+    margin: 8px 0 0 0;
     padding: 12px 16px;
-    font-size: 18px;
+    font-size: var(--text-small);
     -unity-text-align: middle-left;
 }
 
@@ -980,7 +1068,7 @@
     width: 32px;
     height: 50px;
     flex-shrink: 0;
-    margin-right: 10px;
+    margin-right: var(--space-s);
     -unity-background-scale-mode: scale-and-crop;
     background-color: rgba(0, 0, 0, 0.35);
 }
@@ -988,7 +1076,7 @@
     width: 174px;
     height: 269px;
     align-self: center;
-    margin: 6px 0 10px 0;
+    margin: 8px 0 8px 0;
     justify-content: flex-end;
     -unity-background-scale-mode: scale-and-crop;
     background-color: rgba(0, 0, 0, 0.35);
@@ -996,8 +1084,8 @@
     border-color: var(--gof-line);
 }
 .mbv-card-title {
-    padding: 6px 8px;
-    font-size: 13px;
+    padding: 8px 8px;
+    font-size: var(--text-caption);
     letter-spacing: 2px;
     -unity-text-align: middle-center;
     white-space: normal;
@@ -1006,7 +1094,7 @@
 
 /* A quest's steps: one card each, the picked one open. */
 .mbv-step-card {
-    margin: 0 0 6px 0;
+    margin: 0 0 8px 0;
     padding: 0 0 4px 0;
     background-color: rgba(0, 0, 0, 0.2);
     border-width: 1px;
@@ -1019,26 +1107,26 @@
 }
 .mbv-step-head {
     margin: 0;
-    padding: 6px 8px;
+    padding: 8px 8px;
     flex-direction: column;
     align-items: flex-start;
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
 }
-.mbv-step-card--on > .mbv-step-head { padding: 6px 0; }
+.mbv-step-card--on > .mbv-step-head { padding: 8px 0; }
 .can-hover .mbv-step-head:hover { background-color: rgba(216, 236, 247, 0.06); }
 .mbv-step-name {
-    font-size: 15px;
+    font-size: var(--text-caption);
     color: var(--gof-cyan);
 }
 .mbv-step-summary {
-    font-size: 13px;
+    font-size: var(--text-small);
     color: var(--gof-text-dim);
     white-space: normal;
 }
 .mbv-page-box {
     margin: 4px 0;
-    padding: 6px 8px;
+    padding: 8px 8px;
     background-color: rgba(0, 0, 0, 0.2);
     border-left-width: 2px;
     border-left-color: rgba(216, 236, 247, 0.15);
@@ -1046,7 +1134,7 @@
 
 /* The script a quest makes (read only). */
 .mbv-script .unity-base-text-field__input {
-    font-size: 13px;
+    font-size: var(--text-caption);
     white-space: pre;
     -unity-text-align: upper-left;
 }
@@ -1059,12 +1147,12 @@
 /* Quest steps: a block's own lists under it (If's Then / Else, an answer's steps...). */
 .mbv-step-card--block { border-left-width: 3px; border-left-color: rgba(120, 200, 255, 0.35); }
 .mbv-step-children {
-    margin: 2px 6px 4px 14px;
+    margin: 2px 8px 4px 16px;
     padding: 2px 0 2px 8px;
     border-left-width: 1px;
     border-left-color: rgba(216, 236, 247, 0.15);
 }
-.mbv-add--small { font-size: 12px; padding: 2px 8px; min-height: 0; margin: 2px 0; }
+.mbv-add--small { font-size: var(--text-caption); padding: 2px 8px; min-height: 0; margin: 2px 0; }
 
 /* ---- the quest graph (QuestGraphView) ---- */
 .mbg-canvas {
@@ -1096,7 +1184,7 @@
     position: absolute;
     right: 10px;
     top: 10px;
-    font-size: 12px;
+    font-size: var(--text-caption);
     color: var(--gof-text-dim);
 }
 .mbg-help {
@@ -1104,7 +1192,7 @@
     left: 10px;
     right: 10px;
     bottom: 6px;
-    font-size: 11px;
+    font-size: var(--text-small);
     color: rgba(216, 236, 247, 0.4);
     white-space: normal;
 }
@@ -1114,7 +1202,7 @@
     border-width: 1px;
     border-color: rgba(216, 236, 247, 0.22);
     border-radius: 4px;
-    padding-bottom: 4px;
+    padding-bottom: var(--space-xs);
 }
 .mbg-node--selected { border-color: var(--gof-amber); border-width: 2px; }
 .mbg-node--loose { opacity: 0.7; border-color: rgba(255, 120, 120, 0.4); }
@@ -1123,21 +1211,21 @@
 .mbg-head {
     flex-direction: row;
     align-items: center;
-    padding: 4px 10px;
+    padding: 4px 8px;
     min-height: 24px;
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
 }
-.mbg-title { font-size: 13px; color: rgb(240, 244, 248); flex-grow: 1; }
+.mbg-title { font-size: var(--text-caption); color: rgb(240, 244, 248); flex-grow: 1; }
 .mbg-summary {
-    font-size: 12px;
+    font-size: var(--text-small);
     color: var(--gof-text-dim);
     white-space: normal;
-    padding: 4px 10px 2px 10px;
+    padding: 4px 8px 2px 8px;
 }
-.mbg-row { flex-direction: row; align-items: center; min-height: 20px; padding: 0 10px; }
+.mbg-row { flex-direction: row; align-items: center; min-height: 20px; padding: 0 8px; }
 .mbg-row--out { justify-content: flex-end; }
-.mbg-row-label { font-size: 12px; color: rgb(205, 215, 225); }
+.mbg-row-label { font-size: var(--text-caption); color: rgb(205, 215, 225); }
 .mbg-row--out .mbg-row-label { -unity-text-align: middle-right; }
 .mbg-port {
     position: absolute;
@@ -1161,3 +1249,13 @@
 .mbv-top-button--on { color: #04121c; background-color: var(--gof-cyan); border-color: var(--gof-cyan); }
 .mbv-ai-button--live { border-color: rgb(80, 220, 130); }
 .mbv-ai-button--live.mbv-top-button--on { border-color: rgb(80, 220, 130); }
+
+/* Nothing picked in the list: nothing to remove (ModBuilderScreen.UpdateRemoveButtons). */
+.mbv-remove:disabled {
+    opacity: 0.4;
+}
+
+/* Over the star map (Systems): opaque panels, the map's system names read through the translucent ones. */
+.mbv-on-map .mbv-panel {
+    background-color: rgb(6, 12, 20);
+}

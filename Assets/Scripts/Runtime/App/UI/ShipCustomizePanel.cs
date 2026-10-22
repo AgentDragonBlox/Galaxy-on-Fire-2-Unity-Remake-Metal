@@ -65,7 +65,7 @@ namespace GoF2Remake.UI
             s.display = DisplayStyle.None;
             title = new Label();
             title.AddToClassList("gof-semibold");
-            title.style.fontSize = 30; title.style.color = Amber; title.style.marginBottom = 10;
+            title.style.fontSize = UiLayout.Type(30); title.style.color = Amber; title.style.marginBottom = 10;
             Root.Add(title);
             // The rows scroll (wheel, drag, the selection kept in view) so the stats, buttons and help stay on screen: a kit
             // with every colour slot had 19 rows and pushed them off the bottom.
@@ -80,7 +80,7 @@ namespace GoF2Remake.UI
             Root.RegisterCallback<GeometryChangedEvent>(_ => FitToScreen());
             list.contentContainer.RegisterCallback<GeometryChangedEvent>(_ => FitToScreen());
             stats = new Label();
-            stats.style.fontSize = 19; stats.style.color = new Color(0.85f, 0.95f, 1f, 0.95f); stats.style.marginTop = 10;
+            stats.style.fontSize = UiLayout.Type(19); stats.style.color = new Color(0.85f, 0.95f, 1f, 0.95f); stats.style.marginTop = 10;
             stats.style.whiteSpace = WhiteSpace.Normal;
             Root.Add(stats);
             var buttons = new VisualElement();
@@ -89,7 +89,7 @@ namespace GoF2Remake.UI
             buttons.Add(Button(X("kitCancel", "CANCEL"), () => { ClickSound?.Invoke(); Cancelled?.Invoke(); }, false));
             Root.Add(buttons);
             help = new Label();
-            help.style.fontSize = 18; help.style.color = new Color(1f, 1f, 1f, 0.6f); help.style.marginTop = 10; help.style.whiteSpace = WhiteSpace.Normal;
+            help.style.fontSize = UiLayout.Type(18); help.style.color = new Color(1f, 1f, 1f, 0.6f); help.style.marginTop = 10; help.style.whiteSpace = WhiteSpace.Normal;
             Root.Add(help);
         }
 
@@ -126,7 +126,7 @@ namespace GoF2Remake.UI
             this.type = type;
             build = current.Clone();
             title.text = string.Format(X("kitCustomizeTitle", "CUSTOMIZE {0}"), shipName.ToUpperInvariant());
-            help.text = X("kitCustomizeHelp", "Up / down: pick a part. Left / right: change it. Enter: apply, Esc: cancel. Drag to turn the ship, the wheel zooms.");
+            help.text = X("kitCustomizeHelp", "Up / down: part. Left / right: change. Enter: apply. Esc: cancel.");
             row = 0;
             BuildRows();
             Refresh();
@@ -199,13 +199,13 @@ namespace GoF2Remake.UI
             ls.paddingLeft = ls.paddingRight = 6;
             var name = new Label(label.ToUpperInvariant());
             name.AddToClassList("gof-semibold");
-            name.style.width = 210; name.style.fontSize = 20; name.style.color = new Color(1f, 1f, 1f, 0.75f);
+            name.style.width = 210; name.style.fontSize = UiLayout.Type(20); name.style.color = new Color(1f, 1f, 1f, 0.75f);
             NoWrap(name);
             line.Add(name);
             line.Add(Arrow("‹", () => { row = index; Cycle(-1); }));
             var value = new Label();
             value.AddToClassList("gof-semibold");
-            value.style.flexGrow = 1; value.style.flexShrink = 1; value.style.fontSize = 21; value.style.unityTextAlign = TextAnchor.MiddleCenter; value.style.color = Color.white;
+            value.style.flexGrow = 1; value.style.flexShrink = 1; value.style.fontSize = UiLayout.Type(21); value.style.unityTextAlign = TextAnchor.MiddleCenter; value.style.color = Color.white;
             NoWrap(value);
             VisualElement swatch = null;
             if (kind == Kind.Color || kind == Kind.WeaponColor || kind == Kind.ExhaustColor)
@@ -235,7 +235,7 @@ namespace GoF2Remake.UI
         {
             var b = new Button(click) { text = text, focusable = false };
             var s = b.style;
-            s.width = 44; s.height = 40; s.fontSize = 30; s.color = Amber;
+            s.width = 44; s.height = 40; s.fontSize = UiLayout.Type(30); s.color = Amber;
             s.backgroundColor = new Color(1f, 1f, 1f, 0.06f);
             s.borderTopWidth = s.borderBottomWidth = s.borderLeftWidth = s.borderRightWidth = 0;
             s.unityTextAlign = TextAnchor.MiddleCenter;

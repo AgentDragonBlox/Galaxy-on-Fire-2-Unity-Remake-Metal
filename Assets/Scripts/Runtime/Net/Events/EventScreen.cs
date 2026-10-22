@@ -179,9 +179,6 @@ namespace GoF2Remake.Events
             instance = go.AddComponent<EventScreen>();
             instance.runtimePanel = Instantiate(assets.panelSettings);
             instance.runtimePanel.sortingOrder = assets.panelSettings.sortingOrder + 90;   // over the HUDs and menus, under the FPS counter
-            instance.runtimePanel.referenceResolution = new Vector2Int(1920, 1080);
-            instance.runtimePanel.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
-            instance.runtimePanel.match = 1f;
             instance.emptyTree = ScriptableObject.CreateInstance<VisualTreeAsset>();
             var pr = go.AddComponent<PanelRenderer>();
             pr.panelSettings = instance.runtimePanel;
@@ -346,7 +343,7 @@ namespace GoF2Remake.Events
         {
             var l = new Label { pickingMode = PickingMode.Ignore };
             var s = l.style;
-            s.fontSize = size;
+            s.fontSize = UiLayout.Type(size);
             s.color = colour;
             s.letterSpacing = spacing;
             s.unityTextAlign = TextAnchor.MiddleCenter;
@@ -359,6 +356,8 @@ namespace GoF2Remake.Events
 
         void OnUIReload(PanelRenderer renderer, VisualElement root, int version)
         {
+            UiLayout.Keep(runtimePanel, root);   // docs/UI-DESIGN.md "Scaling"
+            UiSounds.Attach(root);   // the questions' and the MOTD's buttons (docs/UI-DESIGN.md "Sound")
             root.pickingMode = PickingMode.Ignore;
             root.style.position = Position.Absolute;
             root.style.left = root.style.top = root.style.right = root.style.bottom = 0;
@@ -580,7 +579,7 @@ namespace GoF2Remake.Events
             b.marginTop = 14;
             b.minWidth = 180;
             b.minHeight = 56;
-            b.fontSize = 22;
+            b.fontSize = UiLayout.Type(22);
             b.letterSpacing = 2;
             b.unityTextAlign = TextAnchor.MiddleCenter;   // centred in the button (the theme's buttons align left)
             b.paddingLeft = b.paddingRight = 24;
@@ -749,7 +748,7 @@ namespace GoF2Remake.Events
                     bs.marginLeft = bs.marginRight = 0;
                     bs.paddingTop = bs.paddingBottom = 10;
                     bs.paddingLeft = bs.paddingRight = 18;
-                    bs.fontSize = 21;
+                    bs.fontSize = UiLayout.Type(21);
                     bs.letterSpacing = 1;
                     bs.unityTextAlign = TextAnchor.MiddleLeft;
                     bs.color = TextDim;
@@ -761,7 +760,7 @@ namespace GoF2Remake.Events
                     glyph.style.position = Position.Absolute;
                     glyph.style.right = 14;
                     glyph.style.top = 9;
-                    glyph.style.fontSize = 16;
+                    glyph.style.fontSize = UiLayout.Type(16);
                     glyph.style.color = TextDim;
                     button.Add(glyph);
                     button.RegisterCallback<PointerEnterEvent>(_ => Highlight(button, true));

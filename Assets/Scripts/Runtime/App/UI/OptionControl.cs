@@ -65,7 +65,15 @@ namespace GoF2Remake.UI
                 default:
                     // Modified: every choice is a drop-down (ChoiceRow, ChoicePopup), the few-value ones too (they were segments).
                     choice = new ChoiceRow(false);
-                    choice.Changed += i => { d.setIndex(i); UpdateDescription(); Changed?.Invoke(); };
+                    choice.Changed += i =>
+                    {
+                        int before = d.getIndex();
+                        d.setIndex(i);
+                        UpdateDescription();
+                        Changed?.Invoke();
+                        // A display or size change asks to be kept, else it goes back by itself (docs/UI-DESIGN.md "Options").
+                        if (d.confirm && before != i) SettingsConfirm.Changed(this, before);
+                    };
                     Field = choice;
                     break;
             }

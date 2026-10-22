@@ -110,6 +110,7 @@ namespace GoF2Remake.UI
         ChaseCamera chase;
         Vector2Int lastScreen;
         Rect lastSafeArea;
+        int lastLayout = -1;
 
         /// <summary>Remake: the radar ellipse's size against the original's 657 x 491 (a 1080-high canvas): the phone layout's
         /// panel is 900 high, so there it shrinks by 900 / 1080 to keep the original's share of the screen height (at full size
@@ -184,6 +185,7 @@ namespace GoF2Remake.UI
         {
             root = rootElement;
             ScrollBars.Watch(rootElement);   // Modified: the hangar's scrollbar on every scroll view that needs one
+            PadKeyboard.Attach(rootElement);   // a controller's keyboard for the chat's text field (docs/UI-DESIGN.md "Text entry")
             root.style.flexGrow = 1;   // no default theme to stretch the document root
             root.pickingMode = PickingMode.Ignore;
             safeArea = root.Q("safeArea");
@@ -254,6 +256,8 @@ namespace GoF2Remake.UI
             pauseMenu?.Close();   // a UI reload rebuilds it: don't leave the game paused
             pauseMenu = new PauseMenu(root, BackToMenu);
             ButtonSounds(root);   // Modified: every button and toggle of the HUD's menus (was the pause menu's and the autopilot menu's)
+            UiSounds.Attach(root, false);   // Rework: a focus move by the keys / a controller in its windows (the multiplayer window...)
+            UiFocus.SkipScrollBars(root);
             pauseMenu.InfoSound = () => PlayUi(CombatAudio.Load()?.messageInfo);
             pauseMenu.HoverSound = PlayHover;   // Modified: the menus' hover / arrow sound
             pauseMenu.ButtonSound = PlayButton;
@@ -356,7 +360,9 @@ namespace GoF2Remake.UI
                 SecondaryReleased = () => { if (!MiningOrDocked) weapons?.FireSecondary(); },
                 // The booster also on the way to an asteroid (refused only while drilling, PlayerEgo::isMining).
                 BoostReleased = () => { if (!Drilling && (docking == null || !docking.Busy)) ship?.Boost(); },
-                CameraReleased = () => { if (mining == null || mining.State == Mining.Phase.Idle) level?.FreeLook?.Cycle(); },
+                CameraPressed = () => level?.FreeLook?.CameraDown(),
+                CameraReleased = () => level?.FreeLook?.CameraUp(mining == null || mining.State == Mining.Phase.Idle),
+                CameraCancelled = () => level?.FreeLook?.CameraUp(false),
                 MenuReleased = OnActionsButton,
                 TurretReleased = () => level?.Turret?.Toggle(),
                 PausePressed = () => PlayButton(true),
@@ -666,6 +672,7 @@ namespace GoF2Remake.UI
                 Hint(T("hudFreeLook", "FREE LOOK"), GameControls.FreeLookHold);
                 if (FirstAuto() != null) Hint(Localization.Get(37).ToUpperInvariant(), GameControls.AutoTurret);
                 if (HasManualTurret()) Hint(T("hudTurretView", "TURRET VIEW"), GameControls.Camera);
+                CockpitHint(pad);
                 Hint(Localization.Get(571).ToUpperInvariant(), GameControls.AutopilotMenu);
                 if (nav != null && nav.MenuEntries(true).Count > 0) Hint(T("hudActions", "ACTIONS"), GameControls.ActionsMenu);
                 Hint(T("hudMenu", "MENU"), menuKey);
@@ -687,9 +694,20 @@ namespace GoF2Remake.UI
             // Remake: a ship may carry an auto turret and a manual one at once: a hint for each kind it has.
             if (FirstAuto() != null) Hint(Localization.Get(37).ToUpperInvariant(), GameControls.AutoTurret);
             if (HasManualTurret()) Hint(T("hudTurretView", "TURRET VIEW"), GameControls.Camera);
+            CockpitHint(pad);
             Hint(Localization.Get(571).ToUpperInvariant(), GameControls.AutopilotMenu);
             if (nav != null && nav.MenuEntries(true).Count > 0) Hint(T("hudActions", "ACTIONS"), GameControls.ActionsMenu);
             Hint(T("hudMenu", "MENU"), menuKey);
+        }
+
+        /// <summary>The cockpit view's own key (F2), or with a controller the camera button held (FreeLookCamera.ToggleCockpit;
+        /// it left the camera cycle). Not in VR, which flies from the seat.</summary>
+        void CockpitHint(bool pad)
+        {
+            if (VrFlags.Enabled) return;
+            string T(string key, string english) => Localization.Extra(key, english).ToUpperInvariant();
+            if (pad) Hint(T("hudCockpit", "COCKPIT") + " (" + T("hudHold", "HOLD") + ")", GameControls.Camera);
+            else Hint(T("hudCockpit", "COCKPIT"), GameControls.CockpitView);
         }
 
         InputKind hintKind;
@@ -819,6 +837,8 @@ namespace GoF2Remake.UI
         void Update()
         {
             if (root == null) return;
+            // The layout first: the Mod Builder's space screen below shares this panel and its scale.
+            if (lastScreen != ScreenSize() || lastSafeArea != Screen.safeArea || lastLayout != UiLayout.Revision) UpdateLayout();
             // Remake: the Mod Builder's work in space (Stations, Weapon fx): its own screen instead of the HUD.
             if (Modding.ModBuilder.InSpace)
             {
@@ -843,11 +863,11 @@ namespace GoF2Remake.UI
             }
             UpdateTouch();   // every frame: the controls hide and let go under menus, dialogues and cutscenes
             UpdateMouseSteering();
-            if (lastScreen != ScreenSize() || lastSafeArea != Screen.safeArea) UpdateLayout();
             lensFlare?.Update(level != null ? level.Backdrop : null, StarMap.IsOpen || !Settings.LensFlare);   // StarSystem::render2D, under the HUD
 
             bool mapOpen = StarMap.IsOpen;
             root.EnableInClassList("hud-map", mapOpen);
+            root.EnableInClassList("hud-paused", pauseMenu != null && pauseMenu.IsOpen);   // the menu has its own prompts
             root.EnableInClassList("hud-shop", carrierShop != null && carrierShop.IsOpen);   // the carrier's resupply window
             int hudMode = Settings.HudMode;   // Options > Gameplay "Flight HUD" (immersion): FlightHud.uss hides the markings
             root.EnableInClassList("hud-minimal", hudMode == Settings.HudMinimal);
@@ -855,6 +875,7 @@ namespace GoF2Remake.UI
             // The FPS counter at the top centre (its default place, FpsCounter): the lock plate and the HUD messages move
             // under it (#137: a mission's reward line was drawn over the counter).
             root.EnableInClassList("hud-fps", Settings.ShowFps && Settings.FpsPosition == Settings.FpsTop);
+            ApplyHudLook();
             if (mapOpen) return;   // the map has its own input
 
             // MGame::OnUpdate: DialogueWindow::update runs only while the player lives; a conversation open at the death waits.
@@ -1053,7 +1074,8 @@ namespace GoF2Remake.UI
             // Touch: no prompt, the fire button is the action button (its arrow shows when fire acts).
             dockPrompt.EnableInClassList("dock-prompt--hidden", prompt == null || InputMode.Current == InputKind.Touch || cursorMode);   // touch / cursor: the arrow on fire
             if (prompt != null) dockLabel.text = prompt;
-            if (prompt != null && GameControls.Action.WasPressedThisFrame())
+            // A session: Enter opens the chat (ChatView), not the prompt (F, the controller's X still act).
+            if (prompt != null && GameControls.Action.WasPressedThisFrame() && !(GoF2Remake.Multiplayer.NetGame.Active && ActionByEnter()))
             {
                 Interact();
                 if (level == null || !level.isActiveAndEnabled) return;
@@ -1536,7 +1558,7 @@ namespace GoF2Remake.UI
             {
                 SaveGame.DeleteRun(Session.RunId);
                 hardcoreDead = true;
-                gameOverText.text = Localization.Extra("hardcoreDead", "Hardcore: your pilot is lost and this game's saves are deleted. Tap to return to the main menu.");
+                gameOverText.text = Localization.Extra("hardcoreDead", "Hardcore: your pilot is lost and the saves are deleted. Tap for the main menu.");
                 return;
             }
             if (Modding.ModBuilder.TestFlying || Modding.ModBuilder.PlayTesting)   // a Mod Builder test flight / play test: back to the builder
@@ -1623,6 +1645,11 @@ namespace GoF2Remake.UI
         bool DockBeforeLock => level != null && level.CanDock && nav != null && !nav.Autopilot && nav.Locked != null
                                && (nav.Locked.kind == Navigation.Kind.Planet || nav.Locked.kind == Navigation.Kind.Station);
 
+        /// <summary>The action's press came from Enter (its second default key).</summary>
+        static bool ActionByEnter() =>
+            GameControls.Action.activeControl is UnityEngine.InputSystem.Controls.KeyControl k
+            && (k.keyCode == UnityEngine.InputSystem.Key.Enter || k.keyCode == UnityEngine.InputSystem.Key.NumpadEnter);
+
         void Interact()
         {
             if (docking != null && docking.PromptText != null) docking.Interact();
@@ -1673,24 +1700,50 @@ namespace GoF2Remake.UI
         {
             lastScreen = ScreenSize();
             lastSafeArea = Screen.safeArea;
+            lastLayout = UiLayout.Revision;
             bool offscreen = runtimePanel != null && runtimePanel.targetTexture != null;
             float w = Mathf.Max(1, lastScreen.x), h = Mathf.Max(1, lastScreen.y);
-            float inches = Screen.dpi > 0f ? Mathf.Sqrt(w * w + h * h) / Screen.dpi : 20f;
-            // Remake: UnityEngine.Device, the Device Simulator's phone (UnityEngine.Application stays the Editor there, so
-            // the simulator showed the desktop layout); the same values in a build.
-            bool phone = UnityEngine.Device.Application.isMobilePlatform && inches < 7.5f;
-            if (runtimePanel != null)
-            {
-                runtimePanel.referenceResolution = phone ? new Vector2Int(1600, 900) : new Vector2Int(1920, 1080);
-                runtimePanel.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
-                runtimePanel.match = 1f;
-            }
-            root.EnableInClassList("layout-phone", phone);
-            root.EnableInClassList("ui-large", UiScale.Large(h, phone ? 900f : 1080f));   // a small high-density screen: bigger lists
-            RadarScale = phone ? 900f / 1080f : 1f;
+            var layout = UiLayout.Configure(runtimePanel, root, w, h);   // docs/UI-DESIGN.md "Scaling"
+            // The radar ellipse (657 x 491 units) is drawn for a 1080-unit-high panel: shrunk with a shorter one (a phone's,
+            // a larger interface size) so its top and bottom dots stay on screen (2026-10-16, players' report at 900).
+            RadarScale = Mathf.Min(1f, layout.panel.y / UiLayout.RefHeight);
             var radar = root.Q("radarEllipse");   // a 0 x 0 box at the centre: scaled around it
             if (radar != null) radar.style.scale = new Scale(new Vector3(RadarScale, RadarScale, 1f));
             ApplySafeArea(w, h, offscreen);
+            hudLook = -1;   // again on the next frame (a rebuilt layout)
+        }
+
+        int hudLook = -1;
+
+        /// <summary>The HUD's panels scaled from the corner or edge they hang on (Options > Gameplay "HUD size"; the ship
+        /// markers, the radar ellipse and the touch controls keep their sizes: they sit on what they mark, or have their
+        /// own options).</summary>
+        static readonly (string cls, float x, float y)[] HudScaled =
+        {
+            ("status-panel", 0f, 0f), ("speed-panel", 0f, 0f), ("orbit-info", 0f, 0f), ("hud-readout", 100f, 0f),
+            ("lock-plate", 50f, 0f), ("hud-messages", 50f, 0f), ("jump-charge", 50f, 0f), ("missile-warning", 50f, 0f),
+            ("hints", 0f, 100f), ("crosshair", 50f, 50f), ("lock-ring", 50f, 50f),
+        };
+
+        /// <summary>The markings Options > Gameplay "HUD opacity" fades (not the messages, the radio, the menus, the action
+        /// prompt or the warnings; the radar ellipse through its quarters, which keep its own 0.6, and not the crosshair,
+        /// whose rules fade it themselves).</summary>
+        static readonly string[] HudFaded = { "status-panel", "speed-panel", "hud-readout", "lock-plate", "hints", "nav-markers", "radar-quarter", "lock-ring" };
+
+        /// <summary>Options > Gameplay "HUD size" / "HUD opacity" (docs/UI-DESIGN.md "HUD"), applied when they change.</summary>
+        void ApplyHudLook()
+        {
+            int key = Settings.HudScalePercent * 1000 + Settings.HudOpacityPercent;
+            if (key == hudLook || root == null) return;
+            hudLook = key;
+            float s = Settings.HudScalePercent / 100f, a = Settings.HudOpacityPercent / 100f;
+            foreach (var (cls, x, y) in HudScaled)
+                root.Query(className: cls).ForEach(e =>
+                {
+                    e.style.transformOrigin = new TransformOrigin(Length.Percent(x), Length.Percent(y));
+                    e.style.scale = new Scale(new Vector3(s, s, 1f));
+                });
+            foreach (var cls in HudFaded) root.Query(className: cls).ForEach(e => e.style.opacity = a);
         }
 
         /// <summary>Device safe-area insets (the notch / Dynamic Island, the home indicator, cutouts), see SafeArea.</summary>

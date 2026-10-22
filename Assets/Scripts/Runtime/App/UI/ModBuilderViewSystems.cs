@@ -66,7 +66,7 @@ namespace GoF2Remake.UI
                 }, null, null);
             }
             if (Project.Systems.Count == 0)
-                Note(systemList, T("mbNoSystems", "No systems yet. A new system goes where the map is centred; drag it to its place. Its stations are made here and shaped in space."));
+                Note(systemList, T("mbNoSystems", "No systems yet. A new one goes where the map is centred; drag it into place."));
         }
 
         // ---- the map ------------------------------------------------------------------------------------------------
@@ -133,7 +133,7 @@ namespace GoF2Remake.UI
 
         int StationNumberOf(ProjectStation st) => st.IsOverride ? ModBuilder.StationNumber(st.OverrideRef) : ModWorld.StationIndexOf(Project.Key(st.LocalId));
 
-        string SystemsHint() => builderMap != null ? T("mbMapHint", "Drag your systems (amber) to their place; tap a system to pick it, again to look inside. Esc zooms back out.") : "";
+        string SystemsHint() => builderMap != null ? T("mbMapHint", "Drag your systems (amber) into place; tap one to pick it, again to look inside.") : "";
 
         bool EscapeSystems() => builderMap != null && builderMap.InSystemView;
 
@@ -148,7 +148,7 @@ namespace GoF2Remake.UI
             pickedGameSystem = -1;
             SystemEdited();
             RebuildSystems();
-            Status(T("mbSystemNeedsStation", "Give it a station (below) and a jumpgate route to a system nearby, or players can only reach it with a Khador Drive."), false);
+            Status(T("mbSystemNeedsStation", "Give it a station and a jumpgate route, or only a Khador Drive reaches it."), false);
         });
 
         void ChangeSystem(string reference)
@@ -215,7 +215,7 @@ namespace GoF2Remake.UI
                 return;
             }
             JsonButton(systemPage, currentSystem.Json, () => { SystemEdited(); RebuildSystems(); BuildSystemPage(); },
-                       T("mbJsonSystemNote", "systems.json's fields: also skybox (nebula, stars, brightness, rotation), sunTexture / sunColor, spaceMusic / stationMusic."));
+                       T("mbJsonSystemNote", "Also in systems.json: skybox, sunTexture / sunColor, spaceMusic / stationMusic."));
             var s = currentSystem;
             bool isNew = !s.IsOverride;
             Heading(systemPage, isNew ? T("mbNewSystemSub", "New system") : string.Format(T("mbChanges", "Changes {0}"), RefLabel(RefKind.System, s.OverrideRef, s.OverrideRef)));
@@ -232,7 +232,7 @@ namespace GoF2Remake.UI
             FlagButton(vrow, T("mbVisible", "On the map from the start"), s.Visible, v => s.Visible = v, () => SystemEdited());
             // systems.json "available" (ModUnlocks): on the map only while it holds, e.g. quest(name) == 1 while a quest runs.
             ConditionField(systemPage, T("mbSystemAvailable", "On the map only when"), (string)s.Get("available"), v => { s.Set("available", v); SystemEdited(); });
-            Note(systemPage, T("mbSystemAvailableNote", "Empty: always as revealed. With a condition the system is shown while it holds and hidden while it doesn't (a player in it is taken out), e.g. quest(smuggler_run) == 1 while that quest or mission runs. Events and quests can also show or hide it with the \"Show / hide a system\" step."));
+            Note(systemPage, T("mbSystemAvailableNote", "Empty = as revealed. A condition shows the system only while it holds, e.g. quest(smuggler_run) == 1."));
 
             if (isNew)
             {
@@ -242,7 +242,7 @@ namespace GoF2Remake.UI
                 Int(prow, "X", Mathf.RoundToInt(p.x), -50, 150, v => { s.Position = new Vector3(v, s.Position.y, s.Position.z); SystemEdited(false); });
                 Int(prow, "Y", Mathf.RoundToInt(p.y), -50, 150, v => { s.Position = new Vector3(s.Position.x, v, s.Position.z); SystemEdited(false); });
                 Int(prow, "Z", Mathf.RoundToInt(p.z), -50, 150, v => { s.Position = new Vector3(s.Position.x, s.Position.y, v); SystemEdited(false); });
-                Note(systemPage, T("mbMapPositionNote", "The game's systems lie between 15 and 94 (X), 2 and 96 (Y) and 10 and 90 (Z, the depth). Prices follow the distance."));
+                Note(systemPage, T("mbMapPositionNote", "The game's systems lie within X 15-94, Y 2-96, Z 10-90; prices follow the distance."));
             }
 
             // ---- jumpgate ----
@@ -272,7 +272,7 @@ namespace GoF2Remake.UI
             Add(srow, new Label(string.Format(T("mbSkyN", "The game's sky {0}"), s.Sky)), "mbv-inline-label");
             Act(srow, "−", () => { s.Sky = (s.Sky + 18) % 19; SystemEdited(); }, "mbv-step");
             Act(srow, "+", () => { s.Sky = (s.Sky + 1) % 19; SystemEdited(); }, "mbv-step");
-            Note(systemPage, T("mbSkyNote", "Which of the game's 19 nebula skies (and suns) it uses: reference.md's sky table says what each looks like. An image of your own below replaces it."));
+            Note(systemPage, T("mbSkyNote", "Which of the game's 19 skies it uses; an image of your own below replaces it."));
             ImageRow(systemPage, T("mbNebula", "Nebula image (2:1 panorama or a 6:1 cube strip)"), s.Nebula, "sky", (s.LocalId ?? "system") + "_nebula", v => { s.Nebula = v; SystemEdited(); });
             if (s.Nebula != null) Float(systemPage, T("mbNebulaBrightness", "Nebula brightness"), s.NebulaBrightness, 0f, 4f, v => { s.NebulaBrightness = v; SystemEdited(false); });
             Float(systemPage, T("mbStarsBrightness", "Stars brightness"), s.StarsBrightness, 0f, 4f, v => { s.StarsBrightness = v; SystemEdited(false); });
@@ -334,7 +334,7 @@ namespace GoF2Remake.UI
                         st.LooksLike = DefaultLook(s.Race);
                         SystemEdited();
                     }), "mbv-add");
-                Note(systemPage, T("mbStationsNote", "A system holds at most 7 stations. Their look, size and rooms are edited in space (Stations)."));
+                Note(systemPage, T("mbStationsNote", "At most 7 stations per system; edit their look in space (Stations)."));
             }
         }
 

@@ -35,6 +35,19 @@
     -unity-background-scale-mode: stretch-to-fill;
 }
 
+/* Rework (docs/UI-DESIGN.md "Contrast"): a scrim behind the header (the station's name, the view, credits and cargo), the
+   bottom shade's gradient upside down: over the bright bars (the Terran lounge's lit ceiling) the header failed 4.5:1. */
+.top-shade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 24%;
+    background-image: url("project://database/Assets/UI/MainMenu/Images/shade_bottom.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    scale: 1 -1;
+}
+
 .station-safe {
     position: absolute;
     left: 0;
@@ -48,11 +61,11 @@
 .top-bar {
     flex-direction: row;
     align-items: center;
-    padding: 34px 40px 0 48px;
+    padding: 32px 40px 0 48px;
 }
 
 .station-title {
-    font-size: 34px;
+    font-size: var(--text-title);
     letter-spacing: 6px;
     color: #FFFFFF;
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
@@ -60,11 +73,11 @@
 
 .view-title {
     flex-grow: 1;
-    margin-left: 22px;
-    padding-left: 22px;
+    margin-left: var(--space-xl);
+    padding-left: var(--space-xl);
     border-left-width: 2px;
     border-left-color: var(--gof-amber);
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 4px;
     color: var(--gof-text-dim);
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
@@ -73,34 +86,19 @@
 .station-menu-button {
     display: none;
     margin-left: auto;   /* right-aligned even when the view title is hidden */
-    padding: 12px 22px;
-    font-size: 20px;
+    padding: 12px 24px;
+    font-size: var(--text-body);
     letter-spacing: 3px;
     color: var(--gof-text);
-    background-color: rgba(4, 10, 18, 0.55);
-    border-width: 2px;
-    border-color: var(--gof-cyan-soft);
-    border-radius: 4px;
+    background-color: var(--button-fill);
+    border-width: var(--button-border);
+    border-color: var(--button-line);
+    border-radius: var(--button-radius);
 }
 
 .input-touch .station-menu-button,
 .input-keyboard .station-menu-button {
     display: flex;
-}
-
-/* Modified: the shop's "i" (StationMenu: OptionInfo, its controls) left of Menu while the hangar window is open; the hint
-   row under the window gives way to it. */
-.station-keys {
-    display: none;
-    margin-left: auto;
-}
-
-.hangar-open .station-keys {
-    display: flex;
-}
-
-.hangar-open .station-menu-button {
-    margin-left: 14px;
 }
 
 /* Modified: the lounge's help "?" left of Menu while the lounge shows. */
@@ -114,13 +112,13 @@
 }
 
 .lounge-open .station-menu-button {
-    margin-left: 14px;
+    margin-left: var(--space-l);
 }
 
 /* Modified: a window's help "?" beside its Back (the Missions window, the hangar's: OptionInfo). */
 .window-help {
     align-self: center;
-    margin: 0 14px 0 0;
+    margin: 0 16px 0 0;
 }
 
 .hangar-open .station-hints {
@@ -128,8 +126,9 @@
 }
 
 .can-hover .station-menu-button:hover {
-    border-color: var(--gof-amber);
+    border-color: var(--button-focus-line);
     color: #FFFFFF;
+    background-color: var(--button-focus-fill);
 }
 
 /* Remake (players' request): the credits and the hold at the top right under the bar, on the main view and in the
@@ -145,7 +144,7 @@
 
 .station-funds-cargo,
 .station-funds-credits {
-    padding: 6px 16px;
+    padding: 8px 16px;
     background-color: rgba(4, 10, 18, 0.6);
     border-width: 2px;
     border-color: var(--gof-cyan-soft);
@@ -154,7 +153,7 @@
 }
 
 .station-funds-cargo {
-    font-size: 20px;
+    font-size: var(--text-body);
     letter-spacing: 1px;
     color: var(--gof-text);
 }
@@ -165,8 +164,8 @@
 }
 
 .station-funds-credits {
-    margin-left: 10px;
-    font-size: 22px;
+    margin-left: var(--space-s);
+    font-size: var(--text-label);
     color: var(--gof-amber);
     border-color: var(--gof-amber);
 }
@@ -188,21 +187,21 @@
 }
 
 .station-info {
-    padding: 14px 18px;
+    padding: 16px 16px;
     border-left-width: 3px;
     border-left-color: var(--gof-cyan);
     background-color: rgba(4, 10, 18, 0.55);
 }
 
 .info-system {
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 3px;
     color: #FFFFFF;
-    margin-bottom: 6px;
+    margin-bottom: var(--space-s);
 }
 
 .info-line {
-    font-size: 18px;
+    font-size: var(--text-small);
     letter-spacing: 1px;
     color: var(--gof-text-dim);
 }
@@ -222,7 +221,7 @@
     width: 72px;
     height: 72px;
     flex-shrink: 0;
-    margin-right: 14px;
+    margin-right: var(--space-l);
     -unity-background-scale-mode: scale-to-fit;
 }
 
@@ -238,9 +237,9 @@
     border-left-color: rgba(0, 0, 0, 0);
     border-radius: 0;
     margin: 4px 0;
-    padding: 14px 20px;
+    padding: 16px 20px;
     -unity-text-align: middle-left;
-    font-size: 26px;
+    font-size: var(--text-heading);
     letter-spacing: 5px;
     color: var(--gof-text-dim);
     transition-duration: 0.18s;
@@ -260,7 +259,7 @@
     background-color: var(--gof-cyan-faint);
     /* Hover moves the label, not the box: a translated box slid out from under the cursor on its edge, which then
        un-hovered and slid back (flicker, missed clicks). */
-    padding-left: 34px;
+    padding-left: var(--space-xxl);
 }
 
 .station-button:active {
@@ -274,27 +273,27 @@
     right: 40px;
     bottom: 64px;
     min-width: 260px;
-    padding: 20px 34px;
-    font-size: 28px;
+    padding: 20px 32px;
+    font-size: var(--text-heading);
     letter-spacing: 6px;
     -unity-text-align: middle-center;
     color: #FFFFFF;
-    background-color: rgba(255, 166, 48, 0.16);
-    border-width: 2px;
-    border-color: var(--gof-amber);
-    border-radius: 4px;
+    background-color: var(--button-primary-fill);
+    border-width: var(--button-border);
+    border-color: var(--button-primary-line);
+    border-radius: var(--button-radius);
     transition-duration: 0.15s;
 }
 
 .can-hover .launch-button:hover,
 .launch-button:focus {
-    background-color: rgba(255, 166, 48, 0.38);
+    background-color: var(--button-primary-focus-fill);
     scale: 1.04 1.04;
 }
 
 .launch-button:active {
-    background-color: var(--gof-amber);
-    color: #0B1016;
+    background-color: var(--button-press-fill);
+    color: var(--button-press-text);
 }
 
 /* Its key before the text (StationMenu, InputGlyph.WithGlyphs): L with keys and mouse, X with a controller, none on touch. */
@@ -330,7 +329,7 @@
 }
 
 .station-hints .hint {
-    margin-left: 8px;
+    margin-left: var(--space-s);
 }
 
 /* Modified: a hint's keys in a row of their own (StationMenu.Hint); the hangar window puts the label under them. */
@@ -348,7 +347,7 @@
     right: 0;
     top: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.72);   /* a modal: the station behind reads as inactive */
     justify-content: center;
     align-items: center;
 }
@@ -372,7 +371,7 @@
 
 .station-dialog-text {
     white-space: normal;
-    font-size: 24px;
+    font-size: var(--text-subhead);
     color: var(--gof-text);
     margin-bottom: 28px;
 }
@@ -383,8 +382,8 @@
 }
 
 .station-dialog-button {
-    margin-left: 12px;
-    font-size: 22px;
+    margin-left: var(--space-m);
+    font-size: var(--text-label);
 }
 
 /* Menu buttons the story hasn't unlocked yet (ModStation::OnInitialize: half transparent). */
@@ -417,7 +416,7 @@
 }
 
 .system-menu-title {
-    font-size: 28px;
+    font-size: var(--text-heading);
     letter-spacing: 6px;
     color: #FFFFFF;
     margin-bottom: 20px;
@@ -430,8 +429,8 @@
     right: 40px;
     min-width: 0;
     margin: 0;
-    padding: 10px 20px;
-    font-size: 20px;
+    padding: 8px 20px;
+    font-size: var(--text-body);
     letter-spacing: 3px;
     -unity-text-align: middle-center;
     color: var(--gof-text);
@@ -451,7 +450,7 @@
 
 /* Modified: the Options page's title as the menu's (white): it was the shared panels' cyan. */
 .options-panel > .panel-title {
-    font-size: 28px;
+    font-size: var(--text-heading);
     letter-spacing: 6px;
     color: #FFFFFF;
 }
@@ -470,27 +469,27 @@
 }
 
 .system-menu-back {
-    margin-top: 16px;
+    margin-top: var(--space-l);
 }
 
 /* The Menu's Debug page rows (CheatsCatalog, OptionControl; the Options page is an OptionsView). */
 .system-option {
     margin: 3px 0;
-    padding: 8px 14px;
-    font-size: 20px;
+    padding: 8px 16px;
+    font-size: var(--text-body);
     border-left-width: 3px;
     border-left-color: rgba(0, 0, 0, 0);
 }
 
 .system-option Label {
-    font-size: 20px;
+    font-size: var(--text-body);
     color: var(--gof-text);
     min-width: 230px;
 }
 
 .system-option .choice-value {
     min-width: 0;
-    font-size: 18px;
+    font-size: var(--text-small);
     color: var(--gof-cyan);
 }
 
@@ -501,13 +500,13 @@
 /* The key bindings' column titles: Labels, but not option labels. */
 .system-option .binding-header-cell {
     min-width: 0;
-    font-size: 13px;
+    font-size: var(--text-caption);
     color: var(--gof-text-dim);
 }
 
 .system-option .option-description {
     min-width: 0;
-    font-size: 15px;
+    font-size: var(--text-small);
     color: var(--gof-text-dim);
 }
 
@@ -519,13 +518,15 @@
 /* Inspect ship (and its Customize screen): the menu's dark shades fade with the menu, so the view (and its screenshots) has
    no dark gradient on the left. */
 .side-shade,
-.bottom-shade {
+.bottom-shade,
+.top-shade {
     transition-property: opacity;
     transition-duration: 0.45s;
 }
 
 .station-inspecting .side-shade,
-.station-inspecting .bottom-shade {
+.station-inspecting .bottom-shade,
+.station-inspecting .top-shade {
     opacity: 0;
 }
 
@@ -533,6 +534,7 @@
 .station-map-open .station-safe,
 .station-map-open .side-shade,
 .station-map-open .bottom-shade,
+.station-map-open .top-shade,
 .station-map-open .drag-zone {
     display: none;
 }
@@ -560,7 +562,7 @@
     bottom: 0;
     -unity-text-align: middle-left;
     white-space: nowrap;
-    font-size: 20px;
+    font-size: var(--text-body);
     color: var(--gof-text);
 }
 
@@ -568,6 +570,7 @@
 .lounge-open .station-ticker,
 .chat-open .station-ticker,
 .missions-open .station-ticker,
+.status-open .station-ticker,
 .station-map-open .station-ticker,
 .ticker-off .station-ticker {
     display: none;
@@ -618,15 +621,15 @@
 
 .ui-large .system-option,
 .ui-large .system-option Label {
-    font-size: 27px;
+    font-size: var(--text-heading);
 }
 
 .ui-large .system-option {
-    padding: 12px 18px;
+    padding: 12px 16px;
 }
 
 .ui-large .system-option .choice-value {
-    font-size: 25px;
+    font-size: var(--text-heading);
 }
 
 .system-menu--wide .system-option Label {
@@ -645,7 +648,7 @@
     flex-direction: row;
     align-items: center;
     min-width: 560px;
-    padding: 16px 34px 16px 18px;
+    padding: 16px 32px 16px 16px;
     background-color: rgba(6, 12, 20, 0.96);
     border-width: 2px;
     border-top-width: 5px;
@@ -673,31 +676,31 @@
 
 .medal-toast-plate {
     flex-shrink: 0;
-    margin-right: 22px;
+    margin-right: var(--space-xl);
     scale: 1.1 1.1;
 }
 
 .medal-toast-title {
-    font-size: 18px;
+    font-size: var(--text-small);
     letter-spacing: 3px;
     -unity-font-style: bold;
 }
 
 .medal-toast-name {
-    font-size: 30px;
+    font-size: var(--text-title);
     color: rgb(255, 255, 255);
     -unity-font-style: bold;
 }
 
 .medal-toast-reward {
-    font-size: 20px;
+    font-size: var(--text-body);
     color: rgb(143, 216, 255);
     -unity-font-style: bold;
 }
 
 .medal-toast-hint {
-    margin-top: 6px;
-    font-size: 14px;
+    margin-top: var(--space-s);
+    font-size: var(--text-small);
     color: rgba(216, 236, 247, 0.6);
 }
 

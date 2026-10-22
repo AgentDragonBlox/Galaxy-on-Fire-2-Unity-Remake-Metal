@@ -1,15 +1,15 @@
 /* Status window (StatusWindow, StatusWindow 0x18345c): on HD both columns side by side - pilot, ship, reputation
    and statistics on the left, the 45 medals in three columns on the right. The root gets status-open while it shows. */
 
-/* Modified: placed and edged as the Missions window (Lounge.uss .missions-window): on the right, the station's info box
-   left of it, the amber top edge (one page at a time now: its Status / Medals tabs). */
+/* Modified: placed and edged as the Missions window (Lounge.uss .missions-window): the whole width like the hangar
+   window, the amber top edge (one page at a time now: its Status / Medals tabs). */
 .status-window {
     display: none;
     position: absolute;
-    left: 520px;
+    left: 48px;    /* Rework: the whole width like the hangar window, the prompt strip under it */
     right: 40px;
     top: 120px;
-    bottom: 110px;
+    bottom: 96px;
     background-color: var(--gof-panel);
     border-width: 1px;
     border-color: var(--gof-line);
@@ -21,12 +21,7 @@
     display: flex;
 }
 
-/* Phones: the side panel is narrower (as the Missions window). */
-.layout-phone .status-window {
-    left: 450px;
-}
-
-/* Modified: the side shade stays (the station's box over it, as with the Missions window). */
+/* Modified: the station's buttons and Launch give way to the window (its info box too, HangarWindow.uss). */
 .status-open .station-buttons,
 .status-open .launch-button,
 .status-open .station-ticker,
@@ -38,28 +33,28 @@
 .status-body {
     flex-grow: 1;
     flex-direction: row;
-    padding: 14px 20px 18px 20px;
+    padding: 16px 20px 16px 20px;
 }
 
 .status-left {
     flex-grow: 1;
     flex-basis: 0;
-    padding-right: 18px;
+    padding-right: var(--space-l);
 }
 
 .status-right {
     flex-grow: 1;
     flex-basis: 0;
-    padding-left: 18px;
+    padding-left: var(--space-l);
     border-left-width: 1px;
     border-left-color: var(--gof-line);
 }
 
 .status-plate {
-    font-size: 20px;
+    font-size: var(--text-body);
     letter-spacing: 4px;
     color: var(--gof-amber);
-    margin: 10px 0 6px 0;
+    margin: 8px 0 8px 0;
 }
 
 .status-row {
@@ -69,8 +64,8 @@
 .status-box {
     flex-grow: 1;
     flex-basis: 0;
-    padding: 10px 14px;
-    margin-right: 10px;
+    padding: 8px 16px;
+    margin-right: var(--space-s);
     background-color: rgba(62, 200, 255, 0.05);
     border-width: 1px;
     border-color: var(--gof-line);
@@ -91,12 +86,12 @@
 }
 
 .status-big {
-    font-size: 22px;
+    font-size: var(--text-label);
     color: #FFFFFF;
 }
 
 .status-line {
-    font-size: 18px;
+    font-size: var(--text-small);
     color: var(--gof-text);
 }
 
@@ -116,7 +111,7 @@
 .status-ship-lines {
     flex-grow: 1;
     flex-shrink: 1;
-    margin-left: 16px;
+    margin-left: var(--space-l);
 }
 
 /* Reputation: emblem, bar from the centre toward the liked side, emblem. */
@@ -138,7 +133,7 @@
 .rep-track {
     flex-grow: 1;
     height: 12px;
-    margin: 0 10px;
+    margin: 0 8px;
     background-color: rgba(255, 255, 255, 0.10);
     border-radius: 6px;
 }
@@ -177,7 +172,7 @@
     flex-shrink: 0;
     width: 246px;
     height: 42px;
-    margin-top: 5px;   /* centred on the 52px emblems */
+    margin-top: var(--space-xs);   /* centred on the 52px emblems */
     -unity-background-scale-mode: stretch-to-fill;
 }
 
@@ -224,11 +219,11 @@
 .rep-names {
     flex-direction: row;
     justify-content: space-between;
-    font-size: 16px;
+    font-size: var(--text-caption);
 }
 
 .rep-name {
-    font-size: 16px;
+    font-size: var(--text-caption);
     color: var(--gof-text-dim);
 }
 
@@ -239,12 +234,12 @@
 }
 
 .stat-line-label {
-    font-size: 18px;
+    font-size: var(--text-small);
     color: var(--gof-text-dim);
 }
 
 .stat-line-value {
-    font-size: 18px;
+    font-size: var(--text-small);
     color: #FFFFFF;
 }
 
@@ -299,19 +294,19 @@
 }
 
 .medal-name {
-    margin-top: 5px;
-    font-size: 18px;
+    margin-top: var(--space-xs);
+    font-size: var(--text-small);
     -unity-text-align: middle-center;
     white-space: normal;
     color: #FFFFFF;
 }
 
 .medal-hint {
-    margin-top: 10px;
-    padding: 10px 14px;
+    margin-top: var(--space-s);
+    padding: 8px 16px;
     min-height: 60px;
     white-space: normal;
-    font-size: 18px;
+    font-size: var(--text-small);
     color: var(--gof-text);
     background-color: rgba(4, 10, 18, 0.8);
     border-width: 1px;

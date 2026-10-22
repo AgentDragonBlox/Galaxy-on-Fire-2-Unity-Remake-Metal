@@ -75,7 +75,7 @@ namespace GoF2Remake.UI
                 characterList.Add(row);
             }
             if (Project.Characters.Count == 0)
-                Note(characterList, T("mbNoCharacters", "No characters yet. Add one from a portrait image (PNG, JPG, TGA, BMP, DDS or the game's .aei; 4:5 like the game's portraits)."));
+                Note(characterList, T("mbNoCharacters", "No characters yet. Add one from a portrait image (4:5)."));
         }
 
         void BuildCharacterPage()
@@ -92,7 +92,7 @@ namespace GoF2Remake.UI
             if (ModManager.BuilderProject != null) Portrait.ShowCharacter(box, DefOf(c), false);
 
             Text(characterPage, T("mbName", "Name"), c.Name, 40, v => { c.Name = v.Trim(); CharacterEdited(); RebuildCharacters(); BuildCharacterPage(); });
-            Note(characterPage, string.Format(T("mbCharacterKey", "Quests, bar missions and events speak through it as {0}:{1} (or by its name): conversations, radio calls, a mission's client."), Project.Id, c.Id));
+            Note(characterPage, string.Format(T("mbCharacterKey", "Quests and events speak through it as {0}:{1} or by its name."), Project.Id, c.Id));
 
             Heading(characterPage, T("mbPortrait", "Portrait"));
             var prow = Add(characterPage, new VisualElement(), "mbv-row");
@@ -107,8 +107,8 @@ namespace GoF2Remake.UI
                     RebuildCharacters();
                     BuildCharacterPage();
                 }));
-            Note(characterPage, T("mbPortraitNote", "4:5 like the game's portraits (320 x 400 stays sharp); a wider picture is cropped at the sides, a taller one keeps its top."));
-            Note(characterPage, T("mbPortraitLayersNote", "Scanlines: the faint lines over every portrait in the game. Dark backdrop: shows only through transparent parts of the picture (a cut-out character)."));
+            Note(characterPage, T("mbPortraitNote", "4:5 like the game's portraits (320 x 400); wider is cropped at the sides."));
+            Note(characterPage, T("mbPortraitLayersNote", "Scanlines: the faint lines over portraits. Dark backdrop: shows through transparent parts."));
             var toggles = Add(characterPage, new VisualElement(), "mbv-row");
             CharacterFlag(toggles, T("mbMirrored", "Mirrored"), c.Mirrored, v => c.Mirrored = v);
             // characters.json "frame" / "background": the game's scanline overlay and the dark backdrop behind the picture.
@@ -127,14 +127,14 @@ namespace GoF2Remake.UI
             var genders = Add(characterPage, new VisualElement(), "mbv-seg-row");
             Act(genders, T("mbMale", "Male"), () => { c.Male = true; CharacterEdited(); BuildCharacterPage(); }, "mbv-seg").EnableInClassList("mbv-seg--on", c.Male);
             Act(genders, T("mbFemale", "Female"), () => { c.Male = false; CharacterEdited(); BuildCharacterPage(); }, "mbv-seg").EnableInClassList("mbv-seg--on", !c.Male);
-            Note(characterPage, T("mbRaceNote", "The race and gender pick the figure a bar mission's client stands as in the Space Lounge, and the colour of the name."));
+            Note(characterPage, T("mbRaceNote", "Race and gender pick the figure in the Space Lounge and the name's colour."));
 
             Heading(characterPage, T("mbStandsInForOptional", "Stands in for (optional)"));
             var srow = Add(characterPage, new VisualElement(), "mbv-row");
             Add(srow, new Label(c.Replaces != null ? SpeakerLabel(c.Replaces) : T("mbNobody", "Nobody")), "mbv-inline-label");
             Act(srow, T("mbChoose", "Choose…"), () => PickSpeaker(c));
             if (c.Replaces != null) Act(srow, "✕", () => { c.Replaces = null; CharacterEdited(); RebuildCharacters(); BuildCharacterPage(); }, "mbv-step");
-            Note(characterPage, T("mbStandsInNote", "Leave it at Nobody for a character of your own. Pick a story character to replace them: their portrait everywhere, the story included, and their name in the conversation and radio headers. What other characters say and the voices stay as they are."));
+            Note(characterPage, T("mbStandsInNote", "Nobody: your own character. A story character: replaces their portrait and name."));
         }
 
         void CharacterFlag(VisualElement parent, string label, bool on, Action<bool> set)

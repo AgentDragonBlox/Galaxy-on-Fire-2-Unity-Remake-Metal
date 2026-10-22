@@ -408,7 +408,7 @@ namespace GoF2Remake.UI
                 h => { int dot = h.label.IndexOf(" · ", StringComparison.Ordinal); return dot >= 0 ? h.label.Substring(dot + 3) : h.label; },
                 h => h.label, () => Math.Clamp(hullPick, 0, Math.Max(0, Current().Count - 1)), i => hullPick = i);
             pick.description = () => X("debugHullHelp",
-                "Not normally flyable ships can't land in a hangar; the capital ships keep their turrets as your auto turrets.");
+                "Capital and cargo hulls can't land in a hangar; capital ships keep their turrets.");
             return new List<OptionDef>
             {
                 Choice("debugHullCategory", () => X("debugHullCategory", "Ship type"), false,

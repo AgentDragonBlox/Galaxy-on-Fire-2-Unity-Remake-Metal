@@ -60,7 +60,7 @@
     left: 0;
     right: 0;
     top: 3px;
-    font-size: 20px;
+    font-size: var(--text-body);
     color: #FFFFFF;
     -unity-text-align: upper-center;
     white-space: nowrap;
@@ -74,7 +74,7 @@
 
 .sec-strip-name {
     height: 34px;
-    font-size: 22px;
+    font-size: var(--text-label);
     color: #FFFFFF;
     -unity-text-align: lower-center;
     white-space: nowrap;
@@ -89,7 +89,7 @@
 .sec-strip-cell {
     width: 150px;
     height: 73px;
-    margin-right: 12px;
+    margin-right: var(--space-m);
     background-color: rgba(5, 18, 32, 0.82);
     border-width: 2px;
     border-color: rgba(62, 200, 255, 0.45);
@@ -111,7 +111,7 @@
     position: absolute;
     right: 6px;
     bottom: 2px;
-    font-size: 20px;
+    font-size: var(--text-body);
     color: #FFFFFF;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 1);
 }
@@ -134,7 +134,7 @@
 .touch-gauge-text {
     position: absolute;
     width: 120px;
-    font-size: 22px;
+    font-size: var(--text-label);
     color: #FFFFFF;
     -unity-text-align: upper-center;
 }
@@ -191,7 +191,7 @@
     translate: -50% 0;
     flex-direction: row;
     align-items: center;
-    padding: 14px 28px;
+    padding: 16px 28px;
     background-color: rgba(4, 10, 18, 0.6);
     border-width: 2px;
     border-color: var(--gof-cyan);
@@ -204,7 +204,7 @@
 
 .dock-glyph {
     flex-direction: row;
-    margin-right: 12px;
+    margin-right: var(--space-m);
 }
 
 .input-touch .dock-glyph {
@@ -212,7 +212,7 @@
 }
 
 .dock-label {
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 5px;
     color: #FFFFFF;
 }
@@ -250,11 +250,11 @@
 }
 
 .lock-class {
-    margin-right: 10px;
+    margin-right: var(--space-s);
 }
 
 .lock-ore {
-    font-size: 22px;
+    font-size: var(--text-label);
     color: #FFFFFF;
 }
 
@@ -301,7 +301,7 @@
     left: -200px;
     right: -200px;
     top: 10px;
-    font-size: 20px;
+    font-size: var(--text-body);
     color: #FFFFFF;
     -unity-text-align: upper-center;
     white-space: nowrap;
@@ -327,7 +327,7 @@
 
 .nav-label {
     position: absolute;
-    font-size: 20px;
+    font-size: var(--text-body);
     color: #FFFFFF;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
@@ -393,7 +393,7 @@
     left: 176px;
     top: 300px;
     min-width: 440px;
-    padding: 14px 16px 16px 16px;
+    padding: 16px 16px 16px 16px;
     background-color: var(--gof-panel);
     border-width: 1px;
     border-color: var(--gof-line);
@@ -422,25 +422,25 @@
 .autopilot-menu-head {
     flex-direction: row;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-s);
 }
 
 .autopilot-menu-icon {
     width: 83px;
     height: 51px;
-    margin-right: 12px;
+    margin-right: var(--space-m);
 }
 
 .autopilot-menu-title {
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 4px;
     color: #FFFFFF;
 }
 
 .autopilot-menu-item {
     margin: 2px 0;
-    padding: 14px 18px;
-    font-size: 24px;
+    padding: 16px 16px;
+    font-size: var(--text-subhead);
     letter-spacing: 3px;
     -unity-text-align: middle-left;
     color: var(--gof-text);
@@ -495,7 +495,7 @@
     position: absolute;
     width: 108px;
     height: 45px;
-    font-size: 22px;
+    font-size: var(--text-label);
     -unity-text-align: middle-center;
 }
 
@@ -522,7 +522,7 @@
    lit left to right as they recharge (see-through until ready), a short flash when ready. Touch shows them on its own buttons. */
 .cooldowns {
     flex-direction: row;
-    margin-top: 6px;
+    margin-top: var(--space-s);
 }
 
 .input-touch .cooldowns {
@@ -532,7 +532,7 @@
 .cooldown {
     width: 90px;
     height: 44px;
-    margin-right: 6px;
+    margin-right: var(--space-s);
     -unity-background-scale-mode: scale-to-fit;
     background-color: rgba(4, 10, 18, 0.55);
     border-left-width: 3px;
@@ -572,6 +572,11 @@
     left: 40px;
     bottom: 34px;
     align-items: flex-start;
+    /* Under the status bars, from the bottom up: at a large text size the hints wrap into a second column. */
+    height: 64%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    align-content: flex-start;
 }
 
 .input-keyboard .hints,
@@ -613,10 +618,12 @@
 .hud-shop .hints {
     flex-direction: row;
     align-items: center;
+    height: auto;   /* one row under the window, not the flight's column box */
+    justify-content: flex-start;
 }
 
 .hud-shop .hints .hint {
-    margin-right: 10px;
+    margin-right: var(--space-s);
 }
 
 /* ---- Khador Drive / cloak charge (Hud::draw 0x1933f6, #48): the frame 0x53a (GoF2Hud/charge_frame, 408 x 69), the
@@ -660,7 +667,7 @@
     left: 0;
     right: 0;
     -unity-text-align: middle-center;
-    font-size: 18px;
+    font-size: var(--text-small);
     letter-spacing: 3px;
     color: var(--gof-text);
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
@@ -686,16 +693,16 @@
 }
 
 .orbit-logo {
-    margin-right: 12px;
+    margin-right: var(--space-m);
 }
 
 .orbit-text {
-    padding-top: 10px;
+    padding-top: var(--space-s);
 }
 
 .orbit-line {
     height: 30px;
-    font-size: 22px;
+    font-size: var(--text-label);
     color: #FFFFFF;
     padding: 0;
     margin: 0;
@@ -815,7 +822,7 @@
 }
 
 .game-over-title {
-    font-size: 64px;
+    font-size: var(--text-display);
     letter-spacing: 12px;
     color: #FFFFFF;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
@@ -826,7 +833,7 @@
     max-width: 1100px;
     white-space: normal;
     -unity-text-align: middle-center;
-    font-size: 24px;
+    font-size: var(--text-subhead);
     color: var(--gof-text);
     opacity: 0;
     transition-property: opacity;
@@ -871,7 +878,7 @@
 
 .combat-label {
     position: absolute;
-    font-size: 20px;
+    font-size: var(--text-body);
     color: #FFFFFF;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
@@ -880,7 +887,7 @@
    marker (placed at x - 61), in the marker's colour (the dots' cores). */
 .combat-label--far {
     width: 122px;
-    font-size: 16px;
+    font-size: var(--text-caption);
     -unity-text-align: upper-center;
 }
 
@@ -890,6 +897,11 @@
 
 .combat-label--friend {
     color: #3BE86A;
+}
+
+/* Options > Accessibility "Colour-blind markers": friends blue (CombatView.MarkerTex turns their images blue too). */
+.ui-colorblind .combat-label--friend {
+    color: #4FB2FF;
 }
 
 .combat-label--neutral {
@@ -908,6 +920,11 @@
 }
 
 /* ---- pause menu (MenuTouchWindow mode 1, PauseMenu) ------------------------------------------ */
+
+/* The pause menu open: the flight's key hints give way to the menu's own prompts. */
+.hud-paused .hints {
+    display: none;
+}
 
 .pause-backdrop {
     display: none;
@@ -929,7 +946,7 @@
 .pause-panel {
     width: 620px;
     max-height: 86%;
-    padding: 18px 20px 20px 20px;
+    padding: 16px 20px 20px 20px;
     background-color: rgb(4, 10, 18);
     border-width: 1px;
     border-color: var(--gof-line);
@@ -938,21 +955,22 @@
 }
 
 .pause-title {
-    margin-bottom: 12px;
+    margin-bottom: var(--space-m);
 }
 
 .pause-body {
     flex-shrink: 1;
+    min-height: 0;   /* scrolls inside the panel's 86 % instead of pushing past the screen */
 }
 
 .pause-scroll {
     flex-shrink: 0;   /* otherwise the panel squeezes it to one row */
     max-height: 560px;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-s);
 }
 
 .pause-text {
-    font-size: 22px;
+    font-size: var(--text-label);
     color: var(--gof-text);
     white-space: normal;
     margin: 4px 0 12px 0;
@@ -960,10 +978,10 @@
 
 .pause-heading,
 .pause-heading--red {
-    font-size: 22px;
+    font-size: var(--text-label);
     letter-spacing: 3px;
     color: var(--gof-amber);
-    margin: 6px 0 4px 0;
+    margin: 8px 0 4px 0;
     -unity-font-style: bold;
 }
 
@@ -972,7 +990,7 @@
 }
 
 .pause-subheading {
-    font-size: 20px;
+    font-size: var(--text-body);
     color: #FFFFFF;
     white-space: normal;
 }
@@ -988,25 +1006,25 @@
 .pause-cargo-icon {
     width: 90px;
     height: 44px;
-    margin-right: 14px;
+    margin-right: var(--space-l);
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .pause-cargo-name {
     flex-grow: 1;
-    font-size: 22px;
+    font-size: var(--text-label);
     color: var(--gof-text);
 }
 
 .pause-cargo-amount {
-    font-size: 22px;
+    font-size: var(--text-label);
     color: #FFFFFF;
 }
 
 .pause-option {
     margin: 4px 0;
-    padding: 8px 18px;
-    font-size: 22px;
+    padding: 8px 16px;
+    font-size: var(--text-label);
     border-left-width: 3px;
     border-left-color: rgba(0, 0, 0, 0);
 }
@@ -1022,7 +1040,7 @@
 .debug-scroll {
     flex-shrink: 1;
     min-height: 140px;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-s);
 }
 
 /* A small high-density screen (UiScale, the root's ui-large: a phone, the Retroid Pocket G2): bigger text and rows, the
@@ -1050,7 +1068,7 @@
 .ui-large .pause-text,
 .ui-large .pause-cargo-name,
 .ui-large .pause-cargo-amount {
-    font-size: 28px;
+    font-size: var(--text-heading);
 }
 
 .ui-large .pause-option {
@@ -1068,7 +1086,7 @@
 }
 
 .pause-option Label {
-    font-size: 22px;
+    font-size: var(--text-label);
     color: var(--gof-text);
     min-width: 250px;
 }
@@ -1084,17 +1102,17 @@
 }
 
 .pause-option .binding-header-cell {
-    font-size: 13px;
+    font-size: var(--text-caption);
     color: var(--gof-text-dim);
 }
 
 .pause-option .choice-value {
-    font-size: 20px;
+    font-size: var(--text-body);
     color: var(--gof-cyan);
 }
 
 .pause-option .option-description {
-    font-size: 17px;
+    font-size: var(--text-small);
     color: var(--gof-text-dim);
 }
 
@@ -1146,7 +1164,7 @@
     right: 0;
     top: 62%;
     -unity-text-align: middle-center;
-    font-size: 26px;
+    font-size: var(--text-heading);
     letter-spacing: 2px;
     color: #FFFFFF;
     text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
@@ -1219,13 +1237,13 @@
 }
 
 .hud-readout-plate--second {
-    margin-top: 4px;
+    margin-top: var(--space-xs);
 }
 
 .hud-readout-text {
-    padding-left: 22px;
-    padding-right: 12px;
-    font-size: 19px;
+    padding-left: var(--space-xl);
+    padding-right: var(--space-m);
+    font-size: var(--text-body);
     color: var(--gof-text);
     -unity-text-align: middle-left;
 }
@@ -1283,8 +1301,8 @@
 }
 
 .missile-warning-title {
-    padding: 6px 22px;
-    font-size: 30px;
+    padding: 8px 24px;
+    font-size: var(--text-title);
     letter-spacing: 5px;
     color: #FF4A2A;
     background-color: rgba(48, 4, 0, 0.6);
@@ -1297,12 +1315,12 @@
 .missile-warning-hint {
     flex-direction: row;
     align-items: center;
-    margin-top: 8px;
+    margin-top: var(--space-s);
 }
 
 .missile-warning-hint-label {
-    margin-left: 8px;
-    font-size: 18px;
+    margin-left: var(--space-s);
+    font-size: var(--text-small);
     letter-spacing: 3px;
     color: #FFD6CC;
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);

@@ -69,14 +69,56 @@ namespace GoF2Remake.UI
 
         MarkerTextures FactionTextures(int faction)
         {
+            // Options > Accessibility "Colour-blind markers": the friendly images blue (MarkerTex), all looked up again.
+            bool cb = Settings.ColorblindMarkers;
+            if (cb != colorblind)
+            {
+                colorblind = cb;
+                for (int i = 0; i < factionTextures.Length; i++) factionTextures[i] = null;
+            }
             var t = factionTextures[faction];
             if (t != null) return t;
             string f = Faction[faction];
+            bool blue = cb && faction == 1;
             return factionTextures[faction] = new MarkerTextures
             {
-                bar = Tex($"ship_bar_{f}"), fill = Tex($"ship_fill_{f}"), bracket = Tex($"ship_bracket_{f}"),
-                ring = Tex($"ship_ring_{f}"), dot = Tex($"ship_dot_{f}"), openRing = Tex($"ship_ring_open_{f}"),
+                bar = MarkerTex($"ship_bar_{f}", blue), fill = MarkerTex($"ship_fill_{f}", blue), bracket = MarkerTex($"ship_bracket_{f}", blue),
+                ring = MarkerTex($"ship_ring_{f}", blue), dot = MarkerTex($"ship_dot_{f}", blue), openRing = MarkerTex($"ship_ring_open_{f}", blue),
             };
+        }
+
+        bool colorblind;
+
+        /// <summary>A marker image; 'blue': the green friendly one turned blue (red-green colour blindness reads green and red
+        /// alike, blue stands apart from both), made once from the GPU copy (the HUD images aren't readable).</summary>
+        Texture2D MarkerTex(string name, bool blue)
+        {
+            var src = Tex(name);
+            if (!blue || src == null) return src;
+            string key = "cb:" + name;
+            if (textures.TryGetValue(key, out var done)) return done;
+            var rt = RenderTexture.GetTemporary(src.width, src.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            Graphics.Blit(src, rt);
+            var previous = RenderTexture.active;
+            RenderTexture.active = rt;
+            var t = new Texture2D(src.width, src.height, TextureFormat.RGBA32, false) { filterMode = src.filterMode, wrapMode = src.wrapMode, name = key };
+            t.ReadPixels(new Rect(0, 0, src.width, src.height), 0, 0);
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(rt);
+            var px = t.GetPixels32();
+            for (int i = 0; i < px.Length; i++)
+            {
+                var c = px[i];
+                byte g = c.g;
+                c.g = (byte)(g * 0.62f);          // green -> an azure blue, its brightness kept
+                c.b = (byte)Mathf.Max(c.b, g);
+                c.r = (byte)(c.r * 0.5f);
+                px[i] = c;
+            }
+            t.SetPixels32(px);
+            t.Apply(false, true);
+            textures[key] = t;
+            return t;
         }
 
         Texture2D Tex(string name)
@@ -279,10 +321,8 @@ namespace GoF2Remake.UI
 
         static string RaceName(int race) => race switch
         {
-            >= 0 and <= 3 => Localization.Get(406 + race),
-            8 => Localization.Get(414),
-            9 => Localization.Get(415),
-            _ => "???",
+            >= 0 and <= 9 => Localization.Get(406 + race),   // the four races, the minor ones, pirates, the Void
+            _ => Localization.Get(416),                     // the Specters: the original's own "???"
         };
 
         bool Project(Camera cam, Vector3 world, Vector2 origin, Vector2 centre, out Vector2 p, out bool near)

@@ -22,16 +22,18 @@
 
 .hangar-open .side-panel,
 .hangar-open .launch-button,
-.hangar-open .side-shade {
+.hangar-open .side-shade,
+.missions-open .side-panel,
+.missions-open .side-shade,
+.status-open .side-panel,
+.status-open .side-shade {
     display: none;
 }
 
-/* Modified: the shop's controls are in its "i" (left of Menu): no hint row under the window (more specific than the
-   input modes' display: flex in StationMenu.uss). */
+/* The shop's controls: the hint row under the window, keyboard and controller only (docs/UI-DESIGN.md "Button prompts"). */
 .input-keyboard.hangar-open .station-hints,
-.input-gamepad.hangar-open .station-hints,
-.input-touch.hangar-open .station-hints {
-    display: none;
+.input-gamepad.hangar-open .station-hints {
+    display: flex;
 }
 
 .hangar-open .station-hints {
@@ -56,7 +58,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 7px 12px 3px 12px;
+    padding: 8px 12px 3px 12px;
     margin: 0 4px;   /* no top margin (GoF2InputGlyphs' 6 px): the row centres on the boxes themselves */
 }
 
@@ -72,7 +74,7 @@
 .hangar-top {
     flex-direction: row;
     align-items: center;
-    padding: 8px 14px 0 14px;
+    padding: 8px 16px 0 16px;
     border-bottom-width: 1px;
     border-bottom-color: var(--gof-line);
 }
@@ -83,9 +85,9 @@
     border-bottom-width: 3px;
     border-bottom-color: rgba(0, 0, 0, 0);
     border-radius: 0;
-    margin: 0 6px 0 0;
+    margin: 0 8px 0 0;
     padding: 12px 28px;
-    font-size: 24px;
+    font-size: var(--text-subhead);
     letter-spacing: 4px;
     color: var(--gof-text-dim);
 }
@@ -105,9 +107,9 @@
 
 .hangar-close {
     display: none;
-    padding: 10px 20px;
-    margin-bottom: 6px;
-    font-size: 20px;
+    padding: 8px 20px;
+    margin-bottom: var(--space-s);
+    font-size: var(--text-body);
     letter-spacing: 3px;
     color: var(--gof-text);
     background-color: rgba(4, 10, 18, 0.55);
@@ -140,25 +142,25 @@
 }
 
 .hangar-list > .unity-scroll-view__content-and-vertical-scroll-container > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container {
-    padding-bottom: 12px;
-    padding-right: 14px;   /* Remake: the rows clear of the scrollbar along the right edge (list-bar) */
+    padding-bottom: var(--space-m);
+    padding-right: var(--space-l);   /* Remake: the rows clear of the scrollbar along the right edge (list-bar) */
 }
 
 /* Remake: a blueprint ingredient's amount in the blueprint ("BLUEPRINT" over "12 / 40 t") at the row's right edge. */
 .row-bp-amount {
     flex-shrink: 0;
-    margin-left: 8px;
+    margin-left: var(--space-s);
     align-items: flex-end;
 }
 
 .row-bp-amount-label {
-    font-size: 15px;
+    font-size: var(--text-caption);
     letter-spacing: 2px;
     color: var(--gof-text-dim);
 }
 
 .row-bp-amount-value {
-    font-size: 22px;
+    font-size: var(--text-label);
     color: var(--gof-text);
 }
 
@@ -205,18 +207,18 @@
 }
 
 .list-header {
-    font-size: 20px;
+    font-size: var(--text-body);
     letter-spacing: 3px;
     color: var(--gof-cyan);
-    padding: 16px 20px 6px 20px;
+    padding: 16px 20px 8px 20px;
 }
 
 .list-row {
     flex-direction: row;
     align-items: center;
     height: 96px;
-    margin: 2px 10px;
-    padding: 0 16px 0 10px;
+    margin: 2px 8px;
+    padding: 0 16px 0 8px;
     border-left-width: 3px;
     border-left-color: rgba(0, 0, 0, 0);
     background-color: rgba(255, 255, 255, 0.03);
@@ -224,10 +226,10 @@
 
 /* remake: the Ship tab's hold items (not mounted): a sub-header and an outlined, dimmer row */
 .list-header--sub {
-    font-size: 16px;
+    font-size: var(--text-caption);
     letter-spacing: 1px;
     color: var(--gof-amber);
-    padding: 10px 20px 4px 34px;
+    padding: 8px 20px 4px 32px;
 }
 
 /* remake: the Ship tab's mounted items: tinted, with a cyan edge (the hold's items below are outlined and dimmer) */
@@ -244,7 +246,7 @@
     border-top-color: rgba(255, 255, 255, 0.10);
     border-right-color: rgba(255, 255, 255, 0.10);
     border-bottom-color: rgba(255, 255, 255, 0.10);
-    margin-left: 34px;
+    margin-left: var(--space-xxl);
 }
 
 /* Remake: a shop row the player has in the hold: the description title's blue, in its place (no outline or indent). */
@@ -273,7 +275,7 @@
 .can-hover .list-row--autocomplete:hover,
 .can-hover .list-row--autocomplete.list-row--selected:hover {
     height: auto;
-    padding: 10px 0;
+    padding: 8px 0;
     justify-content: center;
     background-color: rgba(0, 0, 0, 0);
     border-left-color: rgba(0, 0, 0, 0);
@@ -305,12 +307,12 @@
 .row-texts {
     flex-grow: 1;
     flex-shrink: 1;
-    margin-left: 16px;
+    margin-left: var(--space-l);
     overflow: hidden;
 }
 
 .row-name {
-    font-size: 24px;
+    font-size: var(--text-subhead);
     color: var(--gof-text);
     white-space: nowrap;
     overflow: hidden;
@@ -328,15 +330,15 @@
 }
 
 .row-sub-text {
-    font-size: 19px;
+    font-size: var(--text-body);
     color: var(--gof-text-dim);
 }
 
 .row-badge {
-    font-size: 15px;
+    font-size: var(--text-caption);
     letter-spacing: 2px;
-    padding: 1px 7px;
-    margin-right: 8px;
+    padding: 1px 8px;
+    margin-right: var(--space-s);
     border-radius: 3px;
     color: #0B1016;
 }
@@ -361,7 +363,7 @@
 
 .row-price {
     min-width: 170px;
-    font-size: 24px;
+    font-size: var(--text-subhead);
     color: #FFFFFF;
     -unity-text-align: middle-right;
 }
@@ -378,33 +380,33 @@
 
 .row-price-sep {
     flex-shrink: 0;
-    margin-left: 12px;
-    font-size: 22px;
+    margin-left: var(--space-m);
+    font-size: var(--text-label);
     color: var(--gof-text-dim);
 }
 
 .row-price--inline {
     min-width: 0;
     flex-shrink: 0;
-    margin-left: 12px;
-    font-size: 22px;
+    margin-left: var(--space-m);
+    font-size: var(--text-label);
     -unity-text-align: middle-left;
 }
 
 .row-qty {
     width: 76px;
     flex-shrink: 0;
-    font-size: 22px;
+    font-size: var(--text-label);
     color: var(--gof-text);
 }
 
 .row-qty--station {
-    margin-right: 6px;
+    margin-right: var(--space-s);
     -unity-text-align: middle-left;
 }
 
 .row-qty--ship {
-    margin-left: 6px;
+    margin-left: var(--space-s);
     -unity-text-align: middle-right;
 }
 
@@ -415,11 +417,11 @@
 
 .row-sub--badges .row-badge {
     margin-left: 0;
-    margin-right: 8px;
+    margin-right: var(--space-s);
 }
 
 .row-sub--trailing .row-badge {
-    margin-left: 8px;
+    margin-left: var(--space-s);
     margin-right: 0;
 }
 
@@ -431,7 +433,7 @@
 
 .hangar-details {
     width: 44%;
-    padding: 20px 24px 14px 24px;
+    padding: 20px 24px 16px 24px;
 }
 
 .detail-head {
@@ -450,7 +452,7 @@
 .detail-preview-row {
     flex-direction: row;
     align-items: flex-start;
-    margin-top: 10px;
+    margin-top: var(--space-s);
     flex-shrink: 0;
 }
 
@@ -481,7 +483,7 @@
     flex-grow: 1;
     flex-shrink: 1;
     flex-basis: 0;
-    margin-right: 16px;
+    margin-right: var(--space-l);
 }
 
 /* Remake (#82): a ship's details turn it in 3D under the name (ShipPreview; a click opens the item window).
@@ -512,18 +514,18 @@
 .detail-titles {
     flex-grow: 1;
     flex-shrink: 1;
-    margin-left: 18px;
+    margin-left: var(--space-l);
 }
 
 .detail-name {
-    font-size: 30px;
+    font-size: var(--text-title);
     color: #FFFFFF;
     white-space: normal;
 }
 
 .detail-sub {
-    margin-top: 4px;
-    font-size: 21px;
+    margin-top: var(--space-xs);
+    font-size: var(--text-label);
     color: var(--gof-text-dim);
     white-space: normal;
 }
@@ -534,8 +536,8 @@
     flex-shrink: 0;
     flex-direction: row;
     align-items: center;
-    margin-top: 18px;
-    padding: 12px;
+    margin-top: var(--space-l);
+    padding: var(--space-m);
     background-color: rgba(255, 255, 255, 0.04);
     border-radius: 4px;
 }
@@ -553,26 +555,26 @@
 }
 
 .trade-side-label {
-    font-size: 16px;
+    font-size: var(--text-caption);
     letter-spacing: 2px;
     color: var(--gof-text-dim);
 }
 
 .trade-side-value {
-    font-size: 28px;
+    font-size: var(--text-heading);
     color: #FFFFFF;
 }
 
 /* remake: what of the item is mounted (a missile launcher's remaining ammo), under the hold's amount */
 .trade-side-note {
-    font-size: 15px;
+    font-size: var(--text-small);
     color: var(--gof-text-dim);
 }
 
 .trade-arrow {
     /* Remake: as wide as its text (was 116px; "COMPRAR" didn't fit). */
     height: 64px;
-    padding: 0 18px;
+    padding: 0 16px;
     margin: 0 8px;
     align-items: center;
     justify-content: center;
@@ -627,14 +629,14 @@
 }
 
 .trade-arrow-label {
-    font-size: 21px;
+    font-size: var(--text-label);
     letter-spacing: 3px;
     color: #FFFFFF;
 }
 
 .trade-price {
     flex-grow: 1;
-    font-size: 28px;
+    font-size: var(--text-heading);
     color: #FFFFFF;
     -unity-text-align: middle-center;
 }
@@ -645,24 +647,24 @@
 
 .detail-action {
     flex-shrink: 0;
-    margin: 14px 0 0 0;
-    padding: 14px;
-    font-size: 24px;
+    margin: 16px 0 0 0;
+    padding: var(--space-l);
+    font-size: var(--text-subhead);
     letter-spacing: 4px;
     color: #FFFFFF;
-    background-color: rgba(255, 166, 48, 0.16);
-    border-width: 2px;
-    border-color: var(--gof-amber);
-    border-radius: 4px;
+    background-color: var(--button-primary-fill);
+    border-width: var(--button-border);
+    border-color: var(--button-primary-line);
+    border-radius: var(--button-radius);
 }
 
 .can-hover .detail-action:hover {
-    background-color: rgba(255, 166, 48, 0.38);
+    background-color: var(--button-primary-focus-fill);
 }
 
 .detail-action:active {
-    background-color: var(--gof-amber);
-    color: #0B1016;
+    background-color: var(--button-press-fill);
+    color: var(--button-press-text);
 }
 
 .detail-action--hidden {
@@ -671,7 +673,7 @@
 
 /* The Kaamo Club storage's second row button (Sell, 330) under Use (332). */
 .detail-action--secondary {
-    margin-top: 8px;
+    margin-top: var(--space-s);
     background-color: rgba(255, 74, 58, 0.12);
     border-color: #FF4A3A;
 }
@@ -690,20 +692,20 @@
 
 .detail-scroll {
     flex-grow: 1;
-    margin-top: 16px;
+    margin-top: var(--space-l);
 }
 
 /* Remake: any other item's stats (left) beside its description (right), filling the panel's bottom. */
 .detail-item-row {
     flex-grow: 1;
     flex-direction: row;
-    margin-top: 16px;
+    margin-top: var(--space-l);
 }
 
 .detail-item-stats {
     flex-grow: 1;
     flex-basis: 0;
-    margin-right: 16px;
+    margin-right: var(--space-l);
 }
 
 .detail-item-right {
@@ -725,12 +727,12 @@
 }
 
 .stat-label {
-    font-size: 21px;
+    font-size: var(--text-label);
     color: var(--gof-text-dim);
 }
 
 .stat-value {
-    font-size: 21px;
+    font-size: var(--text-label);
     color: var(--gof-text);
 }
 
@@ -743,20 +745,20 @@
 .stat-arrow {
     width: 57px;
     height: 32px;
-    margin-left: 8px;
+    margin-left: var(--space-s);
     -unity-background-scale-mode: stretch-to-fill;
 }
 
 .detail-text {
-    margin-top: 14px;
-    font-size: 20px;
+    margin-top: var(--space-l);
+    font-size: var(--text-body);
     color: var(--gof-text);
     white-space: normal;
 }
 
 /* Remake: the ship's Kaamo Club mods under its description (ItemInfo.FillModLines: hangar, carrier, item window). */
 .kaamo-mods {
-    margin-top: 14px;
+    margin-top: var(--space-l);
     padding: 8px 12px;
     border-left-width: 3px;
     border-left-color: #FFA630;
@@ -764,7 +766,7 @@
 }
 
 .kaamo-mod-line {
-    font-size: 18px;
+    font-size: var(--text-small);
     color: #FFC872;
     white-space: normal;
 }
@@ -775,7 +777,7 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 22px;
+    padding: 12px 24px;
     border-top-width: 1px;
     border-top-color: var(--gof-line);
 }
@@ -783,7 +785,7 @@
 /* Remake: the hold's load (left) and the credits (right) each in a box of their own, in the footer's corners on every tab. */
 .footer-cargo,
 .footer-credits {
-    padding: 8px 18px;
+    padding: 8px 16px;
     background-color: rgba(4, 10, 18, 0.6);
     border-width: 2px;
     border-color: var(--gof-cyan-soft);
@@ -792,7 +794,7 @@
 }
 
 .footer-cargo {
-    font-size: 23px;
+    font-size: var(--text-subhead);
     letter-spacing: 1px;
     color: var(--gof-text);
 }
@@ -804,40 +806,41 @@
 
 /* Remake: a multiplayer session's restock countdown, between the two (HangarWindow.UpdateRestock). */
 .footer-restock {
-    padding: 8px 18px;
+    padding: 8px 16px;
     background-color: rgba(4, 10, 18, 0.6);
     border-width: 2px;
     border-color: var(--gof-line);
     border-radius: 4px;
     -unity-text-align: middle-center;
-    font-size: 21px;
+    font-size: var(--text-label);
     letter-spacing: 1px;
     color: var(--gof-text-dim);
 }
 
 .footer-credits {
-    font-size: 25px;
+    font-size: var(--text-heading);
     color: var(--gof-amber);
     border-color: var(--gof-amber);
 }
 
 /* ---- messages (sold, mounted, not enough credits ...) ------------------------------------ */
 
+/* An empty list's line (HangarWindow.AddNote; docs/UI-DESIGN.md "Empty states"). */
+.list-empty {
+    margin: 8px 16px 16px 16px;
+    font-size: var(--text-small);
+    color: var(--gof-text-dim);
+    white-space: normal;
+}
+
+/* The look is the shared .gof-toast (GoF2Common.uss); here its place. */
 .station-toast {
     position: absolute;
     bottom: 52px;   /* under the windows (at the top it covered their header tabs), above the news ticker */
     left: 50%;
     translate: -50% 0;
     max-width: 900px;
-    padding: 14px 26px;
-    font-size: 22px;
-    color: #FFFFFF;
-    white-space: normal;
-    background-color: var(--gof-panel);
-    border-left-width: 3px;
-    border-left-color: var(--gof-amber);
     opacity: 0;
-    transition-duration: 0.25s;
 }
 
 .station-toast--shown {
@@ -858,7 +861,7 @@
 
 .bp-bar {
     height: 6px;
-    margin-top: 4px;
+    margin-top: var(--space-xs);
     background-color: rgba(255, 255, 255, 0.12);
     border-radius: 3px;
     overflow: hidden;
@@ -878,9 +881,9 @@
     display: none;
     width: 44px;
     height: 44px;
-    margin-left: 10px;
+    margin-left: var(--space-s);
     border-radius: 22px;
-    font-size: 22px;
+    font-size: var(--text-label);
     -unity-text-align: middle-center;
     padding: 0;
 }
@@ -899,7 +902,7 @@
     width: 36px;
     height: 36px;
     border-radius: 18px;
-    font-size: 18px;
+    font-size: var(--text-small);
     letter-spacing: 0;
     color: #0B1016;
     background-color: #F2C230;
@@ -949,14 +952,14 @@
 }
 
 .info-header {
-    font-size: 30px;
+    font-size: var(--text-title);
     letter-spacing: 3px;
     color: #FFFFFF;
 }
 
 .info-help {
-    margin-bottom: 14px;
-    font-size: 20px;
+    margin-bottom: var(--space-l);
+    font-size: var(--text-body);
     white-space: normal;
     color: rgba(150, 200, 255, 0.7);
 }
@@ -978,8 +981,8 @@
 .info-name-box {
     flex-direction: row;
     align-items: center;
-    padding: 8px;
-    margin-bottom: 10px;
+    padding: var(--space-s);
+    margin-bottom: var(--space-s);
     background-color: rgba(33, 152, 255, 0.10);
     border-width: 1px;
     border-color: rgba(33, 152, 255, 0.3);
@@ -988,18 +991,18 @@
 .info-icon {
     width: 180px;
     height: 88px;
-    margin-right: 14px;
+    margin-right: var(--space-l);
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .info-name {
-    font-size: 30px;
+    font-size: var(--text-title);
     color: #FFFFFF;
     white-space: normal;
 }
 
 .info-sub {
-    font-size: 21px;
+    font-size: var(--text-label);
     color: rgba(150, 200, 255, 0.8);
 }
 
@@ -1011,32 +1014,32 @@
     flex-direction: row;
     align-items: center;
     height: 46px;
-    margin-bottom: 6px;
-    padding: 0 10px;
+    margin-bottom: var(--space-s);
+    padding: 0 8px;
     background-color: rgba(33, 152, 255, 0.07);
 }
 
 .info-row-label {
     flex-grow: 1;
-    font-size: 22px;
+    font-size: var(--text-label);
     color: rgba(200, 225, 255, 0.85);
 }
 
 .info-row-value {
-    font-size: 22px;
+    font-size: var(--text-label);
     color: #FFFFFF;
 }
 
 .info-row-arrow {
     width: 82px;
     height: 46px;
-    margin-left: 8px;
+    margin-left: var(--space-s);
     -unity-background-scale-mode: stretch-to-fill;
 }
 
 .info-preview {
     height: 318px;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-s);
     border-width: 1px;
     border-color: rgba(33, 152, 255, 0.3);
     overflow: hidden;
@@ -1066,16 +1069,16 @@
 }
 
 .info-desc-title {
-    font-size: 22px;
+    font-size: var(--text-label);
     letter-spacing: 2px;
-    padding: 6px 10px;
+    padding: 8px 8px;
     color: #FFFFFF;
     background-color: rgba(33, 152, 255, 0.12);
 }
 
 .info-text-scroll {
     flex-grow: 1;
-    margin-top: 6px;
+    margin-top: var(--space-s);
 }
 
 /* Remake: the ship alone in the box (ItemInfoWindow.ShowShipView, a click on the hangar details' view). */
@@ -1107,9 +1110,9 @@
 /* Remake: the hangar details' description title, under a ship's view: a section header like the list's (.list-header:
    cyan, spaced capitals, no fill) over a thin line, not the item window's filled title bar. */
 .detail-desc-title {
-    margin-top: 4px;
-    padding: 10px 0 6px 0;
-    font-size: 20px;
+    margin-top: var(--space-xs);
+    padding: 8px 0 8px 0;
+    font-size: var(--text-body);
     letter-spacing: 3px;
     color: var(--gof-cyan);
     background-color: rgba(0, 0, 0, 0);
@@ -1118,7 +1121,7 @@
 }
 
 .info-text {
-    font-size: 21px;
+    font-size: var(--text-label);
     white-space: normal;
     color: rgba(220, 235, 255, 0.9);
 }
@@ -1132,9 +1135,9 @@
 
 .info-back {
     /* Remake: as wide and tall as its text (was min-width 220px, height 54px). */
-    font-size: 24px;
+    font-size: var(--text-subhead);
     /* Remake: drawn like the hangar's close button (outline, amber on hover). */
-    padding: 10px 20px;
+    padding: 8px 20px;
     letter-spacing: 3px;
     color: var(--gof-text);
     background-color: rgba(4, 10, 18, 0.55);
@@ -1146,4 +1149,19 @@
 .can-hover .info-back:hover {
     border-color: var(--gof-amber);
     color: #FFFFFF;
+}
+
+/* Rework (docs/UI-DESIGN.md "Layout across aspect ratios"): a compact panel (under 1800 units: a TV, a 16:9 phone, a 1:1
+   or 4:3 screen) gives the details more of the width, so the stat names stay on one line beside the ship's view. */
+.layout-compact .hangar-list {
+    width: 47%;
+}
+
+.layout-compact .hangar-details {
+    width: 53%;
+    padding: 16px 16px 12px 16px;
+}
+
+.layout-compact .detail-preview-side {
+    width: 44%;
 }

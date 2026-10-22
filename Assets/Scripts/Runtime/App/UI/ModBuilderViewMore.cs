@@ -74,7 +74,7 @@ namespace GoF2Remake.UI
                 ItemEdited();
                 BuildItemPage();
             }, 6), "mbv-add");
-            Note(itemPage, T("mbAttributesNote", "For the numbers the stats above have no name for (Modding/ai/gof2-modding/reference.md lists every attribute)."));
+            Note(itemPage, T("mbAttributesNote", "For numbers the stats above don't name (reference.md lists every attribute)."));
         }
 
         /// <summary>A ship's selling and NPC fields.</summary>
@@ -136,7 +136,7 @@ namespace GoF2Remake.UI
                 MarkDirty();
                 BuildShipPage();
             }, e => int.TryParse(e.value, out int idx) ? Database.Shared.Item(idx)?.categoryId == 8 : true), "mbv-add");
-            Note(ship, T("mbNpcTurretsNote", "The n-th turret item goes on the n-th turret mount of the NPC ships of this type: they aim and fire by themselves, and show parked in hangars."));
+            Note(ship, T("mbNpcTurretsNote", "The n-th turret item goes on NPC ships' n-th turret mount."));
 
             // The engine flame.
             Heading(ship, T("mbEngineFlame", "Engine flame"));
@@ -158,7 +158,7 @@ namespace GoF2Remake.UI
                     Float(crow, "RGB".Substring(c, 1), (float)colour[c], 0f, 1f, v => { colour[c] = Math.Round(v, 3); MarkDirty(); RequestReload(true); });
                 }
             }
-            Note(ship, T("mbMoreJsonNote", "Per-mesh materials, throttle glows and extra glows: Edit as JSON (at the top)."));
+            Note(ship, T("mbMoreJsonNote", "Per-mesh materials and glows: Edit as JSON (top)."));
         }
     }
 }

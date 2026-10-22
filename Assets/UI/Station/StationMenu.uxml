@@ -9,6 +9,7 @@
     <ui:VisualElement name="stationRoot" class="station-root" picking-mode="Ignore">
         <ui:VisualElement class="side-shade" picking-mode="Ignore" />
         <ui:VisualElement class="bottom-shade" picking-mode="Ignore" />
+        <ui:VisualElement class="top-shade" picking-mode="Ignore" />
         <ui:VisualElement name="dragZone" class="drag-zone" />
         <ui:VisualElement name="loungeTags" class="lounge-tags" picking-mode="Ignore" />
         <ui:VisualElement name="safeArea" class="station-safe" picking-mode="Ignore">
@@ -198,7 +199,7 @@
             </ui:VisualElement>
 
             <ui:VisualElement name="hints" class="station-hints" picking-mode="Ignore" />
-            <ui:Label name="toast" class="station-toast" picking-mode="Ignore" />
+            <ui:Label name="toast" class="station-toast gof-toast" picking-mode="Ignore" />
         </ui:VisualElement>
 
         <ui:VisualElement name="systemMenu" class="station-dialog-backdrop">

@@ -546,8 +546,11 @@ namespace GoF2Remake.UI
                 else
                 {
                     AddHeader(T(273));
+                    int known = 0;
                     foreach (var p in Blueprints.Products(db))
-                        if (Blueprints.IsUnlocked(p.index)) AddRow(new Row { kind = RowKind.Blueprint, item = p.index });
+                        if (Blueprints.IsUnlocked(p.index)) { AddRow(new Row { kind = RowKind.Blueprint, item = p.index }); known++; }
+                    // Rework (docs/UI-DESIGN.md "Empty states"): an empty tab says how to fill it (it was a heading over nothing).
+                    if (known == 0) AddNote(Localization.Extra("blueprintsNone", "No blueprints yet. Space Lounge visitors sell them."));
                     if (Session.PendingProducts.Count > 0)
                     {
                         AddHeader(T(274));
@@ -623,6 +626,15 @@ namespace GoF2Remake.UI
             l.AddToClassList("list-header");
             if (sub) l.AddToClassList("list-header--sub");
             l.AddToClassList("gof-semibold");
+            list.Add(l);
+            rows.Add(new Row { kind = RowKind.Header, element = l });
+        }
+
+        /// <summary>A line under a header that says why the list is empty (not selectable).</summary>
+        void AddNote(string text)
+        {
+            var l = new Label(text) { pickingMode = PickingMode.Ignore };
+            l.AddToClassList("list-empty");
             list.Add(l);
             rows.Add(new Row { kind = RowKind.Header, element = l });
         }

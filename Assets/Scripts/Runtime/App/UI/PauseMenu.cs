@@ -23,7 +23,8 @@ namespace GoF2Remake.UI
     {
         enum Page { Main, Missions, Cargo, Options, Quit, Photo, Choice, Debug }
 
-        readonly VisualElement backdrop, panel, body;
+        readonly VisualElement backdrop, panel;
+        VisualElement body, pagePrompts;
         readonly Label title;
         readonly Action backToMenu;
         readonly List<VisualElement> items = new List<VisualElement>();
@@ -68,8 +69,7 @@ namespace GoF2Remake.UI
             title.AddToClassList("autopilot-menu-title");
             title.AddToClassList("gof-semibold");
             title.AddToClassList("pause-title");
-            body = new VisualElement();
-            body.AddToClassList("pause-body");
+            body = NewBody();
             panel.Add(title);
             panel.Add(body);
             backdrop.Add(panel);
@@ -154,6 +154,7 @@ namespace GoF2Remake.UI
             audioWasPaused = AudioListener.pause;
             if (!GoF2Remake.Multiplayer.NetGame.Active) AudioListener.pause = true;   // multiplayer: the world (and its sound) goes on
             backdrop.AddToClassList("pause-backdrop--shown");
+            backdrop.BringToFront();   // over what was added to the HUD after it (the chat, the multiplayer buttons)
             pointerDriven = false;   // Modified: opened with a key / button: its first entry is highlighted
             Show(Page.Main);
         }
@@ -184,7 +185,12 @@ namespace GoF2Remake.UI
             panel.RemoveFromClassList("pause-panel--wide");   // the Debug page's
             if (options != null) { options.Root.RemoveFromHierarchy(); options = null; }
             panel.style.display = StyleKeyword.Null;
-            body.Clear();
+            var oldBody = body;   // a new body per page: FitToContent only grows a scroll view
+            body = NewBody();
+            oldBody.parent?.Insert(oldBody.parent.IndexOf(oldBody), body);
+            oldBody.RemoveFromHierarchy();
+            pagePrompts?.RemoveFromHierarchy();
+            pagePrompts = null;
             items.Clear();
             actions.Clear();
             scroll = null;
@@ -224,25 +230,32 @@ namespace GoF2Remake.UI
                     Text(choiceText);
                     InfoSound?.Invoke();
                     Item((choiceYes ?? Localization.Extra("ok", "OK")).ToUpperInvariant(), () => { Close(); var a = choiceOnYes; choiceOnYes = choiceOnNo = null; a?.Invoke(); });
-                    if (choiceNo != null) Item(choiceNo.ToUpperInvariant(), () => { Close(); var a = choiceOnNo; choiceOnYes = choiceOnNo = null; a?.Invoke(); });
+                    InputGlyph.PadPrompt(items[items.Count - 1] as Button, PadButton.A, true);
+                    if (choiceNo != null)
+                    {
+                        Item(choiceNo.ToUpperInvariant(), () => { Close(); var a = choiceOnNo; choiceOnYes = choiceOnNo = null; a?.Invoke(); });
+                        InputGlyph.PadPrompt(items[items.Count - 1] as Button, PadButton.B);
+                    }
                     break;
                 case Page.Quit:
                     title.text = T(522);
                     Text(Localization.Get(523));
                     InfoSound?.Invoke();
                     Item(T(134), () => { Close(); backToMenu?.Invoke(); });
+                    InputGlyph.PadPrompt(items[items.Count - 1] as Button, PadButton.A, true);
                     Item(T(135), () => Show(Page.Main));
+                    InputGlyph.PadPrompt(items[items.Count - 1] as Button, PadButton.B);
                     index = 1;
                     break;
                 case Page.Missions:
                     title.text = T(129);
                     BuildMissions();
-                    Item("‹  " + T(170), () => Show(Page.Main));
+                    BackItem(() => Show(Page.Main));
                     break;
                 case Page.Cargo:
                     title.text = T(166);
                     BuildCargo();
-                    Item("‹  " + T(170), () => Show(Page.Main));
+                    BackItem(() => Show(Page.Main));
                     break;
                 case Page.Options:
                     BuildOptions();
@@ -250,10 +263,40 @@ namespace GoF2Remake.UI
                 case Page.Debug:
                     title.text = Localization.Extra("debugTitle", "Debug").ToUpperInvariant();
                     BuildDebug();
-                    Item("‹  " + T(170), () => Show(Page.Main));
+                    BackItem(() => Show(Page.Main));
                     break;
             }
+            // Rework (docs/UI-DESIGN.md "Button prompts"): the page's keys under it, outside its scrolling body (the Debug page
+            // has its own row; a question's answers carry their own A / B).
+            if (p != Page.Debug && p != Page.Choice && p != Page.Quit)
+            {
+                pagePrompts = MenuKeys.Bar(MenuKeys.Rows.Select | MenuKeys.Rows.Confirm | MenuKeys.Rows.Back);
+                pagePrompts.AddToClassList("prompt-bar--row");
+                panel.Add(pagePrompts);
+            }
             Highlight();
+        }
+
+        /// <summary>The "‹ Back" entry, with B on it for a controller (InputGlyph.PadPrompt).</summary>
+        void BackItem(Action action)
+        {
+            Item("‹  " + T(170), action);
+            InputGlyph.PadPrompt(items[items.Count - 1] as Button, PadButton.B);
+        }
+
+        /// <summary>Rework: a page's body scrolls when it is taller than the panel (a 720-unit-high screen at a large text
+        /// size: the last entries and the prompts went under the screen's edge): as tall as its content, shrunk by the panel's
+        /// 86 %, the selection kept in view (Highlight).</summary>
+        static ScrollView NewBody()
+        {
+            var sv = new ScrollView(ScrollViewMode.Vertical)
+            {
+                horizontalScrollerVisibility = ScrollerVisibility.Hidden,
+                verticalScrollerVisibility = ScrollerVisibility.Hidden,
+            };
+            sv.AddToClassList("pause-body");
+            FitToContent(sv, float.MaxValue);
+            return sv;
         }
 
         void Item(string text, Action action)
@@ -293,7 +336,11 @@ namespace GoF2Remake.UI
             float set = 0f;
             sv.contentContainer.RegisterCallback<GeometryChangedEvent>(e =>
             {
-                float want = Mathf.Min(max, Mathf.Ceil(e.newRect.height));
+                // Rework: never more than half the screen's height, so the title, the buttons and the prompts stay on a
+                // short panel (720 units on a phone or at a large interface size: 560 pushed Back off the bottom).
+                float screen = sv.panel != null ? sv.panel.visualTree.layout.height : 0f;
+                float limit = screen > 0f && max < float.MaxValue ? Mathf.Min(max, screen * 0.5f) : max;   // the Debug page: the panel's own limit
+                float want = Mathf.Min(limit, Mathf.Ceil(e.newRect.height));
                 if (want <= set + 0.5f) return;
                 set = want;
                 sv.style.height = want;
@@ -307,7 +354,7 @@ namespace GoF2Remake.UI
             Scroll();
             Text(T(555), "pause-heading");
             bool story = !Session.FreePlay && Story.Step != null && Story.Step.objectiveText >= 0 && db != null;   // as MissionsWindow
-            Text(story ? Story.ObjectiveText(db) : Localization.Get(174));
+            Text(story ? Story.ObjectiveText(db) : Localization.Extra("missionsNoStory", "No story mission right now."));
             Text(T(556), "pause-heading");
             var m = Freelance.Mission;
             if (Freelance.Active && db != null)
@@ -316,7 +363,7 @@ namespace GoF2Remake.UI
                 Text($"{m.clientName} · {station} · {m.Name}", "pause-subheading");
                 Text(MissionsWindow.FreelanceText(db, m));
             }
-            else Text(Localization.Get(174));
+            else Text(Localization.Extra("missionsNoFreelance", "No mission taken. The visitors in a Space Lounge offer work."));
             if (!Session.FreePlay && Session.CampaignMission >= WantedBoard.StorylineFirst && db != null) BuildWanted(db);
         }
 
@@ -339,7 +386,7 @@ namespace GoF2Remake.UI
                 Text($"{T(3223)} {Place(state.lastSeen)}\n{T(3224)} {Place(state.travelsTo)}");
                 shown++;
             }
-            if (shown == 0) Text(Localization.Get(174));
+            if (shown == 0) Text(Localization.Extra("wantedNoneMoving", "No criminals are on the move."));
         }
 
         /// <summary>The cargo hold: every cargo stack with its tonnage, and the load against the capacity.</summary>
@@ -349,7 +396,7 @@ namespace GoF2Remake.UI
             int load = Shop.CargoLoad(), max = db != null ? Shop.MaxLoad(db) : 0;
             Text($"{load} / {max} t", load > max ? "pause-heading--red" : "pause-heading");
             Scroll();
-            if (Session.Cargo.Count == 0) { Text(Localization.Get(174)); return; }
+            if (Session.Cargo.Count == 0) { Text(Localization.Extra("cargoEmpty", "The cargo hold is empty.")); return; }
             foreach (var s in Session.Cargo)
             {
                 var row = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -525,7 +572,7 @@ namespace GoF2Remake.UI
                 b.clicked += () => { debugTab = tab; Show(Page.Debug); };
                 tabs.Add(b);
             }
-            // Modified: an "i" with the page's keys and a "?" with what it is for, in place of the "Q ◂ ▸ E" line.
+            // Modified: a "?" with what the page is for at the tab row's end; its keys as a prompt row under the page.
             MenuKeys.AddDebugIcons(tabs);
             body.Add(tabs);
 
@@ -547,6 +594,7 @@ namespace GoF2Remake.UI
             debugScroll.AddManipulator(new DragScroll(debugScroll));
             FitToContent(debugScroll, float.MaxValue);
             body.Add(debugScroll);
+            body.Add(MenuKeys.DebugPrompts());
             scroll = debugScroll;
             var content = new VisualElement();
             content.AddToClassList("debug-content");
@@ -662,6 +710,7 @@ namespace GoF2Remake.UI
             for (int i = 0; i < items.Count; i++) items[i].EnableInClassList("autopilot-menu-item--selected", i == marked);
             // A long page (the Debug page on a short screen): the selected row scrolls into view (not under the mouse).
             if (keys && !pointerDriven && scroll != null && index >= 0 && index < items.Count && scroll.contentContainer.Contains(items[index])) scroll.ScrollTo(items[index]);
+            else if (keys && !pointerDriven && body is ScrollView page && index >= 0 && index < items.Count && page.contentContainer.Contains(items[index])) page.ScrollTo(items[index]);
         }
 
         // ---- input (unscaled: the game is paused) -------------------------------------------------------------

@@ -72,7 +72,7 @@ namespace GoF2Remake.UI
             var recent = ModBuilderMcp.Recent;
             if (recent.Count == 0)
             {
-                Note(aiActivity, ModBuilderMcp.Running ? T("mbAiNothingYet", "Nothing yet: connect an AI app (right), then ask it to build something.")
+                Note(aiActivity, ModBuilderMcp.Running ? T("mbAiNothingYet", "Nothing yet: connect an AI app, then ask it to build something.")
                                                        : T("mbAiOff", "The MCP server is off."));
                 return;
             }
@@ -90,7 +90,7 @@ namespace GoF2Remake.UI
         {
             aiPage.Clear();
             Heading(aiPage, T("mbAiTitle", "AI tools (MCP)"));
-            Note(aiPage, T("mbAiIntro", "Lets your own AI assistant (Claude Code, Claude Desktop, other MCP apps) work on this project while the Mod Builder is open: look up the game's and the mods' content, write entries and files, check quests, start play tests and see the result. Give it the modding guide too: Modding/ai/gof2-modding/SKILL.md in the game's repository. Nothing is sent anywhere by the game itself."));
+            Note(aiPage, T("mbAiIntro", "Let your own AI assistant (an MCP app) build this project while the Mod Builder is open. The game sends nothing anywhere."));
             if (!ModBuilderMcp.Supported)
             {
                 Note(aiPage, T("mbAiWindowsOnly", "The MCP server is only on Windows for now."));
@@ -113,9 +113,9 @@ namespace GoF2Remake.UI
                 (int)ModBuilderMcp.Permission, n => { ModBuilderMcp.Permission = (ModBuilderMcp.Permissions)n; sound(false); });
             var pn = Note(aiPage, ModBuilderMcp.Permission switch
             {
-                ModBuilderMcp.Permissions.ReadOnly => T("mbAiPermReadText", "The AI can look at everything and check quests, but can't change the project, undo or start play tests."),
-                ModBuilderMcp.Permissions.AskEveryChange => T("mbAiPermAskText", "Every change the AI makes waits for your Yes here (5 minutes, then it is a No)."),
-                ModBuilderMcp.Permissions.AllowEverything => T("mbAiPermAllText", "Yes to everything: the AI changes the project, starts play tests and removes entries without asking, so you don't need to watch the game. Undo still takes every change back."),
+                ModBuilderMcp.Permissions.ReadOnly => T("mbAiPermReadText", "The AI can look and check quests, but not change anything."),
+                ModBuilderMcp.Permissions.AskEveryChange => T("mbAiPermAskText", "Every change waits for your Yes (5 minutes, then No)."),
+                ModBuilderMcp.Permissions.AllowEverything => T("mbAiPermAllText", "The AI changes, tests and removes without asking. Undo still takes every change back."),
                 _ => T("mbAiPermRemoveText", "The AI makes changes at once; removing an entry waits for your Yes."),
             });
             if (ModBuilderMcp.Permission == ModBuilderMcp.Permissions.AllowEverything) pn.AddToClassList("mbv-warn");
@@ -127,7 +127,7 @@ namespace GoF2Remake.UI
             Act(trow, T("mbAiShow", "Show"), () => tokenLabel.text = ModBuilderMcp.Token, "mbv-step");
             Act(trow, T("mbAiCopy", "Copy"), () => { GUIUtility.systemCopyBuffer = ModBuilderMcp.Token; Status(T("mbCopied", "Copied."), false); }, "mbv-step");
             Act(trow, T("mbAiNewToken", "New token"), () => Confirm(T("mbAiNewToken", "New token"),
-                T("mbAiNewTokenText", "The AI apps connected now stop working until they get the new token. Make a new one?"), ModBuilderMcp.NewToken), "mbv-step");
+                T("mbAiNewTokenText", "Connected AI apps stop working until they get the new token. Make one?"), ModBuilderMcp.NewToken), "mbv-step");
 
             Heading(aiPage, T("mbAiConnect", "Connect an AI app"));
             string url = $"http://127.0.0.1:{ModBuilderMcp.Port}/mcp", token = ModBuilderMcp.Token;
@@ -145,10 +145,10 @@ namespace GoF2Remake.UI
                     },
                 },
             };
-            CopyBlock(T("mbAiClaudeDesktop", "Claude Desktop (Settings > Developer > Edit config: claude_desktop_config.json; needs Node.js)"),
+            CopyBlock(T("mbAiClaudeDesktop", "Claude Desktop (Settings > Developer > Edit config; needs Node.js)"),
                 desktop.ToString(Newtonsoft.Json.Formatting.Indented));
             CopyBlock(T("mbAiOther", "Any other MCP app: Streamable HTTP, this URL and header"), $"{url}\nAuthorization: Bearer {token}");
-            Note(aiPage, T("mbAiSafety", "Only this computer can connect, and only with the token. The AI writes inside this project only; the permissions above decide what asks you here first; every change is an undo step (Undo in the top bar). The server runs only while the Mod Builder is open."));
+            Note(aiPage, T("mbAiSafety", "Only this computer can connect, with the token. The AI writes inside this project only; every change can be undone."));
         }
 
         /// <summary>A setup text with Copy: the token is hidden on screen (a stream or a screenshot) and in the copy.</summary>
@@ -225,7 +225,7 @@ namespace GoF2Remake.UI
             if (allowAll != null)
             {
                 Act(row, T("mbAiYesAll", "Yes to everything"), () => { pendingAsk = null; CloseModal(); allowAll(); });
-                Note(box, T("mbAiYesAllText", "Yes to everything: the AI won't ask again (AI tools > Permissions changes it back)."));
+                Note(box, T("mbAiYesAllText", "Yes to everything: the AI won't ask again (change it in AI tools > Permissions)."));
             }
             modal.AddToClassList("mbv-modal--shown");
         }

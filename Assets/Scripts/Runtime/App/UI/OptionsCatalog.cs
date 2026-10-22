@@ -14,7 +14,7 @@ using UnityEngine;
 
 namespace GoF2Remake.UI
 {
-    public enum OptionPage { Sound, Graphics, Controls, Gameplay, Language, Bindings }
+    public enum OptionPage { Sound, Graphics, Controls, Gameplay, Language, Bindings, Accessibility }
     public enum OptionKind { Slider, Toggle, Choice, Button, Binding }
 
     public sealed class OptionDef
@@ -45,6 +45,9 @@ namespace GoF2Remake.UI
         public Func<int> getIndex;
         public Action<int> setIndex;
         public bool segmented;
+        /// <summary>A change asks "Keep these settings?" with a countdown that puts the old value back (SettingsConfirm):
+        /// the display mode, the resolution and the interface / text size, which can leave a screen unreadable.</summary>
+        public bool confirm;
 
         // Button
         public Action action;
@@ -84,6 +87,7 @@ namespace GoF2Remake.UI
             OptionPage.Controls => Localization.Get(498),
             OptionPage.Bindings => X("tabBindings", "Key bindings"),
             OptionPage.Language => Localization.Get(0),
+            OptionPage.Accessibility => X("tabAccessibility", "Accessibility"),
             _ => X("tabGameplay", "Gameplay"),
         };
 
@@ -98,6 +102,7 @@ namespace GoF2Remake.UI
                 case OptionPage.Controls: Settings.Reset(Settings.ControlsKeys); break;
                 case OptionPage.Gameplay: Settings.Reset(Settings.GameplayKeys); break;
                 case OptionPage.Language: Settings.Reset(Settings.LanguageKeys); break;
+                case OptionPage.Accessibility: Settings.Reset(Settings.AccessibilityKeys); break;
                 case OptionPage.Bindings: Flight.GameControls.ResetToDefaults(); break;
             }
         }
@@ -110,6 +115,10 @@ namespace GoF2Remake.UI
         static readonly string[] VoiceCodes = { "auto", "en", "de" };
         static readonly float[] RenderScales = { 0.5f, 0.67f, 0.75f, 0.8f, 0.9f, 1f, 1.25f, 1.5f, 2f };
         static readonly int[] MsaaSamples = { 1, 2, 4, 8 };
+        /// <summary>Options > Graphics "Interface size" and "Screen edge margin" (UiLayout).</summary>
+        static readonly int[] UiScaleSteps = { 80, 90, 100, 110, 125, 150 };
+        static readonly int[] UiTextSteps = { 100, 115, 130, 150, 175, 200 };
+        static readonly float[] UiMarginSteps = { -1f, 0f, 2.5f, 5f, 7.5f, 10f };
 
         /// <summary>The options of this platform, page by page.</summary>
         public static List<OptionDef> All()
@@ -139,14 +148,14 @@ namespace GoF2Remake.UI
             // ---- graphics
             if (Bootstrap.HasDisplayOptions)
             {
-                list.Add(Choice("displayMode", OptionPage.Graphics, () => X("displayMode", "Display mode"), true,
+                list.Add(Confirmed(Choice("displayMode", OptionPage.Graphics, () => X("displayMode", "Display mode"), true,
                     () => new[] { X("borderless", "Borderless"), X("fullscreen", "Fullscreen"), X("windowed", "Windowed") },
-                    () => (int)Settings.DisplayMode, i => Settings.DisplayMode = (DisplayMode)i));
+                    () => (int)Settings.DisplayMode, i => Settings.DisplayMode = (DisplayMode)i)));
                 var sizes = Bootstrap.Resolutions();
-                list.Add(Choice("resolution", OptionPage.Graphics, () => X("resolution", "Resolution"), false,
+                list.Add(Confirmed(Choice("resolution", OptionPage.Graphics, () => X("resolution", "Resolution"), false,
                     () => sizes.Select(r => $"{r.x} × {r.y}").Prepend(X("resolutionNative", "Display's own")).ToArray(),
                     () => { int i = sizes.IndexOf(Settings.Resolution); return i < 0 ? 0 : i + 1; },
-                    i => Settings.Resolution = i <= 0 ? Vector2Int.zero : sizes[i - 1]));
+                    i => Settings.Resolution = i <= 0 ? Vector2Int.zero : sizes[i - 1])));
             }
             list.Add(Choice("frameRate", OptionPage.Graphics, () => X("frameRate", "Frame rate"), true,
                 () => new[] { "30", "60", "120", X("fpsUncapped", "UNCAPPED"), X("fpsVSync", "V-SYNC") },
@@ -197,13 +206,13 @@ namespace GoF2Remake.UI
                     i => { var l = Upscalers(); Settings.Upscaler = l[Math.Clamp(i, 0, l.Count - 1)]; },
                     () => Bootstrap.ActiveUpscaler switch
                     {
-                        Settings.UpscalerFsr => X("upscalerFsr", "AMD FidelityFX Super Resolution 1: sharp upscaling from the render scale"),
-                        Settings.UpscalerStp => X("upscalerStp", "Unity Spatial-Temporal Post-processing: temporal anti-aliasing and upscaling, replaces MSAA"),
-                        Settings.UpscalerDlss => X("upscalerDlss", "NVIDIA DLSS: AI upscaling and anti-aliasing (DLAA at Native), replaces MSAA; the quality sets its resolution"),
-                        Settings.UpscalerFsrTemporal => string.Format(X("upscalerFsrTemporal", "AMD {0}: temporal upscaling and anti-aliasing, replaces MSAA; the quality sets its resolution"),
+                        Settings.UpscalerFsr => X("upscalerFsr", "AMD FSR 1: sharp upscaling from the render scale"),
+                        Settings.UpscalerStp => X("upscalerStp", "Unity STP: temporal anti-aliasing and upscaling; replaces MSAA"),
+                        Settings.UpscalerDlss => X("upscalerDlss", "NVIDIA DLSS: AI upscaling and anti-aliasing; replaces MSAA"),
+                        Settings.UpscalerFsrTemporal => string.Format(X("upscalerFsrTemporal", "AMD {0}: temporal upscaling and anti-aliasing; replaces MSAA"),
                             UpscalerFramework.BestFsrLabel ?? "FSR"),
                         Settings.UpscalerMetalFxSpatial => X("upscalerMetalFxSpatial", "Apple MetalFX Spatial: sharp upscaling from the render scale"),
-                        Settings.UpscalerMetalFxTemporal => X("upscalerMetalFxTemporal", "Apple MetalFX Temporal: temporal anti-aliasing and upscaling from the render scale, replaces MSAA"),
+                        Settings.UpscalerMetalFxTemporal => X("upscalerMetalFxTemporal", "Apple MetalFX Temporal: temporal upscaling and anti-aliasing; replaces MSAA"),
                         _ => X("upscalerOff", "Plain scaling from the render scale"),
                     }));
             // DLSS / FSR 2+: the render resolution by quality mode, in place of the render scale; only while one of them is on (in
@@ -214,7 +223,7 @@ namespace GoF2Remake.UI
                     () => new[] { X("upscalerNative", "Native (DLAA / native AA)"), X("upscalerQ", "Quality"), X("upscalerB", "Balanced"),
                                   X("upscalerP", "Performance"), X("upscalerUP", "Ultra performance") },
                     () => Settings.UpscalerQuality, i => Settings.UpscalerQuality = i,
-                    () => X("upscalerQualityHelp", "The resolution DLSS / FSR render at, from native down to a third (replaces the render scale)"));
+                    () => X("upscalerQualityHelp", "The resolution DLSS / FSR render at: from native down to a third."));
                 quality.visible = DlssOrFsrOn;
                 list.Add(quality);
             }
@@ -247,7 +256,7 @@ namespace GoF2Remake.UI
                 () => Settings.HangarShadows, i => Settings.HangarShadows = i));
             var hangarDof = Toggle("hangarDof", OptionPage.Graphics, () => X("hangarDof", "Hangar depth of field"),
                 () => Settings.HangarDepthOfField, v => Settings.HangarDepthOfField = v);
-            hangarDof.description = () => X("hangarDofHelp", "In the hangar the camera focuses on your ship and the room behind it goes soft. Not in the original.");
+            hangarDof.description = () => X("hangarDofHelp", "In the hangar your ship stays sharp and the room behind it blurs.");
             list.Add(hangarDof);
             list.Add(Toggle("lensFlare", OptionPage.Graphics, () => X("lensFlare", "Lens flare"), () => Settings.LensFlare, v => Settings.LensFlare = v));
             list.Add(Toggle("npcPlayerEngines", OptionPage.Graphics, () => X("npcPlayerEngines", "Other ships' engines like yours"),
@@ -259,7 +268,38 @@ namespace GoF2Remake.UI
             list.Add(Choice("chaseCamera", OptionPage.Graphics, () => X("chaseCamera", "Chase camera"), true,
                 () => new[] { X("chaseCameraRemake", "Remake"), X("chaseCameraOriginal", "Original") },
                 () => Settings.OriginalChaseCamera ? 1 : 0, i => Settings.OriginalChaseCamera = i == 1,
-                () => X("chaseCameraHelp", "Remake: the camera stays close behind the ship, which stays near the middle of the screen. Original: the camera follows more slowly, as in the original game: in a turn the ship swings out to the side and the crosshair moves off centre.")));
+                () => X("chaseCameraHelp", "Remake: the camera stays close and keeps the ship centred. Original: it lags behind, the ship swings out in turns.")));
+            // Remake: the interface's size, width and edge margin (UiLayout, docs/UI-DESIGN.md "Scaling").
+            list.Add(Confirmed(Choice("uiScale", OptionPage.Accessibility, () => X("uiScale", "Interface size"), false,
+                () => System.Array.ConvertAll(UiScaleSteps, p => p + " %"),
+                () => Mathf.Max(0, System.Array.IndexOf(UiScaleSteps, Settings.UiScalePercent)), i => Settings.UiScalePercent = UiScaleSteps[Mathf.Clamp(i, 0, UiScaleSteps.Length - 1)],
+                () => X("uiScaleHelp", "Makes text, buttons and the HUD bigger or smaller. 100 % already suits your screen."))));
+            // Remake (docs/UI-DESIGN.md "Accessibility"): the text alone up to 200 % (XAG 101), high contrast, reduced motion,
+            // colour-blind markers.
+            list.Add(Confirmed(Choice("uiTextScale", OptionPage.Accessibility, () => X("uiTextScale", "Text size"), false,
+                () => System.Array.ConvertAll(UiTextSteps, p => p + " %"),
+                () => Mathf.Max(0, System.Array.IndexOf(UiTextSteps, Settings.UiTextScalePercent)), i => Settings.UiTextScalePercent = UiTextSteps[Mathf.Clamp(i, 0, UiTextSteps.Length - 1)],
+                () => X("uiTextScaleHelp", "Makes only the text bigger; long texts wrap or scroll."))));
+            var highContrast = Toggle("highContrast", OptionPage.Accessibility, () => X("highContrast", "High contrast"),
+                () => Settings.HighContrast, v => Settings.HighContrast = v);
+            highContrast.description = () => X("highContrastHelp", "Solid panels and brighter secondary text and lines.");
+            list.Add(highContrast);
+            var reduceMotion = Toggle("reduceMotion", OptionPage.Accessibility, () => X("reduceMotion", "Reduce motion"),
+                () => Settings.ReduceMotion, v => Settings.ReduceMotion = v);
+            reduceMotion.description = () => X("reduceMotionHelp", "Menus and panels appear at once instead of sliding and fading in.");
+            list.Add(reduceMotion);
+            var colorblind = Toggle("colorblindMarkers", OptionPage.Accessibility, () => X("colorblindMarkers", "Colour-blind markers"),
+                () => Settings.ColorblindMarkers, v => Settings.ColorblindMarkers = v);
+            colorblind.description = () => X("colorblindMarkersHelp", "Friendly ships are blue instead of green.");
+            list.Add(colorblind);
+            list.Add(Choice("uiWidth", OptionPage.Graphics, () => X("uiWidth", "Interface width"), true,
+                () => new[] { "16:9", "21:9", X("uiWidthFull", "Full width") },
+                () => Settings.UiWidth, i => Settings.UiWidth = i,
+                () => X("uiWidthHelp", "Keeps the HUD and menus in a 16:9 or 21:9 area on wider screens.")));
+            list.Add(Choice("uiMargin", OptionPage.Graphics, () => X("uiMargin", "Screen edge margin"), false,
+                () => System.Array.ConvertAll(UiMarginSteps, m => m < 0f ? X("uiMarginAuto", "Automatic") : m == 0f ? X("off", "Off") : m.ToString("0.#") + " %"),
+                () => Mathf.Max(0, System.Array.IndexOf(UiMarginSteps, Settings.UiMarginPercent)), i => Settings.UiMarginPercent = UiMarginSteps[Mathf.Clamp(i, 0, UiMarginSteps.Length - 1)],
+                () => X("uiMarginHelp", "Moves the interface in from the screen's edges, for TVs that cut them off.")));
             list.Add(Toggle("showFps", OptionPage.Graphics, () => X("showFps", "Show FPS"), () => Settings.ShowFps, v => Settings.ShowFps = v));
             // Remake (#137): the counter in any corner or the middle of any side, so it can stay clear of what a player watches.
             var fpsPosition = Choice("fpsPosition", OptionPage.Graphics, () => X("fpsPosition", "FPS counter position"), false,
@@ -270,7 +310,7 @@ namespace GoF2Remake.UI
                     X("fpsPosBottomLeft", "Bottom left"), X("fpsPosBottom", "Bottom"), X("fpsPosBottomRight", "Bottom right"),
                 },
                 () => Settings.FpsPosition, i => Settings.FpsPosition = i,
-                () => X("fpsPositionHelp", "Where on the screen the FPS counter sits: a corner, or the middle of a side."));
+                () => X("fpsPositionHelp", "Where the FPS counter sits."));
             fpsPosition.visible = () => Settings.ShowFps;
             list.Add(fpsPosition);
 
@@ -279,7 +319,7 @@ namespace GoF2Remake.UI
             // A toggle: off = the original's flight and key layout, untouched.
             var freeFlight = Toggle("flightStyle", OptionPage.Controls, () => X("flightStyleFree", "Free flight (EVERSPACE 2 style)"),
                 () => Settings.FlightStyle == FlightStyles.Free, v => Settings.FlightStyle = v ? FlightStyles.Free : FlightStyles.Original);
-            freeFlight.description = () => (FlightStyles.Forced ? FlightStyleForcedNote() + " " : "") + X("flightStyleHelp", "Original: a throttle, the ship always flies forward. Free flight, after EVERSPACE 2: hold W / S to thrust, A / D to strafe, Space / Ctrl for up and down, Q / E to roll and Shift to boost; the mouse aims, Z toggles the inertial dampeners (off: the ship keeps drifting), Alt held looks around. It has its own key layout (Key bindings). Keyboard, mouse and controller; touch keeps the original.");
+            freeFlight.description = () => (FlightStyles.Forced ? FlightStyleForcedNote() + " " : "") + X("flightStyleHelp", "Free flight: W / S thrust, A / D strafe, Space / Ctrl up and down, Q / E roll, Shift boost, Z dampeners. Own key layout.");
             list.Add(freeFlight);
             // MenuTouchWindow state 8: 490 Touch / 491 Accelerometer pictures (options[0x11]), 492 Steering Calibration
             // (493, then OK stores the device's position), the sensitivity slider per mode (+0x14 / +0x18).
@@ -317,7 +357,7 @@ namespace GoF2Remake.UI
             // Remake (#121): the cameras turned round the ship (free look, Action Freeze, Inspect ship) have their own pair.
             var orbitY = Toggle("invertOrbitY", OptionPage.Controls, () => X("invertOrbitY", "Camera views: invert up / down"),
                 () => Settings.InvertOrbitY, v => Settings.InvertOrbitY = v);
-            orbitY.description = () => X("invertOrbitHelp", "The cameras you turn around the ship: free look, Action Freeze, Inspect ship and the Mod Builder, by drag, stick or keys. Separate from the flight controls' inversion.");
+            orbitY.description = () => X("invertOrbitHelp", "For cameras you turn around the ship: free look, Action Freeze, Inspect ship, the Mod Builder.");
             list.Add(orbitY);
             var orbitX = Toggle("invertOrbitX", OptionPage.Controls, () => X("invertOrbitX", "Camera views: invert left / right"),
                 () => Settings.InvertOrbitX, v => Settings.InvertOrbitX = v);
@@ -348,7 +388,7 @@ namespace GoF2Remake.UI
                     () => r ? X("touchRightHeight", "Touch controls height: fire buttons") : X("touchLeftHeight", "Touch controls height: stick"), 0f, 1f,
                     () => { float v = r ? Settings.TouchRightHeight : Settings.TouchLeftHeight; return v < 0f ? TouchControls.DefaultHeight01(r) : v; },
                     v => { if (r) Settings.TouchRightHeight = v; else Settings.TouchLeftHeight = v; }, Percent);
-                touchHeight.description = () => X("touchHeightHelp", "How high the touch controls sit on the screen: 0 % is the highest, 100 % the lowest.");
+                touchHeight.description = () => X("touchHeightHelp", "0 % is the highest place, 100 % the lowest.");
                 touchHeight.visible = () => Application.isMobilePlatform || InputMode.Current == InputKind.Touch;
                 list.Add(touchHeight);
             }
@@ -362,8 +402,8 @@ namespace GoF2Remake.UI
                 () => Settings.HapticsIntensity, v => { Settings.HapticsIntensity = v; Flight.Haptics.Preview(); },
                 v => v <= 0f ? X("off", "Off") : Percent(v));
             haptics.description = () => Application.isMobilePlatform
-                ? X("hapticsHelpMobile", "Phone vibration (touch controls) and controller rumble: hits, collisions, explosions, missiles, boost, jumps and mining.")
-                : X("hapticsHelp", "Controller rumble: hits, collisions, explosions, shots, boost, jumps and mining.");
+                ? X("hapticsHelpMobile", "Phone vibration and controller rumble for hits, explosions, boosts, jumps and mining.")
+                : X("hapticsHelp", "Controller rumble for hits, explosions, shots, boosts, jumps and mining.");
             list.Add(haptics);
             list.Add(Slider("deadzone", OptionPage.Controls, () => X("deadzone", "Stick dead zone"), 0.05f, 0.4f,
                 () => Settings.StickDeadzone, v => Settings.StickDeadzone = v, Percent));
@@ -371,7 +411,7 @@ namespace GoF2Remake.UI
             list.Add(Choice("padGlyphs", OptionPage.Controls, () => X("padGlyphs", "Controller button icons"), true,
                 () => new[] { X("padGlyphsAuto", "Auto"), "Xbox", "PlayStation" },
                 () => Settings.PadGlyphs, i => Settings.PadGlyphs = i,
-                () => X("padGlyphsHelp", "Auto: PlayStation buttons (cross, circle, square, triangle) while a DualSense or DualShock is in use, Xbox buttons for any other controller.")));
+                () => X("padGlyphsHelp", "Auto: PlayStation buttons for a DualSense or DualShock, Xbox buttons for others.")));
             // Remake: every flight control rebindable (GameControls): two keyboard / mouse keys and a controller button each.
             list.Add(new OptionDef
             {
@@ -386,7 +426,7 @@ namespace GoF2Remake.UI
                                                                                     : X("flightStyleOriginal", "Original"),
                                          PageTitle(OptionPage.Controls))
                            + (FlightStyles.Forced ? " " + FlightStyleForcedNote() : "")
-                           + " " + X("bindingsHelp", "Keys, second keys and controller buttons: pick one to change it. Esc (or the controller's B, or a tap) cancels; nothing pressed for 10 seconds cancels too. To clear one: its ×, a right click, Delete (or the controller's X) on the selected row, or Backspace while it waits for a key. The menu keys stay fixed.");
+                           + " " + X("bindingsHelp", "Pick a key or button to change it. Esc cancels. Delete, × or a right click clears it.");
                 },
                 action = Flight.GameControls.ResetToDefaults,
                 extra = BindingRow.Header,
@@ -404,41 +444,41 @@ namespace GoF2Remake.UI
                 () => Settings.TutorialHints, v => Settings.TutorialHints = v));
             var storyStep = Toggle("showStoryStep", OptionPage.Gameplay, () => X("showStoryStep", "Show story step"),
                 () => Settings.ShowStoryStep, v => Settings.ShowStoryStep = v);
-            storyStep.description = () => X("showStoryStepHelp", "The current story step at the bottom right of the screen. Handy for bug reports.");
+            storyStep.description = () => X("showStoryStepHelp", "The current story step at the bottom right, for bug reports.");
             list.Add(storyStep);
             var dyingCargo = Toggle("dyingCargoMarkers", OptionPage.Gameplay, () => X("dyingCargoMarkers", "Salvage markers on dying ships"),
                 () => Settings.DyingCargoMarkers, v => Settings.DyingCargoMarkers = v);
-            dyingCargo.description = () => X("dyingCargoMarkersHelp", "A ship carrying cargo shows the container markers while it tumbles before exploding, as in the original. Off: no markers; aim at it and the tractor beam still pulls its cargo.");
+            dyingCargo.description = () => X("dyingCargoMarkersHelp", "A dying ship with cargo shows container markers before it explodes.");
             list.Add(dyingCargo);
             var cloakLoses = Toggle("cloakLosesPursuers", OptionPage.Gameplay, () => X("cloakLosesPursuers", "Cloak shakes off pursuers"),
                 () => Settings.CloakLosesPursuers, v => Settings.CloakLosesPursuers = v);
-            cloakLoses.description = () => X("cloakLosesPursuersHelp", "Enemy ships lose track of you while you're cloaked: they fly to where they last saw you, then go back to their patrol. Off: as in the original, they keep chasing and aiming at you but don't fire.");
+            cloakLoses.description = () => X("cloakLosesPursuersHelp", "While you're cloaked, enemies fly to where they last saw you, then return to patrol.");
             list.Add(SessionRule(cloakLoses));
             var empCloak = Toggle("empBreaksCloak", OptionPage.Gameplay, () => X("empBreaksCloak", "EMP breaks cloaks"),
                 () => Settings.EmpBreaksCloak, v => Settings.EmpBreaksCloak = v);
-            empCloak.description = () => X("empBreaksCloakHelp", "An EMP hit on a cloaked ship drops its cloak at once, and a cloak still charging fails: yours, the Specters' and other players'. Off: as in the original, nothing ends a cloak early.");
+            empCloak.description = () => X("empBreaksCloakHelp", "An EMP hit drops a cloak at once, also one still charging.");
             list.Add(SessionRule(empCloak));
             var smartTargeting = Toggle("smarterNpcTargeting", OptionPage.Gameplay, () => X("smarterNpcTargeting", "Smarter NPC targeting"),
                 () => Settings.SmarterNpcTargeting, v => Settings.SmarterNpcTargeting = v);
-            smartTargeting.description = () => X("smarterNpcTargetingHelp", "Enemy fighters attack the nearest hostile ship, you a little likelier, and spread out over their targets instead of all going for you. Off: as in the original, every enemy fighter in range goes for you first.");
+            smartTargeting.description = () => X("smarterNpcTargetingHelp", "Enemy fighters spread over nearby targets instead of all going for you.");
             list.Add(SessionRule(smartTargeting));
             // Remake (players' report: fighters hard to hit since the mesh collision): every hull's real shape, the flyable ships
             // on the original's hit cube, or the original's volumes everywhere (Settings.ShipCollision, Flight.HullCollision.Mode).
             list.Add(SessionRule(Choice("shipCollision", OptionPage.Gameplay, () => X("shipCollision", "Ship collision"), true,
                 () => new[] { X("shipCollisionExact", "Exact shape"), X("shipCollisionMixed", "Mixed"), X("shipCollisionOriginal", "Original") },
                 () => Settings.ShipCollision, i => Settings.ShipCollision = i,
-                () => X("shipCollisionHelp", "Exact shape: shots hit every ship and object on its real shape, so a near miss misses, and you bump into other players' hulls. Mixed: fighters, your ship and other players' ships take the hits on a box around them, as in the original game, which makes them easier to hit, and other players' ships are spheres; freighters, battleships, carriers, stations and other objects keep their real shape. Original: as in the original game, every ship, station and object uses the original's boxes and spheres."))));
+                () => X("shipCollisionHelp", "Exact: real shapes everywhere. Mixed: fighters use boxes, big ships keep real shapes. Original: boxes and spheres."))));
             var pirateEvents = Toggle("pirateEvents", OptionPage.Gameplay, () => X("pirateEvents", "Pirate outposts and bosses"),
                 () => Settings.PirateEvents, v => Settings.PirateEvents = v);
-            pirateEvents.description = () => X("pirateEventsHelp", "Now and then an orbit holds a pirate outpost with its guards or a pirate boss with escorts; destroying them pays a bounty. Not in the original.");
+            pirateEvents.description = () => X("pirateEventsHelp", "Some orbits hold a pirate outpost or a pirate boss with a bounty.");
             list.Add(SessionRule(pirateEvents));
             var capitalShips = Toggle("capitalShips", OptionPage.Gameplay, () => X("capitalShips", "Capital ship enhancements"),
                 () => Settings.CapitalShips, v => Settings.CapitalShips = v);
-            capitalShips.description = () => X("capitalShipsHelp", "Battleships and carriers get escorts and stronger turrets; the carrier and the Vossk battleship can be destroyed for loot, the carrier launches Inflicts when attacked and lets trusted pilots dock to resupply. Not in the original.");
+            capitalShips.description = () => X("capitalShipsHelp", "Capital ships get escorts and stronger turrets; carriers and Vossk battleships can be destroyed and docked at.");
             list.Add(SessionRule(capitalShips));
             var kaamoStacking = Toggle("kaamoStacking", OptionPage.Gameplay, () => X("kaamoStacking", "Stackable Kaamo Club upgrades"),
                 () => Settings.KaamoStacking, v => Settings.KaamoStacking = v);
-            kaamoStacking.description = () => string.Format(X("kaamoStackingHelp", "The Kaamo Club's mechanics fit their upgrade again and again, each level costing twice the last, up to level {0}. Off: one of each, as in the original. Not in the original."),
+            kaamoStacking.description = () => string.Format(X("kaamoStackingHelp", "Kaamo Club upgrades can be fitted again, each level twice the price, up to level {0}."),
                 Settings.KaamoMaxLevel);
             list.Add(SessionRule(kaamoStacking));
             // Remake: the stacking's top level (Session.MaxModLevel), a session rule too (-kaamomaxlevel, /set kaamomaxlevel).
@@ -450,34 +490,34 @@ namespace GoF2Remake.UI
             list.Add(SessionRule(kaamoLevel));
             var kaamoGear = Toggle("kaamoKeepsEquipment", OptionPage.Gameplay, () => X("kaamoKeepsEquipment", "Stored ships keep their equipment"),
                 () => Settings.KaamoKeepsEquipment, v => Settings.KaamoKeepsEquipment = v);
-            kaamoGear.description = () => X("kaamoKeepsEquipmentHelp", "A ship you park in the Kaamo Club keeps its weapons, turrets and equipment, and they are back on it when you fly it again. Off: they move to the ship you take, as in the original. Ships traded in elsewhere always hand theirs over.");
+            kaamoGear.description = () => X("kaamoKeepsEquipmentHelp", "A ship parked in the Kaamo Club keeps its weapons and equipment.");
             list.Add(SessionRule(kaamoGear));
             var cloakBay = Toggle("cloakBay", OptionPage.Gameplay, () => X("cloakBay", "Cloak bay on cloaking ships"),
                 () => Settings.CloakBay, v => Settings.CloakBay = v);
-            cloakBay.description = () => X("cloakBayHelp", "The Specter and the Scimitar have a cloak built in. A cloak you mount on them replaces it without taking an equipment slot. Off: it takes a slot, as in the original.");
+            cloakBay.description = () => X("cloakBayHelp", "On the Specter and Scimitar a mounted cloak takes no equipment slot.");
             list.Add(SessionRule(cloakBay));
             // #28: the Informer mission's rule for other ships dying after the spy.
             list.Add(SessionRule(Choice("informerRule", OptionPage.Gameplay, () => X("informerRule", "Informer missions"), true,
                 () => new[] { X("informerRemake", "Remake"), X("informerOriginal", "Original") },
                 () => Settings.InformerOriginalRule ? 1 : 0, i => Settings.InformerOriginalRule = i == 1,
-                () => X("informerRuleHelp", "Original: any other ship destroyed in the spy's orbit before you dock fails the mission, even after the spy is dead. Remake: once the spy is dead, other kills no longer count."))));
+                () => X("informerRuleHelp", "Remake: once the spy is dead, other kills don't count. Original: any kill before docking fails it."))));
             list.Add(Choice("targetLock", OptionPage.Gameplay, () => X("targetLock", "Target lock"), true,
                 () => new[] { X("targetLockSmart", "Smart"), X("targetLockOriginal", "Original") },
                 () => Settings.OriginalTargetLock ? 1 : 0, i => Settings.OriginalTargetLock = i == 1,
-                () => X("targetLockPriorityHelp", "Smart: hostile ships are locked first, then the one nearest the crosshair. Original: the first ship in the box is locked, whoever it is, and any new lock replaces the old one.") + " "
-                      + X("targetLockBeams", "With Smart, beam lasers also aim only at hostile ships, or at the ship you have locked.") + " "
-                      + X("targetLockUnlock", "The Unlock target key (Key bindings, U by default) drops the lock; on touch, tap the lock plate.")));
+                () => X("targetLockPriorityHelp", "Smart: hostile ships first, then the one nearest the crosshair. Original: the first ship in the box.") + " "
+                      + X("targetLockBeams", "Beam lasers then aim only at hostiles or your lock.") + " "
+                      + X("targetLockUnlock", "Unlock target (U) drops the lock; on touch, tap the lock plate.")));
             // Remake (players' suggestion): the Smart lock's hold on an enemy, its own option (CombatRadar, TargetLockRules).
             var keepEnemy = Toggle("keepEnemyLock", OptionPage.Gameplay, () => X("keepEnemyLock", "Keep enemy lock"),
                 () => Settings.KeepEnemyLock, v => Settings.KeepEnemyLock = v);
-            keepEnemy.description = () => X("keepEnemyLockHelp", "While a hostile ship is locked, a neutral or friendly ship passing through the crosshair can't take the lock (your missiles stay on your target). Off: you can lock and scan any ship during a battle. Only with the Smart target lock.");
+            keepEnemy.description = () => X("keepEnemyLockHelp", "While an enemy is locked, passing neutral or friendly ships can't take the lock.");
             keepEnemy.visible = () => !Settings.OriginalTargetLock;
             list.Add(keepEnemy);
             // Remake mods: NPC fighters in the mods' ships of their race (Modding.ModTraffic).
             list.Add(Choice("modShipTraffic", OptionPage.Gameplay, () => X("modShipTraffic", "Mod ships in traffic"), true,
                 () => new[] { X("modShipTrafficOff", "Off"), "10 %", "25 %", "50 %" },
                 () => Settings.ModShipTraffic, i => Settings.ModShipTraffic = i,
-                () => X("modShipTrafficHelp", "How often an NPC fighter flies one of your mods' ships of its race instead of the game's. Their hulls and guns stay those of the game's fighters.")));
+                () => X("modShipTrafficHelp", "How often NPC fighters fly your mods' ships; their hulls and guns stay the game's.")));
             list.Add(Toggle("autoAdvance", OptionPage.Gameplay, () => X("autoPlayDialogue", "Auto-play dialogue"),
                 () => Settings.AutoAdvanceDialogue, v => Settings.AutoAdvanceDialogue = v));
             list.Add(Toggle("animatedDialogue", OptionPage.Gameplay, () => X("animatedDialogue", "Animated dialogue"),
@@ -488,16 +528,25 @@ namespace GoF2Remake.UI
             list.Add(Choice("hudMode", OptionPage.Gameplay, () => X("hudMode", "Flight HUD"), true,
                 () => new[] { X("hudFull", "Full"), X("hudMinimal", "Minimal"), X("hudOff", "Off") },
                 () => Settings.HudMode, i => Settings.HudMode = i,
-                () => X("hudModeHelp", "Minimal: only the crosshair, the action prompt, warnings and messages. Off: only messages, for maximum immersion. Menus, conversations and the radio always show. The Toggle HUD key (F1 by default) switches it in flight.")));
+                () => X("hudModeHelp", "Minimal: crosshair, prompts and messages only. Off: messages only. F1 switches it in flight.")));
+            // Remake (docs/UI-DESIGN.md "HUD"): the flight HUD's own size and opacity, apart from the menus' Interface size.
+            list.Add(Choice("hudScale", OptionPage.Gameplay, () => X("hudScale", "HUD size"), false,
+                () => System.Array.ConvertAll(HudScaleSteps, p => p + " %"),
+                () => Mathf.Max(0, System.Array.IndexOf(HudScaleSteps, Settings.HudScalePercent)), i => Settings.HudScalePercent = HudScaleSteps[Mathf.Clamp(i, 0, HudScaleSteps.Length - 1)],
+                () => X("hudScaleHelp", "Sizes the flight HUD without changing the menus.")));
+            list.Add(Choice("hudOpacity", OptionPage.Gameplay, () => X("hudOpacity", "HUD opacity"), false,
+                () => System.Array.ConvertAll(HudOpacitySteps, p => p + " %"),
+                () => Mathf.Max(0, System.Array.IndexOf(HudOpacitySteps, Settings.HudOpacityPercent)), i => Settings.HudOpacityPercent = HudOpacitySteps[Mathf.Clamp(i, 0, HudOpacitySteps.Length - 1)],
+                () => X("hudOpacityHelp", "How solid the HUD markings are; messages and menus stay opaque.")));
             // Remake (players' request): a far ship's marker that leaves the ship in view, and its distance (CombatView,
             // FarShipMarkers).
             list.Add(Choice("farShipMarkers", OptionPage.Gameplay, () => X("farShipMarkers", "Far ship markers"), true,
                 () => new[] { X("farMarkerOriginal", "Original"), X("farMarkerRing", "Ring"), X("farMarkerSmallDot", "Small dot") },
                 () => Settings.FarShipMarkers, i => Settings.FarShipMarkers = i,
-                () => X("farShipMarkersHelp", "How a distant ship is marked on screen. Original: a filled dot over the ship. Ring: a hollow ring around it. Small dot: a small dot just above it. Both leave the ship in view; a locked ship gets a bracket around it.")));
+                () => X("farShipMarkersHelp", "How a distant ship is marked: a dot over it, a hollow ring, or a small dot above it.")));
             var markerDistance = Toggle("markerDistance", OptionPage.Gameplay, () => X("markerDistance", "Distance on ship markers"),
                 () => Settings.MarkerDistance, v => Settings.MarkerDistance = v);
-            markerDistance.description = () => X("markerDistanceHelp", "Shows the distance under every distant ship's marker, not only under the locked ship's.");
+            markerDistance.description = () => X("markerDistanceHelp", "Shows the distance under every distant ship's marker.");
             list.Add(markerDistance);
             // Remake: Discord Rich Presence (DiscordPresence), desktop only.
             if (!Application.isMobilePlatform)
@@ -512,7 +561,7 @@ namespace GoF2Remake.UI
                 var difficulty = Choice("difficulty", OptionPage.Gameplay, () => X("difficulty", "Difficulty"), true,
                     () => levels.Select(Session.DifficultyName).ToArray(),
                     () => Nearest(levels, Session.Difficulty), i => Session.Difficulty = levels[Mathf.Clamp(i, 0, levels.Length - 1)],
-                    () => X("difficultyHelp", "Changes the game in progress; enemies and the Extreme rules follow from the next orbit or docking."));
+                    () => X("difficultyHelp", "Takes effect from the next orbit or docking."));
                 difficulty.inGameOnly = true;
                 list.Add(difficulty);
             }
@@ -527,7 +576,7 @@ namespace GoF2Remake.UI
             list.Add(language);
             // Remake: the testing tools (Cheats.Unlocked), also opened by F10, LB + RB or three fingers on the main menu.
             var debug = Toggle("debugTools", OptionPage.Gameplay, () => X("debugTools", "Debug tools"), () => Cheats.Unlocked, v => Cheats.Unlocked = v);
-            debug.description = () => X("debugToolsHelp", "A Debug button in the main menu (the mission select) and a Debug page in the pause and station menus (cheats, items, spawns).");
+            debug.description = () => X("debugToolsHelp", "A Debug button in the main menu and a Debug page in the pause and station menus.");
             debug.visible = () => Cheats.Allowed;   // not in a multiplayer session that doesn't allow the Debug menu
             list.Add(debug);
             // Remake (a player's request): the saves also kept in a folder the player picks, for file managers and sync tools
@@ -539,8 +588,8 @@ namespace GoF2Remake.UI
                     label = () => string.Format(X("saveFolder", "Save folder: {0}"),
                         SaveFolder.Chosen ? SaveFolder.DisplayName : X("saveFolderDefault", "this device only")),
                     description = () => SaveFolder.LastProblem != null
-                        ? string.Format(X("saveFolderUnreachable", "The folder can't be reached ({0}). Your saves stay on this device and go to the folder once it is back."), SaveFolder.LastProblem)
-                        : X("saveFolderHelp", "Keeps your saves and ship presets in a folder you choose as well, where file managers and sync tools (Syncthing) reach them, so the game moves between devices. The game always keeps its own copies too."),
+                        ? string.Format(X("saveFolderUnreachable", "Can't reach the folder ({0}). Saves stay here and sync when it's back."), SaveFolder.LastProblem)
+                        : X("saveFolderHelp", "Also keeps your saves in a folder you choose, for sync tools and other devices."),
                     action = () => SaveFolderPressed?.Invoke(),
                 });
             return list;
@@ -571,6 +620,17 @@ namespace GoF2Remake.UI
         {
             var shown = d.visible;
             d.visible = () => !Multiplayer.NetRules.ClientLocked && (shown == null || shown());
+            return d;
+        }
+
+        /// <summary>The flight HUD's size and opacity steps (Settings.HudScalePercent / HudOpacityPercent).</summary>
+        static readonly int[] HudScaleSteps = { 70, 80, 90, 100, 115, 130, 150 };
+        static readonly int[] HudOpacitySteps = { 30, 40, 50, 60, 70, 80, 90, 100 };
+
+        /// <summary>A change of this row asks to be kept (OptionDef.confirm, SettingsConfirm).</summary>
+        static OptionDef Confirmed(OptionDef d)
+        {
+            d.confirm = true;
             return d;
         }
 

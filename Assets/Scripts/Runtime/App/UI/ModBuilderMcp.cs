@@ -585,7 +585,7 @@ namespace GoF2Remake.UI
                 {
                     lock (waiting) waiting.Remove(c);
                     try { c.timedOut?.Invoke(); } catch (Exception e) { Debug.LogException(e); }
-                    c.Fail(Localization.Extra("mbMcpTimeout", "The game didn't answer in time (a scene still loading?). Ask builder_status."));
+                    c.Fail(Localization.Extra("mbMcpTimeout", "The game didn't answer in time (still loading?). Ask builder_status."));
                 }
             }
             for (int n = 0; n < 16 && jobs.TryDequeue(out var job); n++)

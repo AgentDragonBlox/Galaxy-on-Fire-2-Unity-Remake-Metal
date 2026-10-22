@@ -134,6 +134,7 @@ namespace GoF2Remake.UI
             // After a screenshot: where it went, and (desktop) a button / O to show it in the file browser.
             notice = new VisualElement { pickingMode = PickingMode.Ignore };
             notice.AddToClassList("photo-saved");
+            notice.AddToClassList("gof-toast");   // the shared notice look (docs/UI-DESIGN.md "Notices")
             notice.AddToClassList(SafeArea.EdgeClass);
             noticePath = new Label { pickingMode = PickingMode.Ignore };
             noticePath.AddToClassList("photo-saved-path");

@@ -84,7 +84,7 @@ namespace GoF2Remake.UI
                 }, null, null);
             }
             if (Project.Kits.Count == 0)
-                Note(kitList, T("mbNoKits", "No kits yet. A kit is a set of ship parts (.glb models: bodies, wings, engines...) that players combine into their own ship in the hangar's Customize screen."));
+                Note(kitList, T("mbNoKits", "No kits yet. A kit is a set of ship parts players combine in Customize."));
         }
 
         /// <summary>The project ship that flies a kit (its first), null = none yet.</summary>
@@ -129,7 +129,7 @@ namespace GoF2Remake.UI
                 MarkDirty();
                 RebuildKits();
                 BuildKitPage();
-                Status(T("mbKitAdded", "Now add its parts: each slot (body, wings, rear...) takes one part per build."), false);
+                Status(T("mbKitAdded", "Now add its parts: each slot takes one part per build."), false);
             });
         }
 
@@ -178,7 +178,7 @@ namespace GoF2Remake.UI
             if (k == null)
             {
                 Note(kitPage, T("mbPickKit", "Add a kit on the left to start."));
-                Note(kitPage, T("mbKitAbout", "Customizable ships are built from parts that share one origin: each slot (a body, wings, a rear...) takes one part, and the hangar's Customize screen lets players swap them, pick colours and skins. Every part brings its own hardpoints and stats."));
+                Note(kitPage, T("mbKitAbout", "Parts share one origin; each slot takes one part. Players swap parts, colours and skins in Customize."));
                 return;
             }
             k.Flush();
@@ -192,7 +192,7 @@ namespace GoF2Remake.UI
                 currentPart = fresh.Find(currentPart?.Id) ?? fresh.Parts.FirstOrDefault();
                 gizmo.Selected = -1;
                 KitEdited(true, true);
-            }, T("mbJsonKitNote", "shipkits.json's fields (Modding/README.md \"Customizable ships\"): also \"palettes\", \"colorSlots\", \"presets\" (colour schemes), \"skins\" (texture sets), \"hardpoints\" (weapon and turret models), \"materials\"."));
+            }, T("mbJsonKitNote", "Also in shipkits.json: palettes, colorSlots, presets, skins, hardpoints, materials."));
 
             Heading(kitPage, T("mbKit", "Kit"));
             Text(kitPage, T("mbName", "Name"), k.Name, 40, v => { k.Name = v.Trim(); KitEdited(false, true); });
@@ -205,7 +205,7 @@ namespace GoF2Remake.UI
             Add(yrow, new Label($"{T("mbYawAxis", "Turn (yaw)")}: {Mathf.RoundToInt(k.Yaw)}°"), "mbv-inline-label");
             Act(yrow, "−90°", () => { k.Yaw = Mathf.Repeat(k.Yaw - 90f, 360f); KitEdited(true); });
             Act(yrow, "+90°", () => { k.Yaw = Mathf.Repeat(k.Yaw + 90f, 360f); KitEdited(true); });
-            Note(kitPage, T("mbKitScaleNote", "One scale and turn for every part: the parts are modelled around one origin, the ship's pivot. Turn them until the nose points along the arrow on the floor."));
+            Note(kitPage, T("mbKitScaleNote", "One scale and turn for all parts; turn them until the nose follows the floor arrow."));
 
             BuildKitShip(k);
             BuildKitSlots(k);
@@ -221,13 +221,13 @@ namespace GoF2Remake.UI
             var ship = KitShipOf(k);
             if (ship == null)
             {
-                Note(kitPage, T("mbKitNoShip", "No ship flies this kit yet: make one to see the parts on the turntable. Its stats, price and default build are set in the Ships kind."));
+                Note(kitPage, T("mbKitNoShip", "No ship flies this kit yet: make one in Ships to see the parts."));
                 Act(kitPage, T("mbKitMakeShip", "+ Make a ship from this kit"), () => NewKitShip(k));
                 return;
             }
-            Note(kitPage, string.Format(T("mbKitShipNote", "The turntable shows {0} with the selected part. Its stats, price and default build: Ships kind."),
+            Note(kitPage, string.Format(T("mbKitShipNote", "The turntable shows {0} with the selected part; set its stats in Ships."),
                                         string.IsNullOrEmpty(ship.Name) ? ship.LocalId : ship.Name));
-            if (k.Parts.Count == 0) Note(kitPage, T("mbKitNoPartsYet", "The game skips a kit without parts: until the first one, the ship shows a stand-in."));
+            if (k.Parts.Count == 0) Note(kitPage, T("mbKitNoPartsYet", "A kit without parts is skipped: the ship shows a stand-in until then."));
         }
 
         void NewKitShip(ProjectKit k)
@@ -250,7 +250,7 @@ namespace GoF2Remake.UI
         void BuildKitSlots(ProjectKit k)
         {
             Heading(kitPage, T("mbKitSlots", "Slots"));
-            Note(kitPage, T("mbKitSlotsNote", "In assembly order: a build takes one part per slot (a slot whose parts don't fit a ship's type stays empty)."));
+            Note(kitPage, T("mbKitSlotsNote", "In assembly order: a build takes one part per slot."));
             var slots = k.Slots;
             for (int i = 0; i < slots.Count; i++)
             {
@@ -342,7 +342,7 @@ namespace GoF2Remake.UI
             Heading(box, string.Format(T("mbKitPart", "Part: {0}"), string.IsNullOrEmpty(p.Name) ? p.Id : p.Name));
             k.Flush();
             JsonButton(box, p.Json, () => { p.ReadMounts(); gizmo.Selected = -1; KitEdited(true, true); },
-                       T("mbJsonPartNote", "A part's fields: also \"tierMounts\" (the tier extensions' hardpoints), \"anchors\" (points it offers other parts) and \"anchor\" (the point it sits on)."));
+                       T("mbJsonPartNote", "A part's fields also include tierMounts, anchors and anchor."));
             Text(box, T("mbName", "Name"), p.Name, 40, v => { p.Name = v.Trim(); KitEdited(false); });
             Note(box, string.Format(T("mbKitPartIdNote", "Id: {0}. A ship's build names it in its slot."), p.Id));
             var slots = k.Slots;
@@ -354,7 +354,7 @@ namespace GoF2Remake.UI
                 p.Types = v.Split(',').Select(t => ModProject.UniqueId(t, "", _ => false)).Where(t => t.Length > 0).Distinct().ToList();
                 KitEdited(true);
             });
-            Note(box, T("mbKitPartTypesNote", "Comma-separated ship types (a kit ship's \"Kit type\"); empty: every ship of the kit may fit it."));
+            Note(box, T("mbKitPartTypesNote", "Comma-separated ship types; empty = every ship of the kit."));
 
             Caption(box, T("mbModel", "Model"));
             var mrow = Row(box);
@@ -370,7 +370,7 @@ namespace GoF2Remake.UI
                 }));
 
             Caption(box, T("mbKitTiers", "Tier extensions"));
-            Note(box, T("mbKitTiersNote", "Extra models shown from build tier 1, 2, ... (armour plates, bigger engines): the Customize screen's tier."));
+            Note(box, T("mbKitTiersNote", "Extra models shown from build tier 1, 2, ... (armour plates, bigger engines)."));
             var tiers = p.Tiers;
             for (int i = 0; i < tiers.Count; i++)
             {
@@ -398,7 +398,7 @@ namespace GoF2Remake.UI
             }
 
             Caption(box, T("mbKitPartStats", "Stats"));
-            Note(box, T("mbKitPartStatsNote", "Added up over a build's parts: the hull, cargo and handling in % of the ship's own, equipment slots, and the flight bonuses (both flight styles)."));
+            Note(box, T("mbKitPartStatsNote", "Added up over a build: hull, cargo and handling in %, slots and flight bonuses."));
             for (int i = 0; i < PartStats.Length; i++)
             {
                 string key = PartStats[i];
@@ -434,7 +434,7 @@ namespace GoF2Remake.UI
         void BuildPartPoints(VisualElement box, ProjectKitPart p)
         {
             Caption(box, T("mbPoints", "Hardpoints"));
-            Note(box, T("mbKitPointsNote", "Ship-relative, on the hull as the turntable shows it. A build's points of each kind are its parts'; the ship's own only for a kind none of its parts has."));
+            Note(box, T("mbKitPointsNote", "On the hull as shown; the ship's own points only for kinds no part has."));
             var addRow = Add(box, new VisualElement(), "mbv-row", "mbv-add-row");
             for (int t = 0; t < 4; t++)
             {
@@ -471,7 +471,7 @@ namespace GoF2Remake.UI
         void BuildKitColours(ProjectKit k)
         {
             Heading(kitPage, T("mbKitColours", "Colours"));
-            Note(kitPage, T("mbKitColoursNote", "A paint slot recolours the materials whose name contains its text (the part models' own material names). Presets, other palettes and skins: Edit as JSON."));
+            Note(kitPage, T("mbKitColoursNote", "A paint slot recolours materials whose name contains its text."));
             foreach (var (id, name, material) in k.ColorSlots)
             {
                 string cid = id;
@@ -511,7 +511,7 @@ namespace GoF2Remake.UI
             Note(ship, T("mbKitTypeNote", "Parts list the types that may fit them; the ship's type picks which."));
 
             Caption(ship, T("mbKitDefaultBuild", "Default build"));
-            Note(ship, T("mbKitDefaultBuildNote", "What the dealers sell and other pilots fly; players change theirs in the hangar's Customize screen."));
+            Note(ship, T("mbKitDefaultBuildNote", "What dealers sell and others fly; players change theirs in Customize."));
             IEnumerable<(string slot, List<(string id, string name)> parts)> slots =
                 own != null ? own.Slots.Select(sl => (sl, own.PartsIn(sl).Where(p => p.Types.Count == 0 || p.Types.Contains(s.KitType, StringComparer.OrdinalIgnoreCase))
                                                                 .Select(p => (p.Id, string.IsNullOrEmpty(p.Name) ? p.Id : p.Name)).ToList()))

@@ -177,6 +177,7 @@ namespace GoF2Remake.UI
         public void Update()
         {
             float dt = Time.unscaledDeltaTime * 1000f;
+            UpdateRemoveButtons();
             if (!UpdateCommon(dt)) return;
             if (!ReadCommonKeys())
             {
@@ -245,7 +246,7 @@ namespace GoF2Remake.UI
                 ListRow(stationList, StationTitle(s), sub, s == currentStation, () => PickStation(s), null, null);
             }
             if (Project.Stations.Count == 0)
-                Note(stationList, T("mbNoStations", "No stations yet. A new station goes into a system (yours or the game's); its orbit shows here."));
+                Note(stationList, T("mbNoStations", "No stations yet. A new station goes into a system; its orbit shows here."));
         }
 
         /// <summary>A station picked: its orbit shows (the scene loads when it is another).</summary>
@@ -257,7 +258,7 @@ namespace GoF2Remake.UI
             BuildStationPage();
             int n = StationNumberOf(s);
             if (n >= 0 && n != Session.StationIndex) { SaveNow(); ModBuilder.ReloadSpace(n); }
-            else if (n < 0) Status(T("mbStationNotRead", "The game hasn't read this station yet (check its system): fix the messages above."), true);
+            else if (n < 0) Status(T("mbStationNotRead", "The game hasn't read this station yet: fix the messages above."), true);
         }
 
         void NewStation() => PickRef(RefKind.System, T("mbNewStationSystem", "In which system?"), e => AskText(T("mbNewStation", "+ New station"), T("mbName", "Name"), "", name =>
@@ -291,7 +292,7 @@ namespace GoF2Remake.UI
             {
                 if (kind != ModBuilder.Kind.Stations || st != currentStation) return;
                 int n = StationNumberOf(st);
-                if (n < 0) { Status(T("mbStationNotRead", "The game hasn't read this station yet (check its system): fix the messages above."), true); return; }
+                if (n < 0) { Status(T("mbStationNotRead", "The game hasn't read this station yet: fix the messages above."), true); return; }
                 ModBuilder.ReloadSpace(n);
             });
             Status(T("mbOrbitRebuilding", "Building the orbit again…"), false);
@@ -328,7 +329,7 @@ namespace GoF2Remake.UI
             var s = currentStation;
             if (s == null) { Note(stationPage, T("mbPickStation", "Add a station on the left to start.")); return; }
             JsonButton(stationPage, s.Json, () => { SaveNow(); RequestReload(false); RebuildStations(); BuildStationPage(); },
-                       T("mbJsonStationNote", "stations.json's fields: also volumes (collision boxes / spheres), materials, hangar / bar, music, planetTexture."));
+                       T("mbJsonStationNote", "Also in stations.json: volumes, materials, hangar / bar, music, planetTexture."));
             bool isNew = !s.IsOverride;
             Heading(stationPage, isNew ? T("mbNewStationSub", "New station") : string.Format(T("mbChanges", "Changes {0}"), RefLabel(RefKind.Station, s.OverrideRef, s.OverrideRef)));
             if (isNew) Note(stationPage, string.Format(T("mbStationKey", "Other content names it {0}."), Project.Key(s.LocalId)));
@@ -382,7 +383,7 @@ namespace GoF2Remake.UI
                 Act(yrow, "+15°", () => { s.ModelYaw += 15f; Edited(true); }, "mbv-step");
                 var crow = Row(stationPage);
                 FlagButton(crow, T("mbModelCentre", "Centred on its middle"), s.ModelCentre, v => s.ModelCentre = v, () => Edited(true));
-                Note(stationPage, T("mbStationFront", "A launch leaves along the model's front (+Z after the turn), toward the orbit's planet."));
+                Note(stationPage, T("mbStationFront", "A launch leaves along the model's front, toward the orbit's planet."));
             }
             Segments(stationPage, T("mbCollision", "What ships bump into"), new[] { T("mbBox", "Its box"), T("mbSphere", "A sphere"), T("mbNoCollision", "Nothing") },
                      s.Collision == "sphere" ? 1 : s.Collision == "none" ? 2 : 0, n => { s.Collision = n == 1 ? "sphere" : n == 2 ? "none" : "box"; Edited(true); });
@@ -416,7 +417,7 @@ namespace GoF2Remake.UI
             Act(stationPage, T("mbPlayStation", "Play: dock here"), () =>
             {
                 int n = StationNumberOf(s);
-                if (n < 0) { Status(T("mbStationNotRead", "The game hasn't read this station yet (check its system): fix the messages above."), true); return; }
+                if (n < 0) { Status(T("mbStationNotRead", "The game hasn't read this station yet: fix the messages above."), true); return; }
                 SaveNow();
                 ModBuilder.Reload();
                 Session.StationIndex = n;

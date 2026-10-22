@@ -61,7 +61,7 @@ namespace GoF2Remake.Flight
 
         public static readonly InputAction Steer, Throttle, Brake, Boost, LevelOut, Roll, StrafeLeft, StrafeRight, DodgeLeft, DodgeRight, Drill,
             FirePrimary, FireSecondary, SwitchSecondary, UnlockTarget, Action, AutopilotMenu, ActionsMenu, Wingmen, KhadorDrive, FastForward,
-            Camera, AutoTurret, Cloak, TimeExtender, MouseSteering, Chat, ChatSend, ChatChannel, Screenshot,
+            Camera, CockpitView, AutoTurret, Cloak, TimeExtender, MouseSteering, Chat, ChatSend, ChatChannel, Screenshot,
             HudToggle, MultiplayerWindow, DistressCall,
             Thrust, StrafeAxis, Hover, Dampeners, FreeLookHold;
 
@@ -108,6 +108,9 @@ namespace GoF2Remake.Flight
             FireSecondary = Button("fireSecondary", () => X("ctlFireSecondary", "Fire secondary"), "<Keyboard>/r", "<Mouse>/rightButton", "<Gamepad>/leftTrigger");
             SwitchSecondary = Button("switchSecondary", () => X("ctlSwitchSecondary", "Switch secondary"), "<Keyboard>/g", null, "<Gamepad>/dpad/right");
             Camera = Button("camera", () => X("ctlCamera", "Camera / turret view"), "<Keyboard>/t", null, "<Gamepad>/dpad/up");
+            // Remake (players' feedback, 2026-10-22): the cockpit view on its own (FreeLookCamera.ToggleCockpit), out of the
+            // camera cycle; holding the camera button does the same. No controller default: D-pad up held.
+            CockpitView = Button("cockpitView", () => X("ctlCockpitView", "Cockpit view on / off"), "<Keyboard>/f2", null, null);
             AutoTurret = Button("autoTurret", () => X("ctlAutoTurret", "Auto turret on / off"), "<Keyboard>/y", null, "<Gamepad>/dpad/down");
             // Remake: drops the ship lock (CombatRadar.Unlock; the original has none). U, and B: in flight B is only the
             // menus' back, and the flight's presses wait while a menu is open (Navigation.PressesBlocked).
@@ -526,7 +529,29 @@ namespace GoF2Remake.Flight
         /// captured key doesn't also act in the menu).</summary>
         public static bool Rebinding => operation != null;
         public static bool BlocksMenus => operation != null || Time.frameCount <= rebindEndFrame + 1
-                                          || GoF2Remake.World.SpaceHooks.QuestionOpen;   // an event's question takes the keys
+                                          || GoF2Remake.World.SpaceHooks.QuestionOpen   // an event's question takes the keys
+                                          || TextEntryOpen || Time.frameCount <= textEntryEndFrame + 1    // the controller's keyboard (PadKeyboard)
+                                          || ModalOpen || Time.frameCount <= modalEndFrame + 1;           // "Keep these settings?" (SettingsConfirm)
+
+        /// <summary>Rework: a modal question that reads the devices itself is open (UI.SettingsConfirm): the menus ignore
+        /// their keys meanwhile and on the frame it closes.</summary>
+        public static bool ModalOpen
+        {
+            get => modalOpen;
+            set { if (modalOpen && !value) modalEndFrame = Time.frameCount; modalOpen = value; }
+        }
+        static bool modalOpen;
+        static int modalEndFrame = -10;
+
+        /// <summary>Rework: the controller's on-screen keyboard (UI.PadKeyboard) is open: it takes the controller, the menus
+        /// ignore their keys meanwhile and on the frame it closes.</summary>
+        public static bool TextEntryOpen
+        {
+            get => textEntryOpen;
+            set { if (textEntryOpen && !value) textEntryEndFrame = Time.frameCount; textEntryOpen = value; }
+        }
+        static bool textEntryOpen;
+        static int textEntryEndFrame = -10;
 
         /// <summary>Captures the slot's binding (a composite slot part by part). 'prompt' gets the part being asked for
         /// ("up", or null for a single binding); 'done' runs once it ended (captured, cleared or cancelled). Esc (or the

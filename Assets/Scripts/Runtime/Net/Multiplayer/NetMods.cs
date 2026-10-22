@@ -130,7 +130,7 @@ namespace GoF2Remake.Multiplayer
             var missing = Missing(SessionList, installed);
             if (missing.Count == 0) return null;
             return string.Format(Localization.Extra("mpNeedsMods",
-                "This game uses mods you don't have, or have another version of: {0}. Install the same files in your Mods folder, then join again."),
+                "Needs mods you don't have (or another version): {0}."),
                 string.Join(", ", missing));
         }
 

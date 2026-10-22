@@ -78,7 +78,7 @@ namespace GoF2Remake.UI
             Act(graphTools, "−", () => graph.ZoomBy(1f / 1.15f), "mbv-step");
             graphWideButton = Act(graphTools, "", () => { GraphWide = !GraphWide; UpdateQuestGraph(); }, "mbv-step");
             graph.Add(graphTools);
-            var help = new Label(T("mbGraphHelp", "Drag the canvas to move around, the wheel to zoom. Drag from an output (right) onto a node to wire it, or onto the canvas for a new step; drag a wired input away to cut it. Double-click the canvas for a new step; Delete removes the selected node."));
+            var help = new Label(T("mbGraphHelp", "Drag to pan, wheel to zoom. Drag an output onto a node to wire it, or onto empty space for a new step. Delete removes."));
             help.AddToClassList("mbg-help");
             help.pickingMode = PickingMode.Ignore;
             graph.Add(help);
@@ -152,16 +152,16 @@ namespace GoF2Remake.UI
                     Act(tools, T("mbCutWireIn", "Cut its wire in"), () => { QuestGraph.Detach(q.Json, sel); graph.Rebuild(); MarkDirty(); BuildQuestPage(); }, "mbv-step");
                 Act(tools, T("mbDelete", "Delete"), graph.DeleteSelected, "mbv-danger");
                 Act(tools, T("mbQuestSettings", "Quest settings"), () => graph.Select(null), "mbv-step");
-                JsonButton(questPage, sel, () => { graph.Rebuild(); BuildQuestPage(); }, T("mbJsonStepNote", "The step's fields (QuestSteps; Modding/README.md \"Quests made in the Mod Builder\")."));
+                JsonButton(questPage, sel, () => { graph.Rebuild(); BuildQuestPage(); }, T("mbJsonStepNote", "The step's fields (Modding/README.md, \"Quests made in the Mod Builder\")."));
                 int index = QuestGraph.AllSteps(q.Json).ToList().IndexOf(sel) + 1;
                 BuildStep(questPage, q, sel, def, index.ToString(CultureInfo.InvariantCulture), 0);
-                Note(questPage, T("mbGraphWiredNote", "A field with a dot on the node takes a wire from a value node (+ Value): a number, the game's state, maths, a comparison, the players, an orbit."));
+                Note(questPage, T("mbGraphWiredNote", "A field with a dot takes a wire from a value node (+ Value)."));
                 return;
             }
             BuildQuestSettings(q);
-            JsonButton(questPage, q.Json, () => { graph.Rebuild(); RebuildQuests(); BuildQuestPage(); }, T("mbJsonQuestNote", "The whole .gof2quest: its settings, steps, the loose chains and value nodes."));
+            JsonButton(questPage, q.Json, () => { graph.Rebuild(); RebuildQuests(); BuildQuestPage(); }, T("mbJsonQuestNote", "The whole .gof2quest: settings, steps, loose chains and value nodes."));
             int loose = (q.Json["loose"] as JArray)?.Count ?? 0;
-            if (loose > 0) Note(questPage, string.Format(T("mbLooseNote", "{0} chain(s) of steps aren't wired to anything: they don't run until wired to Start or another step."), loose));
+            if (loose > 0) Note(questPage, string.Format(T("mbLooseNote", "{0} chain(s) aren't wired: they don't run until wired to Start or a step."), loose));
         }
 
         void BuildValueInspector(ProjectQuest q, JObject v)
@@ -240,7 +240,7 @@ namespace GoF2Remake.UI
                 }
             }
             if (Project.Quests.Count == 0 && graphs.Count == 0)
-                Note(questList, T("mbNoQuests", "No quests yet. A quest starts by itself and runs like the game's story; a bar mission is offered by a visitor in the Space Lounges; an event is started by /event in multiplayer or by another's Next event step."));
+                Note(questList, T("mbNoQuests", "No quests yet. A quest starts by itself; a bar mission is offered in a Space Lounge; an event runs by /event."));
         }
 
         static int CountSteps(JArray steps) => ProjectQuest.All(steps, Lists).Count();
@@ -365,7 +365,7 @@ namespace GoF2Remake.UI
         void BuildGraphPage(string name)
         {
             Heading(questPage, name);
-            Note(questPage, T("mbGraphNote", "Made in the Unity Editor with Graph Toolkit: it runs as it is. Edit it there, or convert it to steps to edit it here (the lines the builder has no step for stay Command steps, so it runs the same)."));
+            Note(questPage, T("mbGraphNote", "Made in Unity with Graph Toolkit: it runs as is. Edit it there, or convert it to steps here."));
             var top = Row(questPage);
             Act(top, T("mbPlayQuest", "Play it"), () =>
             {
@@ -386,7 +386,7 @@ namespace GoF2Remake.UI
             {
                 string path = Project.EventGraphPath(name);
                 if (path == null) return;
-                Confirm(T("mbConvertSteps", "Convert to steps"), string.Format(T("mbConvertConfirm", "\"{0}\" becomes a step list the builder edits; the graph file goes (Undo brings it back)."), name),
+                Confirm(T("mbConvertSteps", "Convert to steps"), string.Format(T("mbConvertConfirm", "\"{0}\" becomes a step list; the graph file goes (Undo brings it back)."), name),
                         () => ConvertGraph(name, File.ReadAllText(path), true));
             }, "mbv-add");
         }
@@ -416,7 +416,7 @@ namespace GoF2Remake.UI
                 () => PickStepType(q, addList, currentStep, addList != q.Steps), "mbv-add");
             int looseChains = (q.Json["loose"] as JArray)?.Count ?? 0;
             if (looseChains > 0) Note(questPage, string.Format(T("mbLooseListNote", "{0} chain(s) of steps wired to nothing are only in the graph view."), looseChains));
-            Note(questPage, T("mbStepsNote", "The steps run one after another; a block (If, Repeat, Ask...) runs the steps under it. A quest ends at Complete or Fail (without one it completes after the last step). Put a Checkpoint after each step the player shouldn't repeat after loading a save."));
+            Note(questPage, T("mbStepsNote", "Steps run in order; a block runs the steps under it. Put a Checkpoint after steps not to repeat on load."));
         }
 
         /// <summary>The quest's own settings: title, kind, start, offer, reward, variables.</summary>
@@ -429,7 +429,7 @@ namespace GoF2Remake.UI
                      n => { q.Kind = kinds[n]; QuestEdited(true); RebuildQuests(); });
             if (q.Kind == "quest") BuildStartsWhen(q);
             else if (q.Kind == "mission") BuildMissionOffer(q);
-            else Note(questPage, T("mbEventKindNote", "An event runs for everyone in a multiplayer session when an admin starts it (/event <name>), or when another quest or event reaches a Next event step. Its variables marked Setting can be changed at the start: /event name wave=3."));
+            else Note(questPage, T("mbEventKindNote", "An event runs for everyone when an admin starts it (/event <name>) or a Next event step does."));
             if (q.Kind != "event") Int(questPage, T("mbRewardCredits", "Reward (credits)"), q.Reward, 0, 999999999, v => { q.Reward = v; QuestEdited(); });
             BuildVariables(q);
             if (q.Kind != "event")
@@ -459,7 +459,7 @@ namespace GoF2Remake.UI
                 q.Variables.Add(new JObject { ["name"] = name, ["value"] = 0 });
                 QuestEdited(true);
             }), "mbv-add");
-            Note(questPage, T("mbVariablesNote", "Numbers the quest remembers: Set a variable changes one, conditions read it (kills > goal), a text shows it in braces: \"Wave {wave}\"."));
+            Note(questPage, T("mbVariablesNote", "Numbers the quest remembers: set them, test them (kills > goal), show them as {wave}."));
         }
 
         static JToken Num(string s) =>
@@ -681,16 +681,16 @@ namespace GoF2Remake.UI
             else switch (def.type)
             {
                 case "camera":
-                    Note(card, T("mbPlaceNote", "A place: player [right up forward] (game units from the ship), station [x y z], x y z (in the orbit), ship <name> [x y z]. 20 units are a metre."));
+                    Note(card, T("mbPlaceNote", "A place: player [right up forward], station [x y z], x y z, ship <name>. 20 units = 1 m."));
                     break;
                 case "shipgoto": case "shiproute": case "shipfollow": case "shipattack": case "shipaction":
-                    Note(card, T("mbShipOrderNote", "The ship is named by a Spawn ships or Fight step (its name on the lock plate; several are \"Name 1\", \"Name 2\"...). Places: player [right up forward], station [x y z], x y z, ship <name>."));
+                    Note(card, T("mbShipOrderNote", "The ship is named by a Spawn or Fight step (several: \"Name 1\", \"Name 2\"...)."));
                     break;
                 case "on":
-                    Note(card, T("mbOnNote", "Its steps run each time it happens, beside the rest of the quest; in them, For: \"The player a When block is about\" is the one it happened to."));
+                    Note(card, T("mbOnNote", "Its steps run each time it happens, beside the rest; For: the player it happened to."));
                     break;
                 case "command":
-                    Note(card, T("mbCommandNote", "Any event command without the \"/\": spawn @a 2 pirate 3 enemy named Raider, npc @a Raider attack player, cutscene @a start, ..."));
+                    Note(card, T("mbCommandNote", "Any event command without \"/\": spawn @a 2 pirate 3 enemy, cutscene @a start, ..."));
                     break;
             }
         }
@@ -983,7 +983,7 @@ namespace GoF2Remake.UI
                     var frow = Row(card);
                     FlagButton(frow, T("mbQuietOrbit", "No other traffic there"), st["quiet"]?.Type != JTokenType.Boolean || (bool)st["quiet"], v => st["quiet"] = v, () => BuildQuestPage());
                     Text(card, T("mbObjectiveOptional", "Objective meanwhile (optional)"), S("objective"), 300, v => SetS("objective", v));
-                    Note(card, T("mbFightNote", "They come in front of the player a few seconds after the player reaches the orbit; the step ends when none of them is left."));
+                    Note(card, T("mbFightNote", "They arrive in front of the player in that orbit; the step ends when none is left."));
                     break;
                 }
                 case "cargo":
@@ -1002,7 +1002,7 @@ namespace GoF2Remake.UI
                 }
                 case "checkpoint":
                     Text(card, T("mbCheckpointName", "Name (optional; a save remembers it)"), S("name"), 40, v => SetS("name", v?.Trim().Replace(' ', '_')));
-                    Note(card, T("mbCheckpointNote", "Loading a save goes on from here: what came before isn't played again. Keep checkpoints on the quest's own line of steps."));
+                    Note(card, T("mbCheckpointNote", "Loading a save goes on from here; keep checkpoints on the quest's main line."));
                     break;
                 case "startquest":
                     RefField(card, T("mbQuestField", "Quest"), RefKind.Quest, S("quest"), v => SetS("quest", v), clear: false, filter: e => e.value != q.Name);
@@ -1069,7 +1069,7 @@ namespace GoF2Remake.UI
                 case 3:
                     Matches(w, @"^campaign\s*>=\s*(\d+)$", out string step);
                     Int(questPage, T("mbStoryStep", "From the story step"), int.TryParse(step, out int s) ? s : 20, 0, 162, v => { q.StartsWhen = $"campaign >= {v}"; QuestEdited(); });
-                    Note(questPage, T("mbStoryStepNote", "The GoF2 story's step (Debug menu's list); in free play and mod campaigns it is -1, so such a quest waits for the story."));
+                    Note(questPage, T("mbStoryStepNote", "The GoF2 story's step; -1 in free play and mod campaigns."));
                     break;
                 case 5:
                     ConditionField(questPage, T("mbCondition", "Condition"), w, v => { q.StartsWhen = v ?? ""; QuestEdited(); });

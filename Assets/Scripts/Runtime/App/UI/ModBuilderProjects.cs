@@ -247,11 +247,11 @@ namespace GoF2Remake.UI
                 list.Add(row);
             }
             empty.text = projects.Count == 0
-                ? T("mbEmpty", "No projects yet. Type a name above and press Create to start your first mod.")
+                ? T("mbEmpty", "No projects yet. Type a name above and press Create.")
                 : T("mbNoMatch", "No project matches. Press Create to start one with this name.");
             empty.style.display = shown.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
             count.text = projects.Count == 1 ? T("mbCountOne", "1 project") : string.Format(T("mbCount", "{0} projects"), projects.Count);
-            note.text = string.Format(T("mbNote", "Projects are kept in {0}. Export as mod puts a finished one into your Mods folder, where it is turned on in the Mod Browser."),
+            note.text = string.Format(T("mbNote", "Projects are in {0}. Export as mod puts one into your Mods folder."),
                                       ModProject.Root);
         }
 
@@ -422,12 +422,12 @@ namespace GoF2Remake.UI
             {
                 string path = selected.Export(out string error);
                 if (path == null) notice(heading, string.Format(T("mbExportFailed", "The mod couldn't be exported: {0}"), error));
-                else notice(heading, string.Format(T("mbExported", "\"{0}\" is in your Mods folder:\n{1}\nTurn it on in the Mod Browser to play with it."), selected.Name, path));
+                else notice(heading, string.Format(T("mbExported", "\"{0}\" is in your Mods folder:\n{1}\nTurn it on in the Mod Browser."), selected.Name, path));
             }
-            if (!HasContent(selected)) { notice(heading, T("mbExportEmpty", "This project has nothing in it yet. Open it and add some content first.")); return; }
+            if (!HasContent(selected)) { notice(heading, T("mbExportEmpty", "This project is empty: add some content first.")); return; }
             var old = selected.InstalledMod;
             if (old != null)
-                ask(heading, string.Format(T("mbExportReplace", "A mod with the id \"{0}\" is already installed (\"{1}\" v{2}). Replace it with this project?"),
+                ask(heading, string.Format(T("mbExportReplace", "A mod \"{0}\" is installed (\"{1}\" v{2}). Replace it?"),
                                            selected.Id, old.Name, old.Version), Run);
             else Run();
         }
@@ -437,7 +437,7 @@ namespace GoF2Remake.UI
             if (selected == null) return;
             var p = selected;
             string heading = T("mbDeleteTitle", "Delete project");
-            ask(heading, string.Format(T("mbDeleteText", "Delete the project \"{0}\" and all its files? This can't be undone. (A mod you exported from it stays installed.)"), p.Name), () =>
+            ask(heading, string.Format(T("mbDeleteText", "Delete \"{0}\" and all its files? An exported mod stays installed."), p.Name), () =>
             {
                 if (!p.Delete(out string error)) { notice(heading, string.Format(T("mbDeleteFailed", "The project couldn't be deleted: {0}"), error)); return; }
                 projects.Remove(p);

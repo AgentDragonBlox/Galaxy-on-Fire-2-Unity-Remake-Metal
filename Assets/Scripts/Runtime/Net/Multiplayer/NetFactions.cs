@@ -476,8 +476,11 @@ namespace GoF2Remake.Multiplayer
             if (faction == null) return Localization.Extra("mpFactionNone", "You aren't in a faction.");
             text = NetChat.Clean(text);
             if (text.Length == 0) return "/f <text>";
-            TellFaction(faction, $"[{faction.tag}] {NameOf(me)}: {text}");
-            Debug.Log($"[Faction {faction.tag}] {NameOf(me)}: {text}");
+            // The chat's Faction channel (NetChat.Channel.Faction), the sender's own copy marked.
+            string from = NameOf(me);
+            foreach (var m in faction.members)
+                foreach (ulong c in NetProfiles.ClientsOf(m)) NetState.Instance?.TellFactionLine(c, from, text, m == me);
+            Debug.Log($"[Faction {faction.tag}] {from}: {text}");
             return "";
         }
 
