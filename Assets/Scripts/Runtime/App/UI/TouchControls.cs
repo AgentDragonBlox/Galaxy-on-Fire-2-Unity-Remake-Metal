@@ -404,8 +404,12 @@ namespace GoF2Remake.UI
             return 0f;
         }
 
-        float Width => layer.contentRect.width > 0f ? layer.contentRect.width : 1920f;
-        float Height => layer.contentRect.height > 0f ? layer.contentRect.height : 1080f;
+        // Without touch input (keys, a controller) the touch layer is display: none and has no size: the gauge layer, the
+        // same box and always shown, gives it then. The 1920 x 1080 fallback put the secondary plate left of the centre on
+        // a wider interface (an ultrawide screen at 21:9 or full width; a 16:9 one hid it).
+        VisualElement SizeBox => layer.contentRect.width > 0f || plate?.parent == null ? layer : plate.parent;
+        float Width => SizeBox.contentRect.width > 0f ? SizeBox.contentRect.width : 1920f;
+        float Height => SizeBox.contentRect.height > 0f ? SizeBox.contentRect.height : 1080f;
 
         Vector2 ToScreenDelta(Vector2 panelDelta)
         {
