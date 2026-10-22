@@ -88,6 +88,7 @@ namespace GoF2Remake.Multiplayer
             hostEndReason = null;
             JoinCode = null;
             hostAllocation = null;
+            HostRegion = "";
             listPending = false;
             playersSpawned.Clear();
         }
@@ -201,6 +202,11 @@ namespace GoF2Remake.Multiplayer
         public static string JoinCode { get; private set; }
         static Allocation hostAllocation;
 
+        /// <summary>The Unity Relay region an online session runs through (Allocation.Region, "europe-west4"), empty
+        /// for a local one: the listing carries it, so the browser can say where a game is and measure the round trip
+        /// to it (NetPing).</summary>
+        public static string HostRegion { get; private set; } = "";
+
         /// <summary>"ABC123": a Relay join code (6 letters / digits, no dots or colons), not an address.</summary>
         public static bool IsJoinCode(string text)
         {
@@ -245,6 +251,7 @@ namespace GoF2Remake.Multiplayer
             Status = "";
             hostAllocation = null;
             JoinCode = null;
+            HostRegion = "";
             listPending = listName != null;
             NetGame.listName = listName;
             try
@@ -255,6 +262,7 @@ namespace GoF2Remake.Multiplayer
                 var allocation = await RelayService.Instance.CreateAllocationAsync(Mathf.Clamp(connections, 1, MaxPlayersLimit));
                 JoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
                 hostAllocation = allocation;
+                HostRegion = allocation.Region ?? "";
                 return true;
             }
             catch (Exception e)

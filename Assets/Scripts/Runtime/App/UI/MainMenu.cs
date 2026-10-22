@@ -1234,6 +1234,10 @@ namespace GoF2Remake.UI
         Coroutine serverBrowse;
         bool serverQueryRunning;
         string serverListKey = "";
+        /// <summary>One per listed row: writes its ping again when a measurement lands (NetPing.Revision), so a new
+        /// reading never rebuilds the list under the player's hand.</summary>
+        readonly List<Action> serverPingRows = new List<Action>();
+        int serverPingRevision = -1;
 
         // The host card's choice (PlayerPrefs "mp_mode"): online and listed in the server browser, online by join code only,
         // or on the local network by address.
@@ -1499,6 +1503,11 @@ namespace GoF2Remake.UI
                     next = Time.unscaledTime + ServerRefreshSeconds;
                     yield return QueryServers();
                 }
+                if (serverPingRevision != GoF2Remake.Multiplayer.NetPing.Revision)
+                {
+                    serverPingRevision = GoF2Remake.Multiplayer.NetPing.Revision;
+                    foreach (var fill in serverPingRows) fill();
+                }
                 yield return null;
             }
             serverBrowse = null;
@@ -1519,12 +1528,16 @@ namespace GoF2Remake.UI
                     : string.Format(Localization.Extra("mpGames", "{0} games"), list.Count);
             if (list == null) { ServerListNote(GoF2Remake.Multiplayer.NetGame.Status); yield break; }
             if (list.Count == 0) { ServerListNote(Localization.Extra("mpNoGames", "No public games right now. Host one, or join with a code.")); yield break; }
+            // The round trip to each listed game's Relay region (NetPing: one QoS measurement per region, at most
+            // once a minute); the rows fill their ping in when it lands.
+            GoF2Remake.Multiplayer.NetPing.Measure(list.ConvertAll(x => x.region));
             // Unchanged since the last refresh: the rows stay (a controller's focus on one too).
             var key = new System.Text.StringBuilder();
             foreach (var e in list) key.Append(e.code).Append(e.name).Append(e.players).Append('/').Append(e.maxPlayers).Append(e.password).Append(e.mods).Append(e.pvp).Append('|');
             if (key.ToString() == serverListKey) yield break;
             serverListKey = key.ToString();
             mpServerList.Clear();
+            serverPingRows.Clear();
             foreach (var e in list)
             {
                 var entry = e;
@@ -1554,6 +1567,35 @@ namespace GoF2Remake.UI
                 if (entry.pvp.HasValue)   // players fight anywhere / only in arenas and sieges (NetGame.FreePvp)
                     Tag(entry.pvp.Value ? Localization.Extra("mpPvp", "PvP") : Localization.Extra("mpPve", "PvE"),
                         entry.pvp.Value ? "mp-server-tag--pvp" : "mp-server-tag--pve");
+                // Where the game is and how far away: the short name of its Relay region and the round trip to it,
+                // with a green / amber / red dot (NetPing). A game listed by a build from before the region key has
+                // none; a ping not measured yet reads "..." and fills in by itself.
+                if (!string.IsNullOrEmpty(entry.region))
+                {
+                    var ping = new VisualElement { pickingMode = PickingMode.Ignore };
+                    ping.AddToClassList("mp-server-ping");
+                    var regionLabel = new Label(GoF2Remake.Multiplayer.NetPing.RegionName(entry.region)) { pickingMode = PickingMode.Ignore };
+                    regionLabel.AddToClassList("mp-server-region");
+                    ping.Add(regionLabel);
+                    var dot = new VisualElement { pickingMode = PickingMode.Ignore };
+                    dot.AddToClassList("mp-server-ping-dot");
+                    ping.Add(dot);
+                    var msLabel = new Label { pickingMode = PickingMode.Ignore };
+                    msLabel.AddToClassList("mp-server-ping-ms");
+                    ping.Add(msLabel);
+                    top.Add(ping);
+                    void FillPing()
+                    {
+                        int ms = GoF2Remake.Multiplayer.NetPing.Of(entry.region);
+                        int quality = GoF2Remake.Multiplayer.NetPing.Quality(ms);
+                        msLabel.text = ms < 0 ? "..." : string.Format(Localization.Extra("mpPingMs", "{0} ms"), ms);
+                        dot.EnableInClassList("mp-server-ping-dot--good", quality == 0);
+                        dot.EnableInClassList("mp-server-ping-dot--fair", quality == 1);
+                        dot.EnableInClassList("mp-server-ping-dot--poor", quality == 2);
+                    }
+                    FillPing();
+                    serverPingRows.Add(FillPing);
+                }
                 row.Add(top);
                 var bottom = new VisualElement { pickingMode = PickingMode.Ignore };
                 bottom.AddToClassList("mp-server-line");
@@ -1597,6 +1639,7 @@ namespace GoF2Remake.UI
         {
             serverListKey = "";
             mpServerList.Clear();
+            serverPingRows.Clear();
             var note = new Label(text);
             note.AddToClassList("mp-server-empty");
             UiBusy.Mark(note, busy);

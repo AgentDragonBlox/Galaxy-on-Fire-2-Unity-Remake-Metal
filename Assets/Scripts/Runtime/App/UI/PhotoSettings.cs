@@ -14,6 +14,14 @@ namespace GoF2Remake.UI
         /// rest blurred, or a focus distance of the player's.</summary>
         public enum DofMode { Game, Off, Ship, Manual }
 
+        /// <summary>Bloom: the game's own (the Graphics option), none at all, or the photo mode's own amount. Anything
+        /// but Game also holds the original bloom pass back (Visuals.ClassicBloomPass.Suppressed), which no volume
+        /// reaches.</summary>
+        public enum BloomMode { Game, Off, Custom }
+
+        /// <summary>The sun's lens flare (LensFlareView, flight only): the game's own option, off or on for the photo.</summary>
+        public enum FlareMode { Game, Off, On }
+
         public const float MinFov = 10f, MaxFov = 110f;   // vertical, degrees
         public const float MaxFocusMetres = 3000f;
         public static readonly float[] FrameAspects = { 0f, 16f / 9f, 21f / 9f, 4f / 3f, 1f, 9f / 16f };
@@ -31,6 +39,13 @@ namespace GoF2Remake.UI
         public static float Saturation;      // -100..100
         public static float Vignette;        // 0..0.6
         public static float Grain;           // 0..1
+        public static BloomMode Bloom;
+        public static float BloomAmount = 1f;   // URP Bloom's intensity, over the game's
+        public static FlareMode Flare;
+        public static float Temperature;     // -100..100, warmer +
+        public static float Tint;            // -100..100, magenta +
+        public static float Aberration;      // 0..1
+        public static float Distortion;      // -1..1, barrel +
         public static bool HideShip, Grid;
         public static int Frame;             // FrameAspects
         public static int Size;              // the screenshot: 0 = the screen's size, 1 = twice it, 2 = four times
@@ -48,10 +63,19 @@ namespace GoF2Remake.UI
             Focus = 0.5f;
             Blur = 0.5f;
             Exposure = Contrast = Saturation = Vignette = Grain = 0f;
+            Bloom = BloomMode.Game;
+            BloomAmount = 1f;
+            Flare = FlareMode.Game;
+            Temperature = Tint = Aberration = Distortion = 0f;
             HideShip = Grid = false;
             Frame = 0;
             Size = 0;
         }
+
+        /// <summary>Whether the sun's lens flare is drawn: the Graphics option, or the photo mode's own answer while
+        /// one is open ('photo': Action Freeze is on).</summary>
+        public static bool FlareShown(bool photo) =>
+            photo && Flare != FlareMode.Game ? Flare == FlareMode.On : Data.Settings.LensFlare;
 
         /// <summary>The manual focus distance in metres.</summary>
         public static float FocusMetres => Mathf.Max(1f, Mathf.Pow(MaxFocusMetres, Mathf.Clamp01(Focus)));

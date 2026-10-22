@@ -4,7 +4,8 @@
 // option's value is the next argument unless that is another option (Unity drops empty arguments: "-password -maxplayers"
 // means no password); pilot names are trimmed, tag-free and at most 20 characters; a session holds 2..100 players
 // (default 16); the Editor's version and fingerprint are "editor"; release versions are yyyy.MM.dd.HHmm; arena matches
-// are orbits from 100000.
+// are orbits from 100000; the server browser names a Relay region shortly ("europe-west4" EU West) and reads a ping
+// as good up to 80 ms, fair up to 160, poor above (NetPing).
 // Expected values: CLAUDE.md's numbers (7777, 16, 2..100, 20 characters, 100000, "editor"), hand-written addresses.
 
 using System;
@@ -207,6 +208,39 @@ namespace GoF2Remake.Tests
             Assert.IsFalse(NetArena.IsArenaOrbit(99999));
             Assert.IsFalse(NetArena.IsArenaOrbit(78));
             Assert.IsFalse(NetArena.IsArenaOrbit(-1), "the Void's orbit");
+        }
+
+        // ---- the server browser's region and ping (NetPing) ----
+
+        [TestCase("europe-west4", "EU West")]
+        [TestCase("europe-north1", "EU North")]
+        [TestCase("us-east4", "US East")]
+        [TestCase("us-central1", "US Central")]
+        [TestCase("asia-southeast1", "Asia Southeast")]
+        [TestCase("asia-northeast1", "Asia Northeast")]
+        [TestCase("australia-southeast1", "Australia Southeast")]
+        [TestCase("northamerica-northeast1", "N. America Northeast")]
+        [TestCase("southamerica-east1", "S. America East")]
+        [TestCase("asia", "Asia")]
+        [TestCase("mars-dome2", "Mars Dome")]
+        [TestCase("", "")]
+        [TestCase(null, "")]
+        public void ARelayRegionReadsAsAShortName(string id, string name)
+        {
+            Assert.AreEqual(name, NetPing.RegionName(id));
+        }
+
+        [Test]
+        public void ThePingDotReadsGoodFairAndPoor()
+        {
+            Assert.AreEqual(-1, NetPing.Quality(-1), "not measured");
+            Assert.AreEqual(0, NetPing.Quality(0));
+            Assert.AreEqual(0, NetPing.Quality(80));
+            Assert.AreEqual(1, NetPing.Quality(81));
+            Assert.AreEqual(1, NetPing.Quality(160));
+            Assert.AreEqual(2, NetPing.Quality(161));
+            Assert.AreEqual(-1, NetPing.Of(null));
+            Assert.AreEqual(-1, NetPing.Of("nowhere-west9"), "a region never measured");
         }
     }
 }

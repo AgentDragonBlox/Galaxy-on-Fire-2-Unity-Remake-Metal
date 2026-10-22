@@ -28,6 +28,14 @@ namespace GoF2Remake.Visuals
 
         static ClassicBloomPass instance;
         static bool installed;
+
+        /// <summary>Held back while the photo modes' own bloom setting is not "Default" (UI.PhotoTools): no volume
+        /// reaches this pass, so it is asked here. Cleared when the photo mode closes.</summary>
+        public static bool Suppressed { get; set; }
+
+        // Play mode runs without a domain reload: a photo mode open when it ended would keep the pass off.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics() => Suppressed = false;
         Material material;
 
         /// <summary>Queues the pass for every screen camera while the option is on (Bootstrap).</summary>
@@ -40,7 +48,7 @@ namespace GoF2Remake.Visuals
 
         static void OnBeginCamera(ScriptableRenderContext context, Camera cam)
         {
-            if (!Settings.ClassicBloom || cam.cameraType != CameraType.Game || cam.targetTexture != null) return;
+            if (!Settings.ClassicBloom || Suppressed || cam.cameraType != CameraType.Game || cam.targetTexture != null) return;
             var data = cam.GetUniversalAdditionalCameraData();
             if (data == null || !data.renderPostProcessing || data.renderType != CameraRenderType.Base || data.scriptableRenderer == null) return;
             instance ??= new ClassicBloomPass();

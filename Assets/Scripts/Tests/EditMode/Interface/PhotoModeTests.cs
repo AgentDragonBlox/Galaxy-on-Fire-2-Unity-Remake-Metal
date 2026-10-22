@@ -1,9 +1,11 @@
 // PhotoModeTests.cs
 // Feature: the photo tools of Action Freeze and Inspect ship (UI.PhotoTools, players' suggestion "Everspace-style Action
 // Freeze", 2026-10-17): the free camera (World.FreeCamera) flies anywhere within reach of the ship and above the floor; the
-// frame cuts the screenshot (PhotoSettings.FrameRect); Reset; the hangar orbit takes the free pose, roll and field of view
+// frame cuts the screenshot (PhotoSettings.FrameRect); Reset (the bloom, lens flare, white balance, chromatic
+// aberration and lens distortion too); Action Freeze's lens flare setting over the Graphics option; the hangar orbit takes the free pose, roll and field of view
 // and keeps them through the blend back (World.HangarInspect).
 
+using GoF2Remake.Data;
 using GoF2Remake.UI;
 using GoF2Remake.World;
 using NUnit.Framework;
@@ -83,6 +85,51 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(0f, PhotoSettings.Vignette);
             Assert.AreEqual(PhotoSettings.DofMode.Game, PhotoSettings.Dof);
             Assert.AreEqual(0, PhotoSettings.Frame);
+        }
+
+        [Test]
+        public void ResetPutsTheBloomFlareAndLensBack()
+        {
+            PhotoSettings.Bloom = PhotoSettings.BloomMode.Custom;
+            PhotoSettings.BloomAmount = 2.5f;
+            PhotoSettings.Flare = PhotoSettings.FlareMode.Off;
+            PhotoSettings.Temperature = 40f;
+            PhotoSettings.Tint = -20f;
+            PhotoSettings.Aberration = 0.5f;
+            PhotoSettings.Distortion = -0.4f;
+            PhotoSettings.Reset();
+            Assert.AreEqual(PhotoSettings.BloomMode.Game, PhotoSettings.Bloom, "the game's bloom");
+            Assert.AreEqual(1f, PhotoSettings.BloomAmount);
+            Assert.AreEqual(PhotoSettings.FlareMode.Game, PhotoSettings.Flare);
+            Assert.AreEqual(0f, PhotoSettings.Temperature);
+            Assert.AreEqual(0f, PhotoSettings.Tint);
+            Assert.AreEqual(0f, PhotoSettings.Aberration);
+            Assert.AreEqual(0f, PhotoSettings.Distortion);
+        }
+
+        [Test]
+        public void TheLensFlareFollowsTheOptionUntilActionFreezeSaysOtherwise()
+        {
+            bool option = Settings.LensFlare;
+            var mode = PhotoSettings.Flare;
+            try
+            {
+                Settings.LensFlare = true;
+                PhotoSettings.Flare = PhotoSettings.FlareMode.Game;
+                Assert.IsTrue(PhotoSettings.FlareShown(true), "Default: the Graphics option");
+                PhotoSettings.Flare = PhotoSettings.FlareMode.Off;
+                Assert.IsFalse(PhotoSettings.FlareShown(true), "off for the photo");
+                Assert.IsTrue(PhotoSettings.FlareShown(false), "outside Action Freeze the option rules");
+                Settings.LensFlare = false;
+                PhotoSettings.Flare = PhotoSettings.FlareMode.On;
+                Assert.IsTrue(PhotoSettings.FlareShown(true), "on for the photo though the option is off");
+                Assert.IsFalse(PhotoSettings.FlareShown(false));
+            }
+            finally
+            {
+                Settings.LensFlare = option;
+                PhotoSettings.Flare = mode;
+            }
         }
 
         [Test]

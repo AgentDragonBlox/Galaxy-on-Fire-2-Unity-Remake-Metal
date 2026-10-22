@@ -1392,6 +1392,50 @@
     border-color: rgba(170, 190, 210, 0.4);
 }
 
+/* Where a listed game is and how far away: its Relay region and the round trip to it (NetPing), at the right of the
+   name line. The dot reads the ping as good / fair / poor; one not measured yet shows the dim dot and "...". */
+.mp-server-ping {
+    flex-direction: row;
+    flex-shrink: 0;
+    align-items: center;
+    margin-left: var(--space-m);
+}
+
+.mp-server-region {
+    margin-right: var(--space-s);
+    font-size: var(--text-caption);
+    color: var(--gof-text-dim);
+    white-space: nowrap;
+}
+
+.mp-server-ping-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    background-color: var(--gof-text-dim);
+}
+
+.mp-server-ping-dot--good {
+    background-color: rgb(120, 220, 120);
+}
+
+.mp-server-ping-dot--fair {
+    background-color: var(--gof-amber);
+}
+
+.mp-server-ping-dot--poor {
+    background-color: rgb(255, 110, 100);
+}
+
+.mp-server-ping-ms {
+    min-width: 60px;
+    margin-left: var(--space-s);
+    font-size: var(--text-caption);
+    -unity-text-align: middle-right;
+    color: var(--gof-text-dim);
+    white-space: nowrap;
+}
+
 .mp-password {
     margin: 0 0 12px 0;
 }

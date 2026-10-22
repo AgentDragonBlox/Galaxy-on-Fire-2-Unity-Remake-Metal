@@ -863,7 +863,9 @@ namespace GoF2Remake.UI
             }
             UpdateTouch();   // every frame: the controls hide and let go under menus, dialogues and cutscenes
             UpdateMouseSteering();
-            lensFlare?.Update(level != null ? level.Backdrop : null, StarMap.IsOpen || !Settings.LensFlare);   // StarSystem::render2D, under the HUD
+            // StarSystem::render2D, under the HUD; Action Freeze can switch it for the photo (PhotoSettings.Flare).
+            lensFlare?.Update(level != null ? level.Backdrop : null,
+                              StarMap.IsOpen || !PhotoSettings.FlareShown(pauseMenu != null && pauseMenu.Photo != null && pauseMenu.Photo.Active));
 
             bool mapOpen = StarMap.IsOpen;
             root.EnableInClassList("hud-map", mapOpen);

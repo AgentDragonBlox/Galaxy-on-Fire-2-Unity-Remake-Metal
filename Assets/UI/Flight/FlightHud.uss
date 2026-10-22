@@ -55,14 +55,18 @@
 }
 
 /* Hud::updateSecondaryWeaponString on the plate 0x4c2: "<name> (<n>)" centred, its top at h - 32. */
+/* Centred on the plate below its top frame line (rows 0-2 of the 37 px image; the plate stands on the screen edge). The
+   body-size text of the interface rework sat at the top with the empty half of the plate under it. */
 .touch-plate-text {
     position: absolute;
     left: 0;
     right: 0;
-    top: 3px;
+    top: 0;
+    bottom: 0;
+    padding-top: 3px;
     font-size: var(--text-body);
     color: #FFFFFF;
-    -unity-text-align: upper-center;
+    -unity-text-align: middle-center;
     white-space: nowrap;
 }
 

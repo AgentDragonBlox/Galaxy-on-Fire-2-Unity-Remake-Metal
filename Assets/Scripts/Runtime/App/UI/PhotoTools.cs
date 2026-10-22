@@ -9,7 +9,9 @@
 //                   pinch moves forward / back, two fingers dragged slide the camera.
 //   Camera settings a panel at the left (Tab, the controller's View or the hint): orbit / free, field of view, roll, the
 //                   free camera's speed, depth of field (the game's, off, on the ship, a focus distance) with its blur,
-//                   exposure, contrast, saturation, vignette, film grain, hide the ship, a thirds grid, a frame (16:9,
+//                   bloom (the game's, off, its own amount), the sun's lens flare (flight only), exposure, contrast,
+//                   saturation, white balance, vignette, film grain, chromatic aberration, lens distortion, hide the
+//                   ship, a thirds grid, a frame (16:9,
 //                   21:9, 4:3, 1:1, 9:16: the screenshot is cut to it) and the screenshot's size (the screen's, x2 or
 //                   x4), Reset; PhotoSettings keeps them for the run.
 //   Effects         a global URP volume of its own on layer 26 at priority 1000 (over the game's and the hangar's depth of
@@ -60,6 +62,10 @@ namespace GoF2Remake.UI
         ColorAdjustments color;
         Vignette vignette;
         FilmGrain grain;
+        UnityEngine.Rendering.Universal.Bloom bloom;
+        WhiteBalance white;
+        ChromaticAberration aberration;
+        LensDistortion distortion;
         UniversalAdditionalCameraData camData;
         int savedMask;
 
@@ -173,16 +179,35 @@ namespace GoF2Remake.UI
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoBlur", "Blur"), min = 0f, max = 1f,
                 get = () => PhotoSettings.Blur, set = v => PhotoSettings.Blur = v, format = Pct,
                 visible = () => PhotoSettings.Dof >= PhotoSettings.DofMode.Ship };
+            yield return new OptionDef { kind = OptionKind.Choice, label = () => T("photoBloom", "Bloom"),
+                choices = () => new[] { T("photoDofGame", "Default"), T("photoOff", "Off"), T("photoCustom", "Custom") },
+                getIndex = () => (int)PhotoSettings.Bloom, setIndex = i => PhotoSettings.Bloom = (PhotoSettings.BloomMode)i };
+            yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoBloomAmount", "Bloom amount"), min = 0f, max = 3f,
+                get = () => PhotoSettings.BloomAmount, set = v => PhotoSettings.BloomAmount = v, format = v => $"x{v:0.0}",
+                visible = () => PhotoSettings.Bloom == PhotoSettings.BloomMode.Custom };
+            // The sun's flare is the flight HUD's (LensFlareView), so there is none to switch in the hangar.
+            yield return new OptionDef { kind = OptionKind.Choice, label = () => T("photoFlare", "Lens flare"),
+                choices = () => new[] { T("photoDofGame", "Default"), T("photoOff", "Off"), T("photoOn", "On") },
+                getIndex = () => (int)PhotoSettings.Flare, setIndex = i => PhotoSettings.Flare = (PhotoSettings.FlareMode)i,
+                visible = () => !hangar };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoExposure", "Exposure"), min = -3f, max = 3f,
                 get = () => PhotoSettings.Exposure, set = v => PhotoSettings.Exposure = Mathf.Abs(v) < 0.05f ? 0f : v, format = v => Signed(Mathf.Round(v * 10f) / 10f, " EV") };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoContrast", "Contrast"), min = -50f, max = 50f,
                 get = () => PhotoSettings.Contrast, set = v => PhotoSettings.Contrast = Mathf.Abs(v) < 1f ? 0f : v, format = v => Signed(Mathf.Round(v)) };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoSaturation", "Saturation"), min = -100f, max = 100f,
                 get = () => PhotoSettings.Saturation, set = v => PhotoSettings.Saturation = Mathf.Abs(v) < 1f ? 0f : v, format = v => Signed(Mathf.Round(v)) };
+            yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoTemperature", "Temperature"), min = -100f, max = 100f,
+                get = () => PhotoSettings.Temperature, set = v => PhotoSettings.Temperature = Mathf.Abs(v) < 2f ? 0f : v, format = v => Signed(Mathf.Round(v)) };
+            yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoTint", "Tint"), min = -100f, max = 100f,
+                get = () => PhotoSettings.Tint, set = v => PhotoSettings.Tint = Mathf.Abs(v) < 2f ? 0f : v, format = v => Signed(Mathf.Round(v)) };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoVignette", "Vignette"), min = 0f, max = 0.6f,
                 get = () => PhotoSettings.Vignette, set = v => PhotoSettings.Vignette = v, format = v => Pct(v / 0.6f) };
             yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoGrain", "Film grain"), min = 0f, max = 1f,
                 get = () => PhotoSettings.Grain, set = v => PhotoSettings.Grain = v, format = Pct };
+            yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoAberration", "Chromatic aberration"), min = 0f, max = 1f,
+                get = () => PhotoSettings.Aberration, set = v => PhotoSettings.Aberration = v, format = Pct };
+            yield return new OptionDef { kind = OptionKind.Slider, label = () => T("photoDistortion", "Lens distortion"), min = -1f, max = 1f,
+                get = () => PhotoSettings.Distortion, set = v => PhotoSettings.Distortion = Mathf.Abs(v) < 0.02f ? 0f : v, format = v => Signed(Mathf.Round(v * 100f)) };
             yield return new OptionDef { kind = OptionKind.Toggle, label = () => T("photoHideShip", "Hide the ship"),
                 getBool = () => PhotoSettings.HideShip, setBool = v => PhotoSettings.HideShip = v };
             yield return new OptionDef { kind = OptionKind.Toggle, label = () => T("photoGrid", "Grid (thirds)"),
@@ -542,6 +567,10 @@ namespace GoF2Remake.UI
             color = profile.Add<ColorAdjustments>(false);
             vignette = profile.Add<Vignette>(false);
             grain = profile.Add<FilmGrain>(false);
+            bloom = profile.Add<UnityEngine.Rendering.Universal.Bloom>(false);
+            white = profile.Add<WhiteBalance>(false);
+            aberration = profile.Add<ChromaticAberration>(false);
+            distortion = profile.Add<LensDistortion>(false);
             vignette.color.Override(Color.black);
             vignette.smoothness.Override(0.45f);
             grain.type.Override(FilmGrainLookup.Medium3);
@@ -553,6 +582,7 @@ namespace GoF2Remake.UI
 
         void DestroyEffects()
         {
+            Visuals.ClassicBloomPass.Suppressed = false;
             if (camData != null) camData.volumeLayerMask = savedMask;
             camData = null;
             if (volumeGo != null) UnityEngine.Object.Destroy(volumeGo);
@@ -602,6 +632,20 @@ namespace GoF2Remake.UI
             color.contrast.value = PhotoSettings.Contrast;
             color.saturation.overrideState = PhotoSettings.Saturation != 0f;
             color.saturation.value = PhotoSettings.Saturation;
+            // Bloom: the game's own (the Graphics option, on the scene volumes and the original pass), none, or the
+            // photo's own amount over the scene's (threshold and scatter stay the game's: only the intensity is
+            // overridden). The original bloom pass reads no volume, so it is held back for anything but Default.
+            bool photoBloom = PhotoSettings.Bloom != PhotoSettings.BloomMode.Game;
+            Visuals.ClassicBloomPass.Suppressed = photoBloom;
+            bloom.active = photoBloom;
+            bloom.intensity.Override(PhotoSettings.Bloom == PhotoSettings.BloomMode.Custom ? PhotoSettings.BloomAmount : 0f);
+            white.active = PhotoSettings.Temperature != 0f || PhotoSettings.Tint != 0f;
+            white.temperature.Override(PhotoSettings.Temperature);
+            white.tint.Override(PhotoSettings.Tint);
+            aberration.active = PhotoSettings.Aberration > 0f;
+            aberration.intensity.Override(PhotoSettings.Aberration);
+            distortion.active = PhotoSettings.Distortion != 0f;
+            distortion.intensity.Override(PhotoSettings.Distortion);
             vignette.active = PhotoSettings.Vignette > 0f;
             vignette.intensity.Override(PhotoSettings.Vignette);
             grain.active = PhotoSettings.Grain > 0f;

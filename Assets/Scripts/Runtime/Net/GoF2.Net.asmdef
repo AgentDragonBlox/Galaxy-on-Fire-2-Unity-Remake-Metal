@@ -15,7 +15,8 @@
         "Unity.Networking.Transport",
         "Unity.Services.Core",
         "Unity.Services.Authentication",
-        "Unity.Services.Multiplayer"
+        "Unity.Services.Multiplayer",
+        "Unity.Services.QoS"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

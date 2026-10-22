@@ -1,7 +1,7 @@
 // NetLobby.cs
 // Remake-only: the server browser, on Unity Lobby (Multiplayer Services). An online host (NetGame: a Relay session) that is
 // listed publishes a public lobby carrying what the browser shows (the session's name, the host, the players, a dedicated
-// server or not, the build version) and its Relay join code; the Multiplayer panel lists every version's lobbies, this
+// server or not, the build version, the Relay region its traffic goes through) and its Relay join code; the Multiplayer panel lists every version's lobbies, this
 // build's first, and joins a picked one of the same version with that code (NetGame.StartClientOnline; the connection
 // approval would turn any other version away, so those rows only say which version they need). Nobody joins the lobby
 // itself: it is only the listing, kept alive by the host's heartbeat (15 s; Lobby hides one without a heartbeat for 30 s)
@@ -22,7 +22,7 @@ namespace GoF2Remake.Multiplayer
     {
         const float HeartbeatSeconds = 15f, CountSeconds = 5f;
         const string KeyVersion = "version", KeyProtocol = "protocol", KeyCode = "code", KeyHost = "host", KeyPlayers = "players", KeyServer = "server", KeyPassword = "password",
-            KeyMods = "mods", KeyModNames = "modnames", KeyPvp = "pvp";
+            KeyMods = "mods", KeyModNames = "modnames", KeyPvp = "pvp", KeyRegion = "region";
 
         /// <summary>One listed session in the browser.</summary>
         public sealed class Entry
@@ -33,6 +33,9 @@ namespace GoF2Remake.Multiplayer
             public bool Modded => !string.IsNullOrEmpty(mods);
             /// <summary>The mods this game lacks to join (names), empty = it has them all.</summary>
             public List<string> MissingMods => Modded ? NetMods.MissingForListing(mods) : new List<string>();
+            /// <summary>The Unity Relay region the session runs through ("europe-west4"); the browser shows its short
+            /// name and the round trip to it (NetPing). Empty for a listing from before the key.</summary>
+            public string region = "";
             public int players, maxPlayers;
             public bool dedicated, password;
             /// <summary>Players fight anywhere (NetGame.FreePvp: "PvP") or only in arenas and sieges ("PvE"); null for a
@@ -84,6 +87,7 @@ namespace GoF2Remake.Multiplayer
                         [KeyMods] = Public(Trim(NetMods.SessionList, 2000)),
                         [KeyModNames] = Public(Trim(NetMods.SessionNames, 300)),
                         [KeyPvp] = Public(NetGame.FreePvp ? "1" : "0"),
+                        [KeyRegion] = Public(Trim(NetGame.HostRegion, 40)),
                     },
                 });
                 if (gen != generation || !NetGame.Active)
@@ -183,6 +187,7 @@ namespace GoF2Remake.Multiplayer
                         players = players, maxPlayers = l.MaxPlayers, dedicated = Get(l, KeyServer) == "1", password = Get(l, KeyPassword) == "1",
                         mods = Get(l, KeyMods) ?? "", modNames = Get(l, KeyModNames) ?? "",
                         pvp = Get(l, KeyPvp) switch { "1" => true, "0" => false, _ => (bool?)null },
+                        region = Get(l, KeyRegion) ?? "",
                     });
                 }
                 // This version's first (the query's order, the fullest first, within each).
