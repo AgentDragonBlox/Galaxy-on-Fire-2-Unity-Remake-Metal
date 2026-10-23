@@ -172,8 +172,9 @@ namespace GoF2Remake.Flight
             if (Model.FreeFlight) return ReadVirtualStick(mouse);
             // Centred while the autopilot steers, as free flight's stick (#132: the offset kept adding up on the autopilot, the
             // HUD drew a steering dot that steered nothing, and the ship lurched when it handed back). Not while steering is
-            // locked: the mouse aims the turret view or the Liberator then (SteerInput).
-            if (autopilotTarget != null) { MouseOffset = Vector2.zero; MouseInDeadzone = true; return Vector2.zero; }
+            // locked: the mouse aims the turret view or the Liberator then (SteerInput), the autopilot flying on (a player's
+            // report: a Liberator fired on the autopilot couldn't be steered with the mouse).
+            if (autopilotTarget != null && !steeringLocked) { MouseOffset = Vector2.zero; MouseInDeadzone = true; return Vector2.zero; }
             var lim = new Vector2(Screen.width * 0.5f * 0.7f, Screen.height * 0.5f * 0.7f);
             var o = MouseOffset + mouse.delta.ReadValue();
             MouseOffset = new Vector2(Mathf.Clamp(o.x, -lim.x, lim.x), Mathf.Clamp(o.y, -lim.y, lim.y));
@@ -190,11 +191,12 @@ namespace GoF2Remake.Flight
         /// <summary>Free flight's mouse, EVERSPACE 2's virtual joystick (measured: the reticle stays where the mouse leaves
         /// it, the ship keeps turning at a rate by its offset): the mouse moves the reticle inside a circle round the centre,
         /// its offset beyond the dead zone (Settings.MouseDeadzone) is the stick's deflection. It holds still while free look
-        /// turns the camera and is centred while the autopilot or a script steers.</summary>
+        /// turns the camera and is centred while the autopilot steers; while steering is locked it aims the Liberator or the
+        /// turret view instead (SteerInput; it was centred then too, so the mouse never steered a Liberator in free flight).</summary>
         Vector2 ReadVirtualStick(Mouse mouse)
         {
             if (freeLook == null) freeLook = GetComponent<FreeLookCamera>();
-            if (autopilotTarget != null || steeringLocked) MouseOffset = Vector2.zero;
+            if (autopilotTarget != null && !steeringLocked) MouseOffset = Vector2.zero;
             else if (freeLook == null || !freeLook.FreeLookActive)
                 MouseOffset = Vector2.ClampMagnitude(MouseOffset + mouse.delta.ReadValue(), Screen.height * StickRadius);
             float m = MouseOffset.magnitude / Mathf.Max(1f, Screen.height * StickRadius), dz = Data.Settings.MouseDeadzone;
