@@ -224,6 +224,31 @@ namespace GoF2Remake.Modding
             if (c.engineFx != null)
                 foreach (var f in new[] { c.engineFx.glow, c.engineFx.cone, c.engineFx.trail, c.engineFx.spiral })
                     if (!string.IsNullOrEmpty(f)) yield return (f, false, false, false);
+            if (c.addParts != null)
+                foreach (var p in c.addParts) if (p != null && !string.IsNullOrEmpty(p.texture)) yield return (p.texture, false, false, false);
+        }
+
+        /// <summary>A ship's add parts (ships.json "addParts": its lights and engine glows beside the hull) as glTF scenes
+        /// under 'parent', the ones that load; a part that doesn't is a warning and left out.</summary>
+        static async Task<List<(CustomAddPart spec, GameObject scene)>> LoadAddParts(int rev, ModInfo mod, CustomShipData c, Transform parent)
+        {
+            var parts = new List<(CustomAddPart, GameObject)>();
+            if (c.addParts == null) return parts;
+            foreach (var p in c.addParts)
+            {
+                if (p == null || string.IsNullOrEmpty(p.model) || rev != ModManager.Revision) continue;
+                var bytes = await Task.Run(() => mod.Source.Exists(p.model) ? mod.Source.ReadBytes(p.model) : null);
+                if (bytes == null || rev != ModManager.Revision || parent == null) continue;
+                var import = await ModGltf.Load(mod, bytes, agent);
+                if (import == null) { Warn(mod, $"{p.model}: not a glTF model glTFast can read"); continue; }
+                imports.Add(import);
+                if (rev != ModManager.Revision || parent == null) continue;
+                var scene = new GameObject("scene");
+                scene.transform.SetParent(parent, false);
+                if (!await ModGltf.InstantiateMain(import, scene.transform)) { Object.Destroy(scene); Warn(mod, $"{p.model}: no scene to show"); continue; }
+                parts.Add((p, scene));
+            }
+            return parts;
         }
 
         /// <summary>One ship: its textures and model file at once, then glTFast, then the template.</summary>
@@ -263,7 +288,9 @@ namespace GoF2Remake.Modding
                 if (!await ModGltf.InstantiateMain(import, scene.transform)) { Object.Destroy(scene); Warn(mod, $"{c.model}: no scene to show"); return; }
                 if (rev != ModManager.Revision || holder == null) return;
                 if (ModGltf.HasNoMeshes(scene)) Warn(mod, $"{c.model}: the model has no meshes to show");   // #134: an empty turntable said nothing
-                var template = ModShipBuilder.Build(c, mod, scene);
+                var addParts = await LoadAddParts(rev, mod, c, holder != null ? holder.transform : null);
+                if (rev != ModManager.Revision || holder == null) return;
+                var template = ModShipBuilder.Build(c, mod, scene, addParts: addParts);
                 template.transform.SetParent(holder.transform, false);
                 templates[c.index] = template;
                 names[c.index] = c.name;

@@ -11,9 +11,12 @@
 //     with "flame" materials (EngineFlame, the model's own flame geometry) the glow part stays, empty; with "engineFx"
 //     (Galaxy on Fire 3's flare, cone and trails, EngineFx) it stays without discs and carries those;
 //   - the manoeuvring jets at the slotType-4 mounts (LateralThrusters), under the engine glow part;
+//   - each "addParts" model (the original's additive layers, e.g. an original-game mod's *_lights_add / *_engine_glow_add /
+//     *_engine_add, OriginalModImport) in the hull's frame with the game's material for its role: the lights always on, an
+//     "engineGlow" under the engine glow part in place of the discs, an "engine" as the NPC variant;
 //   - each "throttleGlow" / "extraGlows" entry: the hull triangles under the lit part of its mask, pushed 'offset' out,
 //     additive, driven by ThrottleGlow (with its trails), plus an empty engine_state player part;
-//   - no NPC engine parts; one LOD level culled at 80000 units like the generic ships.
+//   - no NPC engine parts but an "engine" add part; one LOD level culled at 80000 units like the generic ships.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -35,7 +38,8 @@ namespace GoF2Remake.Modding
         /// <summary>The template for 'c' around the instantiated glTF scene 'model' (re-parented as the hull). A kit ship's
         /// build (ModShipKits) passes the kit's 'kitScale' (Unity metres per model unit: every build of the kit the same size,
         /// not stretched to modelLength) and 'kitYaw', and 'hasFlames' when the kit's materials make engine flames.</summary>
-        public static GameObject Build(CustomShipData c, ModInfo mod, GameObject model, float kitScale = 0f, float kitYaw = 0f, bool hasFlames = false)
+        public static GameObject Build(CustomShipData c, ModInfo mod, GameObject model, float kitScale = 0f, float kitYaw = 0f, bool hasFlames = false,
+                                       List<(CustomAddPart spec, GameObject scene)> addParts = null)
         {
             var root = new GameObject(c.assembly);
             var asm = root.AddComponent<AssembledObject>();
@@ -90,11 +94,30 @@ namespace GoF2Remake.Modding
             }
 
             var parts = new List<GameObject>();
+            var npcParts = new List<GameObject>();
+            bool ownGlow = addParts != null && addParts.Exists(p => p.spec.role == CustomAddPart.EngineGlow);
             // A ship with its own engine flames ("flame" materials) keeps the glow part (it marks the engines on / off for
             // the flames, the exhaust particles and the "engine" materials) without its glow discs.
-            // Galaxy on Fire 3's engine effect (engineFx) replaces the discs too, drawn under the same part (EngineFx).
-            var glow = BuildEngineGlow(c, !flames && c.engineFx == null);
+            // Galaxy on Fire 3's engine effect (engineFx) replaces the discs too, drawn under the same part (EngineFx), and so
+            // does the model's own engine glow (an "engineGlow" add part, the original's *_engine_glow_add).
+            var glow = BuildEngineGlow(c, !flames && c.engineFx == null && !ownGlow);
+            if (glow == null && ownGlow) glow = new GameObject("engine_glow");
             if (glow != null) parts.Add(glow);
+            // The original's additive layers beside the hull (ships.json "addParts"), as the game's own ships have them
+            // (Globals::getShipGroup): the lights always, the player's engine glow with the engines (under the glow part),
+            // the NPCs' engine glow as the NPC variant.
+            if (addParts != null)
+                foreach (var (spec, scene) in addParts)
+                {
+                    var part = BuildAddPart(c, mod, spec, scene, model.transform);
+                    if (part == null) continue;
+                    if (spec.role == CustomAddPart.EngineGlow) part.transform.SetParent(glow.transform, false);
+                    else
+                    {
+                        part.transform.SetParent(root.transform, false);
+                        if (spec.role == CustomAddPart.Engine) npcParts.Add(part);
+                    }
+                }
             if (glow != null && c.engineFx != null) EngineFx.Add(root, glow, c, mod);
             var glowSpecs = new List<CustomThrottleGlow> { c.throttleGlow };
             if (c.extraGlows != null) glowSpecs.AddRange(c.extraGlows);
@@ -111,7 +134,7 @@ namespace GoF2Remake.Modding
             // Manoeuvring jets (slotType 4: EVERSPACE 2's lateral thrusters), under the engine glow part so they go with it.
             LateralThrusters.Add(root, glow != null ? glow.transform : null, c.mounts);
             asm.playerVariantParts = parts.ToArray();
-            asm.npcVariantParts = new GameObject[0];
+            asm.npcVariantParts = npcParts.ToArray();
             asm.conditionalParts = new GameObject[0];
             asm.conditions = new string[0];
 
@@ -122,6 +145,80 @@ namespace GoF2Remake.Modding
             float h = Mathf.Clamp01(group.size / (2f * CullDistance * M * tanHalf));
             group.SetLODs(new[] { new LOD(h, root.GetComponentsInChildren<Renderer>(true)) });
             return root;
+        }
+
+        /// <summary>One add part: its glTF scene in a holder that takes the hull model's place, turn and size (the original's
+        /// parts share the hull's origin), its renderers named with the game's ending for the role ("_lights_add" ...: the
+        /// hull-only code, collision, shadows, levels of detail, aim spots, skips those) and drawn with the role's material
+        /// (AddPartMaterial), white vertex colours where the mesh has none (the game's additive shader multiplies by them), no
+        /// shadows. Null when the scene has nothing to draw.</summary>
+        static GameObject BuildAddPart(CustomShipData c, ModInfo mod, CustomAddPart spec, GameObject scene, Transform hull)
+        {
+            FlattenSkinned(scene);
+            var renderers = scene.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) { Object.Destroy(scene); return null; }
+            string name = c.assembly + CustomAddPart.Suffix(spec.role);
+            var holder = new GameObject(name);
+            holder.transform.localPosition = hull.localPosition;
+            holder.transform.localRotation = hull.localRotation;
+            holder.transform.localScale = hull.localScale;
+            scene.transform.SetParent(holder.transform, false);
+            scene.transform.localPosition = Vector3.zero;
+            scene.transform.localRotation = Quaternion.identity;
+            scene.transform.localScale = Vector3.one;
+            scene.name = name;
+            var mat = AddPartMaterial(c, mod, spec);
+            foreach (var r in renderers)
+            {
+                r.gameObject.name = name;
+                var mesh = MeshOf(r);
+                int count = Mathf.Max(1, mesh != null ? mesh.subMeshCount : r.sharedMaterials.Length);
+                if (mat != null) r.sharedMaterials = Enumerable.Repeat(mat, count).ToArray();
+                r.shadowCastingMode = ShadowCastingMode.Off;
+                r.receiveShadows = false;
+                if (mesh != null && mesh.isReadable && (mesh.colors32 == null || mesh.colors32.Length == 0))
+                {
+                    var white = new Color32[mesh.vertexCount];
+                    for (int i = 0; i < white.Length; i++) white[i] = new Color32(255, 255, 255, 255);
+                    mesh.colors32 = white;
+                }
+            }
+            return holder;
+        }
+
+        /// <summary>The material an add part is drawn with: the game's for that role on the ship the model replaces, else on a
+        /// game ship of its race (the lights and NPC engines: the race's glow, 3460x; the player's engine glow: 34813), else the
+        /// mods' engine glow; with the part's 'texture' a copy showing that instead.</summary>
+        static Material AddPartMaterial(CustomShipData c, ModInfo mod, CustomAddPart spec)
+        {
+            var baseMat = GameAddMaterial(c, CustomAddPart.Suffix(spec.role)) ?? ModAssets.Get()?.engineGlow;
+            if (baseMat == null || string.IsNullOrEmpty(spec.texture)) return baseMat;
+            var tex = ModMaterials.Texture(mod, spec.texture, false);
+            if (tex == null) return baseMat;
+            var copy = new Material(baseMat) { name = $"{c.assembly} {spec.role} {spec.texture}" };
+            if (copy.HasProperty("_MainTex")) copy.SetTexture("_MainTex", tex);
+            if (copy.HasProperty("_BaseMap")) copy.SetTexture("_BaseMap", tex);
+            return copy;
+        }
+
+        /// <summary>The game's material for the part ending 'suffix' ("_lights_add" ...): on the original ship 'c' overrides,
+        /// else the first game ship of c's race that has such a part. Null = none found.</summary>
+        static Material GameAddMaterial(CustomShipData c, string suffix)
+        {
+            var db = Database.Shared;
+            if (db == null) return null;
+            Material Of(int ship)
+            {
+                var prefab = AssembledObject.LoadPrefab(db.ShipAssembly(ship, original: true));
+                if (prefab == null) return null;
+                foreach (var r in prefab.GetComponentsInChildren<Renderer>(true))
+                    if (r.name.EndsWith(suffix) && r.sharedMaterial != null) return r.sharedMaterial;
+                return null;
+            }
+            if (c.index >= 0 && c.index < GameNames.OriginalShips && Of(c.index) is Material own) return own;
+            for (int i = 0; i < GameNames.OriginalShips; i++)
+                if (i != 13 && i != 14 && i != 15 && Shop.RaceOfShip(i) == c.race && Of(i) is Material m) return m;
+            return null;
         }
 
         /// <summary>Skinned meshes (a GLB whose hull is bound to a skeleton, common in exported game models) baked into plain

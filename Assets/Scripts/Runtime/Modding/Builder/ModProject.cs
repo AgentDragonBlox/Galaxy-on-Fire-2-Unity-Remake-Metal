@@ -1281,6 +1281,30 @@ namespace GoF2Remake.Modding
 
         static string SlotKey(int kind) => kind == 0 ? "primary" : kind == 1 ? "secondary" : kind == 2 ? "turret" : "equipment";
 
+        /// <summary>ships.json "addParts": the original's additive layers beside the hull (CustomAddPart: model, role,
+        /// texture), in the order they are listed.</summary>
+        public List<(string model, string role, string texture)> AddParts =>
+            json["addParts"] is JArray a
+                ? a.OfType<JObject>().Select(o => ((string)o["model"], (string)o["role"], (string)o["texture"])).ToList()
+                : new List<(string, string, string)>();
+
+        /// <summary>Adds an add part (CustomAddPart.Roles); 'texture' null = the game's material for the role.</summary>
+        public void AddPart(string role, string model, string texture = null)
+        {
+            if (!(json["addParts"] is JArray a)) json["addParts"] = a = new JArray();
+            var o = new JObject { ["model"] = model, ["role"] = role };
+            if (!string.IsNullOrEmpty(texture)) o["texture"] = texture;
+            a.Add(o);
+        }
+
+        /// <summary>Removes the add part at 'index' (the list goes when it is empty).</summary>
+        public void RemovePart(int index)
+        {
+            if (!(json["addParts"] is JArray a) || index < 0 || index >= a.Count) return;
+            a.RemoveAt(index);
+            if (a.Count == 0) json.Remove("addParts");
+        }
+
         public int MountCount(int slotType) => Mounts.Count(m => m.slotType == slotType);
 
         // ---- a customizable ship (ModShipKits) ----
@@ -1318,7 +1342,7 @@ namespace GoF2Remake.Modding
         /// <summary>The ship flies a kit: its model's own fields go.</summary>
         public void UseKit(string kit, string kitType)
         {
-            foreach (var k in new[] { "model", "modelLength", "modelYaw", "modelPitch", "modelRoll", "modelOffset", "materials", "hangarHeight", "engineGlowRadius" })
+            foreach (var k in new[] { "model", "modelLength", "modelYaw", "modelPitch", "modelRoll", "modelOffset", "materials", "hangarHeight", "engineGlowRadius", "addParts" })
                 json.Remove(k);
             Kit = kit;
             KitType = kitType;
@@ -1336,7 +1360,7 @@ namespace GoF2Remake.Modding
         public void UseGameModel(string assembly, ShipData from, IEnumerable<WeaponMount> mounts, int race = -1)
         {
             Model = GameModels.Ref(assembly);
-            foreach (var k in new[] { "modelLength", "modelYaw", "modelPitch", "modelRoll", "modelOffset", "materials", "hangarHeight", "engineGlowRadius" })
+            foreach (var k in new[] { "modelLength", "modelYaw", "modelPitch", "modelRoll", "modelOffset", "materials", "hangarHeight", "engineGlowRadius", "addParts" })
                 json.Remove(k);
             Mounts.Clear();
             if (mounts != null) Mounts.AddRange(mounts.Select(Copy));

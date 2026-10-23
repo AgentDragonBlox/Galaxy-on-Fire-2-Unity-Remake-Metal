@@ -46,8 +46,13 @@ folders, named like the files they replace): the projects page's **Import mod > 
 zip. A game ship's hull (`ship_016_nivelian.aem`) becomes a change to that ship with the new model at the length it had in
 the game, so the ship's hardpoints still fit; its `_diffuse` and `_normal_specular` textures become the hull's textures
 (the specular map as its smoothness). Any other `.aei` replaces the game's texture of that name, so a mod that only
-changes textures becomes a skin. The ship's other parts (`_lod_1`, `_engine_add`, `_lights_add`...) aren't used: the new
-model is the whole ship. Every model picker in the builder also takes a single `.aem`, and every texture picker an `.aei`.
+changes textures becomes a skin. The ship's glowing layers become its `addParts` (see the table below), drawn like the
+game's own ships draw them: `_lights_add` (the lights), `_engine_glow_add` (your engine glow) and `_engine_add` (the NPCs'
+engine glow). Copies of the hull in those files (some mods fill them with it) and the `_lod_1` / `_lod_2` models are left
+out. The first release's files work too: `ship_00.aem` with `ship_00_lights.aem` and `ship_00_add.aem` (its engine glow),
+and its race's texture atlas (`tex_mido_ships.aei` ...) as the hull's and the parts' texture. The importer reads `.zip`
+files: a `.7z` has to be repacked as a zip first. Every model picker in the builder also takes a single `.aem`, and every
+texture picker an `.aei`.
 
 Every entry's page has **Edit as JSON…**: the entry's fields as this guide lists them, also the ones the builder has no field
 for (a ship's per-mesh `materials`, throttle and extra glows, a station's collision `volumes`, a room's `gateSpan`). The
@@ -569,6 +574,7 @@ styles](#exhaust-styles)), 4 manoeuvring jet (`"direction": [x, y, z]`, the way 
 | `engineGlowColor` | `[r, g, b]` (0 to 1): the flame colour of every exhaust without its own `glowColor`. None = the game's own blue-white flame. |
 | `materials` | Optional. Replace the model's own materials, see below. |
 | `throttleGlow`, `extraGlows` | Optional. Parts of the hull that glow with the throttle, see below. |
+| `addParts` | Optional. Glowing layers modelled beside the hull, in the same place and size (the original game's `_lights_add` / `_engine_glow_add` / `_engine_add`): a list of `{ "model": "models/x_lights.glb", "role": "lights" }`. `role`: `lights` (always lit), `engineGlow` (your engine glow, lit with the engines, in place of the round glows at the exhausts) or `engine` (the NPCs' engine glow). Drawn additively with the game's glow texture for the role (the ship's race), or the entry's `texture` (a PNG in the mod). The builder's Ship tab lists them under Glowing parts. |
 | `engineFx` | Optional. A Galaxy on Fire 3 style engine effect at every exhaust instead of the flame and its particles, see [Engine effect](#engine-effect). For effects any ship can wear, see [Exhaust styles](#exhaust-styles). |
 | `lounge` | Optional. A visitor in the Space Lounges sells it: in systems of `systemRace` (-1 = any), from story step `minCampaign` (in free play from rank `minRank`), `chance` % each time a bar fills with new visitors. |
 | `npcTurrets` | Optional, also in an `override`. Turret items (numbers or `"mod:id"`, e.g. `[ 48, "my_mod:flak" ]`) the **NPC** ships of this type carry on its turret mounts (`slotType` 2), the n-th item on the n-th mount: in space they aim and fire by themselves at whatever that ship is hostile to (your own turret model, missiles and salvos included), and parked in a hangar they show them. Items that are no turret, or more items than mounts, give a warning. The game's own NPC ships carry none; the Bloodstar (45) and the Rhino (51) swap their built-in turret for yours. |

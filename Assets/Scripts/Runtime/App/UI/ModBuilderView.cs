@@ -535,6 +535,7 @@ namespace GoF2Remake.UI
                 }
                 Act(nrow, T("mbCentreModel", "Centre on pivot"), () => CentreModel(s));
                 BuildTextures(s);
+                BuildAddParts(s);
             }
             if (!s.IsOverride && !gameModel)
             {
@@ -570,6 +571,40 @@ namespace GoF2Remake.UI
                         BuildShipPage();
                     }));
                 if (current != null) Act(row, "✕", () => { s.SetHullTexture(r, null); RequestReload(false); BuildShipPage(); }, "mbv-step");
+            }
+        }
+
+        /// <summary>The ship's glowing parts (ships.json "addParts", CustomAddPart): the original's additive layers beside the
+        /// hull, e.g. an original-game mod's lights and engine glows, made in the hull model's own frame and drawn with the
+        /// game's material for their role. Listed with a remove button; a new one picked as a .glb / .aem for each role.</summary>
+        void BuildAddParts(ProjectShip s)
+        {
+            Heading(ship, T("mbAddParts", "Glowing parts"));
+            Note(ship, T("mbAddPartsNote", "Lights and engine glows modelled beside the hull (in the same place and size), drawn like the game's own ships draw theirs."));
+            var parts = s.AddParts;
+            for (int i = 0; i < parts.Count; i++)
+            {
+                int index = i;
+                var (model, role, texture) = parts[i];
+                var row = Add(ship, new VisualElement(), "mbv-row");
+                string text = $"{PartRoleName(role)}: {System.IO.Path.GetFileName(model ?? "")}";
+                if (!string.IsNullOrEmpty(texture)) text += $" ({System.IO.Path.GetFileName(texture)})";
+                Add(row, new Label(text), "mbv-inline-label");
+                Act(row, "✕", () => { s.RemovePart(index); RequestReload(false); BuildShipPage(); }, "mbv-step");
+            }
+            if (!ModImport.Available) return;
+            var arow = Add(ship, new VisualElement(), "mbv-row");
+            foreach (var role in CustomAddPart.Roles)
+            {
+                string r = role;
+                Act(arow, "+ " + PartRoleName(r), () => PickGlb(T("mbPickPart", "Choose the part's model"), path =>
+                {
+                    string id = s.IsOverride ? "ship_" + s.OverrideIndex : s.LocalId;
+                    s.AddPart(r, Project.AddModel(path, $"{id}_{r}"));
+                    RequestReload(false);
+                    BuildShipPage();
+                    Status(T("mbLoadingModel", "Loading the model…"), false);
+                }));
             }
         }
 

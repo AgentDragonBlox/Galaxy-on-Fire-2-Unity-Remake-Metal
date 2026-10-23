@@ -199,6 +199,7 @@ namespace GoF2Remake.Modding
             "extraGlows", "lounge", "dealer", "traffic", "available", "npcTurrets", "flightStyle", "flight", "kit", "kitType", "build",
             "skins", "weaponColors",   // customizations of a ship without a kit (ModShipKits.CustomizationOf)
             "engineFx",   // Galaxy on Fire 3's engine effect (EngineFx)
+            "addParts",   // the original's additive layers beside the hull: lights, engine glows (ModShipBuilder)
             "sounds",     // the ship's own engine and boost sounds (ModShipSounds)
             "integrated", // a built-in Khador Drive / cloak (ApplyIntegrated)
         };
@@ -225,6 +226,7 @@ namespace GoF2Remake.Modding
                     throw new ModJsonException($"{where}: \"integrated\" must be an object {{ \"khadorDrive\": true, \"cloak\": 95 }}");
                 if (ModJson.Get(o, "npcTurrets") is JToken nt && !(nt is JArray))
                     throw new ModJsonException($"{where}: \"npcTurrets\" must be a list of turret items [ 48, \"mod:id\" ]");
+                CheckAddParts(o, where, mod);
                 foreach (var prop in o.Properties())
                     if (!ShipFields.Contains(prop.Name)) mod.Warnings.Add($"{ModJson.Where(prop, ShipsFile)}: unknown field \"{prop.Name}\" (ignored)");
                 foreach (var f in new[] { "race", "armor", "cargo", "price", "priceDefault", "handling", "hangarHeight" }) ModJson.Int(o, f, 0, ShipsFile);
@@ -258,6 +260,26 @@ namespace GoF2Remake.Modding
                 catch (Exception e) { throw new ModJsonException($"{where}: {e.Message}"); }
                 d.data = data.ToString();
                 p.ships.Add(d);
+            }
+        }
+
+        /// <summary>ships.json "addParts": a list of { model, role, texture } (CustomAddPart). A wrong shape or role is an error,
+        /// a file missing from the mod a warning (that part is left out).</summary>
+        static void CheckAddParts(JObject o, string where, ModInfo mod)
+        {
+            var t = ModJson.Get(o, "addParts");
+            if (t == null) return;
+            if (!(t is JArray list)) throw new ModJsonException($"{where}: \"addParts\" must be a list [ {{ \"model\": \"models/x_lights.glb\", \"role\": \"lights\" }} ]");
+            foreach (var e in list)
+            {
+                string at = ModJson.Where(e, ShipsFile);
+                if (!(e is JObject p)) throw new ModJsonException($"{at}: each of \"addParts\" must be an object {{ \"model\", \"role\" }}");
+                string model = ModJson.Str(p, "model"), role = ModJson.Str(p, "role"), texture = ModJson.Str(p, "texture");
+                if (Array.IndexOf(CustomAddPart.Roles, role) < 0)
+                    throw new ModJsonException($"{at}: \"role\" must be \"lights\", \"engineGlow\" or \"engine\"");
+                if (string.IsNullOrEmpty(model)) throw new ModJsonException($"{at}: an add part needs \"model\", its glTF / GLB file");
+                if (!mod.Source.Exists(model)) mod.Warnings.Add($"{at}: the model \"{model}\" isn't in the mod (the part is left out)");
+                if (!string.IsNullOrEmpty(texture) && !mod.Source.Exists(texture)) mod.Warnings.Add($"{at}: the texture \"{texture}\" isn't in the mod (the game's is used)");
             }
         }
 

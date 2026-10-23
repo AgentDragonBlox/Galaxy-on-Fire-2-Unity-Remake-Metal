@@ -3487,8 +3487,22 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   StartOriginalImport`, a worker thread; the Mod Browser's Import points there): a ship whose assembly name
   (`ShipsByModel`, not 13-15) has a `<name>.aem` becomes an override with that model at its length (its stats and
   hardpoints copied) and the `<name>_diffuse` / `_normal_specular` `.aei` as its hull textures (RGB normal map; the alpha,
-  the game's specular, as the smoothness: `split_spec.py`'s rule); its other `.aem` parts are left out (copies of the hull
-  counted apart: the community's mods fill the glow / LOD slots with the hull); any other `.aei` is a skin under its own
+  the game's specular, as the smoothness: `split_spec.py`'s rule); its additive layers become add parts (2026-10-23, the
+  user's request with a Full HD and a first-release Betty: ships.json `addParts`, `CustomAddPart` model / role / texture,
+  `ModShipBuilder.BuildAddPart`: each part's glTF in a holder that takes the hull model's place, turn and size (the
+  original's parts share the hull's origin; no transforms in their files), its renderers named with the game's ending
+  (`_lights_add` ... `CustomAddPart.Suffix`, which collision, shadows, LODs, aim spots and the icon skip), white vertex
+  colours where missing (GoF2/Additive multiplies them), the game's material for the role (`GameAddMaterial`: that part
+  on the overridden ship's own prefab, else on a game ship of its race: lights / NPC engine 3460x glow_<race>, player glow
+  34813), a copy with the part's `texture`; lights always on, `engineGlow` under the engine glow part in place of the
+  generated discs, `engine` the NPC variant (`npcVariantParts`); `ModShips.LoadAddParts` loads them with the hull;
+  checked: the Full HD Betty's parts come out with the game prefab's exact vertices, bounds and UVs): HD names
+  `_lights_add` / `_engine_glow_add` / `_engine_add`, the first release's `ship_NN` + `_lights` / `_add` (its engine
+  glow) with its race atlas `tex_<race>_ships.aei` (`RaceAtlas`) as the hull's diffuse and the parts' texture; copies of the
+  hull (byte-identical, or `SameShape`: the same triangle count and size within a unit) and `_lod_N` left out; the builder's
+  Ship tab lists them (Glowing parts: remove, + Lights / Engine glow / NPC engine glow from a .glb / .aem), a switch to a kit
+  or a game model drops them. Not yet: the first release's fume samples panels of `tex_mido_ships` (its UVs point
+  elsewhere: probably another texture of that release, not in the files we have); a zip only (no .7z). Any other `.aei` is a skin under its own
   name (`ModTextures`; a `_normal_specular` one with its `_metallic_smoothness`); other `.aem` files are reported unused.
   `ModShipBuilder` now makes tangents (`RecalculateTangents`) for a readable mesh without them under a ships.json normal
   map (glTFast makes them only for a glTF normal texture, so these maps shaded wrong). Checked in Play mode with the Narn

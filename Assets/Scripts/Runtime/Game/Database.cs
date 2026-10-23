@@ -197,11 +197,30 @@ namespace GoF2Remake.Data
         public CustomThrottleGlow throttleGlow;   // a glow on part of the hull that follows the throttle (no mask = none)
         public List<CustomThrottleGlow> extraGlows;   // more of them (each its own mask, colour, levels and trail)
         public CustomEngineFx engineFx;    // remake mods: Galaxy on Fire 3's engine effect at every exhaust (Modding.EngineFx); null = none
+        public List<CustomAddPart> addParts;   // remake mods: the original's additive layers (lights, engine glows) beside the hull
         public CustomLoungeSeller lounge;  // a lounge visitor who sells it (AgentGenerator.AddCustomShipSellers); null = none
         public CustomDealer dealer;        // remake mods: ship dealers may stock it (Modding.ModUnlocks.AddDealerShips); null = never
         public CustomTraffic traffic;      // remake mods: how NPC fighters fly it (Modding.ModTraffic); null = its race's, weight 1
         public string kit, kitType;        // remake mods: a customizable ship (Modding.ModShipKits): its kit ("mod_id:kit_id") and type
         [System.NonSerialized] public string defaultBuild;   // its "build" as build text (ModShipKits.Build)
+    }
+
+    /// <summary>Remake mods: one of the original's additive layers a ship model brings beside its hull (ships.json "addParts";
+    /// Modding.ModShipBuilder), in the hull model's own frame (the original's parts share its origin), drawn like the game's
+    /// ships draw theirs: 'role' "lights" (the *_lights_add: always shown, the race's glow material 3460x), "engineGlow" (the
+    /// player's *_engine_glow_add: with the engines, in place of the generated glow discs, mat_34813) or "engine" (the NPCs'
+    /// *_engine_add: the NPC variant, the race's glow material). 'texture' (a PNG / .aei in the mod) replaces the material's
+    /// texture; none = the game's (which skins of that texture still replace).</summary>
+    [System.Serializable] public class CustomAddPart
+    {
+        public string model;
+        public string role;
+        public string texture;
+
+        public const string Lights = "lights", EngineGlow = "engineGlow", Engine = "engine";
+        public static readonly string[] Roles = { Lights, EngineGlow, Engine };
+        /// <summary>The game's name ending for the role's part ("_lights_add" ...), which the hull-only code skips.</summary>
+        public static string Suffix(string role) => role == EngineGlow ? "_engine_glow_add" : role == Engine ? "_engine_add" : "_lights_add";
     }
 
     /// <summary>Remake mods: how often NPC fighters fly a mod ship (Modding.ModTraffic, the "Mod ships in traffic" option):

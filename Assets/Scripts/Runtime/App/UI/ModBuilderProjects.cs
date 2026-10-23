@@ -575,6 +575,9 @@ namespace GoF2Remake.UI
             foreach (var (ship, file, triangles, textured) in r.hulls)
                 lines.Add("• " + string.Format(T("mbOgShip", "{0}: a new hull from {1} ({2} triangles)"), GameNames.Ship(ship), System.IO.Path.GetFileName(file),
                                                 triangles.ToString("N0")) + (textured ? "" : " " + T("mbOgNoTexture", "(no texture in the mod: choose its hull textures in the builder)")));
+            foreach (var ship in r.parts.Select(p => p.ship).Distinct())
+                lines.Add("• " + string.Format(T("mbOgParts", "{0}: its {1} kept, drawn like the game's own"), GameNames.Ship(ship),
+                                                string.Join(", ", r.parts.Where(p => p.ship == ship).Select(p => ModBuilderScreen.PartRoleName(p.role)))));
             if (r.skins.Count > 0) lines.Add("• " + string.Format(T("mbOgSkins", "{0} textures replacing the game's of the same name"), r.skins.Count));
             if (r.hullCopies > 0) lines.Add("• " + string.Format(T("mbOgCopies", "{0} copies of a hull left out (the new hull is the whole ship)"), r.hullCopies));
             if (r.unused.Count > 0)

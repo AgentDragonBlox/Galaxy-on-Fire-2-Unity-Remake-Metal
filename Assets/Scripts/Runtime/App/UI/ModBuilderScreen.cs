@@ -29,6 +29,11 @@ namespace GoF2Remake.UI
     {
         protected static string T(string key, string english) => Localization.Extra(key, english);
 
+        /// <summary>An add part's role (CustomAddPart) as the builder names it.</summary>
+        public static string PartRoleName(string role) =>
+            role == CustomAddPart.EngineGlow ? T("mbPartEngineGlow", "Engine glow")
+            : role == CustomAddPart.Engine ? T("mbPartEngine", "NPC engine glow") : T("mbPartLights", "Lights");
+
         protected readonly Action<bool> sound;
         protected readonly VisualElement root, modal;
         protected readonly Label status, projectLabel;
