@@ -24,6 +24,9 @@ namespace GoF2Remake.UI
         readonly Label text, secondText;
         string plateImage, secondImage;
 
+        /// <summary>The readout's box at the top right of the safe area (FlightHud moves it left of the touch pause button).</summary>
+        public VisualElement Root => root;
+
         public HudReadout(VisualElement parent)
         {
             root = new VisualElement { name = "hudReadout", pickingMode = PickingMode.Ignore };

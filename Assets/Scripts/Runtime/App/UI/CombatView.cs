@@ -47,6 +47,7 @@ namespace GoF2Remake.UI
                                       gammaRow, gammaFill, speedPanel;
         readonly Label lockOre;
         readonly VisualElement[] arcs = new VisualElement[4];
+        readonly VisualElement arcBox, safeBox;   // the arcs' 0 x 0 box at the screen centre, the HUD's safe area
         readonly Texture2D[] lockFrames = new Texture2D[24];
         readonly Dictionary<Object, Marker> markers = new Dictionary<Object, Marker>();
         readonly Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
@@ -149,6 +150,8 @@ namespace GoF2Remake.UI
             arcs[1] = root.Q("arcRight");
             arcs[2] = root.Q("arcTop");
             arcs[3] = root.Q("arcBottom");
+            arcBox = root.Q("hitArcs");
+            safeBox = root.Q("safeArea");
             foreach (var plate in statusPanel.Query(className: "status-plate").ToList()) Image(plate, Tex("status_plate"), false);
             Image(root.Q("shieldFrame"), Tex("status_shield_frame"), false);
             Image(root.Q("hullFrame"), Tex("status_hull_frame"), false);
@@ -174,6 +177,16 @@ namespace GoF2Remake.UI
         static void Place(VisualElement e, float x, float y) => e.style.translate = new Translate(x, y);
 
         /// <summary>Left / top for elements placed once (the hit arcs, which also flip by their scale).</summary>
+        /// <summary>The safe area around the hit arcs' centre box (panel units; the box sits at the screen's centre), or no
+        /// limit before the layout.</summary>
+        Rect ArcLimits()
+        {
+            if (arcBox == null || safeBox == null) return new Rect(-1e5f, -1e5f, 2e5f, 2e5f);
+            Rect s = safeBox.worldBound, c = arcBox.worldBound;
+            if (float.IsNaN(s.width) || s.width <= 0f || float.IsNaN(c.x)) return new Rect(-1e5f, -1e5f, 2e5f, 2e5f);
+            return Rect.MinMaxRect(s.xMin - c.x, s.yMin - c.y, s.xMax - c.x, s.yMax - c.y);
+        }
+
         static void PlaceFixed(VisualElement e, float x, float y)
         {
             e.style.left = x;
@@ -585,12 +598,16 @@ namespace GoF2Remake.UI
                 var a = arcs[i];
                 Image(a, tex);
                 float w = tex.width, h = tex.height;
+                // Remake: each image kept inside the safe area. Centred on the ellipse (491 units up / down) the 374-unit top
+                // and bottom arcs reach 678 units out, their glow (the outer half) past a 1080-unit screen's 540 (a player's
+                // report: mostly off screen on a phone); the sides' 819 of 960 fit at 16:9, not on a narrower screen.
+                var lim = ArcLimits();
                 switch (i)
                 {
-                    case 0: PlaceFixed(a, -EllipseX - w / 2f, -h / 2f); a.style.scale = new Scale(new Vector3(-1f, 1f, 1f)); break;
-                    case 1: PlaceFixed(a, EllipseX - w / 2f, -h / 2f); break;
-                    case 2: PlaceFixed(a, -w / 2f, -EllipseY - h / 2f); break;
-                    default: PlaceFixed(a, -w / 2f, EllipseY - h / 2f); a.style.scale = new Scale(new Vector3(1f, -1f, 1f)); break;
+                    case 0: PlaceFixed(a, Mathf.Max(-EllipseX - w / 2f, lim.xMin), -h / 2f); a.style.scale = new Scale(new Vector3(-1f, 1f, 1f)); break;
+                    case 1: PlaceFixed(a, Mathf.Min(EllipseX - w / 2f, lim.xMax - w), -h / 2f); break;
+                    case 2: PlaceFixed(a, -w / 2f, Mathf.Max(-EllipseY - h / 2f, lim.yMin)); break;
+                    default: PlaceFixed(a, -w / 2f, Mathf.Min(EllipseY - h / 2f, lim.yMax - h)); a.style.scale = new Scale(new Vector3(1f, -1f, 1f)); break;
                 }
             }
         }

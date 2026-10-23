@@ -96,6 +96,8 @@ namespace GoF2Remake.UI
         public Vector2 Stick { get; private set; }
         /// <summary>The fire button is held (or autofire is latched) and the press wasn't an action.</summary>
         public bool FireHeld => autofire || (firePointer >= 0 && !fireSwallowed);
+        /// <summary>The pause button (in the HUD root): the top readout keeps left of it while it shows (FlightHud).</summary>
+        public VisualElement PauseButton => pause;
 
         const float S0 = 415f, F0 = 365f;   // Globals::Globals: the Android defaults
         const float StickTravel = 94f, StickHitX = 112f, StickHitY = 216f;
@@ -650,6 +652,9 @@ namespace GoF2Remake.UI
             frame = f;
             if (f.mode != Mode.Full && was == Mode.Full) ReleaseAll();
             if (f.mode != Mode.Full) autofire = false;
+            // NavigationView's autopilot / fast-forward block goes with the controls: it shows it only while they do, but
+            // the HUD skips that update under the pause menu, so the block stayed there (and over cutscenes it was shown).
+            if (navButtons != null && (f.mode == Mode.Off || f.mode == Mode.PauseOnly)) navButtons.style.display = DisplayStyle.None;
             Layout();
             Draw(dtMs);
         }
