@@ -18,7 +18,7 @@
 // once it has typed in; never past the last page.
 // Remake option "Animated dialogue" (TextReveal): the page types in with pacing, shouting and tinted names; Next during
 // it shows the page at once, pages read before show at once, the portrait fades in when the speaker changes, the text
-// scrolls along with a long page, and the Next button breathes once the page is complete (not while AUTO is on).
+// scrolls along with a long page, and the Next button breathes once the page is complete (with AUTO on only Close, on the last page).
 
 using System;
 using System.Collections.Generic;
@@ -309,8 +309,9 @@ namespace GoF2Remake.UI
                 return;
             }
             if (!Settings.AnimatedDialogue || narration) return;
-            // Not while AUTO turns the pages: the button needn't ask to be pressed.
-            if (Settings.AutoAdvanceDialogue) { next.RemoveFromClassList("dialogue-button--ready"); pulseMs = 0f; return; }
+            // Not while AUTO turns the pages: the button needn't ask to be pressed. AUTO never closes the conversation, so
+            // the last page's Close still does.
+            if (Settings.AutoAdvanceDialogue && page < pages.Count - 1) { next.RemoveFromClassList("dialogue-button--ready"); pulseMs = 0f; return; }
             pulseMs += dtMs;
             if (pulseMs >= PulseMs) { pulseMs = 0f; next.ToggleInClassList("dialogue-button--ready"); }
         }
