@@ -583,7 +583,7 @@ namespace GoF2Remake.Multiplayer
             foreach (var crate in FindObjectsByType<Crate>(FindObjectsInactive.Exclude))
             {
                 // A crate made by a cargo steal is the stealer's already (pulled at once, the ship keeps the rest): not shared.
-                if (crate.remote || crate.stolenFrom != null || crateIds.ContainsKey(crate)) continue;
+                if (crate.remote || crate.Stolen || crateIds.ContainsKey(crate)) continue;
                 int id = nextCrateId++;
                 crateIds[crate] = id;
                 crates[id] = crate;

@@ -70,6 +70,12 @@ namespace GoF2Remake.Flight
         [NonSerialized] public Action<float, Vector3, bool, float> RemoteDamage;
         /// <summary>Multiplayer: EMP (points) passed on to the game that owns the ship (NetProxy, NetPlayer).</summary>
         [NonSerialized] public Action<int> RemoteEmp;
+        /// <summary>Multiplayer (NetProxy): another game's EMP-disabled NPC with cargo: its first cargo entry (item -1 = none),
+        /// which this player's tractor beam may steal (CombatRadar); RemoteSteal(item, amount) takes it off the owner's ship.</summary>
+        [NonSerialized] public int netStealItem = -1, netStealAmount;
+        [NonSerialized] public Action<int, int> RemoteSteal;
+        /// <summary>Multiplayer: a cargo steal candidate on another game's ship (KIPlayer+0x20 on the owner's side).</summary>
+        public bool NetStealable => RemoteSteal != null && netStealItem >= 0 && netStealAmount > 0;
         /// <summary>Multiplayer: the killing hit came from another player (NetProxy): counts as the player's for a freelance
         /// mission (FreelanceOrbit), though the game takes it as an NPC's hit (killedByNpc: no standing change here).</summary>
         [NonSerialized] public bool killedByRemote;

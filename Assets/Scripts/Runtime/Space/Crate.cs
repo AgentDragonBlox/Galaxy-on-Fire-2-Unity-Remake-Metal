@@ -33,6 +33,11 @@ namespace GoF2Remake.Flight
         public bool pulled;
         /// <summary>The living ship whose cargo this is (a steal), null for a wreck's crate.</summary>
         public World.NpcShip stolenFrom;
+        /// <summary>Multiplayer: the other game's ship (its NetProxy's Target) whose cargo this is (a steal); the capture
+        /// takes it off that ship through Target.RemoteSteal.</summary>
+        [System.NonSerialized] public Target stolenFromRemote;
+        /// <summary>A steal's crate (this ship's or another game's): the stealer's own, never shared or auto-salvaged.</summary>
+        public bool Stolen => stolenFrom != null || stolenFromRemote != null;
         /// <summary>Player+0x5d of the ship it came from (a friend: Level::stealFriendCargo) / a mission container (116 / 117).</summary>
         public bool fromFriend, missionCrate;
 

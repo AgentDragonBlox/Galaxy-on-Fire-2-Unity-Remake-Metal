@@ -8,6 +8,10 @@
 //   release    the Unlock target control (GameControls.UnlockTarget): the lock is dropped and that ship is no candidate
 //              again until it has left the crosshair box (in both lock modes), so the priority doesn't take it straight back
 //              and any other ship in the box can be locked.
+//   steal      an EMP-disabled ship with cargo in the box is a salvage candidate (the tractor beam's ring), not a ship lock,
+//              in either lock mode and whatever ship is held. Multiplayer: another game's NPC (NetProxy) too, from what its
+//              owner reports (RemoteStealable); it was only ever a ship lock there, so only the player whose game ran the
+//              orbit's NPCs could steal (Discord report 2026-10-21).
 
 namespace GoF2Remake.Flight
 {
@@ -28,5 +32,10 @@ namespace GoF2Remake.Flight
 
         /// <summary>The released ship stays released while it is alive and in the crosshair box.</summary>
         public static bool StillReleased(bool alive, bool inBox) => alive && inBox;
+
+        /// <summary>Multiplayer: another game's NPC is a steal candidate here while its owner reports it EMP-disabled and
+        /// flying with cargo (its first entry: item, amount); a freelance mission ship's cargo only for the mission's team.</summary>
+        public static bool RemoteStealable(bool empDisabled, bool flying, bool team, int item, int amount) =>
+            empDisabled && flying && team && item >= 0 && amount > 0;
     }
 }

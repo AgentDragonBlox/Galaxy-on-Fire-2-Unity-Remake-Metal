@@ -11,7 +11,9 @@
 // the model hidden unless it leaves a wreck: freighters, fixed objects), flying again after a relaunch. Its shots (every
 // gun, missiles and blasts included) are mirrored (NetShotSender -> NetShotMirror). Despawned when the ship leaves, or its
 // owner leaves the orbit (NetOrbit, NetState). Another player's EMP reaches the owner's ship too (NpcShip.OnRemoteEmp), an
-// EMP-disabled ship shows its lightning to everyone, and the player whose hit destroyed it gets the kill (their own
+// EMP-disabled ship shows its lightning to everyone and, holding cargo, can be stolen from by the others' tractor beams
+// (its first cargo entry published, the stolen units taken off the owner's ship: StealUpRpc), and the player whose hit
+// destroyed it gets the kill (their own
 // standing and kill count, KillCreditRpc). The markers' colours follow each player's own standings and squad. A freelance
 // mission's ships look like any other ship to players outside the mission's team: no mission name on the lock plate
 // (the Hijacker, the Wanted target, the Challenge rival); their kills still help the team (NetMissions). A mission ship
@@ -69,6 +71,10 @@ namespace GoF2Remake.Multiplayer
         readonly NetworkVariable<FixedString128Bytes> aggressors = new NetworkVariable<FixedString128Bytes>(default, Read, Owner);
         readonly NetworkVariable<bool> alwaysHostile = new NetworkVariable<bool>(false, Read, Owner);
         readonly NetworkVariable<bool> empDisabled = new NetworkVariable<bool>(false, Read, Owner);
+        // While EMP-disabled with cargo (NpcShip.HasCargo): its first cargo entry, which another player's tractor beam may
+        // steal (CombatRadar, Target.NetStealable); -1 = none.
+        readonly NetworkVariable<int> stealItem = new NetworkVariable<int>(-1, Read, Owner);
+        readonly NetworkVariable<int> stealAmount = new NetworkVariable<int>(0, Read, Owner);
         readonly NetworkVariable<byte> cloakPct = new NetworkVariable<byte>(0, Read, Owner);   // its cloak, 0..100 (a Specter's)
         readonly NetworkVariable<int> junkKind = new NetworkVariable<int>(-1, Read, Owner);   // >= 0: a mission's space junk (CombatAssets.junk)
         readonly NetworkVariable<bool> missionShip = new NetworkVariable<bool>(false, Read, Owner);   // a freelance mission's (NpcShip.MissionShip)
@@ -257,6 +263,7 @@ namespace GoF2Remake.Multiplayer
             target.maxHp = 100f;
             target.RemoteDamage = (amount, hitVector, byNpc, _) => DamageUpRpc(amount, hitVector, byNpc);   // NPCs have no shield
             target.RemoteEmp = emp => EmpUpRpc(emp);
+            target.RemoteSteal = (item, amount) => StealUpRpc(item, amount);
             // Space junk is lockable after the ships and a far dot, like the owner's own junk (Target.RadarObjects).
             if (IsJunk) { Target.RadarObjects.Add(target); target.plateNameOnly = target.plateNoIcon = true; }
             else Target.NetShips.Add(target);
@@ -376,6 +383,28 @@ namespace GoF2Remake.Multiplayer
             if (ship != null) ship.OnRemoteEmp(shooter, emp);
         }
 
+        /// <summary>Another player's tractor beam stole 'amount' of 'item' from this ship (CombatRadar.Capture: rnd(amount) of
+        /// the first entry), through the server: only from that orbit, only while it is disabled and holds that much.</summary>
+        [Rpc(SendTo.Server)]
+        void StealUpRpc(int item, int amount, RpcParams rpc = default)
+        {
+            ulong thief = rpc.Receive.SenderClientId;
+            if (thief == OwnerClientId || !NetRateLimit.Allow(thief, NetRateLimit.Kind.Claim)) return;
+            if (!empDisabled.Value || item != stealItem.Value || amount < 1 || amount > stealAmount.Value)
+            {
+                NetRateLimit.Reject(thief, $"a cargo steal of {amount} x {item}");
+                return;
+            }
+            if (NetGuard.InOrbit(thief, station.Value)) StealRpc(item, amount);
+        }
+
+        /// <summary>The checked steal: the units leave the owner's ship (NpcShip.StealFrom, KIPlayer::captureCrate).</summary>
+        [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
+        void StealRpc(int item, int amount)
+        {
+            if (ship != null) ship.StealFrom(item, amount);
+        }
+
         bool credited;   // the server: this ship's kill credit went out (one per proxy: a relaunched ship gets a new one)
 
         /// <summary>The ship's game says 'shooter' destroyed it: the server passes the credit on once, and only to a player who
@@ -447,6 +476,12 @@ namespace GoF2Remake.Multiplayer
             if (roleFlags.Value != role) roleFlags.Value = role;
             bool emp = ship.Hp != null && ship.Hp.empDisabled && l == Flying;
             if (empDisabled.Value != emp) empDisabled.Value = emp;
+            int si = -1, sa = 0;
+            if (emp && ship.HasCargo)
+                foreach (var c in ship.CargoList)
+                    if (c.amount > 0) { si = c.item; sa = c.amount; break; }
+            if (stealItem.Value != si) stealItem.Value = si;
+            if (stealAmount.Value != sa) stealAmount.Value = sa;
         }
 
         /// <summary>The model arrives after the spawn when the owner is a client (its first values follow as a delta).</summary>
@@ -564,6 +599,11 @@ namespace GoF2Remake.Multiplayer
             // The owner's game writes the label (a wingman's name comes from its save): no rich-text tags reach the others'
             // lock plates (<size>, <color> to impersonate staff or cover the HUD).
             target.displayName = IsJunk ? Target.JunkName : label.Value.Length > 0 && team ? NetNews.Safe(label.Value.ToString()) : null;
+            // A steal candidate while it is disabled with cargo; a mission ship's cargo only for the mission's team (like its
+            // crates, NetCrate).
+            bool stealable = TargetLockRules.RemoteStealable(empDisabled.Value, life.Value == Flying, team, stealItem.Value, stealAmount.Value);
+            target.netStealItem = stealable ? stealItem.Value : -1;
+            target.netStealAmount = stealable ? stealAmount.Value : 0;
             if (life.Value != shownLife)
             {
                 // NpcShip.UpdateDying's end: the explosion (with its sound); a fighter's model goes with it.

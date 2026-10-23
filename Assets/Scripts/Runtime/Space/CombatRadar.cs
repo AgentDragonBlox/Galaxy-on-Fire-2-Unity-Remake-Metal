@@ -29,7 +29,11 @@
 //               same ring and tractor lock time; locked, TractorBeam::update makes a container of its cargo at the ship
 //               (createCrate(0)) and pulls that; captureCrate takes rnd(amount) of its first entry (at least 1, capped to
 //               the free cargo), Standing::applyStealCargo (delict 2), a friend's cargo sets Level::stealFriendCargo; the
-//               beam lets go when the ship dies (TractorBeam: !Player::isActive)
+//               beam lets go when the ship dies (TractorBeam: !Player::isActive). Multiplayer: another game's NPC (a NetProxy
+//               in Target.NetShips) is a steal candidate the same way (Target.NetStealable: disabled with cargo, its first
+//               entry published by its owner): the crate is made here and the capture's units leave the owner's ship
+//               (Target.RemoteSteal); it was a ship lock candidate, so only the orbit's authority could steal (#Discord
+//               2026-10-21)
 //   auto modes  Radar::Radar from the beam's attr 23: 1 (AB-3 Kingfisher) the first crate on screen is salvaged at once, 2
 //               (AB-4 Octopus) any crate, even off screen and on the autopilot; only dead cargo (crates), never ships
 //   remake      (for mods) a tractor beam with attr 122 "tractorTargets" N >= 2 also pulls up to N - 1 more crates by itself,
@@ -61,8 +65,9 @@ namespace GoF2Remake.Flight
         /// <summary>The lock candidate: a Target (ship) or null.</summary>
         public Target Candidate { get; private set; }
         public Crate CrateCandidate { get; private set; }
-        /// <summary>An EMP-disabled ship with cargo in the box (the steal).</summary>
-        public NpcShip StealCandidate { get; private set; }
+        /// <summary>An EMP-disabled ship with cargo in the box (the steal): a traffic ship's Target or, in multiplayer, another
+        /// game's NPC (NetProxy, Target.NetStealable).</summary>
+        public Target StealCandidate { get; private set; }
         /// <summary>The sticky ship lock.</summary>
         public Target Locked { get; private set; }
         public Crate Salvaging { get; private set; }
@@ -105,7 +110,7 @@ namespace GoF2Remake.Flight
         // Remake (#45, like Mining's "No drill installed."): salvage refused for want of a tractor beam; ignored until it leaves
         // the crosshair box.
         Crate refusedCrate;
-        NpcShip refusedSteal;
+        Target refusedSteal;
         Transform beam;
         GameObject beamPrefab;
         float beamLength = M;
@@ -220,7 +225,7 @@ namespace GoF2Remake.Flight
                            || (mining != null && mining.State != Mining.Phase.Idle);
             Target best = null;
             Crate bestCrate = null;
-            NpcShip bestSteal = null;
+            Target bestSteal = null;
             int bestCloud = -1;
             var cam = Camera.main;
             // Radar+0x1aa (AB-3): the first crate on screen, no box and no lock time.
@@ -238,6 +243,7 @@ namespace GoF2Remake.Flight
                     // Unlock target: the ship let go stays out until it leaves the box.
                     if (Released != null && !TargetLockRules.StillReleased(Released.Alive && Released.isActiveAndEnabled, InBox(cam, c, box, Released.transform.position, out _))) Released = null;
                     float bestScore = float.MaxValue;
+                    bool StealingFrom(Target t) => Salvaging != null && (Salvaging.stolenFromRemote == t || (Salvaging.stolenFrom != null && Salvaging.stolenFrom.Target == t));
                     bool Better(Target t)
                     {
                         if (!TargetLockRules.Eligible(keepHostile, t.hostileToPlayer, t == Released)) return false;
@@ -262,7 +268,7 @@ namespace GoF2Remake.Flight
                             // Radar::draw: a fighter dying with cargo (KIPlayer+0x48) is salvage until it explodes.
                             if (s.DyingWithCargo && !s.Gone && !s.Hidden && !s.RadarHidden)
                             {
-                                if (InBox(cam, c, box, s.transform.position, out float dd) && dd < stealD) { stealD = dd; bestSteal = s; }
+                                if (InBox(cam, c, box, s.transform.position, out float dd) && dd < stealD) { stealD = dd; bestSteal = s.Target; }
                                 continue;
                             }
                             // KIPlayer untargetable (a Rhino's / Myfft's turret, Level::createFighterTurrets): no lock; it was
@@ -270,18 +276,21 @@ namespace GoF2Remake.Flight
                             if (s.Gone || !s.Target.Alive || s.Hidden || s.RadarHidden || s.OffersDocking || s.Asleep || s.Target.untargetable) continue;
                             if (!InBox(cam, c, box, s.transform.position, out float d)) continue;
                             // KIPlayer+0x20: a disabled ship with cargo is salvage (it wins over the ship locks).
-                            if (s.Hp.empDisabled && s.HasCargo) { if (d < stealD && (Salvaging == null || Salvaging.stolenFrom != s)) { stealD = d; bestSteal = s; } }
+                            if (s.Hp.empDisabled && s.HasCargo) { if (d < stealD && !StealingFrom(s.Target)) { stealD = d; bestSteal = s.Target; } }
                             else if (smart) { if (Better(s.Target)) best = s.Target; }
                             else if (best == null && s.Target != Released) best = s.Target;   // Radar::draw: the first ship of the list in the box
                         }
-                    // Multiplayer: the other players and the host's ships (on a client), after the traffic's.
-                    if ((best == null || smart) && bestSteal == null)
-                        foreach (var o in Target.NetShips)
-                            if (o != null && o.Alive && !o.untargetable && o != Released && InBox(cam, c, box, o.transform.position, out float dn))
-                            {
-                                if (!smart) { best = o; break; }
-                                if (Better(o)) best = o;
-                            }
+                    // Multiplayer: the other players and the host's ships (on a client), after the traffic's. Another game's
+                    // EMP-disabled NPC with cargo is a steal like a traffic ship (it was a ship lock candidate here, so only
+                    // the player whose game ran the orbit's NPCs could steal: Discord report 2026-10-21).
+                    foreach (var o in Target.NetShips)
+                    {
+                        if (o == null || !o.Alive || o.untargetable || !InBox(cam, c, box, o.transform.position, out float dn)) continue;
+                        if (o.NetStealable) { if (dn < stealD && !StealingFrom(o)) { stealD = dn; bestSteal = o; } continue; }
+                        if (bestSteal != null || o == Released) continue;
+                        if (!smart) { if (best == null) best = o; continue; }   // the first in the list, after the traffic's
+                        if (Better(o)) best = o;
+                    }
                     if (bestSteal != null) best = null;
                     // Remake, the smarter lock (#76): a crate in the box also beats the ship already locked (that lock stays,
                     // there is nothing to lock) and a non-hostile one; only a new hostile ship still comes first. Before, the
@@ -344,7 +353,7 @@ namespace GoF2Remake.Flight
                     }
                     else if (Salvaging == null)
                     {
-                        var crate = CrateCandidate != null ? CrateCandidate : StealCandidate.CreateStealCrate();
+                        var crate = CrateCandidate != null ? CrateCandidate : CreateStealCrate(StealCandidate);
                         if (crate != null) StartSalvage(crate);
                         CrateCandidate = null;
                         StealCandidate = null;
@@ -393,6 +402,23 @@ namespace GoF2Remake.Flight
                 if (cargo[i].amount > 0) { Message?.Invoke($"{cargo[i].amount}t {GameNames.Item(cargo[i].item)}", 0, HudMessageKind.Scan); return; }
         }
 
+        /// <summary>TractorBeam::update's steal: KIPlayer::createCrate(0) at the ship, a container of its cargo, pulled at once:
+        /// a traffic ship makes its own (NpcShip.CreateStealCrate); another game's NPC (multiplayer) one here holding its first
+        /// cargo entry as published (NetProxy), the capture taking the stolen units off the owner's ship (Target.RemoteSteal).</summary>
+        Crate CreateStealCrate(Target t)
+        {
+            if (t == null) return null;
+            var npc = t.GetComponent<NpcShip>();
+            if (npc != null) return npc.CreateStealCrate();
+            if (!t.NetStealable) return null;
+            var c = Crate.Spawn(t.transform.position, new[] { new ItemStack(t.netStealItem, t.netStealAmount) }, t.race, Crate.LookContainer);
+            c.name = "Stolen cargo";
+            c.stolenFromRemote = t;
+            c.fromFriend = t.friendToPlayer;
+            c.pulled = true;
+            return c;
+        }
+
         void StartSalvage(Crate crate)
         {
             crate.PullStarted?.Invoke();   // multiplayer: the claim
@@ -428,7 +454,7 @@ namespace GoF2Remake.Flight
                     float best = reach2;
                     foreach (var cr in Crate.All)
                     {
-                        if (cr == null || cr.pulled || cr == Salvaging || cr.stolenFrom != null || cr.claimedByOther || !cr.HasLoot) continue;
+                        if (cr == null || cr.pulled || cr == Salvaging || cr.Stolen || cr.claimedByOther || !cr.HasLoot) continue;
                         if (cr.missionCrate && !room) continue;   // it would only come back: the hold has no room for it
                         float d = (cr.transform.position - transform.position).sqrMagnitude;
                         if (d < best) { best = d; pickCrate = cr; }
@@ -484,7 +510,7 @@ namespace GoF2Remake.Flight
             float best = float.MaxValue;
             foreach (var cr in Crate.All)
             {
-                if (cr.stolenFrom != null || !cr.HasLoot || cr.claimedByOther) continue;
+                if (cr.Stolen || !cr.HasLoot || cr.claimedByOther) continue;
                 if (onScreenOnly)
                 {
                     if (cam == null) return;
@@ -523,7 +549,9 @@ namespace GoF2Remake.Flight
             }
             // TractorBeam::update lets go when the ship is gone (Player::isActive); a dying one keeps its crate coming, which
             // becomes the ship's crate when it explodes (NpcShip.DropCrate).
-            if (Salvaging.stolenFrom != null && ((!Salvaging.stolenFrom.Target.Alive && !Salvaging.stolenFrom.Dying) || Salvaging.stolenFrom.Gone))
+            var remote = Salvaging.stolenFromRemote;
+            if ((Salvaging.stolenFrom != null && ((!Salvaging.stolenFrom.Target.Alive && !Salvaging.stolenFrom.Dying) || Salvaging.stolenFrom.Gone))
+                || (remote != null && (!remote.Alive || !remote.isActiveAndEnabled || !remote.NetStealable)))
             {
                 Destroy(Salvaging.gameObject);
                 Salvaging = null;
@@ -561,7 +589,8 @@ namespace GoF2Remake.Flight
             int free = Shop.FreeCargo(db);
             var ship = crate.stolenFrom;
             // KIPlayer::captureCrate: rnd(amount) only from a living ship; a dying one gives it all and leaves no crate.
-            int want = ship != null && ship.Target.Alive ? UnityEngine.Random.Range(0, entry.amount) : entry.amount;
+            var remoteShip = crate.stolenFromRemote;
+            int want = (ship != null && ship.Target.Alive) || remoteShip != null ? UnityEngine.Random.Range(0, entry.amount) : entry.amount;
             if (ship != null && !ship.Target.Alive) ship.LootTaken();
             int n = Mathf.Max(1, Mathf.Min(want, free));
             n = Mathf.Min(n, entry.amount);
@@ -574,12 +603,14 @@ namespace GoF2Remake.Flight
                 if (crate.missionCrate && ship == null) { crate.pulled = false; return; }
                 entry.amount -= n;
                 ship?.StealFrom(entry.item, n);
+                remoteShip?.RemoteSteal?.Invoke(entry.item, n);
                 crate.CapturedHere?.Invoke();
                 Destroy(crate.gameObject);
                 return;
             }
             entry.amount -= n;
             ship?.StealFrom(entry.item, n);
+            remoteShip?.RemoteSteal?.Invoke(entry.item, n);   // multiplayer: off the owner's ship (NetProxy)
             var mounted = db.Item(entry.item)?.TypeId == 1 ? Session.Equipment.Find(e => e.item == entry.item) : null;
             if (mounted != null) mounted.amount += n; else Shop.AddToCargo(entry.item, n);
             Session.CratesSalvaged += n;   // Status::crateCaptured
@@ -594,7 +625,7 @@ namespace GoF2Remake.Flight
             Message?.Invoke($"{n}t {GameNames.Item(entry.item)}", 2, HudMessageKind.Gain);
             // Remake: a crate of several stacks (the remake's own: a capital ship's, a pirate outpost's by tier; the
             // original's crates hold one) gives every one of them, as far as the hold has room (it used to give the first).
-            if (ship == null && !crate.missionCrate)
+            if (!crate.Stolen && !crate.missionCrate)
                 foreach (var more in crate.loot)
                 {
                     if (more == entry || more.amount <= 0) continue;
