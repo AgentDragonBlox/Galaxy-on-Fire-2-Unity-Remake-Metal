@@ -149,9 +149,9 @@
                     <ui:ScrollView name="bindingsPage" class="tab-page options-scroll" />
                     <ui:ScrollView name="gameplayPage" class="tab-page options-scroll" />
                     <ui:ScrollView name="accessibilityPage" class="tab-page options-scroll" />
-                    <ui:VisualElement name="languagePage" class="tab-page">
+                    <ui:ScrollView name="languagePage" class="tab-page options-scroll">
                         <ui:VisualElement name="languageList" class="language-list" />
-                    </ui:VisualElement>
+                    </ui:ScrollView>
                     <ui:VisualElement class="options-footer">
                         <ui:Button name="optionsBack" class="menu-button back-button gof-semibold" />
                         <ui:Button name="optionsDefaults" class="menu-button back-button options-defaults gof-semibold" />

@@ -259,14 +259,6 @@
     max-width: 1240px;
 }
 
-/* Modified: the Language page as tall as the other tabs' scroll pages (GoF2Common.uss .options-scroll): sized by its few
-   buttons, the window shrank whenever that tab was shown. */
-#languagePage {
-    height: 560px;
-    flex-shrink: 1;
-    min-height: 160px;
-}
-
 .panel--wide {
     max-width: 1020px;
 }
@@ -1760,9 +1752,12 @@
     color: var(--gof-amber);
 }
 
+/* The Language page is a scroll page like the other tabs (.options-scroll): a fixed box, its buttons ran past the bottom
+   on a phone, over the voice language row, and the last one couldn't be reached. */
 .language-list {
     flex-direction: row;
     flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
 /* The voice language row under the text language buttons. */
