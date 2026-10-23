@@ -321,6 +321,7 @@ namespace GoF2Remake.UI
             raceLabel.text = race >= 0 && race < 4 ? T(406 + race) : "";
             raceLabel.style.display = raceLabel.text.Length > 0 ? DisplayStyle.Flex : DisplayStyle.None;
             ShowRaceIcon(raceLabel.parent, race, st != null ? st.index : -1);
+            shownCredits = shownLoad = shownMaxLoad = int.MinValue;   // the funds plates again in this language (UpdateFunds)
             hangarButton.text = T(167).ToUpperInvariant();
             loungeButton.text = T(398).ToUpperInvariant();
             mapButton.text = T(177).ToUpperInvariant();
