@@ -112,14 +112,14 @@ screen is drawn at one scale **S**, the largest of these:
 | Desktop | 1 | the design's own size: body text 20 px on a 1080p monitor (XAG's PC minimum is 18 px) |
 | Handheld (Steam Deck: `SteamDeck=1`; a small Linux screen) | 1.25 | 30 cm away: the caption reaches Steam Deck's recommended 12 px |
 | TV (an Xbox, `UwpDisplay`) | 1.3 | 3 m away: the body text comes out at 26 px, XAG's console minimum |
-| Phone (`UnityEngine.Device.Application.isMobilePlatform`, < 7.5″) | 1.5 | the body text at about 2 mm, the caption near Apple's 11 pt minimum |
+| Phone (`UnityEngine.Device.Application.isMobilePlatform`, < 7.5″) | 1.2 | the body text at about 1.6 mm on a 20:9 phone, a 900-unit panel (1.5 until 2026-10-23: a 720-unit panel read too big and the main menu's nine rows ran off it) |
 | Pixel floor | 11 px ÷ caption | the 16-unit caption is never drawn smaller than 11 screen pixels (a 720p or 540p screen) |
 
 Options > Graphics **Interface size** (80–150 %) multiplies S (XAG 101 asks for user-adjustable text size).
 
 The panel shows 1080 ÷ S units of height, and **never fewer than 1280 units of width** (`PanelScreenMatchMode.Expand`).
 A 1:1 or 4:3 screen therefore makes the whole UI smaller rather than cutting it off. Every layout must work at
-**1280 × 720 units**, the smallest panel there is: a 16:9 phone, or a desktop at 150 %.
+**1280 × 720 units**, the smallest panel there is: a desktop at 150 % (a phone shows 900 units of height, 720 at 125 %).
 
 `UiLayout.Configure` sets these classes on the screen's root for the USS to adapt to:
 
@@ -177,8 +177,9 @@ up to the scale. The scale itself never changes per platform: the panel scale ab
   Panels pad 32–44 units; rows sit 4–12 apart.
 - **Pointer targets:** at least 40 units high.
 - **Touch targets:** on phones every interactive row and button is at least 64 units high (`.layout-phone` in
-  `GoF2Common.uss`). That is about 7 mm on a 6.7″ phone, near Apple's 44 pt; Material's 48 dp would be about 84 units,
-  which a nine-entry menu on a 720-unit panel can't fit. Neighbours sit at least 8 units apart. A small visual can sit in a larger hit area (padding with a
+  `GoF2Common.uss`). That is about 5.5 mm on a 6.7″ phone, under Apple's 44 pt (7 mm), traded for a phone that doesn't read oversized.
+  Neighbours sit at least 8 units apart, but for the main menu's rows, which touch on phones (`.layout-phone
+  .main-column--full`) so that all nine fit above the version line. A small visual can sit in a larger hit area (padding with a
   negative margin, as `.footer-version` does).
 - **Icons** (the "?" help): 34–40 units, with their hit area padded to the touch minimum.
 

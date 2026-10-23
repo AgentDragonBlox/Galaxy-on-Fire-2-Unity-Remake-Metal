@@ -6,7 +6,8 @@
 //
 // The panel is laid out in units of a 1920 x 1080 design ("panel units", what the USS px mean). Each screen is scaled by
 // one factor S:
-//  - the device class: desktop 1, handheld (Steam Deck, a small Windows / Linux screen) 1.25, TV (an Xbox) 1.3, phone 1.5;
+//  - the device class: desktop 1, handheld (Steam Deck, a small Windows / Linux screen) 1.25, TV (an Xbox) 1.3, phone 1.2
+//    (1.5 until 2026-10-23: on a 20:9 phone the main menu ran off the screen and everything read too big, the user's report);
 //  - a pixel floor: the smallest text (the caption, 16 units) is never drawn under 11 real pixels (a 720p or 540p screen);
 //  - the player's Options > Graphics "Interface size" (80..150 %) on top.
 // The panel then shows 1080 / S units of height (PanelScreenMatchMode.Expand), but never fewer than MinWidth units of
@@ -86,7 +87,7 @@ namespace GoF2Remake.UI
         {
             Device.Handheld => 1.25f,
             Device.Tv => 1.3f,
-            Device.Phone => 1.5f,
+            Device.Phone => 1.2f,
             _ => 1f,
         };
 

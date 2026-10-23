@@ -2001,8 +2001,26 @@
     display: none;
 }
 
+/* Rows 64 units high, the touch minimum (docs/UI-DESIGN.md "Touch targets"; 72 with 16 units of padding). */
 .layout-phone .menu-button {
-    padding: 16px 24px;
+    padding: 12px 24px;
+}
+
+/* The column's top padding is a share of the width: on a 20:9 phone that put the first row a fifth of the height down
+   and the nine rows ran past the version line. Under the logo instead (its bottom 22 % of the panel's 900 units). */
+.layout-phone .main-column {
+    padding-top: 200px;
+}
+
+.layout-phone .main-column--full {
+    padding-top: 190px;
+    padding-bottom: 96px;
+}
+
+/* All nine rows (Resume and Debug shown) end above the version line's tap zone (.footer-version, 791 units down on a
+   900-unit panel) only without the 4-unit margins: the rows touch, each still 64 units high. */
+.layout-phone .main-column--full .main-buttons .menu-button {
+    margin: 0;
 }
 
 .layout-phone .panel-host {

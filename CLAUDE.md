@@ -961,7 +961,8 @@ The FMOD data comes from the FEV's LGCY chunk (`Reference/tools/audio/fev_lgcy.p
   code uses `UiLayout.Type`), the scaling model, layout, contrast, focus, navigation and button prompts, and how to check
   a screen at ten sizes (`UiShots`, GoF2 > Tools > UI Screenshots). Follow it for any UI change.
 - **Scaling** (`UiLayout`, Space/UI): every panel is laid out in units of the 1920 x 1080 design and scaled by S = the
-  device class (desktop 1, handheld 1.25 (Steam Deck), TV 1.3 (Xbox, `UwpDisplay` sets `TvDetected`), phone 1.5), at least
+  device class (desktop 1, handheld 1.25 (Steam Deck), TV 1.3 (Xbox, `UwpDisplay` sets `TvDetected`), phone 1.2 (1.5 until 2026-10-23: too big on a 20:9 phone, the
+  main menu's rows ran off it; its column now starts under the logo and its nine rows touch, `.layout-phone`)), at least
   enough for the 16-unit caption to take 11 real pixels, x Options > Graphics "Interface size" (80-150 %); the panel shows
   1080 / S units of height but never under 1280 of width (`PanelScreenMatchMode.Expand`: 1:1 / 4:3 shrink instead of
   clipping). Root classes `layout-narrow` / `-square` / `-ultrawide` / `-compact` (< 1800 units wide: the main menu hides
