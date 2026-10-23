@@ -146,13 +146,19 @@ namespace GoF2Remake.World
         public const float TurntablePixelsPerRadian = 120f;
 
         /// <summary>UNK_00253ee8: parked ships = nextInt(max + 1). Remake: Midorian 5 (the original's 3), its remodelled
-        /// room's third row of pads (ParkedSlots).</summary>
-        public static readonly int[] ParkedMax = { 2, 9, 2, 5, 0, 0, 0, 3, 0 };
+        /// room's third row of pads; Terran 5 (the original's 2), its remodelled room's three new pads (ParkedSlots).</summary>
+        public static readonly int[] ParkedMax = { 5, 9, 2, 5, 0, 0, 0, 3, 0 };
 
         /// <summary>Parked-ship slots (UNK_00253f10 ...); the ship's own height is added to y.</summary>
         public static readonly Vector3[][] ParkedSlots =
         {
-            new[] { new Vector3(0, 0, 2891), new Vector3(0, 0, 5781) },
+            new[]
+            {
+                new Vector3(0, 0, 2891), new Vector3(0, 0, 5781),
+                // Remake: the remodelled Terran room's new pads (2026-10-23), measured on its mesh with rays (the same pad
+                // as the original two, at their height): a second column beside them, and one behind the turntable.
+                new Vector3(5459, 0, 2891), new Vector3(5459, 0, 5781), new Vector3(0, 0, -2891),
+            },
             new[]
             {
                 new Vector3(-3715, 0, 661), new Vector3(-6983, 36, 2548), new Vector3(-9408, 36, 5438),

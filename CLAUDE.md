@@ -807,6 +807,23 @@ Research: `Reference/research/mining.md` (+ `Reference/tools/mining/mining_table
   hand, x6 has no resource id). Its third row of pads, behind the turntable, are parked slots 3 / 4 (`StationTables.ParkedSlots`,
   game (0, 0, -4096) a raised pedestal like slot 2, (-4096, 0, -4096) a sunk pad like the turntable's; `ParkedMax` 5). The hangar
   heights were rebuilt for it.
+- **Terran hangar, remodel** (remake, 2026-10-23, the user's files, already converted: `hangar_terran*.fbx` + their
+  `.gof2mesh.json` sidecars, written by the remake's aem2fbx from new .aem files): the room made bigger (a second shell
+  part, room bounds ~910 x 335 x 1090 m), the props copied around it (x2-x6 and their shadow layers up to 4 / 6 parts, the
+  `_add` lights 7), the four robots re-animated for the room (new paths and timing) and the `_add` lights' blink on a
+  4.6 s loop. They replace the 22 models and sidecars in `Models/main/hangars` in place (same .meta GUIDs, so the
+  per-mesh prefabs and the assembly keep working; the old ones only in git history). The model importer brings no
+  materials (`materialImportMode` None), so every part the prefabs didn't have showed Unity's default Lit: each per-mesh
+  prefab's renderers were given their file's game material with PrefabUtility (`_add` 20078, `_alpha` / `_shadow_alpha`
+  20077, the rest 24070, resources.json); the new shell's meshes are named `hangar_terran_v3` / `.001` (Blender names, not
+  `_part0`), which nothing reads by name (the shell has no animation). Three new pads, the same pad model at the old ones'
+  height (pit floor -62.5 m, ring -49.1 m), measured with rays on the assembled room in a preview scene: game (5459, 0,
+  2891), (5459, 0, 5781) beside the original two and (0, 0, -2891) behind the turntable, parked slots 2-4
+  (`StationTables.ParkedSlots[0]`, `ParkedMax` 2 -> 5): NPC ships park and land there. The flight lane is unchanged (the
+  forcefield still at z -549; nothing under 90 m on the way to any pad but 14.5 m near the field, the 161 m girders well above
+  the 45 m cruise). Hangar heights rebuilt (Terran 24 -> 48 entries, the same eight ships lifted on every pad; every other
+  hangar identical). Checked in Play mode at Dis: parked ships on all five slots, centred; NPC landings on slots 2 and 3 and a
+  take-off from slot 4.
 
 ## Shop
 
