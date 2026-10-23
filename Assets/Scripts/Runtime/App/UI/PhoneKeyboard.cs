@@ -6,6 +6,8 @@
 // new Open) ends in Unity's UGASoftKeyboard::UpdateTextInputState, which pushes the text to Android and restarts the IME's
 // input connection (GameActivity_restartInput, see the Editor's AndroidPlayer/Source/GameActivity/UGASoftKeyboard.cpp),
 // and a restart ends the keyboard's key repeat; UI Toolkit's soft keyboard keeps its keyboard in step with the field.
+// The repeat also ended for a reason the game doesn't control: GameActivity's text input restarts the keyboard after
+// every key event, and Gboard sends Backspace as one (logcat, 2026-10-23); GoF2GameActivity (Plugins/Android) takes it.
 // The HUD chat (ChatView) does the same with its own send / close rules.
 //   Attach(field, done): on a device with an on-screen keyboard (else nothing). Focusing the field opens it with the
 //   field's text, type and password flag; while it is up its text goes into the field (cut to the field's maxLength there,
@@ -64,6 +66,17 @@ namespace GoF2Remake.UI
                 });
             }
             field.RegisterCallback<DetachFromPanelEvent>(_ => { if (owner == field) Close(); });
+        }
+
+        /// <summary>Sets the field's text and, while the game's keyboard types into it, the keyboard's too (else the next poll
+        /// put the keyboard's text back: the multiplayer window's Send left the sent line in the field). One write, one
+        /// restart of the keyboard's input.</summary>
+        public static void SetText(TextField field, string text)
+        {
+            if (field == null) return;
+            field.value = text ?? "";
+            field.SelectRange(field.value.Length, field.value.Length);
+            if (owner == field && keyboard != null && keyboard.status == TouchScreenKeyboard.Status.Visible) keyboard.text = field.value;
         }
 
         static void Open(TextField field, Func<bool> done)

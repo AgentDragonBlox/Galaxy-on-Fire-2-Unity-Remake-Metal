@@ -1453,8 +1453,7 @@ namespace GoF2Remake.UI
         void SendChat()
         {
             string line = chatField.value;
-            chatField.value = "";
-            chatField.SelectRange(0, 0);
+            PhoneKeyboard.SetText(chatField, "");   // a phone's keyboard emptied too
             if (!string.IsNullOrWhiteSpace(line)) NetChat.Send(line);
             chatField.schedule.Execute(() => chatField.Focus()).ExecuteLater(1);   // keep typing
         }

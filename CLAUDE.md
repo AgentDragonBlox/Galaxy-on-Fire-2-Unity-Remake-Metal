@@ -1765,7 +1765,13 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   `bottom: auto` there, from the left edge); any other text field on a phone (the pilot name prompt, the Host card, the
   Mod Builder) slides its screen up above the keyboard while focused (`KeyboardLift.Watch` beside `PadKeyboard.Attach`:
   the root's translate, TouchScreenKeyboard.area or 55 % of the screen; GameActivity's keyboard shows no input box of its
-  own); the send and channel keys are rebindable rows read straight from the devices
+  own); a held Backspace repeats (2026-10-23, found in logcat: GameActivity's GameTextInput restarts the keyboard's input
+  after every key event its view gets, `InputConnection.onKey` -> `restartInput`, and Gboard sends Backspace to the game's
+  view as KEYCODE_DEL key events, so every field deleted one character and stopped, the game's own writes or not: the
+  activity is `com.unity3d.player.GoF2GameActivity`, `Plugins/Android/GoF2GameActivity.java`, put in the manifest by the
+  Editor's `AndroidGameActivity`, whose view takes the soft keyboard's Backspace while the keyboard is up and makes the
+  edit through the input connection without the restart); Send with the keyboard up empties the keyboard's text too
+  (`PhoneKeyboard.SetText`; the poll had copied the sent line back); the send and channel keys are rebindable rows read straight from the devices
   (`GameControls.PressedNow`: the flight map is off while typing), and their key events and characters stay out of the
   line. The field keeps the focus: the project-wide UI map's Navigate (arrows, W A S D), Tab and Submit (Space / Enter)
   are swallowed there (`StopPropagation` + `focusController.IgnoreEvent`: stopping alone still moved the focus to a menu
@@ -2335,7 +2341,7 @@ now takes an option right after another (a dash and a letter) as no value). `Boo
   -mpname Pilot2` (`-mpjoin`: the menu skips its intro and joins, again every 2 s until a host answers; development
   builds also take `-mpdock` (docks once, a few seconds into the first flight after launching) and `-mpaccept` (accepts squad invitations
   while docked) and `-mptrade` (accepts trade requests while docked, offers 500 credits, accepts once the other side has) and `-mphost` (hosts from the menu), so the real hangar / squad flows run without a hand on the client
-  (a phone: `adb shell "am start -n com.joppietoppie.gof2remake/com.unity3d.player.UnityPlayerGameActivity -e unity
+  (a phone: `adb shell "am start -n com.joppietoppie.gof2remake/com.unity3d.player.GoF2GameActivity -e unity
   '-mphost -mpname Phone'"`). **Switch the active build profile before building another platform**: URP picks the shader
   variants to keep from the *active* build target's quality levels (`ShaderBuildPreprocessor`), so an Android APK built
   while Windows was active stripped URP's post-processing shaders (UberPost) and rendered lit geometry black;

@@ -33,6 +33,9 @@
 // the cursor, selection). The line never selects all on focus: after a send the next line's letters showed highlighted.
 // Nothing writes to the keyboard while it is up (PhoneKeyboard's header: on GameActivity a write restarts the IME, which ends
 // a held Backspace's repeat); the row's buttons (Local / Global, Send, close) keep the typing and the keyboard.
+// What really ended the repeat (2026-10-23, logcat on a phone): GameActivity's text input restarts the keyboard after every
+// key event it gets, and Gboard sends Backspace as one; GoF2GameActivity (Plugins/Android) now takes that key itself.
+// GameActivity shows no input box of its own above the keyboard, whatever hideInput says.
 // Opening (remake rework, players' request, like Minecraft): in flight Enter opens the chat too (in a session Enter is no
 // longer the action prompt's second key, F stays; the station keeps Enter for its menus), and "/" (the typed character,
 // so any keyboard layout) opens it with the "/" already in the line, ready for a command; neither while a menu, a
@@ -430,6 +433,9 @@ namespace GoF2Remake.UI
             completionLine = null; completionIndex = -1; completedText = null;
             field.value = "";
             field.SelectRange(0, 0);
+            // The Send button with the keyboard still up: its text goes too (PollKeyboard copied the sent line back into
+            // the field). One write: the keyboard's input restarts once, which no key is held through.
+            if (keyboard != null && keyboard.status == TouchScreenKeyboard.Status.Visible) keyboard.text = "";
             focusTries = FocusFrames;
             field.Focus();
             OpenKeyboard();
