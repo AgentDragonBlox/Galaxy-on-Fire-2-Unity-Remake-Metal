@@ -169,13 +169,25 @@ namespace GoF2Remake.Flight
         public void SetWormhole(GoF2Remake.World.Wormhole wormhole)
         {
             this.wormhole = wormhole;
-            Targets.RemoveAll(t => t.kind == Kind.Wormhole);
+            if (wormholeTarget != null) Targets.Remove(wormholeTarget);
+            wormholeTarget = null;
             if (wormhole == null) return;
             wormholeTarget = new Target { kind = Kind.Wormhole, transform = wormhole.transform, name = Localization.Get(545), hidden = !wormhole.Visible };
             Targets.Add(wormholeTarget);
         }
-        GoF2Remake.World.Wormhole wormhole;
-        Target wormholeTarget;
+        GoF2Remake.World.Wormhole wormhole, eventWormhole;
+        Target wormholeTarget, eventWormholeTarget;
+
+        /// <summary>Remake events: an event's wormhole, marked like landmark 3 (never a lock candidate).</summary>
+        public void SetEventWormhole(GoF2Remake.World.Wormhole w)
+        {
+            eventWormhole = w;
+            if (eventWormholeTarget != null) Targets.Remove(eventWormholeTarget);
+            eventWormholeTarget = null;
+            if (w == null) return;
+            eventWormholeTarget = new Target { kind = Kind.Wormhole, transform = w.transform, name = Localization.Get(545), hidden = !w.Visible };
+            Targets.Add(eventWormholeTarget);
+        }
 
         /// <summary>ObjectDocking on the player (set by the level): locked docking targets dock through it.</summary>
         [NonSerialized] public ObjectDocking Docking;
@@ -319,7 +331,7 @@ namespace GoF2Remake.Flight
             }
             if (layout.hasJumpgate)
                 Targets.Add(new Target { kind = Kind.Jumpgate, fixedPosition = OrbitLayout.ToUnity(layout.jumpgate), name = Localization.Get(547) });
-            if (layout.systemIndex >= 0)
+            if (layout.systemIndex >= 0 && layout.asteroidCount > 0)   // remake mods: an orbit without a field has no entry
                 AsteroidField = new Target { kind = Kind.AsteroidField, fixedPosition = OrbitLayout.ToUnity(layout.asteroidCentre), name = Localization.Get(549) };
             // StarSystem::getPlanetTargets: the other stations' planets (the orbit planet is the current station's own).
             if (backdrop != null)
@@ -554,6 +566,7 @@ namespace GoF2Remake.Flight
             UpdateDockingTargets();
             if (Docking != null && Docking.Busy) { Candidate = Locked = null; LockTimer = 0f; wasLocked = false; return; }
             if (wormholeTarget != null) wormholeTarget.hidden = !wormhole.Visible;
+            if (eventWormholeTarget != null) eventWormholeTarget.hidden = eventWormhole == null || !eventWormhole.Visible;
             UpdateStationShown();
             // Radar::draw's planet block runs only above campaign mission 1 and outside the alien orbit: no planet locks,
             // names or icons in the prologue and the rescue (autopilot_travel.md 1.4).

@@ -454,7 +454,7 @@ namespace GoF2Remake.UI
             "/ voices.md / events.md / guide.md for numbers and formats). Find the game's, this project's and other mods' content " +
             "with search_content (use the values it returns); read entries with list_entries / get_entries, write them with " +
             "put_entry (the same JSON as the mod files: ships.json, items.json, characters.json, systems.json, stations.json, " +
-            "interiors.json, blueprints.json, gameoptions.json, campaign.json, mod.json, events/<name>.gof2quest), files " +
+            "interiors.json, blueprints.json, gameoptions.json, campaign.json, mod.json, events/<name>.gof2mission), files " +
             "(images, models, audio) with write_file. Check with validate (and compile_mission for a mission); try it with " +
             "play_test, read get_log and take a screenshot. Every change is an undo step in the builder (the undo tool takes the " +
             "last one back). To see your work: view_model draws any model (game, project ship with its hardpoints, station, .glb) " +
@@ -463,7 +463,11 @@ namespace GoF2Remake.UI
             "weapon_range, engines, switch_hangar, and the projects (list_projects, create_project, open_project, import_mod, export_mod). " +
             "Audio: search_content kinds music / sound / voice give the game's track, sound and voice line names a file of the " +
             "same name replaces (voices per language in voices/<code>/); any other name is new. A story character is replaced " +
-            "with replace_game_character; the game's .aem models convert on write_file; optimize shrinks big models and textures. ";
+            "with replace_game_character; the game's .aem models convert on write_file; optimize shrinks big models and textures. " +
+            "A station's star map planet is stations.json mapTexture (a 2:1 map wrapped round the sphere) / mapRing; a sky that " +
+            "turns its top to each orbit's sun is skybox.sunAligned; a station's orbit level (station / jumpgate / arrival / asteroids / " +
+            "fog / sun / planet) is stations.json orbit and its map planet's place mapPlace (SKILL.md); a mission's wormhole step opens a wormhole whose destination " +
+            "may be a variable; play_test mode mission offers a bar mission in the Space Lounge to take as a player would. ";
 
         /// <summary>The instructions' line on the permission mode (builder_status says the current one).</summary>
         static string PermissionNote(Permissions p) => p switch

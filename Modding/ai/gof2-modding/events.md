@@ -327,6 +327,14 @@ Flow: in; out: Next.
 |---|---|---|---|---|
 | input | Players | Text | `@a` | Who: @a everyone, @r a random player, @alive, @space, @docked, @dead, @survivors (never destroyed since the fight began), or a player's name. |
 
+### Close Wormhole
+
+Flow: in; out: Next.
+
+| Kind | Name | Type | Default | What it is |
+|---|---|---|---|---|
+| input | Players | Text | `@a` | Who: @a everyone, @r a random player, @alive, @space, @docked, @dead, @survivors (never destroyed since the fight began), or a player's name. |
+
 ### Free For All
 
 Flow: in; out: Next.
@@ -370,6 +378,18 @@ Flow: in; out: Next.
 |---|---|---|---|---|
 | option | On | Yes/No | `yes` | On: the orbit is the mission's from the next arrival, no normal traffic is built there (like a story orbit), until off or the mission's end. Off: normal again. |
 | input | Orbit | Orbit |  | The orbit (wire Get Orbit in). |
+
+### Open Wormhole
+
+Flow: in; out: Next.
+
+| Kind | Name | Type | Default | What it is |
+|---|---|---|---|---|
+| input | Players | Text | `@a` | Who: @a everyone, @r a random player, @alive, @space, @docked, @dead, @survivors (never destroyed since the fight began), or a player's name. |
+| input | Orbit | Orbit |  | The orbit the wormhole opens in (wire Get Orbit in). |
+| input | At | Text |  | Game coordinates "x y z" in that orbit (/pos shows yours); empty = 4 km out, beside the launch path. Keep it 2 km (40000) clear of the line straight ahead of the station (x 0, y 0): launching ships fly along it. |
+| input | Destination | Orbit |  | Where flying in takes them (wire Get Orbit in: a station, "void", or a wired number such as a variable). A stream-out arrival there, with a wormhole closing behind. |
+| input | Seconds | Number | `0` | Open this many seconds (0 = until Close Wormhole or the event's end). One per player: a new one replaces it. |
 
 ### Restrict Travel
 
@@ -838,6 +858,7 @@ leading `/`, the dedicated server's console without it. `[players]` is a player'
 | /provoke | [players] [race] [within <metres>] | admins: the NPC ships around them turn on them and their squad (a race, a distance) |
 | /radio | [players] <speaker> : <text> | admins: a radio call in flight (a face, a name, gone by itself); speakers as /dialog |
 | /waypoint | [players] <station x y z / off> | admins: a waypoint to fly to (game coordinates in a station's orbit; /pos shows yours) |
+| /wormhole | [players] <station> [x y z] to <station / void> [for <seconds>] / close | admins: a wormhole in a station's orbit; flying in takes them to another station or the Void |
 | /cutscene | [players] <start [nobars] [freeze] [invulnerable] / end> | admins: cinematic mode in flight (no HUD or controls, letterbox) until end |
 | /camera | [players] <place [to place] [over s] [look place] [follow] [fov deg] [shake 0-1] / chase> | admins: a camera shot; places as /npc (player, station, x y z, ship <name>); chase ends it |
 | /npc | [players] <ship> <goto place / route place / place ... [loop] / follow / escort / attack <player / ship "name"> / flee / dock / hold / resume / jump / speed n> [speed n] [radius r] [fight] [then hold / resume / vanish / jump] | admins: orders for spawned ships by name: fly somewhere, follow / escort, attack, flee, dock, hold, resume |

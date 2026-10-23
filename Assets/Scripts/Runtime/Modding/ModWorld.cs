@@ -17,7 +17,13 @@
 // "sphere", "none", or "volumes": [{ "box": [x, y, z, hx, hy, hz] } | { "sphere": [x, y, z, r] }] in game units around the
 // station; built by ModStations, "looksLike" stands in while it loads or when it fails), "interior" (the hangar and bar:
 // terran / vossk / nivelian / midorian or 0-3; default the system's race), "planetTexture" (a PNG with transparency: the
-// station's planet, seen from its own orbit and the system's others); systems: "sunTexture" (a PNG), "sunColor" [r, g, b]
+// station's planet, seen from its own orbit and the system's others), "mapTexture" (the star map's planet: an image wrapped
+// round the map's sphere, a 2:1 one like a world map; without it a "planetTexture" faces the map's camera as a disc, else the
+// game's planet for "planet"), "mapRing" (true: a ring round the map's planet, like the planet ring orbits'), "mapPlace"
+// ({ "angle": degrees, "distance": map units }: the planet's place in the star map's system view, else the seeded one), "orbit"
+// (the orbit level's layout over the seeded one, OrbitSpec: station shown / without docking / none, the visible jumpgate and
+// its position, where travel arrives, the asteroid field (none, count, centre, spread, kind, ores), fog, the sun's and the
+// orbit planet's direction and size); systems: "sunTexture" (a PNG), "sunColor" [r, g, b]
 // 0..1 (the sun's light; default from "sky").
 // stations.json: { "id", "system": "mod:id" | number, "name", "techLevel" (0-10), "planet" (its planet texture: 0-22 or
 //   24-26 like the originals), "looksLike": a station number (its model and collision; default the first original
@@ -70,7 +76,7 @@ namespace GoF2Remake.Modding
               "sunTexture", "sunColor", "skybox", "available" };
         static readonly HashSet<string> StationFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             { "id", "override", "name", "system", "techLevel", "planet", "looksLike", "music", "model", "modelSize", "modelYaw", "modelCentre",
-              "materials", "collision", "volumes", "interior", "planetTexture", "hangar", "bar" };
+              "materials", "collision", "volumes", "interior", "planetTexture", "mapTexture", "mapRing", "mapPlace", "orbit", "hangar", "bar" };
 
         /// <summary>ModContent.Parse: a mod's systems.json and stations.json into 'systems' / 'stations'.</summary>
         public static void Parse(ModInfo mod, List<Def> systems, List<Def> stations)
@@ -103,6 +109,12 @@ namespace GoF2Remake.Modding
                 ReadVolumes(o, d);   // checks the list
                 if (ModJson.Has(o, "materials") && !(ModJson.Get(o, "materials") is JArray))
                     throw new ModJsonException($"{d.where}: \"materials\" must be a list like ships.json's");
+                foreach (string image in new[] { "planetTexture", "mapTexture" })
+                    if (ModJson.Str(o, image) is string file && !mod.Source.Exists(file))
+                        throw new ModJsonException($"{d.where}: the {image} {file} isn't in the mod");
+                ModJson.Bool(o, "mapRing", false, d.file);
+                if (ModJson.Get(o, "orbit") is JToken orbitToken) ParseOrbit(mod, orbitToken, d.where, null);
+                if (ModJson.Get(o, "mapPlace") is JToken placeToken) ParseMapPlace(placeToken, d.where);
             });
 
         }
@@ -226,7 +238,9 @@ namespace GoF2Remake.Modding
         /// <summary>A station's custom hangar / bar (stations.json "hangar" / "bar": an interiors.json key; ModInteriors), null: none.</summary>
         public static string HangarKey(int station) => stationHangar.TryGetValue(station, out var k) ? k : null;
         public static string BarKey(int station) => stationBar.TryGetValue(station, out var k) ? k : null;
-        static readonly Dictionary<int, string> planetTextures = new Dictionary<int, string>(), sunTextures = new Dictionary<int, string>();
+        static readonly Dictionary<int, string> planetTextures = new Dictionary<int, string>(), sunTextures = new Dictionary<int, string>(),
+                                                mapTextures = new Dictionary<int, string>();
+        static readonly HashSet<int> mapRings = new HashSet<int>();
         static readonly Dictionary<int, Color> sunColors = new Dictionary<int, Color>();
 
         /// <summary>The station's own model (null: an original's, "looksLike").</summary>
@@ -241,6 +255,167 @@ namespace GoF2Remake.Modding
         /// <summary>A station's own planet texture (Backdrop's "mod:" name, ModBackdrop), null: the game's.</summary>
         public static string PlanetTexture(int station) => planetTextures.TryGetValue(station, out var t) ? t : null;
 
+        /// <summary>A station's star map planet image (stations.json "mapTexture", wrapped round the map's sphere; Backdrop's
+        /// "mod:" name), null: none (StarMap then shows its planetTexture as a disc, else the game's planet).</summary>
+        public static string MapTexture(int station) => mapTextures.TryGetValue(station, out var t) ? t : null;
+
+        /// <summary>The station's planet has a ring on the star map (stations.json "mapRing").</summary>
+        public static bool MapRing(int station) => mapRings.Contains(station);
+
+        /// <summary>A station's orbit level laid out by its mod (stations.json "orbit"), applied by OrbitLayout.Build over the
+        /// seeded layout; null fields keep the game's. Positions in game units around the station (the orbit's centre).</summary>
+        public sealed class OrbitSpec
+        {
+            /// <summary>-1 the game's; 0 no station (an empty orbit); 1 a station to dock at; 2 its model without docking.</summary>
+            public int station = -1;
+            public bool? jumpgate;
+            public Vector3? jumpgatePosition, arrival;
+            /// <summary>false: no asteroid field.</summary>
+            public bool? asteroids;
+            public int? asteroidCount;
+            public Vector3? asteroidCentre;
+            /// <summary>The field's size (game units: the small asteroids' cube side; the big ones in 0.6 of it). Default 100000.</summary>
+            public float? asteroidSpread;
+            /// <summary>-1 the game's; 0 rock, 1 Void crystal, 2 ice, 3 magma.</summary>
+            public int asteroidType = -1;
+            /// <summary>The ores (item, chance weight), null: the system's by distance like the game's.</summary>
+            public List<(int item, int chance)> ores;
+            public bool? fog;
+            public Color? fogColor;
+            public float? fogEnd;
+            /// <summary>The sun's direction: yaw (degrees, 0 straight ahead along the launch, + to the right) and pitch (+ up).</summary>
+            public Vector2? sun;
+            /// <summary>The orbit's own planet: its size (x the game's), yaw / pitch (degrees, 0 = straight ahead as the game's).</summary>
+            public float? planetSize, planetYaw, planetPitch;
+        }
+
+        /// <summary>A planet's place in the star map's system view (stations.json "mapPlace").</summary>
+        public sealed class MapPlace
+        {
+            /// <summary>Degrees round the sun (0..360), null: the seeded slot's.</summary>
+            public float? angle;
+            /// <summary>Map units from the sun (the game's planets lie about 8000 to 45000 out), null: the seeded one.</summary>
+            public float? distance;
+        }
+
+        static readonly Dictionary<int, OrbitSpec> orbits = new Dictionary<int, OrbitSpec>();
+        static readonly Dictionary<int, MapPlace> mapPlaces = new Dictionary<int, MapPlace>();
+
+        /// <summary>The station's orbit layout from its mod, null: the game's.</summary>
+        public static OrbitSpec OrbitOf(int station) => orbits.TryGetValue(station, out var o) ? o : null;
+
+        /// <summary>The station's planet place on the star map, null: the game's.</summary>
+        public static MapPlace MapPlaceOf(int station) => mapPlaces.TryGetValue(station, out var p) ? p : null;
+
+        static readonly HashSet<string> OrbitFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "station", "jumpgate", "jumpgatePosition", "arrival", "asteroids", "fog", "sun", "planet" };
+        static readonly HashSet<string> AsteroidFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "count", "centre", "center", "spread", "type", "ores" };
+        static readonly string[] AsteroidTypes = { "rock", "void", "ice", "magma" };
+
+        static Vector3? Xyz(JObject o, string key, string where)
+        {
+            var t = ModJson.Get(o, key);
+            if (t == null) return null;
+            if (!(t is JArray a) || a.Count != 3 || a.Any(v => v.Type != JTokenType.Integer && v.Type != JTokenType.Float))
+                throw new ModJsonException($"{where}: \"{key}\" must be [x, y, z] (game units)");
+            var p = new Vector3((float)a[0], (float)a[1], (float)a[2]);
+            if (Mathf.Abs(p.x) > 1e6f || Mathf.Abs(p.y) > 1e6f || Mathf.Abs(p.z) > 1e6f) throw new ModJsonException($"{where}: \"{key}\" lies too far out (at most 1000000 units)");
+            return p;
+        }
+
+        /// <summary>stations.json "orbit" (see OrbitSpec). 'mod' reports the ores it can't resolve when 'resolve' is set
+        /// (Apply; Parse only checks the shape).</summary>
+        static OrbitSpec ParseOrbit(ModInfo mod, JToken t, string where, Func<string, int> resolve)
+        {
+            if (!(t is JObject o)) throw new ModJsonException($"{where}: \"orbit\" must be an object {{ \"station\": ..., \"asteroids\": ... }}");
+            foreach (var p in o.Properties())
+                if (!OrbitFields.Contains(p.Name)) Report(mod, $"{where}: unknown orbit field \"{p.Name}\" (ignored)");
+            var s = new OrbitSpec();
+            if (ModJson.Get(o, "station") is JToken st)
+            {
+                if (st.Type == JTokenType.Boolean) s.station = (bool)st ? 1 : 0;
+                else if (st.Type == JTokenType.String && ((string)st).Equals("nodock", StringComparison.OrdinalIgnoreCase)) s.station = 2;
+                else throw new ModJsonException($"{where}: orbit \"station\" is true, false (an empty orbit) or \"nodock\" (its model, no docking)");
+            }
+            if (ModJson.Get(o, "jumpgate") is JToken jg)
+            {
+                if (jg.Type != JTokenType.Boolean) throw new ModJsonException($"{where}: orbit \"jumpgate\" is true or false");
+                s.jumpgate = (bool)jg;
+            }
+            s.jumpgatePosition = Xyz(o, "jumpgatePosition", where);
+            s.arrival = Xyz(o, "arrival", where);
+            var ast = ModJson.Get(o, "asteroids");
+            if (ast != null && ast.Type == JTokenType.Boolean) s.asteroids = (bool)ast;
+            else if (ast is JObject a)
+            {
+                foreach (var p in a.Properties())
+                    if (!AsteroidFields.Contains(p.Name)) Report(mod, $"{where}: unknown asteroids field \"{p.Name}\" (ignored)");
+                s.asteroids = true;
+                if (ModJson.Has(a, "count")) s.asteroidCount = Mathf.Clamp(ModJson.Int(a, "count", 60, StationsFile), 0, 300);
+                s.asteroidCentre = Xyz(a, "centre", where) ?? Xyz(a, "center", where);
+                if (ModJson.Has(a, "spread")) s.asteroidSpread = Mathf.Clamp(ModJson.Float(a, "spread", 100000f, StationsFile), 5000f, 500000f);
+                if (ModJson.Str(a, "type") is string type)
+                {
+                    s.asteroidType = Array.FindIndex(AsteroidTypes, x => x.Equals(type, StringComparison.OrdinalIgnoreCase));
+                    if (s.asteroidType < 0) throw new ModJsonException($"{where}: asteroids \"type\" is rock, void, ice or magma");
+                }
+                if (ModJson.Get(a, "ores") is JToken ores)
+                {
+                    if (!(ores is JArray list) || list.Count == 0) throw new ModJsonException($"{where}: asteroids \"ores\" is a list of items (numbers or \"mod_id:id\"), or {{ \"item\", \"chance\" }}");
+                    s.ores = new List<(int, int)>();
+                    foreach (var e in list)
+                    {
+                        string item = e is JObject eo ? ModJson.Get(eo, "item")?.ToString() : e.ToString();
+                        int chance = e is JObject eo2 ? Mathf.Max(1, ModJson.Int(eo2, "chance", 1, StationsFile)) : 1;
+                        if (string.IsNullOrEmpty(item)) throw new ModJsonException($"{where}: an ore without \"item\"");
+                        if (resolve == null) continue;
+                        int n = resolve(item);
+                        if (n < 0) { Report(mod, $"{where}: ore \"{item}\" is no item (left out)"); continue; }
+                        s.ores.Add((n, chance));
+                    }
+                    if (resolve != null && s.ores.Count == 0) s.ores = null;
+                }
+            }
+            else if (ast != null) throw new ModJsonException($"{where}: orbit \"asteroids\" is false or {{ \"count\", \"centre\", \"spread\", \"type\", \"ores\" }}");
+            var fog = ModJson.Get(o, "fog");
+            if (fog != null && fog.Type == JTokenType.Boolean) s.fog = (bool)fog;
+            else if (fog is JObject f)
+            {
+                s.fog = true;
+                if (ModJson.Get(f, "color") is JToken c)
+                {
+                    if (!(c is JArray ca) || ca.Count != 3) throw new ModJsonException($"{where}: fog \"color\" must be [r, g, b] (0..1)");
+                    s.fogColor = new Color(Mathf.Clamp01((float)ca[0]), Mathf.Clamp01((float)ca[1]), Mathf.Clamp01((float)ca[2]));
+                }
+                if (ModJson.Has(f, "end")) s.fogEnd = Mathf.Clamp(ModJson.Float(f, "end", 100000f, StationsFile), 5000f, 1000000f);
+            }
+            else if (fog != null) throw new ModJsonException($"{where}: orbit \"fog\" is false or {{ \"color\": [r, g, b], \"end\": units }}");
+            if (ModJson.Get(o, "sun") is JToken sun)
+            {
+                if (!(sun is JArray sa) || sa.Count != 2) throw new ModJsonException($"{where}: orbit \"sun\" must be [yaw, pitch] (degrees)");
+                s.sun = new Vector2((float)sa[0], Mathf.Clamp((float)sa[1], -89f, 89f));
+            }
+            if (ModJson.Get(o, "planet") is JToken pl)
+            {
+                if (!(pl is JObject po)) throw new ModJsonException($"{where}: orbit \"planet\" must be {{ \"size\", \"yaw\", \"pitch\" }}");
+                if (ModJson.Has(po, "size")) s.planetSize = Mathf.Clamp(ModJson.Float(po, "size", 1f, StationsFile), 0.05f, 5f);
+                if (ModJson.Has(po, "yaw")) s.planetYaw = ModJson.Float(po, "yaw", 0f, StationsFile);
+                if (ModJson.Has(po, "pitch")) s.planetPitch = Mathf.Clamp(ModJson.Float(po, "pitch", 0f, StationsFile), -89f, 89f);
+            }
+            return s;
+        }
+
+        /// <summary>stations.json "mapPlace": { "angle": degrees, "distance": map units }.</summary>
+        static MapPlace ParseMapPlace(JToken t, string where)
+        {
+            if (!(t is JObject o)) throw new ModJsonException($"{where}: \"mapPlace\" must be {{ \"angle\": degrees, \"distance\": map units }}");
+            var p = new MapPlace();
+            if (ModJson.Has(o, "angle")) p.angle = Mathf.Repeat(ModJson.Float(o, "angle", 0f, StationsFile), 360f);
+            if (ModJson.Has(o, "distance")) p.distance = Mathf.Clamp(ModJson.Float(o, "distance", 20000f, StationsFile), 3000f, 120000f);
+            return p;
+        }
+
         /// <summary>A system's own sun texture (Backdrop's "mod:" name), null: the game's.</summary>
         public static string SunTexture(int system) => sunTextures.TryGetValue(system, out var t) ? t : null;
 
@@ -252,7 +427,7 @@ namespace GoF2Remake.Modding
         {
             Database.Load();
             var sky = skyboxes.Values.SelectMany(s => new[] { s.nebula, s.stars }).Where(n => n != null);
-            return planetTextures.Values.Concat(sunTextures.Values).Concat(sky).Distinct().ToList();
+            return planetTextures.Values.Concat(sunTextures.Values).Concat(mapTextures.Values).Concat(sky).Distinct().ToList();
         }
 
         /// <summary>A system's own sky (systems.json "skybox"; OrbitBuilder.SetupSky, GoF2/SpaceSky's mod images).</summary>
@@ -264,8 +439,12 @@ namespace GoF2Remake.Modding
             /// <summary>The game's star layer 0-2 instead (-1: the system's own, -2: none).</summary>
             public int starsLayer = -1;
             public float nebulaBrightness = 1f, starsBrightness = 1f;
-            /// <summary>A fixed turn (Unity degrees); null: the game's own per-station turn, like the originals.</summary>
+            /// <summary>A fixed turn (Unity degrees); null: the game's own per-station turn, like the originals. With sunAligned
+            /// it turns the image in its own frame first (its +Y stays toward the sun).</summary>
             public Vector3? rotation;
+            /// <summary>The sky's +Y toward each orbit's sun (OrbitBuilder.SunAlignedSky, the supernova system's rule), so a
+            /// painted sky's bright side lies behind the sun whatever the orbit.</summary>
+            public bool sunAligned;
         }
 
         static readonly Dictionary<int, Skybox> skyboxes = new Dictionary<int, Skybox>();
@@ -273,10 +452,10 @@ namespace GoF2Remake.Modding
         public static Skybox SkyOf(int system) => skyboxes.TryGetValue(system, out var s) ? s : null;
 
         static readonly HashSet<string> SkyFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "nebula", "stars", "nebulaBrightness", "starsBrightness", "rotation" };
+            { "nebula", "stars", "nebulaBrightness", "starsBrightness", "rotation", "sunAligned" };
 
         /// <summary>"skybox": { "nebula": "sky/x.png", "stars": "sky/s.png" | 0-2 | "none", "nebulaBrightness", "starsBrightness",
-        /// "rotation": [x, y, z] }.</summary>
+        /// "rotation": [x, y, z], "sunAligned": true }.</summary>
         static Skybox ParseSkybox(ModInfo mod, JToken t, string where)
         {
             if (!(t is JObject o)) throw new ModJsonException($"{where}: \"skybox\" must be an object {{ \"nebula\": \"sky/....png\", ... }}");
@@ -286,6 +465,7 @@ namespace GoF2Remake.Modding
             {
                 nebulaBrightness = Mathf.Max(0f, ModJson.Float(o, "nebulaBrightness", 1f, SystemsFile)),
                 starsBrightness = Mathf.Max(0f, ModJson.Float(o, "starsBrightness", 1f, SystemsFile)),
+                sunAligned = ModJson.Bool(o, "sunAligned", false, SystemsFile),
             };
             string nebula = ModJson.Str(o, "nebula");
             if (nebula != null)
@@ -384,6 +564,7 @@ namespace GoF2Remake.Modding
             EnsureMapping();
             systemSpaceMusic.Clear(); systemStationMusic.Clear(); stationMusic.Clear();
             stationModels.Clear(); stationInterior.Clear(); planetTextures.Clear(); sunTextures.Clear(); sunColors.Clear(); skyboxes.Clear();
+            mapTextures.Clear(); mapRings.Clear(); orbits.Clear(); mapPlaces.Clear();
             stationHangar.Clear(); stationBar.Clear();
             if (systemAt.Count == 0 && stationAt.Count == 0 && missingSystems.Count == 0 && missingStations.Count == 0
                 && !ModManager.Active.Any(m => ModContent.Parse(m).systems.Count + ModContent.Parse(m).stations.Count > 0)) return;
@@ -475,6 +656,11 @@ namespace GoF2Remake.Modding
                         int interior = InteriorOf(o);
                         if (interior >= 0) stationInterior[st.index] = interior;
                         if (ModJson.Str(o, "planetTexture") is string pt) planetTextures[st.index] = BackdropName(mod, pt);
+                        if (ModJson.Str(o, "mapTexture") is string mt) mapTextures[st.index] = BackdropName(mod, mt);
+                        if (ModJson.Bool(o, "mapRing", false, d.file)) mapRings.Add(st.index); else if (ModJson.Has(o, "mapRing")) mapRings.Remove(st.index);
+                        if (ModJson.Get(o, "orbit") is JToken orbitToken)
+                            orbits[st.index] = ParseOrbit(mod, orbitToken, d.where, r => ModContent.TryResolveItem(r, out int item) && db.Item(item) != null ? item : -1);
+                        if (ModJson.Get(o, "mapPlace") is JToken placeToken) mapPlaces[st.index] = ParseMapPlace(placeToken, d.where);
                         // A custom room: "mod_id:interior_id", or this mod's own id.
                         if (ModJson.Str(o, "hangar") is string hk) stationHangar[st.index] = hk.Contains(":") ? hk : mod.Id + ":" + hk;
                         if (ModJson.Str(o, "bar") is string bk) stationBar[st.index] = bk.Contains(":") ? bk : mod.Id + ":" + bk;

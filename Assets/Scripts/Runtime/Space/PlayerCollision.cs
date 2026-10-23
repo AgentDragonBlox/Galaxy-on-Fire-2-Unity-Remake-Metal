@@ -42,6 +42,10 @@ namespace GoF2Remake.Flight
         [NonSerialized] public Func<bool> wormholeNoPull;
         /// <summary>PlayerEgo::isInWormhole: pulled within 1000 units (and alive).</summary>
         public bool InWormhole { get; private set; }
+        /// <summary>Remake events: an event's wormhole (SpaceLevel.OpenEventWormhole), null = none; it pulls like the story's.</summary>
+        [NonSerialized] public GoF2Remake.World.Wormhole eventWormhole;
+        /// <summary>Within 1000 units of the event's wormhole: SpaceLevel rides it to its destination.</summary>
+        public bool InEventWormhole { get; private set; }
 
         PlayerHealth health;
         ChaseCamera chase;
@@ -71,7 +75,7 @@ namespace GoF2Remake.Flight
             scraping = false;
             // Remake: the enemies' shots hit the collision probe too, not only the hull (Target.hitSphereRadius).
             if (health != null && health.Target != null) health.Target.hitSphereRadius = ProbeRadius();
-            if (off || health == null || health.Dead) { wormhole?.SetSound(false); scrapedLastFrame = false; hasLastPosition = false; return; }
+            if (off || health == null || health.Dead) { wormhole?.SetSound(false); eventWormhole?.SetSound(false); scrapedLastFrame = false; hasLastPosition = false; return; }
             if (mining != null && mining.State != Mining.Phase.Idle) { scrapedLastFrame = false; hasLastPosition = false; return; }
             if (docking != null && docking.Busy && docking.State != ObjectDocking.Phase.Approach) { scrapedLastFrame = false; hasLastPosition = false; return; }   // easing onto a docking point
             CheckWormhole();
@@ -217,22 +221,28 @@ namespace GoF2Remake.Flight
 
         void CheckWormhole()
         {
-            var w = wormhole;
-            if (w == null) return;
-            if (!w.Visible || w.Shrinking) { w.SetSound(false); return; }
-            if (wormholeHeld != null && wormholeHeld()) return;
+            if (Pull(wormhole, true)) InWormhole = true;
+            if (Pull(eventWormhole, false)) InEventWormhole = true;
+        }
+
+        /// <summary>One wormhole's pull (the story's rules only for 'story'); true: the ship is inside.</summary>
+        bool Pull(GoF2Remake.World.Wormhole w, bool story)
+        {
+            if (w == null) return false;
+            if (!w.Visible || w.Shrinking) { w.SetSound(false); return false; }
+            if (story && wormholeHeld != null && wormholeHeld()) return false;
             var d = w.transform.position - transform.position;
             float units = d.magnitude / GoF2Remake.World.OrbitLayout.MetersPerUnit;
             float pull = GoF2Remake.World.Wormhole.RadiusUnits - units;
-            if (pull < 1f) { w.SetSound(false); return; }
+            if (pull < 1f) { w.SetSound(false); return false; }
             w.SetSound(true);
-            if (wormholeNoPull == null || !wormholeNoPull())
+            if (!story || wormholeNoPull == null || !wormholeNoPull())
             {
                 transform.position += d.normalized * ((int)pull >> 8) * (Time.deltaTime * 1000f / 33.3f) * GoF2Remake.World.OrbitLayout.MetersPerUnit;
                 Hit();
                 Haptics.Rumble(0.1f + 0.6f * pull / GoF2Remake.World.Wormhole.RadiusUnits);   // remake: stronger closer in
             }
-            if (units < GoF2Remake.World.Wormhole.InsideUnits) InWormhole = true;
+            return units < GoF2Remake.World.Wormhole.InsideUnits;
         }
 
         /// <summary>The asteroid's cube (+-radius) grown by 'probe'; its own hit boxes (if any) as they are.</summary>

@@ -901,6 +901,19 @@ namespace GoF2Remake.Events
                     return w.Count == 1 && IsNumberOrExpr(w[0]) ? new JObject { ["type"] = "credits", ["amount"] = NumOrText(w[0]) } : null;
                 case "restrict":
                     return w.Count == 1 && new[] { "jumps", "docking", "all", "off" }.Contains(w[0]) ? new JObject { ["type"] = "restrict", ["what"] = w[0] } : null;
+                case "wormhole":
+                {
+                    if (w.Count == 1 && (w[0] == "close" || w[0] == "off")) return St("wormhole");
+                    int to = w.IndexOf("to");
+                    if (to != 1 && to != 4) return null;
+                    var st = new JObject { ["type"] = "wormhole", ["station"] = RefToken(w[0]) };
+                    if (to == 4) { if (!w.Skip(1).Take(3).All(IsNumberOrExpr)) return null; st["at"] = string.Join(" ", w.Skip(1).Take(3)); }
+                    int end = w.Count;
+                    if (w.Count >= to + 4 && w[w.Count - 2] == "for" && IsNumberOrExpr(w[w.Count - 1])) { st["seconds"] = NumOrText(w[w.Count - 1]); end = w.Count - 2; }
+                    if (end != to + 2) return null;
+                    if (w[to + 1] == "void") st["void"] = true; else st["to"] = RefToken(w[to + 1]);
+                    return st;
+                }
                 case "waypoint":
                     if (w.Count == 1 && w[0] == "off") return St("waypoint");
                     return w.Count == 4 && w.Skip(1).All(IsNumberOrExpr) ? new JObject { ["type"] = "waypoint", ["station"] = RefToken(w[0]), ["at"] = string.Join(" ", w.Skip(1)) } : null;

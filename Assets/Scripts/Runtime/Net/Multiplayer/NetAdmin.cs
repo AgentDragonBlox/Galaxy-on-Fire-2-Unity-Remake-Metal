@@ -69,7 +69,7 @@ namespace GoF2Remake.Multiplayer
     [Unity.Scripting.LifecycleManagement.NoAutoStaticsCleanup]
     public static class NetAdmin
     {
-        public enum Order : byte { Kill = 1, Heal = 2, Give = 3, Credits = 4, Spawn = 5, Ship = 6, Ammo = 7, Reveal = 8, Peace = 9, Cheat = 10, Object = 11, Title = 12, Timer = 13, Dialog = 14, Reward = 15, Scoreboard = 16, Sound = 17, Music = 18, Respawn = 19, Rules = 20, Ask = 21, Provoke = 22, Radio = 23, Waypoint = 24, Cutscene = 25, Camera = 26, Fade = 27, Letterbox = 28, Npc = 29, Flight = 30, Wreck = 31, System = 32 }
+        public enum Order : byte { Kill = 1, Heal = 2, Give = 3, Credits = 4, Spawn = 5, Ship = 6, Ammo = 7, Reveal = 8, Peace = 9, Cheat = 10, Object = 11, Title = 12, Timer = 13, Dialog = 14, Reward = 15, Scoreboard = 16, Sound = 17, Music = 18, Respawn = 19, Rules = 20, Ask = 21, Provoke = 22, Radio = 23, Waypoint = 24, Cutscene = 25, Camera = 26, Fade = 27, Letterbox = 28, Npc = 29, Flight = 30, Wreck = 31, System = 32, Wormhole = 33 }
 
         const int MaxGive = 1000, MaxSpawn = 10, MaxCredits = 999999999;
         /// <summary>A /spawn name's length, and its separator in the order's text (taken out of names).</summary>
@@ -659,6 +659,66 @@ namespace GoF2Remake.Multiplayer
             return "";
         });
 
+        /// <summary>The spot an event wormhole opens at without "x y z": about 4 km out, ahead of the station and 2.6 km to its
+        /// side, so its 2 km pull misses the ships launching straight ahead (along game +z from x 0, y 0).</summary>
+        public static readonly Vector3 WormholeDefaultAt = new Vector3(50000f, 15000f, 60000f);
+
+        /// <summary>/wormhole [players] &lt;station&gt; [x y z] to &lt;destination&gt; [for &lt;seconds&gt;] | close: a wormhole in that
+        /// orbit (EventWormhole); flying in takes them to the destination (a station, or "void"). Open until closed, the seconds
+        /// or the event's end.</summary>
+        public static string Wormhole(string args, IPilot by) => ForTargets(args, by, true, (t, rest) =>
+        {
+            rest = rest.Trim();
+            if (string.Equals(rest, "close", StringComparison.OrdinalIgnoreCase) || string.Equals(rest, "off", StringComparison.OrdinalIgnoreCase))
+            {
+                Send(t, Order.Wormhole, 0, 0, 0, by, "wormhole closed", "close");
+                return "";
+            }
+            if (!TryParseWormhole(rest, out string payload)) return Usage("wormhole");
+            Send(t, Order.Wormhole, 0, 0, 0, by, "wormhole " + payload, payload);
+            EventRunner.NoteWormholeSet();
+            return "";
+        });
+
+        /// <summary>"&lt;station&gt; [x y z] to &lt;destination&gt; [for &lt;seconds&gt;]" to EventWormhole's order text.</summary>
+        internal static bool TryParseWormhole(string rest, out string payload)
+        {
+            payload = null;
+            if (!ParseOrbit(rest, out int station, out string after)) return false;
+            var w = new List<string>(after.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
+            var at = WormholeDefaultAt;
+            if (w.Count >= 3 && float.TryParse(w[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float x)
+                && float.TryParse(w[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y)
+                && float.TryParse(w[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float z))
+            {
+                if (Mathf.Abs(x) > 1e7f || Mathf.Abs(y) > 1e7f || Mathf.Abs(z) > 1e7f) return false;
+                at = new Vector3(x, y, z);
+                w.RemoveRange(0, 3);
+            }
+            if (w.Count < 2 || !w[0].Equals("to", StringComparison.OrdinalIgnoreCase)) return false;
+            w.RemoveAt(0);
+            float seconds = 0f;
+            int f = w.FindLastIndex(s => s.Equals("for", StringComparison.OrdinalIgnoreCase));
+            if (f >= 0)
+            {
+                if (f != w.Count - 2 || !float.TryParse(w[f + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out seconds) || seconds < 0f || seconds > 86400f) return false;
+                w.RemoveRange(f, 2);
+            }
+            if (!ParseOrbit(string.Join(" ", w), out int to, out string left) || left.Length > 0) return false;
+            payload = string.Join(" ", station.ToString(CultureInfo.InvariantCulture), at.x.ToString(CultureInfo.InvariantCulture),
+                at.y.ToString(CultureInfo.InvariantCulture), at.z.ToString(CultureInfo.InvariantCulture), to.ToString(CultureInfo.InvariantCulture),
+                seconds.ToString(CultureInfo.InvariantCulture));
+            return true;
+        }
+
+        /// <summary>A station as NetTeleport.ParseStation reads it, also -1 for the Void's home orbit (a variable's number).</summary>
+        static bool ParseOrbit(string text, out int station, out string rest)
+        {
+            text = (text ?? "").Trim();
+            if (text == "-1" || text.StartsWith("-1 ")) { station = Session.VoidOrbit; rest = text.Substring(2).Trim(); return true; }
+            return NetTeleport.ParseStation(text, out station, out rest);
+        }
+
         /// <summary>/cutscene [players] &lt;start [nobars] [freeze] [invulnerable] | end&gt;: cinematic mode in flight
         /// (EventCutscene): no HUD, no controls, the letterbox bars.</summary>
         public static string Cutscene(string args, IPilot by) => ForTargets(args, by, true, (t, rest) =>
@@ -1120,6 +1180,9 @@ namespace GoF2Remake.Multiplayer
                     break;
                 case Order.Waypoint:
                     EventWaypoint.Apply(text);
+                    break;
+                case Order.Wormhole:
+                    EventWormhole.Apply(text);
                     break;
                 case Order.Cutscene:
                     EventCutscene.ApplyCutscene(text);

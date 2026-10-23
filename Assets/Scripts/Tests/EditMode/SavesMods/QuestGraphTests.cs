@@ -72,6 +72,38 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
+        public void AWormholeStepTakesAVariableDestinationAndComesBack()
+        {
+            var open = QuestSteps.New("wormhole");
+            open["station"] = 78;
+            open["at"] = "0 0 50000";
+            open["to"] = "{dest}";
+            open["seconds"] = 30;
+            var toVoid = QuestSteps.New("wormhole");
+            toVoid["station"] = 78;
+            toVoid["void"] = true;
+            var close = QuestSteps.New("wormhole");
+            var q = Quest(open, toVoid, close);
+            q["variables"] = new JArray(new JObject { ["name"] = "dest", ["value"] = 70 });
+            var problems = new List<string>();
+            string script = QuestFile.Compile(q, problems);
+            CollectionAssert.IsEmpty(problems, script);
+            var lines = Lines(script);
+            foreach (var l in new[] { "wormhole @a 78 0 0 50000 to {dest} for 30", "wormhole @a 78 to void", "wormhole @a close" })
+                CollectionAssert.Contains(lines, l, script);
+            Assert.IsNull(RunnerError(script), script);
+            // A Unity graph's line back to the step.
+            var back = QuestFile.FromScript(script, "T", new List<string>());
+            var steps = ((JArray)back["steps"]).OfType<JObject>().Where(s => (string)s["type"] == "wormhole").ToList();
+            Assert.AreEqual(3, steps.Count, back.ToString());
+            Assert.AreEqual("0 0 50000", (string)steps[0]["at"]);
+            Assert.AreEqual("{dest}", (string)steps[0]["to"]);
+            Assert.AreEqual(30, (int)steps[0]["seconds"]);
+            Assert.IsTrue((bool)steps[1]["void"]);
+            Assert.IsNull(steps[2]["station"], "close");
+        }
+
+        [Test]
         public void BlocksNest()
         {
             var iff = QuestSteps.New("if");

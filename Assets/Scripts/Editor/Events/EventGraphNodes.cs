@@ -502,6 +502,30 @@ namespace GoF2Remake.EditorTools
     }
 
     [Serializable]
+    [Node("Event", null, "Open Wormhole")]
+    public class EventOpenWormholeNode : EventCommandNode
+    {
+        public const string OrbitIn = "Orbit", At = "At", Destination = "Destination", Seconds = "Seconds";
+
+        protected override void DefineInputs(IPortDefinitionContext context)
+        {
+            PlayersIn(context);
+            context.AddInputPort<Orbit>(OrbitIn).WithTooltip("The orbit the wormhole opens in (wire Get Orbit in).").Build();
+            TextIn(context, At, "", "Game coordinates \"x y z\" in that orbit (/pos shows yours); empty = 4 km out, beside the launch path. Keep it 2 km (40000) clear of the line straight ahead of the station (x 0, y 0): launching ships fly along it.");
+            context.AddInputPort<Orbit>(Destination).WithTooltip("Where flying in takes them (wire Get Orbit in: a station, \"void\", or a " +
+                "wired number such as a variable). A stream-out arrival there, with a wormhole closing behind.").Build();
+            NumberIn(context, Seconds, 0f, "Open this many seconds (0 = until Close Wormhole or the event's end). One per player: a new one replaces it.");
+        }
+    }
+
+    [Serializable]
+    [Node("Event", null, "Close Wormhole")]
+    public class EventCloseWormholeNode : EventCommandNode
+    {
+        protected override void DefineInputs(IPortDefinitionContext context) => PlayersIn(context);
+    }
+
+    [Serializable]
     [Node("Event", null, "Show / Hide System")]
     public class EventSystemNode : EventCommandNode
     {

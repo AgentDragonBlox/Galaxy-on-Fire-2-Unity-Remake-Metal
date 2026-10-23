@@ -279,6 +279,15 @@ namespace GoF2Remake.UI
             {
                 var sky = s.Get("skybox") as JObject;
                 var rot = sky?["rotation"] as JArray;
+                bool sunAligned = sky?["sunAligned"] is JValue sa && sa.Type == JTokenType.Boolean && (bool)sa;
+                FlagButton(Row(systemPage), T("mbSkySunAligned", "The sky's top toward the sun in every orbit"), sunAligned, on =>
+                {
+                    var o = s.Get("skybox") as JObject ?? new JObject();
+                    if (on) o["sunAligned"] = true; else o.Remove("sunAligned");
+                    s.Set("skybox", o.HasValues ? o : null);
+                    SystemEdited(false);
+                }, () => BuildSystemPage());
+                Note(systemPage, T("mbSkySunAlignedNote", "Paint the image's bright side at its top (+Y): each orbit turns it to that orbit's sun, like the supernova sky. A fixed turn then turns the image first."));
                 FlagButton(Row(systemPage), T("mbSkyFixedTurn", "The sky turned the same at every station"), rot != null, on =>
                 {
                     var o = s.Get("skybox") as JObject ?? new JObject();

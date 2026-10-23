@@ -183,6 +183,11 @@ namespace GoF2Remake.UI
         readonly List<GalaxyMap.Planet> planets = new List<GalaxyMap.Planet>();
         readonly List<Transform> planetObjects = new List<Transform>(), orbitObjects = new List<Transform>();
         readonly List<Vector3> planetScales = new List<Vector3>();
+        readonly List<Transform> planetDiscs = new List<Transform>();   // remake mods: a station's planetTexture facing the camera
+        static readonly Dictionary<string, Material> modPlanetMaterials = new Dictionary<string, Material>();
+        static int modPlanetRevision = -1;
+        static readonly Dictionary<float, Mesh> wrappedSpheres = new Dictionary<float, Mesh>();
+        static Mesh discQuad;
         readonly List<Camera> disabledCameras = new List<Camera>();
         readonly List<Light> disabledLights = new List<Light>();
         UnityEngine.Rendering.AmbientMode savedAmbientMode;
@@ -741,7 +746,8 @@ namespace GoF2Remake.UI
             foreach (var p in planets)
             {
                 var planet = Spawn($"galaxymap_planet_{p.textureIndex:000}", systemRoot.transform) ?? Spawn("galaxymap_planet_000", systemRoot.transform);
-                if (planet != null && World.SkyLayers.InPlanetRingOrbit(p.station)) AddPlanetRing(planet);
+                if (planet != null && (World.SkyLayers.InPlanetRingOrbit(p.station) || Modding.ModWorld.MapRing(p.station))) AddPlanetRing(planet);
+                if (planet != null) ApplyModPlanet(planet, p.station);
                 if (planet != null) LightBySun(planet);
                 planetObjects.Add(planet != null ? planet.transform : null);
                 planetScales.Add(planet != null ? planet.transform.localScale / 128f : Vector3.zero);
@@ -813,6 +819,7 @@ namespace GoF2Remake.UI
             planetObjects.Clear();
             orbitObjects.Clear();
             planetScales.Clear();
+            planetDiscs.Clear();
             foreach (var it in planetItems) it.root.RemoveFromHierarchy();
             planetItems.Clear();
         }
@@ -850,6 +857,142 @@ namespace GoF2Remake.UI
                     orbit.localRotation = ModelRotation(rc * Quaternion.AngleAxis(planets[k].orbitYaw * Mathf.Rad2Deg, Vector3.up));
                 }
             }
+            FaceDiscs();
+        }
+
+        /// <summary>Remake mods: the planetTexture discs face the map's camera (like the planet billboards in orbit).</summary>
+        void FaceDiscs()
+        {
+            if (cam == null) return;
+            foreach (var d in planetDiscs)
+                if (d != null) d.rotation = Quaternion.LookRotation(d.position - cam.transform.position, cam.transform.up);
+        }
+
+        /// <summary>Remake mods: a station's own planet on the map. "mapTexture": the image wrapped round the map's sphere (a
+        /// sphere with 0..1 UVs takes the place of the game's mesh, whose UVs are one cell of the planet atlas; still lit by
+        /// GoF2/MapPlanet). Else "planetTexture": the orbit's disc, facing the camera, unlit like the orbit's billboard. Else
+        /// the game's planet for its "planet" number.</summary>
+        void ApplyModPlanet(GameObject planet, int station)
+        {
+            if (modPlanetRevision != Modding.ModManager.Revision)
+            {
+                foreach (var m in modPlanetMaterials.Values) if (m != null) Destroy(m);
+                modPlanetMaterials.Clear();
+                modPlanetRevision = Modding.ModManager.Revision;
+            }
+            string wrap = Modding.ModWorld.MapTexture(station), disc = wrap == null ? Modding.ModWorld.PlanetTexture(station) : null;
+            if (wrap == null && disc == null) return;
+            var hull = new List<MeshRenderer>();
+            foreach (var r in planet.GetComponentsInChildren<MeshRenderer>(true))
+                if (r.name.StartsWith("map_planet_") && !r.name.StartsWith("map_planet_ring")) hull.Add(r);
+            if (hull.Count == 0) return;
+            if (wrap != null)
+            {
+                var mat = ModPlanetMaterial(wrap, false, hull[0].sharedMaterial);
+                if (mat == null) return;
+                foreach (var r in hull)
+                {
+                    var mf = r.GetComponent<MeshFilter>();
+                    if (mf == null || mf.sharedMesh == null) continue;
+                    mf.sharedMesh = WrappedSphere(mf.sharedMesh.bounds.extents.x);
+                    r.sharedMaterial = mat;
+                }
+                return;
+            }
+            var discMat = ModPlanetMaterial(disc, true, null);
+            if (discMat == null) return;
+            var mesh = hull[0].GetComponent<MeshFilter>()?.sharedMesh;
+            float radius = mesh != null ? mesh.bounds.extents.x : 1600f;
+            foreach (var r in hull) r.enabled = false;
+            var go = new GameObject("map_planet_disc") { layer = Layer };
+            go.transform.SetParent(planet.transform, false);
+            go.transform.localScale = Vector3.one * radius * 2.1f;   // the orbit images keep a little room round the disc
+            go.AddComponent<MeshFilter>().sharedMesh = DiscQuad();
+            go.AddComponent<MeshRenderer>().sharedMaterial = discMat;
+            planetDiscs.Add(go.transform);
+        }
+
+        /// <summary>A mod planet's map material: the wrapped one a copy of the game's map planet material (LightBySun makes it
+        /// GoF2/MapPlanet), the disc one a copy of the mods' alpha-blended fx material.</summary>
+        static Material ModPlanetMaterial(string name, bool disc, Material planetSource)
+        {
+            string key = (disc ? "disc|" : "wrap|") + name;
+            if (modPlanetMaterials.TryGetValue(key, out var m)) return m;
+            var tex = Modding.ModBackdrop.Texture(name);
+            Material made = null;
+            if (tex != null && disc)
+            {
+                var template = Modding.ModAssets.Get()?.fxAlpha;
+                if (template != null)
+                {
+                    made = new Material(template) { name = "map disc " + name };
+                    made.SetTexture("_MainTex", tex);
+                    made.SetTextureScale("_MainTex", Vector2.one);
+                    made.SetTextureOffset("_MainTex", Vector2.zero);
+                    made.SetColor("_Color", Color.white);
+                }
+            }
+            else if (tex != null && planetSource != null)
+            {
+                tex.wrapModeU = TextureWrapMode.Repeat;
+                made = new Material(planetSource) { name = "map planet " + name };
+                if (made.HasProperty("_BaseMap")) { made.SetTexture("_BaseMap", tex); made.SetTextureScale("_BaseMap", Vector2.one); made.SetTextureOffset("_BaseMap", Vector2.zero); }
+                if (made.HasProperty("_BaseColor")) made.SetColor("_BaseColor", Color.white);
+            }
+            return modPlanetMaterials[key] = made;
+        }
+
+        /// <summary>A UV sphere of 'radius' with longitude on u (0..1 once round the Y axis) and latitude on v (0 at the
+        /// bottom pole), for an equirectangular image.</summary>
+        static Mesh WrappedSphere(float radius)
+        {
+            if (wrappedSpheres.TryGetValue(radius, out var m) && m != null) return m;
+            const int seg = 48, rings = 24;
+            var v = new List<Vector3>();
+            var n = new List<Vector3>();
+            var uv = new List<Vector2>();
+            for (int y = 0; y <= rings; y++)
+            {
+                float lat = Mathf.PI * (y / (float)rings - 0.5f);
+                for (int x = 0; x <= seg; x++)
+                {
+                    float lon = 2f * Mathf.PI * x / seg;
+                    var dir = new Vector3(Mathf.Cos(lat) * Mathf.Sin(lon), Mathf.Sin(lat), Mathf.Cos(lat) * Mathf.Cos(lon));
+                    v.Add(dir * radius);
+                    n.Add(dir);
+                    uv.Add(new Vector2(x / (float)seg, y / (float)rings));
+                }
+            }
+            var tris = new List<int>();
+            for (int y = 0; y < rings; y++)
+                for (int x = 0; x < seg; x++)
+                {
+                    int a = y * (seg + 1) + x, b = a + seg + 1;
+                    tris.Add(a); tris.Add(b); tris.Add(a + 1);
+                    tris.Add(a + 1); tris.Add(b); tris.Add(b + 1);
+                }
+            m = new Mesh { name = "map planet (wrapped)" };
+            m.SetVertices(v);
+            m.SetNormals(n);
+            m.SetUVs(0, uv);
+            m.SetTriangles(tris, 0);
+            m.RecalculateTangents();
+            m.RecalculateBounds();
+            return wrappedSpheres[radius] = m;
+        }
+
+        /// <summary>A unit quad in the XY plane, seen from -Z (FaceDiscs turns its +Z away from the camera).</summary>
+        static Mesh DiscQuad()
+        {
+            if (discQuad != null) return discQuad;
+            discQuad = new Mesh { name = "map planet disc" };
+            discQuad.SetVertices(new List<Vector3> { new Vector3(-0.5f, -0.5f, 0f), new Vector3(0.5f, -0.5f, 0f), new Vector3(-0.5f, 0.5f, 0f), new Vector3(0.5f, 0.5f, 0f) });
+            discQuad.SetUVs(0, new List<Vector2> { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f) });
+            discQuad.SetColors(new List<Color> { Color.white, Color.white, Color.white, Color.white });
+            discQuad.SetTriangles(new[] { 0, 1, 2, 1, 3, 2 }, 0);   // facing -Z
+            discQuad.RecalculateNormals();
+            discQuad.RecalculateBounds();
+            return discQuad;
         }
 
         // ---- overlay ---------------------------------------------------------------------------------------

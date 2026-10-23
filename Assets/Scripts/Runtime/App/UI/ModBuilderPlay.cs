@@ -20,9 +20,19 @@ namespace GoF2Remake.UI
             SceneManager.LoadScene("Station");
         }
 
-        /// <summary>A play test with the quest 'name' started (its "Starts when" skipped). The reason when it can't start.</summary>
+        /// <summary>A play test with the quest 'name' started (its "Starts when" skipped); a bar mission is offered in the
+        /// Space Lounge instead, at the builder's station (or any other), to be taken like a player takes it. The reason when
+        /// it can't start.</summary>
         public static string StartQuest(string name)
         {
+            Events.EventMissions.PlayTestOffer = null;
+            if (Events.EventRunner.IsBarMission(name))
+            {
+                ModBuilder.BeginPlayTest();
+                Events.EventMissions.PlayTestOffer = name;
+                SceneManager.LoadScene("Station");
+                return null;
+            }
             ModBuilder.BeginPlayTest();
             string why = Events.EventRunner.StartQuest(name);
             if (why != null) { ModBuilder.EndPlayTest(); return why; }

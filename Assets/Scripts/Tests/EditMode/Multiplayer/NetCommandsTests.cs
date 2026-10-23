@@ -326,5 +326,27 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(160, NetChat.Clean(new string('a', 300)).Length);
             Assert.AreEqual("", NetChat.Clean(null));
         }
+
+        // /wormhole (NetAdmin.TryParseWormhole -> EventWormhole's order text "station x y z destination seconds").
+        [Test]
+        public void AWormholeOrder()
+        {
+            Assert.IsTrue(NetAdmin.TryParseWormhole("78 100 -200 30000 to 70 for 45", out string p));
+            Assert.AreEqual("78 100 -200 30000 70 45", p);
+            Assert.IsTrue(EventWormhole.TryParse(p, out int st, out var at, out int to, out float s));
+            Assert.AreEqual(78, st);
+            Assert.AreEqual(new Vector3(100, -200, 30000), at);
+            Assert.AreEqual(70, to);
+            Assert.AreEqual(45f, s);
+            Assert.IsTrue(NetAdmin.TryParseWormhole("Var Hastra to void", out p), "names, the default spot, the Void");
+            var def = NetAdmin.WormholeDefaultAt;
+            Assert.AreEqual($"78 {def.x} {def.y} {def.z} {Session.VoidOrbit} 0", p);
+            Assert.IsTrue(NetAdmin.TryParseWormhole("void 0 0 0 to -1", out p), "in the Void, a variable's -1 = the Void");
+            Assert.AreEqual($"{Session.VoidOrbit} 0 0 0 {Session.VoidOrbit} 0", p);
+            Assert.IsFalse(NetAdmin.TryParseWormhole("78", out _), "no destination");
+            Assert.IsFalse(NetAdmin.TryParseWormhole("78 to nowhere", out _));
+            Assert.IsFalse(NetAdmin.TryParseWormhole("78 to 70 for", out _));
+            Assert.IsFalse(NetAdmin.TryParseWormhole("999 to 70", out _), "no such station");
+        }
     }
 }

@@ -4,10 +4,18 @@
         "looksLike": 40,
         "model": "models/kepler_station.glb", "modelSize": 50000, "collision": "box",
         "hangar": "kepler_hangar", "bar": "kepler_bar",
-        "planetTexture": "textures/kepler_prime_planet.png"
+        "planetTexture": "textures/kepler_prime_planet.png",
+        "mapTexture": "textures/kepler_prime_map.png", "mapRing": true
     },
     {
         "id": "rho_freeport", "system": "frontier_systems:kepler", "name": { "en": "Rho Freeport", "de": "Freihafen Rho" }, "techLevel": 4, "planet": 6,
-        "looksLike": 41, "interior": "nivelian"
+        "looksLike": 41, "interior": "nivelian",
+        "mapPlace": { "angle": 200, "distance": 26000 },
+        "orbit": {
+            "jumpgatePosition": [-60000, 8000, 70000],
+            "asteroids": { "count": 90, "centre": [40000, -6000, 50000], "spread": 140000, "type": "ice", "ores": [154, 159, { "item": 161, "chance": 2 }] },
+            "sun": [120, 20],
+            "planet": { "size": 1.4, "yaw": -25, "pitch": 8 }
+        }
     }
 ]

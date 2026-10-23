@@ -678,6 +678,21 @@ namespace GoF2Remake.Events
                     case "EventClearWaypointNode":
                         Line(Join("waypoint", Text(n, "Players"), "off"));
                         break;
+                    case "EventOpenWormholeNode":
+                    {
+                        string station = inputs.TryGetValue((n.id, "Orbit"), out var orbit) && orbit.node.kind == "EventGetOrbitNode" ? Orbit(orbit.node) : "";
+                        string to = inputs.TryGetValue((n.id, "Destination"), out var dest) && dest.node.kind == "EventGetOrbitNode" ? Orbit(dest.node) : "";
+                        string at = Text(n, "At");
+                        if (station.Length == 0) Error(n, "Wire a Get Orbit into Orbit: where the wormhole opens.");
+                        if (to.Length == 0) Error(n, "Wire a Get Orbit into Destination: where flying in takes them.");
+                        if (at.Trim().Length > 0 && at.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length != 3) Error(n, "At: game coordinates \"x y z\" (or empty).");
+                        string seconds = IsWired(n, "Seconds") || Num(n, "Seconds") > 0 ? "for " + Arg(n, "Seconds") : "";
+                        Line(Join("wormhole", Text(n, "Players"), station, at, "to", to, seconds));
+                        break;
+                    }
+                    case "EventCloseWormholeNode":
+                        Line(Join("wormhole", Text(n, "Players"), "close"));
+                        break;
                     case "EventSystemNode":
                     {
                         string system = Text(n, "System");

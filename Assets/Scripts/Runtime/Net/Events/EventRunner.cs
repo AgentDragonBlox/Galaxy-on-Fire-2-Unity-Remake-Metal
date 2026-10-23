@@ -277,6 +277,7 @@ namespace GoF2Remake.Events
         internal static void NoteRulesSet() { if (executing != null) executing.eventRules = true; }
         internal static void NoteFlightSet() { if (executing != null) executing.eventFlight = true; }
         internal static void NoteWaypointSet() { if (executing != null) executing.eventWaypoint = true; }
+        internal static void NoteWormholeSet() { if (executing != null) executing.eventWormhole = true; }
         internal static void NoteCutsceneSet() { if (executing != null) executing.eventCutscene = true; }
         internal static void NoteFadeSet() { if (executing != null) executing.eventFade = true; }
 
@@ -363,6 +364,13 @@ namespace GoF2Remake.Events
 
         /// <summary>Server: every event graph with mission details (its Start node's Mission title).</summary>
         internal static List<MissionInfo> MissionGraphs() => AllGraphs().FindAll(m => m.IsMission);
+
+        /// <summary>The graph 'name' is a bar mission (offered in the Space Lounges).</summary>
+        public static bool IsBarMission(string name)
+        {
+            graphCache = null;   // the Mod Builder may have just written it
+            return MissionGraphs().Exists(m => m.name == name);
+        }
 
         /// <summary>Single player: every quest graph (its Start node's kind Quest).</summary>
         internal static List<MissionInfo> QuestGraphs() => AllGraphs().FindAll(m => m.IsQuest && !m.builtIn);
@@ -1065,7 +1073,7 @@ namespace GoF2Remake.Events
             public readonly HashSet<ulong> team;
             public readonly int station;   // a mission: where it was taken (-1: none)
             public bool ended;
-            public bool eventPvp, eventRespawn, eventRules, eventWaypoint, eventCutscene, eventFade, eventFlight;   // it turned the free for all on / set respawn points / restricted travel / a waypoint
+            public bool eventPvp, eventRespawn, eventRules, eventWaypoint, eventWormhole, eventCutscene, eventFade, eventFlight;   // it turned the free for all on / set respawn points / restricted travel / a waypoint
             public GraphQuestState record;   // single player's lasting run (a quest, a bar mission): what a save keeps (null: none)
             public string objective = "";
             public int target = -1;
@@ -1162,6 +1170,7 @@ namespace GoF2Remake.Events
                         if (eventRules) EventHost.Send(p.OwnerClientId, NetAdmin.Order.Rules, 0, 0, 0, "", "Server");
                         if (eventFlight) EventHost.Send(p.OwnerClientId, NetAdmin.Order.Flight, -1, 0, 0, "", "Server");
                         if (eventWaypoint) EventHost.Send(p.OwnerClientId, NetAdmin.Order.Waypoint, 0, 0, 0, "off", "Server");
+                        if (eventWormhole) EventHost.Send(p.OwnerClientId, NetAdmin.Order.Wormhole, 0, 0, 0, "close", "Server");
                         if (eventCutscene) EventHost.Send(p.OwnerClientId, NetAdmin.Order.Cutscene, 0, 0, 0, "end", "Server");
                         if (eventFade) EventHost.Send(p.OwnerClientId, NetAdmin.Order.Fade, 0, 0, 0, "clear", "Server");
                     }
@@ -1224,7 +1233,7 @@ namespace GoF2Remake.Events
                             case Op.Command:
                             {
                                 string word = s.a.Split(' ')[0].ToLowerInvariant();
-                                if (word == "music" || word == "waypoint" || word == "respawn" || word == "restrict" || word == "flightstyle")
+                                if (word == "music" || word == "waypoint" || word == "wormhole" || word == "respawn" || word == "restrict" || word == "flightstyle")
                                     try { RunCommand(Fill(s.a)); } catch (Exception e) { Debug.LogWarning($"Event {running}: {e.Message}"); }
                                 break;
                             }

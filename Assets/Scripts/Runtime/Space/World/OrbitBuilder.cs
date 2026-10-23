@@ -46,7 +46,9 @@ namespace GoF2Remake.World
                 else if (mod.starsLayer >= 0) sky.SetTexture("_Stars", Resources.Load<Cubemap>($"GoF2Sky/stars_{mod.starsLayer:000}"));
                 sky.SetFloat("_NebulaGain", mod.nebulaBrightness);
                 sky.SetFloat("_StarsGain", mod.starsLayer == -2 ? 0f : mod.starsBrightness);
-                if (mod.rotation.HasValue) rotation = Quaternion.Euler(mod.rotation.Value);
+                // "sunAligned": +Y toward this orbit's sun like the supernova system (a fixed "rotation" turns the image first).
+                if (mod.sunAligned) rotation = SunAlignedSky(layout) * (mod.rotation.HasValue ? Quaternion.Euler(mod.rotation.Value) : Quaternion.identity);
+                else if (mod.rotation.HasValue) rotation = Quaternion.Euler(mod.rotation.Value);
             }
             // The shader maps world directions into the baked cube: the inverse of the sky's Unity rotation.
             sky.SetMatrix("_SkyRotation", Matrix4x4.Rotate(Quaternion.Inverse(rotation)));
@@ -91,10 +93,18 @@ namespace GoF2Remake.World
         public static Quaternion SkyRotation(OrbitLayout layout)
         {
             if (!layout.skySunAligned) return OrbitLayout.RotationToUnity(layout.skyEuler);
+            return SunAlignedSky(layout);
+        }
+
+        /// <summary>The sky turned so its +Y points at the orbit's sun (StarSystem's supernova sky; remake mods' "sunAligned").</summary>
+        public static Quaternion SunAlignedSky(OrbitLayout layout)
+        {
             // System 27: X = a x b, Y = a (toward the sun), Z = b with b = normalize((1,0,0) x a). Mirrored to Unity
             // (S * R * S) the Z column flips sign: Y' = S a, Z' = -S b.
             var a = OrbitLayout.DirToUnity(layout.lightDirection).normalized;
-            var b = OrbitLayout.DirToUnity(Vector3.Cross(Vector3.right, layout.lightDirection)).normalized;
+            var side = Vector3.Cross(Vector3.right, layout.lightDirection);
+            if (side.sqrMagnitude < 1e-8f) side = Vector3.Cross(Vector3.forward, layout.lightDirection);   // a sun on game x (a mod's)
+            var b = OrbitLayout.DirToUnity(side).normalized;
             return Quaternion.LookRotation(-b, a) * Quaternion.Euler(0f, 180f, 0f);
         }
 
@@ -327,7 +337,7 @@ namespace GoF2Remake.World
         /// spot, e.g. to keep the menu camera's orbit clear.
         /// </summary>
         public static Transform SpawnAsteroids(Database db, OrbitLayout layout, Transform parent = null, Func<Vector3, bool> reject = null)
-            => SpawnField(db, layout, layout.asteroidCentre, layout.asteroidCount, -1, 60000f, 100000f, -1, parent, reject, "Asteroids");
+            => SpawnField(db, layout, layout.asteroidCentre, layout.asteroidCount, -1, layout.asteroidSpread * 0.6f, layout.asteroidSpread, -1, parent, reject, "Asteroids");
 
         /// <summary>
         /// A field of 'count' asteroids around 'centre' (game units) of the orbit's kind: the first 'big' (-1 = roll 2..9
@@ -346,7 +356,7 @@ namespace GoF2Remake.World
             var root = new GameObject(name).transform;
             root.SetParent(parent, false);
             if (prefab == null) return root;
-            if (big < 0) big = Random.Range(2, 10);
+            if (big < 0) big = Mathf.Min(count, Random.Range(2, 10));
             var bigPositions = new Vector3[big];
             var ores = ore >= 0 ? new List<(int item, int p)> { (ore, 100) } : OreProbabilities(db, layout);
             int oreCursor = 0;
@@ -375,7 +385,7 @@ namespace GoF2Remake.World
                 if (isBig) bigPositions[i] = pos;
 
                 float scale = isBig ? Random.Range(120, 220) * 0.01f : Random.Range(30, 100) * 0.01f;
-                int rockOre = ore >= 0 ? ore : PickOre(ores, ref oreCursor);
+                int rockOre = ore >= 0 ? ore : layout.modOres != null ? PickWeighted(layout.modOres) : PickOre(ores, ref oreCursor);
                 // Quality from the scale; the big ones (and the largest small ones) are 50 % A, else D..B.
                 int quality = scale < 0.4f ? 4 : scale < 0.7f ? 5 : scale < 0.92f ? 6 : Random.Range(0, 2) == 0 ? 7 : 4 + Random.Range(0, 3);
                 var euler = new Vector3(Random.Range(0, 100), Random.Range(0, 100), Random.Range(0, 100)) * 0.01f * 2f * Mathf.PI;
@@ -414,6 +424,16 @@ namespace GoF2Remake.World
 
         /// <summary>Level::createAsteroids 0xbd34a: a cursor walks the pairs; a roll under p takes that ore and moves on
         /// (wrapping after pair 5), a miss starts over at the top ore.</summary>
+        /// <summary>Remake mods: an ore of the orbit's own list, by its chance weight.</summary>
+        static int PickWeighted(List<(int item, int chance)> ores)
+        {
+            int total = 0;
+            foreach (var o in ores) total += Mathf.Max(1, o.chance);
+            int r = Random.Range(0, total);
+            foreach (var o in ores) { r -= Mathf.Max(1, o.chance); if (r < 0) return o.item; }
+            return ores[0].item;
+        }
+
         public static int PickOre(List<(int item, int p)> ores, ref int k)
         {
             for (int guard = 0; guard < 10000; guard++)

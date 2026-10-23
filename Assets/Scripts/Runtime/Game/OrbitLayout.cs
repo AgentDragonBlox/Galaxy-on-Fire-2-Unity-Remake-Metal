@@ -48,6 +48,8 @@ namespace GoF2Remake.World
         public bool hasJumpgate;
         public Vector3 jumpgate;         // landmark 1 (visible gate)
         public Vector3 hiddenJumpgate;   // landmark 2 (arrival point when travelling in)
+        /// <summary>Remake mods (stations.json "orbit" "arrival"): where every arrival by travel comes in, facing the station.</summary>
+        public Vector3? arrival;
         public int hiddenGateAngle;      // A2 (65536 per turn)
         public Vector3 skyEuler;         // radians, R_sky = Rx * Ry * Rz (game)
         public bool skySunAligned;       // system 27: the sky's +Y points at the sun
@@ -74,6 +76,11 @@ namespace GoF2Remake.World
         public int asteroidCount;
         public Vector3 asteroidCentre;
         public int asteroidType;         // 0 default, 1 void, 2 ice (Beidan), 3 magma
+        /// <summary>The field's size in game units: the small asteroids in a cube of this side, the big ones in 0.6 of it
+        /// (Level::createAsteroids: 100000 / 60000; remake mods change it).</summary>
+        public float asteroidSpread = 100000f;
+        /// <summary>Remake mods: the field's ores (item, chance weight), null: the system's (OreProbabilities).</summary>
+        public List<(int item, int chance)> modOres;
 
         // Level::initParticleSystems
         public Color dustFogTint;
@@ -175,7 +182,71 @@ namespace GoF2Remake.World
             o.BuildStarSystem(db, sys);
             o.BuildLights();
             o.BuildAsteroidField();
+            if (!alien) o.ApplyMod(Modding.ModWorld.OrbitOf(stationIndex), st);
             return o;
+        }
+
+        /// <summary>Remake mods: stations.json "orbit" over the seeded layout (Modding.ModWorld.OrbitSpec). The station stays
+        /// the orbit's centre: the gate, the field and the arrival are placed around it.</summary>
+        void ApplyMod(Modding.ModWorld.OrbitSpec m, StationData st)
+        {
+            if (m == null) return;
+            if (m.station == 0) hasStation = stationObject = false;
+            else if (m.station == 1) hasStation = stationObject = st != null;
+            else if (m.station == 2) { hasStation = false; stationObject = st != null; }
+            if (m.jumpgate == true && !hasJumpgate)
+            {
+                // The spot BuildGates would have rolled for a gate orbit (its first draws, seed 2 * station).
+                var rnd = new JavaRandom(2L * stationIndex);
+                int s = rnd.NextInt(2), k = rnd.NextInt(500);
+                int a = (s == 0 ? -(250 + k) : 250 + k) * 16;
+                float r = 90000f + 3f * a, ang = a / 65536f * 2f * Mathf.PI;
+                jumpgate = new Vector3(r * Mathf.Sin(ang), 0f, r * Mathf.Cos(ang));
+            }
+            if (m.jumpgate.HasValue) hasJumpgate = m.jumpgate.Value;
+            if (m.jumpgatePosition.HasValue) jumpgate = m.jumpgatePosition.Value;
+            if (m.arrival.HasValue) arrival = m.arrival.Value;
+            if (m.asteroids == false) asteroidCount = 0;
+            if (m.asteroidCount.HasValue) asteroidCount = m.asteroidCount.Value;
+            if (m.asteroidCentre.HasValue) asteroidCentre = m.asteroidCentre.Value;
+            if (m.asteroidSpread.HasValue) asteroidSpread = m.asteroidSpread.Value;
+            if (m.asteroidType >= 0) asteroidType = m.asteroidType;
+            if (m.ores != null) modOres = m.ores;
+            if (m.fog == false) fog = false;
+            else if (m.fog == true)
+            {
+                if (!fog) { fogColor = new Color(0.45f, 0.45f, 0.5f); fogEnd = 100000f; }
+                fog = true;
+                if (m.fogColor.HasValue) fogColor = m.fogColor.Value;
+                if (m.fogEnd.HasValue) fogEnd = m.fogEnd.Value;
+            }
+            if (m.sun.HasValue)
+            {
+                lightDirection = ModDirection(m.sun.Value.x, m.sun.Value.y);
+                sunPitch = Mathf.Asin(lightDirection.y);
+            }
+            var own = planets.Find(p => p.isOrbitPlanet);
+            if (own != null)
+            {
+                if (m.planetSize.HasValue) own.scale *= m.planetSize.Value;
+                if (m.planetYaw.HasValue || m.planetPitch.HasValue)
+                {
+                    // The backdrop places a body at -Direction(pitch, yaw), whose pitch tips the other way past 90 deg of yaw:
+                    // the same direction in its own angles.
+                    var d = ModDirection(m.planetYaw ?? 0f, m.planetPitch ?? 0f);
+                    own.yaw = Mathf.Asin(Mathf.Clamp(-d.x, -1f, 1f));
+                    own.pitch = Mathf.Atan2(d.y, -d.z);
+                }
+            }
+        }
+
+        /// <summary>Remake mods: a direction from the station (game space, unit) by yaw / pitch in degrees: yaw 0 where the game's
+        /// orbit planet sits (game -z: behind a ship launching from the station), 90 to that ship's right (game -x), 180 ahead
+        /// of it; pitch up from the horizon.</summary>
+        public static Vector3 ModDirection(float yawDeg, float pitchDeg)
+        {
+            float y = yawDeg * Mathf.Deg2Rad, p = Mathf.Clamp(pitchDeg, -89f, 89f) * Mathf.Deg2Rad;
+            return new Vector3(-Mathf.Sin(y) * Mathf.Cos(p), Mathf.Sin(p), -Mathf.Cos(y) * Mathf.Cos(p));
         }
 
         // Level::createSpace: landmark 1 only in the gate orbit, landmark 2 (hidden) always.
@@ -384,6 +455,7 @@ namespace GoF2Remake.World
         /// then p[k] -= 2k for the positive ones.</summary>
         public static List<(int item, int p)> OreProbabilities(Database db, OrbitLayout layout)
         {
+            if (layout.modOres != null) return layout.modOres.Select(o => (o.item, o.chance)).ToList();   // remake mods: the orbit's own
             var list = new List<(int item, int p)>();
             bool alien = layout.systemIndex < 0;
             for (int item = 154; item <= 163; item++)

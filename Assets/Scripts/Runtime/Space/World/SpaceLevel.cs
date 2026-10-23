@@ -597,6 +597,16 @@ namespace GoF2Remake.World
         /// 10000 units behind the player and closes after a second (reset(true)).</summary>
         void PlaceArrivalWormhole()
         {
+            if (Session.ArrivedByWormhole)
+            {
+                // Remake events: out of an event's wormhole, one closing 10000 units behind the player (like the Void's).
+                Session.ArrivedByWormhole = false;
+                var behind = Player.transform.position - Player.transform.forward * 10000f * M;
+                var hole = Wormhole.Spawn(StoryAssets.Load(), new Vector3(behind.x, behind.y, -behind.z) / M, true);
+                hole.FreeMissionLock();
+                hole.ResetTimer(true);
+                hole.player = Player.transform;
+            }
             if (Wormhole == null) return;
             Wormhole.player = Player.transform;
             if (!(ComingFromVoid || Layout.alienOrbit) || Story.Index >= 43) return;
@@ -635,6 +645,11 @@ namespace GoF2Remake.World
         /// <summary>MGame::OnUpdate, PlayerEgo::isInWormhole (see the header).</summary>
         void UpdateWormholeRide()
         {
+            if (!riding && Collision != null && Collision.InEventWormhole && Health != null && !Health.Dead && EventWormhole != null)
+            {
+                RideEventWormhole();
+                return;
+            }
             if (riding || Collision == null || !Collision.InWormhole || Health == null || Health.Dead) return;
             int index = Story.Index;
             bool active = !Session.FreePlay && Campaign != null && Story.IsLevelMission(Layout.stationIndex);
@@ -673,6 +688,57 @@ namespace GoF2Remake.World
             Session.LaunchedFromStation = false;
             Session.ComingFromVoid = true;
             Session.ProgrammedStation = -1;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+
+        // ---- remake events: an event's / mission's wormhole (EventWormhole, /wormhole) ----------------------------
+
+        /// <summary>The event's wormhole in this orbit (null: none).</summary>
+        public Wormhole EventWormhole { get; private set; }
+        int eventWormholeTo;
+
+        /// <summary>Opens (or moves) the event's wormhole at 'game' (game units in this orbit); flying in takes the player to
+        /// 'destination' (a station, Session.VoidOrbit the Void's home).</summary>
+        public void OpenEventWormhole(Vector3 game, int destination)
+        {
+            if (Player == null) return;
+            eventWormholeTo = destination;
+            if (EventWormhole == null)
+            {
+                EventWormhole = Wormhole.Spawn(StoryAssets.Load(), game, true);
+                EventWormhole.held = true;
+                EventWormhole.FreeMissionLock();
+                EventWormhole.player = Player.transform;
+                if (Collision != null) Collision.eventWormhole = EventWormhole;
+                Navigation?.SetEventWormhole(EventWormhole);
+            }
+            else
+            {
+                EventWormhole.SetPosition(game);
+                EventWormhole.SetVisible(true);
+            }
+            EventWormhole.Open();
+        }
+
+        /// <summary>The event's wormhole shrinks away.</summary>
+        public void CloseEventWormhole() => EventWormhole?.Close();
+
+        /// <summary>The ride through an event's wormhole: a stream-out arrival at its destination with a wormhole closing
+        /// behind (hull etc. kept, like the Void's).</summary>
+        void RideEventWormhole()
+        {
+            if (rode || Leaving) return;
+            rode = riding = true;
+            Leaving = true;
+            Weapons?.StoreAmmo();
+            int from = Layout.stationIndex;
+            if (eventWormholeTo == Session.VoidOrbit && !Layout.alienOrbit) Session.VoidReturnStation = from;
+            Session.PreviousStationIndex = from;
+            Session.StationIndex = eventWormholeTo;
+            Session.ArrivedByTravel = true;
+            Session.LaunchedFromStation = false;
+            Session.ProgrammedStation = -1;
+            Session.ArrivedByWormhole = true;
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
@@ -930,6 +996,7 @@ namespace GoF2Remake.World
         /// when that station isn't in this system.</summary>
         Vector3 ArrivalPosition()
         {
+            if (Layout.arrival.HasValue) return OrbitLayout.ToUnity(Layout.arrival.Value);   // remake mods: the orbit's own
             if (Layout.hasJumpgate || Layout.alienOrbit) return OrbitLayout.ToUnity(Layout.hiddenJumpgate);
             var from = Layout.planets.Find(p => p.station == Session.PreviousStationIndex);
             if (from == null) return OrbitLayout.ToUnity(new Vector3(0f, 0f, 100000f));

@@ -111,6 +111,9 @@ namespace GoF2Remake.Modding
         public string Hangar { get => S("hangar"); set => SetS("hangar", value); }
         public string Bar { get => S("bar"); set => SetS("bar", value); }
         public string PlanetTexture { get => S("planetTexture"); set => SetS("planetTexture", value); }
+        /// <summary>The star map's planet image, wrapped round its sphere (2:1 like a world map).</summary>
+        public string MapTexture { get => S("mapTexture"); set => SetS("mapTexture", value); }
+        public bool MapRing { get => B("mapRing", false); set => SetB("mapRing", value, false); }
         public string Music { get => S("music"); set => SetS("music", value); }
     }
 

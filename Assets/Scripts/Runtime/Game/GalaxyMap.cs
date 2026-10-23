@@ -261,6 +261,13 @@ namespace GoF2Remake.Data
             {
                 var p = list[k];
                 p.orbitYaw = rnd.NextInt(3141) / 1000f;
+                // Remake mods: stations.json "mapPlace" (after the draws, so the others keep their places).
+                var place = Modding.ModWorld.MapPlaceOf(p.station);
+                if (place != null)
+                {
+                    if (place.angle.HasValue) p.angle = Mathf.RoundToInt(place.angle.Value / 360f * 65536f);
+                    if (place.distance.HasValue) p.radius = Mathf.RoundToInt(place.distance.Value);
+                }
                 list[k] = p;
             }
             return list;

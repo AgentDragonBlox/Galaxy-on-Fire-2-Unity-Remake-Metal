@@ -16,6 +16,7 @@ using System.Linq;
 using GoF2Remake.Data;
 using GoF2Remake.Modding;
 using GoF2Remake.World;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -329,7 +330,7 @@ namespace GoF2Remake.UI
             var s = currentStation;
             if (s == null) { Note(stationPage, T("mbPickStation", "Add a station on the left to start.")); return; }
             JsonButton(stationPage, s.Json, () => { SaveNow(); RequestReload(false); RebuildStations(); BuildStationPage(); },
-                       T("mbJsonStationNote", "Also in stations.json: volumes, materials, hangar / bar, music, planetTexture."));
+                       T("mbJsonStationNote", "Also in stations.json: volumes, materials, hangar / bar, music, planetTexture, mapTexture, mapRing."));
             bool isNew = !s.IsOverride;
             Heading(stationPage, isNew ? T("mbNewStationSub", "New station") : string.Format(T("mbChanges", "Changes {0}"), RefLabel(RefKind.Station, s.OverrideRef, s.OverrideRef)));
             if (isNew) Note(stationPage, string.Format(T("mbStationKey", "Other content names it {0}."), Project.Key(s.LocalId)));
@@ -414,6 +415,20 @@ namespace GoF2Remake.UI
             }), "mbv-step");
             if (s.PlanetTexture != null) Act(irow, "✕", () => { Project.DeleteFile(s.PlanetTexture, false); s.PlanetTexture = null; Edited(true); }, "mbv-step");
 
+            var maprow = Row(stationPage);
+            Add(maprow, new Label($"{T("mbMapImage", "On the star map")}: {(s.MapTexture != null ? System.IO.Path.GetFileName(s.MapTexture) : s.PlanetTexture != null ? T("mbMapDisc", "the planet image, as a disc") : T("mbGamePlanet", "the game's planet"))}"), "mbv-inline-label");
+            Act(maprow, T("mbChoose", "Choose…"), () => PickImage(T("mbPickMapPlanet", "Choose the map's planet (a 2:1 map of its surface, wrapped round the sphere)"), path =>
+            {
+                string old = s.MapTexture;
+                s.MapTexture = Project.AddFile(path, "textures", (s.LocalId ?? "station") + "_map", ".png");
+                Project.DeleteFile(old, false);
+                Edited(true);
+            }), "mbv-step");
+            if (s.MapTexture != null) Act(maprow, "✕", () => { Project.DeleteFile(s.MapTexture, false); s.MapTexture = null; Edited(true); }, "mbv-step");
+            FlagButton(Row(stationPage), T("mbMapRing", "A ring round it on the star map"), s.MapRing, v => s.MapRing = v, () => Edited(true));
+            BuildMapPlace(s);
+            BuildOrbitLayout(s);
+
             Act(stationPage, T("mbPlayStation", "Play: dock here"), () =>
             {
                 int n = StationNumberOf(s);
@@ -423,6 +438,152 @@ namespace GoF2Remake.UI
                 Session.StationIndex = n;
                 ModBuilderPlay.Start();
             }, "mbv-play");
+        }
+
+        // ---- the orbit's layout (stations.json "orbit", "mapPlace") ----
+
+        /// <summary>A JSON object field of the station, made on first change and dropped when emptied.</summary>
+        JObject Obj(ProjectStation s, string key) => s.Get(key) as JObject ?? new JObject();
+        void Put(ProjectStation s, string key, JObject o) => s.Set(key, o.HasValues ? o : null);
+
+        /// <summary>[x, y, z] fields of 'o[key]' (game units).</summary>
+        void XyzRow(VisualElement parent, string label, JObject o, string key, Action save)
+        {
+            if (!(o[key] is JArray a) || a.Count < 3) return;
+            Add(parent, new Label(label), "mbv-inline-label");
+            var row = Row(parent, "mbv-xyz");
+            for (int k = 0; k < 3; k++)
+            {
+                int c = k;
+                Float(row, "XYZ".Substring(c, 1), (float)a[c], -1000000f, 1000000f, v => { a[c] = Math.Round(v); save(); });
+            }
+        }
+
+        void BuildMapPlace(ProjectStation s)
+        {
+            var place = s.Get("mapPlace") as JObject;
+            FlagButton(Row(stationPage), T("mbMapPlace", "Its own place on the star map"), place != null,
+                       on => s.Set("mapPlace", on ? new JObject { ["angle"] = 0, ["distance"] = 20000 } : null), () => Edited(true));
+            if (place == null) return;
+            Float(stationPage, T("mbMapAngle", "Angle round the sun (degrees)"), place["angle"]?.Value<float>() ?? 0f, 0f, 360f, v => { place["angle"] = Math.Round(v, 1); Edited(true); });
+            Float(stationPage, T("mbMapDistance", "Distance from the sun (the game's planets: 8000 to 45000)"), place["distance"]?.Value<float>() ?? 20000f, 3000f, 120000f, v => { place["distance"] = Math.Round(v); Edited(true); });
+        }
+
+        void BuildOrbitLayout(ProjectStation s)
+        {
+            Heading(stationPage, T("mbOrbitLayout", "Its orbit"));
+            Note(stationPage, T("mbOrbitLayoutNote", "The station is the orbit's centre. Places are game units from it (20 = 1 m): z ahead of a ship launching from it, y up, x across (+x to its left). Show its orbit to see the result."));
+            var o = Obj(s, "orbit");
+            void Save(bool rebuild = false) { Put(s, "orbit", o); Edited(true); if (rebuild) BuildStationPage(); }
+
+            // The station itself.
+            var st = o["station"];
+            int stMode = st == null ? 0 : st.Type == JTokenType.Boolean ? ((bool)st ? 1 : 3) : 2;
+            Segments(stationPage, T("mbOrbitStation", "In its orbit"), new[] { T("mbGameDefault", "As the game has it"), T("mbOrbitDock", "A station to dock at"),
+                     T("mbOrbitNoDock", "Its model, no docking"), T("mbOrbitEmpty", "No station (an empty orbit)") }, stMode, n =>
+            {
+                if (n == 0) o.Remove("station"); else if (n == 1) o["station"] = true; else if (n == 2) o["station"] = "nodock"; else o["station"] = false;
+                Save(true);
+            });
+
+            // The visible jumpgate.
+            var jg = o["jumpgate"];
+            int jgMode = jg == null ? 0 : (bool)jg ? 1 : 2;
+            Segments(stationPage, T("mbOrbitGate", "Jumpgate"), new[] { T("mbOrbitGateSystem", "In the system's gate orbit"), T("mbOrbitGateHere", "Here"), T("mbOrbitGateNone", "None here") }, jgMode, n =>
+            {
+                if (n == 0) o.Remove("jumpgate"); else o["jumpgate"] = n == 1;
+                Save(true);
+            });
+            FlagButton(Row(stationPage), T("mbOrbitGateAt", "The jumpgate at a place of my own"), o["jumpgatePosition"] != null,
+                       on => { if (on) o["jumpgatePosition"] = new JArray(0, 0, 90000); else o.Remove("jumpgatePosition"); Put(s, "orbit", o); }, () => { Edited(true); BuildStationPage(); });
+            XyzRow(stationPage, T("mbOrbitGatePos", "Jumpgate at"), o, "jumpgatePosition", () => Save());
+            Note(stationPage, T("mbOrbitGateNote", "Ships arriving through the routes still come to the system's gate orbit (Systems: the jumpgate's orbit)."));
+
+            // Arrivals.
+            FlagButton(Row(stationPage), T("mbOrbitArrivalOwn", "Arrivals come in at a place of my own"), o["arrival"] != null,
+                       on => { if (on) o["arrival"] = new JArray(0, 0, 100000); else o.Remove("arrival"); Put(s, "orbit", o); }, () => { Edited(true); BuildStationPage(); });
+            XyzRow(stationPage, T("mbOrbitArrival", "Arrivals at (they face the station)"), o, "arrival", () => Save());
+
+            // The asteroid field.
+            var ast = o["asteroids"];
+            int astMode = ast == null ? 0 : ast.Type == JTokenType.Boolean ? ((bool)ast ? 0 : 1) : 2;
+            Segments(stationPage, T("mbOrbitAsteroids", "Asteroids"), new[] { T("mbGameDefault", "As the game has it"), T("mbOrbitNoAsteroids", "None"), T("mbOrbitOwnField", "A field of my own") }, astMode, n =>
+            {
+                if (n == 0) o.Remove("asteroids");
+                else if (n == 1) o["asteroids"] = false;
+                else o["asteroids"] = new JObject { ["count"] = 60, ["centre"] = new JArray(0, 0, 60000), ["spread"] = 100000 };
+                Save(true);
+            });
+            if (o["asteroids"] is JObject field)
+            {
+                Int(stationPage, T("mbOrbitCount", "How many"), field["count"]?.Value<int>() ?? 60, 1, 300, v => { field["count"] = v; Save(); });
+                if (field["centre"] == null) field["centre"] = new JArray(0, 0, 60000);
+                XyzRow(stationPage, T("mbOrbitFieldCentre", "Its centre"), field, "centre", () => Save());
+                Float(stationPage, T("mbOrbitSpread", "Its size (game units across; the game's 100000)"), field["spread"]?.Value<float>() ?? 100000f, 5000f, 500000f, v => { field["spread"] = Math.Round(v); Save(); });
+                string[] types = { "rock", "void", "ice", "magma" };
+                int ti = Math.Max(0, Array.IndexOf(types, (string)field["type"] ?? "rock"));
+                Segments(stationPage, T("mbOrbitRocks", "Rocks"), new[] { T("mbRockRock", "Rock"), T("mbRockVoid", "Void crystal"), T("mbRockIce", "Ice"), T("mbRockMagma", "Magma") }, ti, n =>
+                {
+                    if (n == 0) field.Remove("type"); else field["type"] = types[n];
+                    Save();
+                });
+                var ores = field["ores"] as JArray;
+                Add(stationPage, new Label(T("mbOrbitOres", "Ores (none: the system's, as the game picks them)")), "mbv-inline-label");
+                if (ores != null)
+                    foreach (var e in ores.ToList())
+                    {
+                        string item = e is JObject eo ? eo["item"]?.ToString() : e.ToString();
+                        var row = Row(stationPage);
+                        Add(row, new Label(RefLabel(RefKind.Item, item, item)), "mbv-inline-label");
+                        Act(row, "✕", () => { ores.Remove(e); if (ores.Count == 0) field.Remove("ores"); Save(true); }, "mbv-step");
+                    }
+                Act(stationPage, T("mbOrbitAddOre", "+ Ore"), () => PickRef(RefKind.Item, T("mbOrbitAddOre", "+ Ore"), e =>
+                {
+                    var list = field["ores"] as JArray ?? new JArray();
+                    list.Add(ProjectEntry.RefToken(e.value));
+                    field["ores"] = list;
+                    Save(true);
+                }), "mbv-add");
+            }
+
+            // Fog.
+            var fog = o["fog"];
+            int fogMode = fog == null ? 0 : fog.Type == JTokenType.Boolean ? ((bool)fog ? 2 : 1) : 2;
+            Segments(stationPage, T("mbOrbitFog", "Fog"), new[] { T("mbGameDefault", "As the game has it"), T("mbOrbitNoFog", "None"), T("mbOrbitOwnFog", "My own") }, fogMode, n =>
+            {
+                if (n == 0) o.Remove("fog"); else if (n == 1) o["fog"] = false; else o["fog"] = new JObject { ["color"] = new JArray(0.45, 0.45, 0.5), ["end"] = 100000 };
+                Save(true);
+            });
+            if (o["fog"] is JObject f)
+            {
+                if (!(f["color"] is JArray fc) || fc.Count < 3) f["color"] = fc = new JArray(0.45, 0.45, 0.5);
+                var crow = Row(stationPage, "mbv-xyz");
+                for (int k = 0; k < 3; k++)
+                {
+                    int c = k;
+                    Float(crow, "RGB".Substring(c, 1), (float)fc[c], 0f, 1f, v => { fc[c] = Math.Round(v, 2); Save(); });
+                }
+                Float(stationPage, T("mbOrbitFogEnd", "Thick at (game units; the game's 50000-150000)"), f["end"]?.Value<float>() ?? 100000f, 5000f, 1000000f, v => { f["end"] = Math.Round(v); Save(); });
+            }
+
+            // The sun and the orbit's planet.
+            var sun = o["sun"] as JArray;
+            FlagButton(Row(stationPage), T("mbOrbitSunOwn", "The sun in a direction of my own"), sun != null,
+                       on => { if (on) o["sun"] = new JArray(90, 15); else o.Remove("sun"); Put(s, "orbit", o); }, () => { Edited(true); BuildStationPage(); });
+            if (sun != null && sun.Count >= 2)
+            {
+                Float(stationPage, T("mbOrbitYaw", "Round (degrees: 0 behind a launching ship, 90 to its right, 180 ahead)"), (float)sun[0], -360f, 360f, v => { sun[0] = Math.Round(v, 1); Save(); });
+                Float(stationPage, T("mbOrbitPitch", "Up (degrees, -89 to 89)"), (float)sun[1], -89f, 89f, v => { sun[1] = Math.Round(v, 1); Save(); });
+            }
+            var planet = o["planet"] as JObject;
+            FlagButton(Row(stationPage), T("mbOrbitPlanetOwn", "Its planet in a direction and size of my own"), planet != null,
+                       on => { if (on) o["planet"] = new JObject { ["size"] = 1, ["yaw"] = 0, ["pitch"] = 0 }; else o.Remove("planet"); Put(s, "orbit", o); }, () => { Edited(true); BuildStationPage(); });
+            if (planet != null)
+            {
+                Float(stationPage, T("mbOrbitPlanetSize", "Size (x the game's)"), planet["size"]?.Value<float>() ?? 1f, 0.05f, 5f, v => { planet["size"] = Math.Round(v, 2); Save(); });
+                Float(stationPage, T("mbOrbitYaw", "Round (degrees: 0 behind a launching ship, 90 to its right, 180 ahead)"), planet["yaw"]?.Value<float>() ?? 0f, -360f, 360f, v => { planet["yaw"] = Math.Round(v, 1); Save(); });
+                Float(stationPage, T("mbOrbitPitch", "Up (degrees, -89 to 89)"), planet["pitch"]?.Value<float>() ?? 0f, -89f, 89f, v => { planet["pitch"] = Math.Round(v, 1); Save(); });
+            }
         }
 
         void PickGameStationModel(ProjectStation s)

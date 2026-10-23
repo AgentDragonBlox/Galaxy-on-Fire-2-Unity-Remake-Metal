@@ -67,8 +67,13 @@ namespace GoF2Remake.Events
         /// <summary>The event mission this player is on (null: none).</summary>
         public static Offer Active { get; private set; }
 
+        /// <summary>The Mod Builder's play test of a bar mission: offered in every bar while it runs, whatever its chance,
+        /// stations and pilot count (ModBuilderPlay.StartQuest).</summary>
+        public static string PlayTestOffer;
+        static bool PlayTested(string name) => PlayTestOffer != null && PlayTestOffer == name && Modding.ModBuilder.PlayTesting;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { offersStation = -1; addVisitor = null; byAgent.Clear(); Active = null; rolls.Clear(); talked.Clear(); }
+        static void ResetStatics() { offersStation = -1; addVisitor = null; byAgent.Clear(); Active = null; rolls.Clear(); talked.Clear(); PlayTestOffer = null; }
 
         /// <summary>EventRunner.Reset (a new session, the server going): every station rolls its offers anew.</summary>
         internal static void ResetOffers() => rolls.Clear();
@@ -208,7 +213,7 @@ namespace GoF2Remake.Events
         static void AcceptLocal(Offer o)
         {
             var info = EventRunner.MissionGraphs().Find(m => m.name == o.name);
-            if (info == null || !Offered(info, o.station)) { EventHost.NoticeTo(LocalPilot.Instance, X("mpEventMissionGone", "That mission isn't offered here any more.")); return; }
+            if (info == null || (!Offered(info, o.station) && !PlayTested(o.name))) { EventHost.NoticeTo(LocalPilot.Instance, X("mpEventMissionGone", "That mission isn't offered here any more.")); return; }
             var record = new GraphQuestState { name = o.name, kind = GraphQuestState.KindMission, title = o.title, station = o.station, offer = o.entry };
             Session.GraphQuests.Add(record);
             string why = EventRunner.StartMission(o.name, new HashSet<ulong> { 0 }, o.station, LocalPilot.Instance, record);
@@ -357,6 +362,8 @@ namespace GoF2Remake.Events
         {
             var list = new List<string>();
             foreach (var m in EventRunner.MissionGraphs())
+                if (singlePlayer && PlayTested(m.name)) list.Add(Entry(m, station));   // the builder's play test: here for sure
+                else
                 // Single player: the mods' and the Events folder's graphs for one pilot (the built-ins are multiplayer examples).
                 if ((m.stations.Count == 0 || m.stations.Contains(station)) && (!singlePlayer || (m.minPlayers <= 1 && !m.builtIn))
                     && (m.takers != EventMissionTakers.OneInUniverse || !EventRunner.MissionTaken(m.name))   // one squad in the universe

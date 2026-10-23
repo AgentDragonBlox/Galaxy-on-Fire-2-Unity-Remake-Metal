@@ -18,6 +18,8 @@
 //   PlayerEgo::calcCollision  visible, not shrinking, within 40000: the loop sound 34 at the wormhole, the player moved
 //                        toward it by (40000 - d) / 256 units per (30 fps) frame, camera hit(); within 1000 = inside
 //                        (PlayerEgo+0x25, isInWormhole); the ride itself is SpaceLevel's (MGame::OnUpdate)
+// Remake events / missions (EventWormhole, /wormhole): a 'held' wormhole stays open until Close() shrinks it away, with no
+// story rules; SpaceLevel rides it to its own destination.
 
 using GoF2Remake.Data;
 using GoF2Remake.Visuals;
@@ -46,6 +48,9 @@ namespace GoF2Remake.World
         public bool alienOrbit, attackedStation;
         /// <summary>The player (for the index 29 / 41 relocation near the player).</summary>
         public Transform player;
+        /// <summary>Remake events: open until Close(), never relocated, no mission lock.</summary>
+        public bool held;
+        bool closing;
 
         public static Wormhole Spawn(StoryAssets assets, Vector3 gamePosition, bool visible)
         {
@@ -88,6 +93,7 @@ namespace GoF2Remake.World
         {
             timer = closing ? 59000 : 0;
             scale = 4096;
+            this.closing = closing;
         }
 
         /// <summary>PlayerWormHole::open: grows from nothing over 3 s.</summary>
@@ -95,6 +101,15 @@ namespace GoF2Remake.World
         {
             timer = -GrowMs;
             scale = 0;
+            closing = false;
+        }
+
+        /// <summary>Remake events: a held wormhole shrinks away over 3 s.</summary>
+        public void Close()
+        {
+            if (!Visible || closing) return;
+            closing = true;
+            if (timer < OpenMs) timer = OpenMs;
         }
 
         public void FreeMissionLock() => missionLock = false;
@@ -116,14 +131,15 @@ namespace GoF2Remake.World
             timer += dt;
             int index = Story.Index;
             if (timer < 0) scale = 4096 - (int)(-timer / (float)GrowMs * 4096f);
+            else if (held && !closing) { timer = 0; scale = 4096; }   // an event's: open until closed
             else if (timer > OpenMs)
             {
-                bool locked = missionLock && ((index == 42 && alienOrbit) || (index == 40 && !alienOrbit));
+                bool locked = missionLock && !held && ((index == 42 && alienOrbit) || (index == 40 && !alienOrbit));
                 if (locked) timer = OpenMs;
                 scale = 4096 - (int)((timer - OpenMs) / (float)ShrinkMs * 4096f);
                 if (timer > OpenMs + ShrinkMs)
                 {
-                    if (!alienOrbit && !attackedStation) { SetVisible(false); return; }
+                    if (held || (!alienOrbit && !attackedStation)) { SetVisible(false); return; }
                     if (missionLock && index == 42 && !alienOrbit) { SetVisible(false); return; }
                     Relocate(index);
                 }

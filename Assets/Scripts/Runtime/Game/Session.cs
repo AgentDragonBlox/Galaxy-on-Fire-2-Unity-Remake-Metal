@@ -213,6 +213,8 @@ namespace GoF2Remake.Data
         public static int VoidReturnStation = 10;
         /// <summary>Level::comingFromAlienWorld: the next level starts with a wormhole closing behind the player.</summary>
         public static bool ComingFromVoid;
+        /// <summary>Remake events: the next level starts with a wormhole closing behind the player (an event's wormhole ride).</summary>
+        public static bool ArrivedByWormhole;
         /// <summary>Level::initStreamOutPositionAfterCutscene: index 143 won in space at Var Lupra, so the 144 cutscene's reload
         /// into the 145 attack is a stream-out arrival (LevelScript::process 0x90). Not saved, like the original's static.</summary>
         public static bool StreamOutAfterCutscene;
@@ -498,6 +500,7 @@ namespace GoF2Remake.Data
             InvasionDepartures = 0;
             VoidReturnStation = 10;
             ComingFromVoid = false;
+            ArrivedByWormhole = false;
             StreamOutAfterCutscene = false;
             LastFreighterHull = -1;
             EndingPending = false;

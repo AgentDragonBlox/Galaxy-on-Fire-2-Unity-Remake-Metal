@@ -408,8 +408,20 @@ the game. `"flightStyle": "free" | "original"`: the campaign's games always fly 
 ```json
 [ { "id": "kepler_prime", "system": "frontier_systems:kepler", "name": "Kepler Prime", "techLevel": 7, "planet": 12,
     "looksLike": 40, "model": "models/station.glb", "modelSize": 50000, "collision": "box", "interior": "nivelian",
-    "planetTexture": "textures/planet.png", "music": "kepler_bar" } ]
+    "planetTexture": "textures/planet.png", "mapTexture": "textures/planet_map.png", "mapRing": true, "music": "kepler_bar" } ]
 ```
+
+`planetTexture` is the planet billboard seen in orbit (a disc on transparency); `mapTexture` the star map's planet (a 2:1
+equirectangular map wrapped round the map's sphere, lit by the sun; without it the map shows `planetTexture` as a flat disc,
+without either the game's planet `planet`); `mapRing: true` puts the game's planet ring round it on the map. A system's
+`"skybox": { "sunAligned": true }` turns the sky in every orbit so its top (+Y) points at that orbit's sun (paint the bright
+side at the top); a `rotation` with it turns the image first. A station's `"mapPlace": { "angle": deg, "distance": 8000-45000 }`
+places its planet in the map's system view. A station's `"orbit"` lays out its orbit level over the game's seeded one (the
+station is the centre; game units, z ahead of a launching ship, y up, +x to its left; yaw 0 behind a launching ship, 90 to its
+right): `"station": true | false | "nodock"`, `"jumpgate": true | false` (arrivals by route still go to the system's gate
+orbit), `"jumpgatePosition"` / `"arrival"`: [x, y, z], `"asteroids": false | { "count", "centre", "spread" (default 100000),
+"type": rock | void | ice | magma, "ores": [item | { item, chance }] }`, `"fog": false | { "color", "end" }`, `"sun": [yaw,
+pitch]`, `"planet": { "size", "yaw", "pitch" }`.
 
 `looksLike` borrows only an original station's model and collision (reference.md's Model column): its special rules (the
 Kaamo Club's storage and siege, a pirate base) stay with the original number. Stations have no hidden flag: every station of
@@ -466,7 +478,9 @@ from the game's own table: read it before writing a mission. In short: story ste
 `title`), flow and blocks (`wait`, `waituntil`, `if` then / else, `while`, `repeat`, `parallel`, `every`, `on` <trigger> (also
 `hacked`: the player hacked a wreck, its name as %victim%), `ask`
 / `vote` answers, `random` branches, `set`, `checkpoint`, `startquest`, `startevent`, `complete`, `fail`), places (`goto`,
-`waypoint`, `target`, `questorbit`, `restrict`, `respawn`, `teleport`), ships (`fight`, `spawn`, `wreck` (a hackable freighter
+`waypoint`, `wormhole` (station, at, to / void, seconds: a Void-style wormhole in that orbit, flying in takes the player
+to `to`, which may be a variable `"{dest}"` or a wired value; no station = close it), `target`, `questorbit`, `restrict`,
+`respawn`, `teleport`), ships (`fight`, `spawn`, `wreck` (a hackable freighter
 wreck: race, name, at), `shipgoto`, `shiproute`,
 `shipfollow`, `shipattack`, `shipaction`, `provoke`), the player (`reward`, `give`, `cargo`, `credits`, `ship`, `heal`...),
 cutscenes (`cutscene`, `camera`, `fade`, `letterbox`...), `music`, `sound`, `timer`, score steps and `command` (any event

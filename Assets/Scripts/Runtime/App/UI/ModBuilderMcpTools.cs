@@ -181,7 +181,7 @@ namespace GoF2Remake.UI
             new Tool
             {
                 name = "play_test", title = "Start a play test",
-                description = "Plays the project as a player would: 'station' (docked at the builder's station), 'mission' (with the named mission under way) or 'campaign' (from the project's campaign start). Edits wait until end_play_test. Watch it with screenshot, builder_status and get_log.",
+                description = "Plays the project as a player would: 'station' (docked at the builder's station), 'mission' (with the named mission under way; a bar mission is offered in the station's Space Lounge instead, by its client: take it there as a player would) or 'campaign' (from the project's campaign start). Edits wait until end_play_test. Watch it with screenshot, builder_status and get_log.",
                 input = Input(("mode", Enum("station", "mission", "campaign"), "how to start", true), ("mission", "string", "mode mission: the mission's name", false)),
                 run = PlayTest, timeoutSeconds = 90f, ask = a => $"start a play test ({Str(a, "mode") ?? "station"}{(Str(a, "mission") != null ? ": " + Str(a, "mission") : "")})",
             },

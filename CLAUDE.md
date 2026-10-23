@@ -1869,6 +1869,22 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   when a player alive in space comes that close (server-side, NetPlayer positions). Spawned objects get collision
   (`DebugSpawner.SpawnObject`: `station_pirates` the original's volumes 1002 unrotated, others a box around the model) and
   exist only in the games they were sent to: spawn scenery for `@a[orbit=...]` at fixed coordinates.
+  **Wormholes** (remake, 2026-10-23, the user's request: "wormhole spawning nodes to Missions, with variable destination";
+  `/wormhole [players] <station> [x y z] to <station | void> [for <seconds>] | close`, NetAdmin order Wormhole 33,
+  `NetAdmin.TryParseWormhole` (a station by number, name, key, `void` or -1, so a variable's number works; without x y z
+  `NetAdmin.WormholeDefaultAt` (50000, 15000, 60000): its 2 km pull clear of the launch path along game +z, which a
+  first test at (0, 0, 60000) caught every launching ship from); the mission step `wormhole`
+  (station, at, to (a Station field: a variable or value node wires in) / void, seconds; no station = close; `QuestFile`
+  reads the line back), the graph's Open / Close Wormhole nodes (Orbit and Destination take Get Orbit)): `EventWormhole`
+  (Net/Events, like `EventWaypoint`; one per player, a new order replaces it; game-time seconds, 0 = until closed; closed at
+  the event's end, `EventRun.eventWormhole`; a resumed mission runs the line again) has the `SpaceLevel` of that orbit open
+  it (`OpenEventWormhole`: `Wormhole.held`, open until `Close()`, never relocated, no mission lock; its own
+  `PlayerCollision.eventWormhole` pull without the story's rules, `Navigation.SetEventWormhole`'s "Wormhole" marker); inside
+  it `RideEventWormhole` travels to the destination (`VoidReturnStation` set for the Void) as a stream-out arrival with
+  `Session.ArrivedByWormhole`: `PlaceArrivalWormhole` puts a closing wormhole 10000 units behind the player. Tests
+  `NetCommandsTests.AWormholeOrder`, `QuestGraphTests.AWormholeStepTakesAVariableDestinationAndComesBack`. Verified in Play
+  mode (single player, a throwaway .gof2mission at Kepler Prime with `"to": "{dest}"`): the wormhole opening with its marker,
+  the ride to Var Hastra arriving 4.2 km out facing the station with the closing wormhole behind. Not tested in multiplayer.
   **Ship orders** (`EventShipOrders`, `NpcOrder`; NetAdmin order Npc 29, `/npc [players] <ship> <order>`; the server checks
   the text with `EventShipOrders.TryParse`, each target's game applies it to its own traffic ships of that name (Target.
   displayName, "Name N" of a numbered spawn too; proxies just mirror)): goto / route (places "/"-separated, loop), follow /
@@ -2643,6 +2659,27 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   planet behind it, the sun, a ship placed inside pushed out to the box face, Dock offered there, the Nivelian hangar docked.
   A sun PNG with a bright glow out to its edge blows up when the sun swells near the screen centre: the originals fade to black
   well inside the edge (the guide says so).
+  **Star map planets** (remake, 2026-10-23, the user's request): stations.json `"mapTexture"` (an image wrapped round the
+  map's sphere; `StarMap.ApplyModPlanet` swaps the planet mesh, whose UVs are one 0.2 x 0.2 cell of the
+  galaxymap_planets atlas, for a generated UV sphere of the same radius (`WrappedSphere`, equirectangular) with a copy of
+  the map material, still lit by `LightBySun`), else a `"planetTexture"` there as a disc facing the map camera
+  (`FaceDiscs`, a copy of `ModAssets.fxAlpha`, the sphere's renderers off), else the game's planet; `"mapRing": true` adds
+  `AddPlanetRing`'s copy of planet 9's ring (`ModWorld.MapTexture` / `MapRing`; the map image is preloaded with the other
+  backdrops). The example's Kepler Prime has both (`textures/kepler_prime_map.png`).
+  **Orbit layouts and map places** (remake, 2026-10-23, the user's request): stations.json `"orbit"` (`ModWorld.OrbitSpec`,
+  `OrbitOf`; parsed with the rest, ores resolved in Apply) is applied by `OrbitLayout.ApplyMod` after the seeded layout:
+  station (`hasStation` / `stationObject`: dock, `"nodock"`, none), the visible jumpgate (a forced one at the spot
+  `BuildGates` would roll for a gate orbit) and its position, `arrival` (`OrbitLayout.arrival`, first in
+  `SpaceLevel.ArrivalPosition`), the asteroid field (`asteroidCount` 0 = none, also no autopilot entry; centre;
+  `asteroidSpread` for `SpawnAsteroids`' cubes; type; `modOres` with weights: `OrbitBuilder.PickWeighted`, not the original's
+  `PickOre`, which needs six entries), fog, the sun (`lightDirection` = -Direction(pitch, yaw), so the backdrop, light, flare,
+  skybox `sunAligned` follow) and the orbit planet's size / yaw / pitch. The station stays the origin (everything around it
+  assumes so); directions: yaw 0 behind a launching ship (the orbit planet's default), + to its right. `"mapPlace"`
+  (`ModWorld.MapPlaceOf`) sets the planet's angle / radius in `GalaxyMap.SystemLayout` after its draws, so the other planets
+  keep theirs. The builder's Stations page: Its own place on the star map, Its orbit (every field). The example's Rho
+  Freeport has both. Tests `ModWorldTests.AnOrbitLaidOutByItsMod` / `AnOrbitWithoutStationOrAsteroids` and the errors. The builder's Stations page: the map
+  image and the ring. Verified in Play mode: Kepler Prime's banded map planet lit from the sun with its ring, and with
+  only planetTexture the disc.
 - **Weapon fx** (`ModWeapons`, items.json `"fx"` on a new item or an override; `ModFxPart`): projectile / muzzle / impact
   each the base item's, `false` (none), a `sprite` (PNG on a two-sided 1 x 1 quad, white vertex colours: the GoF2 Shader
   Graphs keep `_USEVERTEXCOLOR_ON` in every game material, so it stays on) or a `model` (glTF; with `texture` every
@@ -3088,7 +3125,10 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   at its top). Images through `ModBackdrop.Texture` / `ModMaterials` (preloaded with the backdrops, `ModWorld.BackdropTextures`).
   Example: frontier_systems' 2048 x 1024 Kepler nebula (generated, seamless) over the game's star layer 1. Verified in Play
   mode: a labelled debug strip with a zero rotation (each face on its axis, upright, the up / down faces as documented), the
-  panorama with the per-station turn, no seam.
+  panorama with the per-station turn, no seam. `"sunAligned": true` (remake, 2026-10-23, the user's request) turns the sky
+  in every orbit so its +Y points at that orbit's sun (`OrbitBuilder.SunAlignedSky`, the supernova system's R_sky; a sun on
+  game x takes game z for its side axis instead of a zero vector), a `rotation` with it applied to the image first; the
+  builder's Systems page has it. Test `ModWorldTests.ASkyFollowsTheSun`.
 - **Characters** (`ModCharacters`, a mod's `characters.json`: id, name (per language), portrait PNG, race, gender, mirrored,
   background, frame, replaces): `NetAdmin.ResolveSpeaker` takes a character by key "mod_id:id" (before the story speakers),
   else after them by id or name (any language), "x as Name" renaming; the spec is "-3 US rename US key" (`Events.SpeakerSpec`,
@@ -3283,7 +3323,8 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   Campaign show their ship on the turntable (`ModBuilder.PreviewShip` / `PreviewLoadout`). **Play** (`ModBuilderPlay`,
   `ModBuilder.PlayTesting`): a play test, the game with the project on (the station menu, traffic, quests:
   `LocalEvents` runs no quests in the builder otherwise), from the builder's station, the campaign's start or a quest under
-  way; the pause / station menu's Back to Mod Builder, a death or a failed quest end it (`EndPlayTest`: the builder's game
+  way (a bar mission instead: `EventMissions.PlayTestOffer`, offered in every bar while the play test runs, whatever its
+  chance, stations and pilot count, taken in the lounge like a player; `EventRunner.IsBarMission`; the MCP's play_test too); the pause / station menu's Back to Mod Builder, a death or a failed quest end it (`EndPlayTest`: the builder's game
   as it opened). Blueprints: product, ingredients, skin ship, autocomplete, condition, lounge / derelict / drops. Campaign:
   the card, start, equipment, cargo, standing, story quest, mod-only galaxy / items / ships, traffic ships; new-game options.
   Missions (called quests until 2026-10-23, the user's request: "Mission" everywhere a player or modder reads it; the

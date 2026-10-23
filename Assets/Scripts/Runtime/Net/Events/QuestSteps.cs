@@ -343,6 +343,17 @@ namespace GoF2Remake.Events
                 string st = r.Ref("station"), at = r.Xyz("at");
                 return st.Length == 0 || at.Length == 0 ? QuestReader.Join("waypoint", r.Who, "off") : QuestReader.Join("waypoint", r.Who, st, at);
             }, Who(), F("station", QuestFieldKind.Station, "Station"), F("at", QuestFieldKind.Xyz, "At (x y z, game units from the station; empty: cleared)", optional: true)),
+            Plain("wormhole", "places", "Wormhole", "A wormhole in an orbit; flying in takes the player to its destination", r =>
+            {
+                string st = r.Ref("station");
+                if (st.Length == 0) return QuestReader.Join("wormhole", r.Who, "close");
+                string to = r.B("void") ? "void" : r.Ref("to");
+                if (to.Length == 0) { r.Problem("pick the destination (a station, or the Void)."); return null; }
+                return QuestReader.Join("wormhole", r.Who, st, r.Xyz("at"), "to", to, r.Has("seconds") ? "for " + r.Arg("seconds") : "");
+            }, Who(), F("station", QuestFieldKind.Station, "In the orbit of (empty: close it)", optional: true),
+               F("at", QuestFieldKind.Xyz, "At (x y z; empty: 4 km out, beside the launch path)", optional: true),
+               F("to", QuestFieldKind.Station, "Destination", optional: true), F("void", QuestFieldKind.Bool, "Into the Void instead", false),
+               F("seconds", QuestFieldKind.Float, "Open for (seconds; empty: until closed)", optional: true, min: 1f)),
             Plain("target", "places", "Map target", "The gold story icon on the map and the HUD", r => "target " + (r.Ref("station") is var s && s.Length > 0 ? s : "off"),
                F("station", QuestFieldKind.Station, "Station (empty: none)", optional: true)),
             Plain("questorbit", "places", "Quiet orbit", "No normal traffic in an orbit (for the mission's own ships)", r =>

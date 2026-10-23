@@ -265,6 +265,113 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
+        public void TheExamplesMapPlanetAndRing()
+        {
+            Frontier();
+            Assert.AreEqual("mod:frontier_systems|textures/kepler_prime_map.png", ModWorld.MapTexture(135));
+            Assert.IsTrue(ModWorld.MapRing(135));
+            Assert.IsNull(ModWorld.MapTexture(136), "no map image: the game's planet");
+            Assert.IsFalse(ModWorld.MapRing(136));
+            CollectionAssert.Contains(ModWorld.BackdropTextures().ToList(), "mod:frontier_systems|textures/kepler_prime_map.png", "decoded with the other backdrops");
+        }
+
+        [Test]
+        public void AnOriginalStationGetsAMapRing()
+        {
+            WriteMod("w", "t_world", "1.0", "", ("stations.json", "[ { 'override': 78, 'mapRing': true } ]"));
+            ScanAndEnable("t_world");
+            Database.Load();
+            Assert.IsTrue(ModWorld.MapRing(78));
+            Assert.IsFalse(ModWorld.MapRing(79));
+        }
+
+        [Test]
+        public void AMissingMapImageIsAnError() =>
+            StringAssert.Contains("the mapTexture textures/none.png isn't in the mod", WorldError("stations.json", "[ { 'override': 1, 'mapTexture': 'textures/none.png' } ]"));
+
+        [Test]
+        public void ASkyFollowsTheSun()
+        {
+            WriteMod("w", "t_world", "1.0", "", ("systems.json", "[ { 'override': 1, 'skybox': { 'sunAligned': true } }, { 'override': 2, 'skybox': { 'stars': 1 } } ]"));
+            ScanAndEnable("t_world");
+            Database.Load();
+            Assert.IsTrue(ModWorld.SkyOf(1).sunAligned);
+            Assert.IsFalse(ModWorld.SkyOf(2).sunAligned);
+            // OrbitBuilder.SunAlignedSky: the sky's +Y toward the orbit's sun, whatever its direction (also along game x).
+            foreach (var toSun in new[] { new Vector3(0.3f, 0.5f, -0.8f), Vector3.right, new Vector3(-1f, 0f, 0f), Vector3.up })
+            {
+                var layout = new GoF2Remake.World.OrbitLayout { lightDirection = toSun.normalized };
+                var up = GoF2Remake.World.OrbitBuilder.SunAlignedSky(layout) * Vector3.up;
+                var want = GoF2Remake.World.OrbitLayout.DirToUnity(toSun.normalized).normalized;
+                Assert.Less(Vector3.Angle(up, want), 0.01f, toSun.ToString());
+            }
+        }
+
+        // stations.json "orbit" over the seeded layout (OrbitLayout.ApplyMod) and "mapPlace" (GalaxyMap.SystemLayout).
+        [Test]
+        public void AnOrbitLaidOutByItsMod()
+        {
+            WriteMod("w", "t_world", "1.0", "", ("stations.json", "[ { 'override': 78, 'mapPlace': { 'angle': 90, 'distance': 30000 }, 'orbit': { " +
+                "'station': 'nodock', 'jumpgate': true, 'jumpgatePosition': [1000, 2000, 3000], 'arrival': [0, 5000, -80000], " +
+                "'asteroids': { 'count': 20, 'centre': [-40000, 0, 50000], 'spread': 50000, 'type': 'ice', 'ores': [154, { 'item': 155, 'chance': 3 }, 'nope:x'] }, " +
+                "'fog': { 'color': [0.2, 0.4, 0.6], 'end': 70000 }, 'sun': [0, 30], 'planet': { 'size': 2, 'yaw': 45, 'pitch': 10 } } } ]"));
+            ScanAndEnable("t_world");
+            var db = Database.Load();
+            var l = GoF2Remake.World.OrbitLayout.Build(db, 78);
+            Assert.IsFalse(l.hasStation, "no docking");
+            Assert.IsTrue(l.stationObject, "the model stays");
+            Assert.IsTrue(l.hasJumpgate);
+            Assert.AreEqual(new Vector3(1000, 2000, 3000), l.jumpgate);
+            Assert.AreEqual(new Vector3(0, 5000, -80000), l.arrival.Value);
+            Assert.AreEqual(20, l.asteroidCount);
+            Assert.AreEqual(new Vector3(-40000, 0, 50000), l.asteroidCentre);
+            Assert.AreEqual(50000f, l.asteroidSpread);
+            Assert.AreEqual(2, l.asteroidType, "ice");
+            CollectionAssert.AreEqual(new[] { (154, 1), (155, 3) }, l.modOres, "the unknown ore left out");
+            StringAssert.Contains("ore \"nope:x\" is no item", AllMessages(Installed("t_world")));
+            CollectionAssert.AreEqual(new[] { (154, 1), (155, 3) }, GoF2Remake.World.OrbitLayout.OreProbabilities(db, l));
+            Assert.IsTrue(l.fog);
+            Assert.AreEqual(0.4f, l.fogColor.g, 1e-6f);
+            Assert.AreEqual(70000f, l.fogEnd);
+            Assert.Greater(l.lightDirection.y, 0.49f, "the sun 30 degrees up");
+            Assert.AreEqual(0f, l.lightDirection.x, 1e-5f);
+            var own = l.planets.Find(p => p.isOrbitPlanet);
+            var placed = -GoF2Remake.World.OrbitLayout.Direction(own.pitch, own.yaw);   // where the backdrop puts it
+            Assert.Less(Vector3.Angle(placed, GoF2Remake.World.OrbitLayout.ModDirection(45f, 10f)), 0.01f);
+            Assert.Greater(placed.y, 0.17f, "10 degrees up");
+            // Past 90 degrees of yaw "up" stays up (the game's own angles tip the pitch over there).
+            var behind = GoF2Remake.World.OrbitLayout.ModDirection(120f, 20f);
+            Assert.AreEqual(Mathf.Sin(20f * Mathf.Deg2Rad), behind.y, 1e-5f);
+            Assert.Less(behind.x, 0f, "to a launching ship's right is game -x");
+            Assert.Greater(behind.z, 0f, "past 90 degrees: ahead of it (game +z)");
+            var map = GalaxyMap.SystemLayout(db, db.Systems.Find(s => s.index == 15)).Find(p => p.station == 78);
+            Assert.AreEqual(16384, map.angle, "90 degrees of 65536");
+            Assert.AreEqual(30000, map.radius);
+        }
+
+        [Test]
+        public void AnOrbitWithoutStationOrAsteroids()
+        {
+            WriteMod("w", "t_world", "1.0", "", ("stations.json", "[ { 'override': 79, 'orbit': { 'station': false, 'jumpgate': false, 'asteroids': false, 'fog': false } } ]"));
+            ScanAndEnable("t_world");
+            var db = Database.Load();
+            var l = GoF2Remake.World.OrbitLayout.Build(db, 79);
+            Assert.IsFalse(l.hasStation);
+            Assert.IsFalse(l.stationObject);
+            Assert.IsFalse(l.hasJumpgate);
+            Assert.AreEqual(0, l.asteroidCount);
+            Assert.IsFalse(l.fog);
+            Assert.IsNull(l.arrival);
+            var plain = GoF2Remake.World.OrbitLayout.Build(db, 80);
+            Assert.AreEqual(100000f, plain.asteroidSpread, "a station without one keeps the game's");
+            Assert.IsNull(plain.modOres);
+        }
+
+        [Test] public void ABadOrbitStation() => StringAssert.Contains("orbit \"station\" is true, false", WorldError("stations.json", "[ { 'override': 1, 'orbit': { 'station': 'maybe' } } ]"));
+        [Test] public void ABadAsteroidType() => StringAssert.Contains("asteroids \"type\" is rock, void, ice or magma", WorldError("stations.json", "[ { 'override': 1, 'orbit': { 'asteroids': { 'type': 'cheese' } } } ]"));
+        [Test] public void ABadOrbitPosition() => StringAssert.Contains("\"arrival\" must be [x, y, z]", WorldError("stations.json", "[ { 'override': 1, 'orbit': { 'arrival': [1, 2] } } ]"));
+
+        [Test]
         public void VolumesAreRead()
         {
             string dir = WriteMod("w", "t_world", "1.0", "", ("stations.json",

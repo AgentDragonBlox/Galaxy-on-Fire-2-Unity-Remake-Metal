@@ -197,6 +197,16 @@ A point in an orbit the autopilot flies to
 - `station` (wirable): Station; the game's number, its name, or a key "mod_id:id".
 - `at`: At (x y z, game units from the station; empty: cleared); "x y z" in game units (20 = 1 m).
 
+### `wormhole`: Wormhole
+
+A wormhole in an orbit; flying in takes the player to its destination
+
+- `station` (wirable): In the orbit of (empty: close it); the game's number, its name, or a key "mod_id:id".
+- `at`: At (x y z; empty: 4 km out, beside the launch path); "x y z" in game units (20 = 1 m).
+- `to` (wirable): Destination; the game's number, its name, or a key "mod_id:id".
+- `void`: Into the Void instead. Default `False`.
+- `seconds` (wirable): Open for (seconds; empty: until closed); a number, or an expression as a string.
+
 ### `target`: Map target
 
 The gold story icon on the map and the HUD

@@ -31,7 +31,8 @@ Wherever content names other content (a mission's speaker, a station's system, a
 picker offers the game's, your project's own (your character can speak in your mission) and **every other installed mod's**:
 picking another mod's makes it a dependency of yours (Menu > Dependencies lists them). **Play** in the top bar starts a play
 test: the game as a player has it with your mod on, from the builder's station, from your campaign's start or with one of
-your missions under way; the pause menu's (or the station menu's) Back to Mod Builder ends it, and so does a death.
+your missions under way (a bar mission is offered in the station's Space Lounge instead, by its client, whatever its offer
+chance and stations: take it there as a player would); the pause menu's (or the station menu's) Back to Mod Builder ends it, and so does a death.
 **Undo** / **Redo** in the top bar (Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z) step back and forth through your edits, files you replaced
 or removed included, until you close the project. Menu > **Optimize models and textures** (or **Optimize…** beside a ship's
 model) makes a big download small: every texture inside your `.glb` models scaled down to 1K, 2K or 4K and stored as a JPEG
@@ -1071,7 +1072,8 @@ New star systems and their stations. Both are lists: `"id"` adds one, `"override
         "looksLike": 40,
         "model": "models/kepler_station.glb", "modelSize": 50000, "collision": "box",
         "interior": "nivelian",
-        "planetTexture": "textures/kepler_prime_planet.png"
+        "planetTexture": "textures/kepler_prime_planet.png",
+        "mapTexture": "textures/kepler_prime_map.png", "mapRing": true
     },
     { "id": "rho_freeport", "system": "frontier_systems:kepler", "name": "Rho Freeport", "techLevel": 4, "planet": 6, "looksLike": 41 }
 ]
@@ -1112,6 +1114,7 @@ The game's sky is two layers added together: the stars and a nebula. A system's 
 | `stars` | A star image of your own, one of the game's three star layers (`0`, `1`, `2`), or `"none"` (when your nebula image has its stars painted in). Default: the system's usual stars. |
 | `nebulaBrightness`, `starsBrightness` | Multipliers, default 1. |
 | `rotation` | `[x, y, z]` degrees: a fixed turn of the sky. Without it the sky is turned per station like the game's own (each orbit sees it from another angle). |
+| `sunAligned` | `true`: in every orbit the sky is turned so its top (+Y, the panorama's top edge, the strip's up face) points at that orbit's sun, the way the game turns the supernova's sky. Paint the glow or the bright side of your nebula at the top and it always lies behind the sun, whatever planets the stations have. With `rotation` too, that turn is applied to the image first (it turns the picture about its top). |
 
 An image is either:
 
@@ -1143,10 +1146,51 @@ nebula on black, not on a dark blue. The sky also lights the scene a little (its
 | `interior` | The hangar and bar you see when docked: `"terran"`, `"vossk"`, `"nivelian"`, `"midorian"` (or 0-3). Default: those of its system's race. |
 | `hangar`, `bar` | Your own hangar / bar room from `interiors.json` (see [Hangars and bars](#hangars-and-bars)): its id, or `"mod_id:interior_id"` for another mod's. `interior` still picks the race whose ships park there. |
 | `planetTexture` | Its own planet: a PNG with transparency (the round planet on a transparent background, its lit side as you like it; 512 x 512 is plenty). Seen big from its own orbit and small from the system's other orbits. Default: the game's texture `planet`. |
+| `mapTexture` | The planet on the star map's system view: an image wrapped round the map's sphere like a world map (2:1 equirectangular; it must wrap at the left and right edges; 1024 x 512 is plenty), lit by the system's sun like the game's map planets. Without it a `planetTexture` is shown there as a flat disc facing you; without either, the game's map planet for `planet`. |
+| `mapRing` | `true`: a ring round the planet on the star map (the game's own planet ring, as the planet ring orbits have it). |
+| `mapPlace` | `{ "angle": degrees, "distance": n }`: where its planet sits in the star map's system view, round the sun (0 to 360) and how far out (the game's planets lie about 8000 to 45000 out). Either may be left out. Default: the game's place for it. |
+| `orbit` | The layout of its orbit level: station or not, jumpgate, arrivals, asteroids, fog, sun and planet. See [Orbit layouts](#orbit-layouts). |
 | `music` | A mod's track for its docked music (see [Music](#music)). |
 
 Changing a station (`"override"`): `name`, `techLevel`, and the looks: `model` and its fields, `interior`, `planetTexture`,
-`music` (an original station can get a new model too).
+`mapTexture`, `mapRing`, `mapPlace`, `orbit`, `music` (an original station can get a new model too).
+
+### Orbit layouts
+
+Every orbit is laid out by the game from fixed numbers per station: where the jumpgate stands (only in the system's gate
+orbit), where ships arrive, how many asteroids there are and where, the sun's direction, the planet's size. A station's
+`orbit` changes any of it; what it leaves out stays the game's. The station is always the orbit's centre: places are game
+units from it (20 units = 1 m), `z` ahead of a ship launching from the station, `y` up, `x` across (+x to the launching ship's
+left). Directions are degrees: yaw 0 behind a launching ship (where the game puts the orbit's planet), 90 to its right, 180
+ahead of it; pitch up from the horizon.
+
+| Field | |
+|---|---|
+| `station` | `true` a station to dock at (also in an orbit the game keeps empty), `false` no station at all (an empty orbit: nothing to dock at, no station in the autopilot menu), `"nodock"` its model without docking (like the game's wrecked Luur). |
+| `jumpgate` | `true` the jumpgate stands in this orbit, `false` none. Default: in the system's gate orbit only. A gate here takes ships out through the routes; ships coming in through them still arrive in the system's gate orbit (`gateStation`), so keep the gate there. |
+| `jumpgatePosition` | `[x, y, z]`: where the jumpgate stands (the game's: 70 000-120 000 units out). |
+| `arrival` | `[x, y, z]`: where every arrival by travel comes in (a planet jump, the jumpgate, the Khador Drive, a wormhole), facing the station. Default: from the direction of the planet left behind, or the gate. |
+| `asteroids` | `false` no field (the autopilot's "Asteroid field" entry goes too), or `{ "count": 1-300, "centre": [x, y, z], "spread": units across (default 100000; the big ones in 0.6 of it), "type": "rock" \| "void" \| "ice" \| "magma", "ores": [items] }`. `ores` are item numbers or `"mod_id:id"`, or `{ "item": 157, "chance": 3 }` for a weight (default 1); without them the system's ores by distance, like the game's. The game's ores (154-164, 217) give their cores from class A asteroids. |
+| `fog` | `false` no fog, or `{ "color": [r, g, b] (0..1), "end": units }`: the haze some systems have (the game's end 50 000-150 000). |
+| `sun` | `[yaw, pitch]`: the sun's direction in this orbit (and the light, the flare, the skybox's `sunAligned`). |
+| `planet` | `{ "size": x the game's, "yaw", "pitch" }`: the orbit's own planet. |
+
+```json
+{
+    "id": "rho_freeport", "system": "frontier_systems:kepler", "name": "Rho Freeport", "techLevel": 4, "planet": 6,
+    "mapPlace": { "angle": 200, "distance": 26000 },
+    "orbit": {
+        "jumpgatePosition": [-60000, 8000, 70000],
+        "asteroids": { "count": 90, "centre": [40000, -6000, 50000], "spread": 140000, "type": "ice", "ores": [154, 159, { "item": 161, "chance": 2 }] },
+        "sun": [120, 20],
+        "planet": { "size": 1.4, "yaw": -25, "pitch": 8 }
+    }
+}
+```
+
+Keep the jumpgate, the field and the arrival within 10 km (200 000 units) of the station: the game's own lie within 6 km,
+and the view reaches 15 km. A launching ship flies along +z: leave room there for the departure. The Mod Builder's Stations
+page has every field (Its orbit) and **Show its orbit** shows the result.
 
 The docking range and the launch point grow with a big model: the "Dock" prompt shows within its radius plus 300 m, and a
 launch starts 150 m clear of it. Station models load in the background with the ships while the game starts (the loading
@@ -1422,8 +1466,8 @@ The file name (without `.gof2event`) is the graph's name; keep it one word. The 
   still offer it) or **Anyone** (any number of squads, at the same station too). The visitor's plate names the mission only once you have talked to them. When it ends
   with **Mission Complete** or **Mission Failed** the client sends their message, like the game's own freelance missions.
   In single player it is the player's one mission, like the game's freelance missions: it shows in the
-  Missions window's Freelance panel with **Discard**, and a success counts like a freelance mission. In multiplayer the squad
-  takes it together.
+  Missions window's Freelance panel with **Discard**, and a success counts like a freelance mission (only missions for one
+  pilot are offered there: **Min pilots** 1). In multiplayer the squad takes it together.
 - **Event** is a multiplayer game mode started by an admin's `/event`.
 
 Nodes made for missions:
@@ -1438,7 +1482,7 @@ Nodes made for missions:
 Everything else is the event graphs' toolbox: **Dialog** (conversations with portraits, see [Voice-over](#voice-over)), **Radio**,
 **Spawn** (ships, friendly or hostile, named; objects as scenery; `wreck`: a hackable freighter wreck), **Wait Until**, **On**
 triggers (docked, entered an orbit, destroyed, a spawned ship destroyed, all enemies cleared, arriving near a point, a wreck
-hacked), **Set Waypoint**, **Restrict Travel**,
+hacked), **Set Waypoint**, **Open Wormhole** / **Close Wormhole** (see below), **Restrict Travel**,
 **Give Item**, **Reward**, **Title**, **Timer**, **Play Music**, **Set Flight Model** (free flight or the original for a race
 or a chase, undone when the graph ends; see [Flight styles](#flight-styles)) and more. Game values for conditions: `campaign` (the story
 step, -1 without one), `credits`, `rank`, `station`, `system`, `ship`, `kills`, `freeflight` (1 in free flight), and the functions `cargo(item)`, `has(item)`
@@ -1461,6 +1505,23 @@ limited to a station like the others), with the player as `@trigger` and the wre
 
 In multiplayer the wreck is in the games it was spawned for (each player of `@a` gets their own); the other players see it
 but can't dock at it. Spawn it for one player (`@trigger`, `@p`) when a squad shares the orbit.
+
+**Wormholes.** The `wormhole` step (the **Open Wormhole** node; the command `wormhole @a <station> [x y z] to <station | void>
+[for <seconds>]`) opens a wormhole like the Void's in a station's orbit, at the coordinates or about 4 km out beside the station's launch path (keep your own spot 2 km, 40000 units, off the line
+straight ahead of the station, x 0 / y 0: ships launch along it and would be pulled in):
+it grows in 3 seconds, pulls a ship within 2 km toward it, shows as "Wormhole" on the HUD, and flying in takes the player to
+its destination, any station or `void` (the Void's home orbit), arriving from deep space with a wormhole closing behind. The
+destination may be a variable: wire a value or a variable into the step's Destination (the node: a **Get Orbit** with a
+number wired in), e.g. one picked with `random(0, 99)` or set by an Ask. It stays open until the step with no orbit (Close
+Wormhole, `wormhole @a close`), its seconds run out (game time) or the mission ends; each player has one, a new one replaces
+it, and it opens again whenever they come back to that orbit. Arriving fires `entered` there like any arrival.
+
+```json
+{ "type": "set", "variable": "dest", "value": "random(0, 99)" },
+{ "type": "wormhole", "station": 78, "at": "-60000 10000 40000", "to": { "$value": "v1" }, "seconds": 120 }
+```
+
+with the value node `{ "id": "v1", "type": "variable", "name": "dest" }` (or simply `"to": "{dest}"`).
 
 Mod missions run beside the game's own story. A mission whose mod is turned off waits in the save until the mod is back.
 
@@ -1512,7 +1573,7 @@ the default; `@trigger` the player a When block is about; any selector). The ste
 |---|---|
 | Story | `dialog` (pages: speaker, text, voice), `radio` (speaker, text, voice), `objective` (text, station), `title` (title, subtitle, seconds), `note` (text: a comment) |
 | Flow | `wait` (seconds), `waituntil` (condition, timeout), `if` (condition, `then`, `else`), `while` (condition, `steps`), `repeat` (count, as, `steps`), `parallel` (`steps`: beside the rest), `every` (seconds, `steps`), `on` (trigger: died, docked, launched, kill, cleared, entered, near, respawned, hacked, joined, left, pvpkill; station; near: at "x y z", radius; `steps`), `ask` / `vote` (question, speaker, seconds, `answers`: [{ text, steps }]; a vote's `none` runs when nobody voted), `random` (`branches`: [{ weight, steps }]), `set` (variable, value), `checkpoint` (name), `startquest` (mission), `startevent` (event, settings), `complete` (reward, title), `fail` (title), `stop` |
-| Places | `goto` (station, `dock` true: docked there, false: in its orbit, objective), `waypoint` (station, at), `target` (station), `questorbit` (station, on), `system` (system, action: show / hide / reset), `restrict` (what: jumps / docking / all / off), `respawn` (station, at, spread, delay), `teleport` (station, dock, at) |
+| Places | `goto` (station, `dock` true: docked there, false: in its orbit, objective), `waypoint` (station, at), `wormhole` (station, at, to, void, seconds; no station: closed), `target` (station), `questorbit` (station, on), `system` (system, action: show / hide / reset), `restrict` (what: jumps / docking / all / off), `respawn` (station, at, spread, delay), `teleport` (station, dock, at) |
 | Ships | `fight` (station, ships: ship / count / race / behaviour, name, quiet; ends when none is left), `spawn` (ship, count, race, behaviour, name, at, turrets), `wreck` (race, name, at: a hackable freighter wreck), `shipgoto` (ship, to, speed, radius, fight, then), `shiproute` (ship, route "place / place", loop, ...), `shipfollow` (ship, leader, offset, escort, speed), `shipattack` (ship, target), `shipaction` (ship, action: hold / resume / jump / dock / flee, seconds), `provoke` (race, within) |
 | The player | `reward` (credits, items, title), `give` (item, amount, mount), `cargo` (item, amount, station: waits until the hold has it), `credits` (amount), `ship` (hull, own), `heal`, `ammo`, `kill`, `reveal`, `peace` |
 | Cutscenes | `cutscene` (letterbox, freeze, invulnerable), `camera` (from, to, seconds, look, follow, fov, shake), `chasecamera`, `cutsceneend`, `fade` (direction: out / in / clear, seconds, colour), `letterbox` (on) |
