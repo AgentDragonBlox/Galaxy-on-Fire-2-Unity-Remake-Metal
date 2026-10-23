@@ -1135,8 +1135,11 @@
     min-width: 200px;
 }
 
+/* Every option row's name at one size: the toggles' and sliders' names (a base field's label) grow with the drop-downs'
+   (a phone showed the drop-down rows' names larger than the toggles' between them). */
 .ui-large .choice-label,
 .ui-large .choice-value,
+.ui-large .option-item .unity-base-field__label,
 .ui-large .option-item .option-button {
     font-size: var(--text-heading);
 }
