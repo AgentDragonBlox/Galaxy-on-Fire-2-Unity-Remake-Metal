@@ -8,9 +8,9 @@ the bar and the whole story. It is built on the original assets and on game logi
 Downloads are on the [releases page](https://github.com/JoppieToppie/Galaxy-on-Fire-2-Unity-Remake/releases); each
 release says how to install it.
 
-**Status:** the main campaign, the Valkyrie add-on and the Supernova add-on can be played from start to end. The
-Supernova opening and final battle have been rebuilt from the original scripts, but the add-on has not been fully played
-through yet. Multiplayer and VR are experimental. A build's version is the date and time of its release (for example
+**Status:** the main campaign and both add-ons, Valkyrie and Supernova, can be played from start to end. The Supernova
+Challenge arcade mode is playable too. Multiplayer and the Mod Builder are experimental, and VR has only been tested
+without a headset so far. A build's version is the date and time of its release (for example
 `2026.10.01.1200`), the same on every platform, shown in the main menu.
 
 ## Features
