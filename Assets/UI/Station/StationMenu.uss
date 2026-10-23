@@ -138,8 +138,8 @@
     position: absolute;
     right: 40px;
     top: 112px;
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;   /* the credits, the cargo under them (the user's request) */
+    align-items: flex-end;
 }
 
 .station-funds-cargo,
@@ -164,7 +164,7 @@
 }
 
 .station-funds-credits {
-    margin-left: var(--space-s);
+    margin-bottom: var(--space-s);
     font-size: var(--text-label);
     color: var(--gof-amber);
     border-color: var(--gof-amber);
