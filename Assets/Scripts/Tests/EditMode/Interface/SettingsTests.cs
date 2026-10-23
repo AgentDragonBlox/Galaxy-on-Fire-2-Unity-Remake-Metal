@@ -224,6 +224,30 @@ namespace GoF2Remake.Tests
         }
 
         [Test]
+        public void AndroidAtOneHundredPercentGetsMsaa()
+        {
+            // MSAA off -> 2x on Android at 100 %, the scale left alone.
+            Assert.AreEqual(2, Bootstrap.AppliedMsaa(1, 1f, true, false));
+            Assert.AreEqual(1f, Bootstrap.AppliedRenderScale(1f, true, false));
+            // The player's own MSAA, other scales, other platforms: as picked.
+            Assert.AreEqual(4, Bootstrap.AppliedMsaa(4, 1f, true, false));
+            Assert.AreEqual(1, Bootstrap.AppliedMsaa(1, 0.9f, true, false));
+            Assert.AreEqual(1, Bootstrap.AppliedMsaa(1, 1.25f, true, false));
+            Assert.AreEqual(1, Bootstrap.AppliedMsaa(1, 1f, false, false));
+            Assert.AreEqual(1f, Bootstrap.AppliedRenderScale(1f, false, true));
+        }
+
+        [Test]
+        public void AndroidUnderATemporalUpscalerDrawsOneHundredPercentFarEnoughBelowItForUrp()
+        {
+            Assert.AreEqual(1, Bootstrap.AppliedMsaa(1, 1f, true, true));   // temporal upscalers need MSAA off
+            Assert.AreEqual(Bootstrap.AndroidFullScale, Bootstrap.AppliedRenderScale(1f, true, true));
+            // URP's kRenderScaleThreshold: closer than 0.05 to 1 is rendered as 1.
+            Assert.GreaterOrEqual(Mathf.Abs(1f - Bootstrap.AppliedRenderScale(1f, true, true)), 0.05f);
+            Assert.AreEqual(0.9f, Bootstrap.AppliedRenderScale(0.9f, true, true));
+        }
+
+        [Test]
         public void TouchHeightsAreFractionsOrTheDefault()
         {
             Settings.TouchLeftHeight = -5f; Assert.AreEqual(-1f, Settings.TouchLeftHeight);

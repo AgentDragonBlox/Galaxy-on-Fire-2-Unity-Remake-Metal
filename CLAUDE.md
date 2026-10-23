@@ -1279,6 +1279,13 @@ jumping back to the bottom; the likely cause, not reproduced). Original options:
   display hardware can't (a Dimensity 8350: a solid 60 fps in 2026.10.09's Terran hangar, 40-60 in 2026.10.18's, at 50 %
   render scale). The guard costs a full-resolution blit at 100 % (below it, or with MSAA, URP blits anyway).
   `Bootstrap.ApplyUpscaling` still keeps FSR 1 below 100 % (there is nothing to upscale at 100 %). Not yet run on a phone.
+  The freeze at 100 % was reported again with 2026.10.23 (the guard in), and doesn't happen with MSAA on (the user's test on
+  a phone). The guard can't have changed anything: with post-processing on URP renders through its intermediate texture
+  anyway (`UniversalRenderer.RequiresIntermediateColorTexture`); the cause is still unknown. A lead: with MSAA off the
+  station camera runs URP's TAA (`StationLevel.ApplyAntialiasing`), with MSAA SMAA. So on Android 100 % with MSAA off gets
+  MSAA 2x (`Bootstrap.AppliedMsaa`; the option still shows Off), and under a temporal upscaler (MSAA off) 94 %
+  (`AppliedRenderScale` / `AndroidFullScale`: URP renders a scale within 5 % of 1 as exactly 1, `kRenderScaleThreshold`).
+  Not yet checked on a phone.
 - **UWP** (Universal Windows Platform, no build profile: `EditorUserBuildSettings.SwitchActiveBuildTarget(WSA, WSAPlayer)`
   first, then `BuildPipeline.BuildPlayer` to a folder; IL2CPP, x64, D3D): package `JoppieToppie.GoF2Remake`, Start menu
   name "GoF2 Remake", capabilities InternetClient / InternetClientServer / PrivateNetworkClientServer (multiplayer and
