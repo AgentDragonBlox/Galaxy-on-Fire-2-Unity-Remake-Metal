@@ -214,7 +214,7 @@
  "lodsHelp": "Weit entfernte Schiffe, Stationen und andere Objekte werden mit weniger Dreiecken gezeichnet, für eine flüssigere Bildrate. Aus: jedes Modell in voller Detailstufe.",
  "graphicsPreset": "Grafik-Voreinstellung",
  "presetCustom": "Benutzerdefiniert",
- "graphicsPresetHelp": "Stellt Renderauflösung, Effekte, Schatten und Details auf einmal ein. Niedrig passt zu Handys und langsameren Geräten, Hoch ist der volle Look.",
+ "graphicsPresetHelp": "Stellt Renderauflösung, Effekte, Schatten und Details auf einmal ein. Niedrig passt zu Handys und langsameren Geräten, Hoch ist der volle Look, Ultra stellt jede Option aufs Maximum, für schnelle Grafikkarten.",
  "textureQuality": "Texturqualität",
  "textureFull": "Voll",
  "textureHalf": "Halb",
@@ -2840,5 +2840,18 @@
  "mbRecreateIcon": "Symbol neu erstellen",
  "mbIconWait": "Das Symbol kann gezeichnet werden, sobald das Modell des Schiffs auf der Drehscheibe steht.",
  "mbIconOwn": "Dein eigenes Symbol: „Symbol neu erstellen“ zeichnet stattdessen eines aus dem Modell.",
- "mbIconMade": "Aus dem Modell gezeichnet, Bug nach unten links, sobald sich das Modell, seine Drehung oder seine Texturen ändern."
+ "mbIconMade": "Aus dem Modell gezeichnet, Bug nach unten links, sobald sich das Modell, seine Drehung oder seine Texturen ändern.",
+ "presetUltra": "Ultra",
+ "fireSmoke": "Feuer und Rauch",
+ "fireSmokeHelp": "Beschädigte Schiffe ziehen Rauch und Feuer hinter sich her, Schiffe und Wracks brennen, wenn sie zerstört werden.",
+ "fog": "Nebel",
+ "fogHelp": "Der Dunst der Sternsysteme, die ihn haben.",
+ "detailDistance": "Detailentfernung",
+ "detailDistanceHelp": "Wie weit entfernt Schiffe, Stationen und Asteroiden ihre vollen Details behalten, bevor einfachere Modelle übernehmen.",
+ "textureFiltering": "Texturfilterung",
+ "textureFilteringHelp": "Hält schräg gesehene Flächen scharf. Anisotrop: wo eine Textur es verlangt; Erzwungen: jede Textur; 16×: am schärfsten.",
+ "filterBilinear": "Bilinear",
+ "filterAnisotropic": "Anisotrop",
+ "filterForced": "Erzwungen",
+ "filterForced16": "Erzwungen 16×"
 }

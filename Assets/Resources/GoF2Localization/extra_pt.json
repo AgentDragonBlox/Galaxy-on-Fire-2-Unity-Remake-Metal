@@ -214,7 +214,7 @@
  "lodsHelp": "Naves, estações e outros objetos distantes são desenhados com menos triângulos, para uma taxa de quadros mais fluida. Desligado: todos os modelos com detalhe total.",
  "graphicsPreset": "Predefinição gráfica",
  "presetCustom": "Personalizado",
- "graphicsPresetHelp": "Define de uma vez a escala de renderização, os efeitos, as sombras e o detalhe. Baixo é para celulares e aparelhos mais lentos; Alto é o visual completo.",
+ "graphicsPresetHelp": "Ajusta de uma vez a escala de renderização, os efeitos, as sombras e o detalhe. Baixo serve para celulares e aparelhos lentos, Alto é o visual completo, Ultra leva cada opção ao máximo, para placas de vídeo rápidas.",
  "textureQuality": "Qualidade das texturas",
  "textureFull": "Completa",
  "textureHalf": "Metade",
@@ -2840,5 +2840,18 @@
  "mbRecreateIcon": "Recriar ícone",
  "mbIconWait": "O ícone pode ser desenhado quando o modelo da nave estiver na plataforma giratória.",
  "mbIconOwn": "Seu próprio ícone: \"Recriar ícone\" desenha um a partir do modelo no lugar dele.",
- "mbIconMade": "Desenhado a partir do modelo, com o nariz para baixo à esquerda, sempre que o modelo, sua rotação ou suas texturas mudam."
+ "mbIconMade": "Desenhado a partir do modelo, com o nariz para baixo à esquerda, sempre que o modelo, sua rotação ou suas texturas mudam.",
+ "presetUltra": "Ultra",
+ "fireSmoke": "Fogo e fumaça",
+ "fireSmokeHelp": "Naves danificadas deixam um rastro de fumaça e fogo, e naves e destroços queimam ao serem destruídos.",
+ "fog": "Névoa",
+ "fogHelp": "A névoa dos sistemas estelares que a têm.",
+ "detailDistance": "Distância de detalhe",
+ "detailDistanceHelp": "Até que distância naves, estações e asteroides mantêm todo o detalhe antes de modelos mais simples assumirem.",
+ "textureFiltering": "Filtragem de texturas",
+ "textureFilteringHelp": "Mantém nítidas as superfícies vistas de lado. Anisotrópica: onde uma textura pede; Forçada: todas as texturas; 16×: a mais nítida.",
+ "filterBilinear": "Bilinear",
+ "filterAnisotropic": "Anisotrópica",
+ "filterForced": "Forçada",
+ "filterForced16": "Forçada 16×"
 }

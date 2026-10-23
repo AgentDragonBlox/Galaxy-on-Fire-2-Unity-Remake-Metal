@@ -65,7 +65,7 @@ namespace GoF2Remake.Flight
         /// <summary>enableSystemEmit: new explosions on / off; the living ones burn out.</summary>
         public void SetEmitting(bool on)
         {
-            on &= Settings.QualityEffects;
+            on &= Settings.FireSmoke;
             if (on == Emitting || system == null) return;
             Emitting = on;
             if (on) system.Play(true); else system.Stop(true, ParticleSystemStopBehavior.StopEmitting);

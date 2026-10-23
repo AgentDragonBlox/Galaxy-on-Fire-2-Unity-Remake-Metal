@@ -214,7 +214,7 @@
  "lodsHelp": "Les vaisseaux, stations et autres objets lointains sont dessinés avec moins de triangles, pour une fréquence d'images plus fluide. Désactivé : chaque modèle en détail complet.",
  "graphicsPreset": "Préréglage graphique",
  "presetCustom": "Personnalisé",
- "graphicsPresetHelp": "Règle d’un coup l’échelle de rendu, les effets, les ombres et les détails. Bas convient aux téléphones et aux appareils plus lents ; Haut offre le rendu complet.",
+ "graphicsPresetHelp": "Règle d'un coup l'échelle de rendu, les effets, les ombres et les détails. Bas convient aux téléphones et appareils lents, Haut est le rendu complet, Ultra pousse chaque option au maximum, pour les cartes graphiques rapides.",
  "textureQuality": "Qualité des textures",
  "textureFull": "Complète",
  "textureHalf": "Moitié",
@@ -2840,5 +2840,18 @@
  "mbRecreateIcon": "Recréer l'icône",
  "mbIconWait": "L'icône peut être dessinée une fois le modèle du vaisseau sur la plaque tournante.",
  "mbIconOwn": "Ton icône à toi : « Recréer l'icône » en dessine une à partir du modèle à la place.",
- "mbIconMade": "Dessinée à partir du modèle, nez vers le bas à gauche, chaque fois que le modèle, sa rotation ou ses textures changent."
+ "mbIconMade": "Dessinée à partir du modèle, nez vers le bas à gauche, chaque fois que le modèle, sa rotation ou ses textures changent.",
+ "presetUltra": "Ultra",
+ "fireSmoke": "Feu et fumée",
+ "fireSmokeHelp": "Les vaisseaux endommagés laissent une traînée de fumée et de feu, et vaisseaux et épaves brûlent en étant détruits.",
+ "fog": "Brouillard",
+ "fogHelp": "La brume des systèmes stellaires qui en ont.",
+ "detailDistance": "Distance des détails",
+ "detailDistanceHelp": "Jusqu'à quelle distance vaisseaux, stations et astéroïdes gardent tous leurs détails avant que des modèles plus simples prennent le relais.",
+ "textureFiltering": "Filtrage des textures",
+ "textureFilteringHelp": "Garde nettes les surfaces vues de biais. Anisotrope : là où une texture le demande ; Forcé : toutes les textures ; 16× : le plus net.",
+ "filterBilinear": "Bilinéaire",
+ "filterAnisotropic": "Anisotrope",
+ "filterForced": "Forcé",
+ "filterForced16": "Forcé 16×"
 }

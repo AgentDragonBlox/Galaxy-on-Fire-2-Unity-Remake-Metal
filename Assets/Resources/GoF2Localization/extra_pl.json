@@ -214,7 +214,7 @@
  "lodsHelp": "Odległe statki, stacje i inne obiekty są rysowane z mniejszą liczbą trójkątów, dla płynniejszej liczby klatek. Wyłączone: każdy model w pełnej szczegółowości.",
  "graphicsPreset": "Ustawienie wstępne grafiki",
  "presetCustom": "Własne",
- "graphicsPresetHelp": "Ustawia naraz skalę renderowania, efekty, cienie i szczegóły. Niskie pasuje do telefonów i słabszych urządzeń, Wysokie to pełny wygląd.",
+ "graphicsPresetHelp": "Ustawia naraz skalę renderowania, efekty, cienie i detale. Niski pasuje do telefonów i wolniejszych urządzeń, Wysoki to pełny wygląd, Ultra ustawia każdą opcję na maksimum, dla szybkich kart graficznych.",
  "textureQuality": "Jakość tekstur",
  "textureFull": "Pełna",
  "textureHalf": "Połowa",
@@ -2840,5 +2840,18 @@
  "mbRecreateIcon": "Utwórz ikonę ponownie",
  "mbIconWait": "Ikonę można narysować, gdy model statku znajdzie się na obrotnicy.",
  "mbIconOwn": "Twoja własna ikona: „Utwórz ikonę ponownie” narysuje zamiast niej ikonę z modelu.",
- "mbIconMade": "Rysowana z modelu, dziobem w lewo w dół, za każdym razem, gdy zmienia się model, jego obrót lub tekstury."
+ "mbIconMade": "Rysowana z modelu, dziobem w lewo w dół, za każdym razem, gdy zmienia się model, jego obrót lub tekstury.",
+ "presetUltra": "Ultra",
+ "fireSmoke": "Ogień i dym",
+ "fireSmokeHelp": "Uszkodzone statki ciągną za sobą dym i ogień, a statki i wraki płoną, gdy zostają zniszczone.",
+ "fog": "Mgła",
+ "fogHelp": "Mgiełka układów gwiezdnych, które ją mają.",
+ "detailDistance": "Odległość detali",
+ "detailDistanceHelp": "Jak daleko statki, stacje i asteroidy zachowują pełne detale, zanim zastąpią je prostsze modele.",
+ "textureFiltering": "Filtrowanie tekstur",
+ "textureFilteringHelp": "Utrzymuje ostrość powierzchni widzianych pod kątem. Anizotropowe: gdzie tekstura tego chce; Wymuszone: każda tekstura; 16×: najostrzejsze.",
+ "filterBilinear": "Dwuliniowe",
+ "filterAnisotropic": "Anizotropowe",
+ "filterForced": "Wymuszone",
+ "filterForced16": "Wymuszone 16×"
 }

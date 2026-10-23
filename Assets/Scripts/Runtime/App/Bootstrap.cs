@@ -24,6 +24,7 @@ namespace GoF2Remake
     public static class Bootstrap
     {
         // The project's own values, the "default" of the render scale / MSAA options and the base of the LOD bias.
+        static AnisotropicFiltering defaultAniso = AnisotropicFiltering.Enable;
         static float defaultRenderScale = 1f, defaultLodBias = 1f, defaultDeadzone = Settings.DefaultDeadzone;
         static int defaultMsaa = 1, defaultMipLimit;
 #if !ENABLE_UPSCALER_FRAMEWORK
@@ -57,6 +58,7 @@ namespace GoF2Remake
 #endif
             }
             defaultLodBias = QualitySettings.lodBias;
+            defaultAniso = QualitySettings.anisotropicFiltering;
             defaultMipLimit = QualitySettings.globalTextureMipmapLimit;
             defaultDeadzone = InputSystem.settings.defaultDeadzoneMin;
 
@@ -101,6 +103,8 @@ namespace GoF2Remake
                 RenderPipelineManager.endCameraRendering -= UpscalerFramework.FlushContexts;
                 QualitySettings.vSyncCount = editorVSync;
                 QualitySettings.lodBias = defaultLodBias;
+                QualitySettings.anisotropicFiltering = defaultAniso;
+                Texture.SetGlobalAnisotropicFilteringLimits(-1, -1);
                 QualitySettings.globalTextureMipmapLimit = defaultMipLimit;
                 if (urp != null)
                 {
@@ -139,7 +143,8 @@ namespace GoF2Remake
             ApplyVolume();
             if (urp != null) urp.renderScale = AppliedRenderScale(PickedRenderScale, Android, IsTemporal(ActiveUpscaler));
             ApplyUpscaling();
-            QualitySettings.lodBias = defaultLodBias * (Settings.Quality >= 2 ? 1f : Settings.Quality == 1 ? 0.6f : 0.35f);
+            QualitySettings.lodBias = defaultLodBias * Settings.DetailDistanceFactor;
+            ApplyTextureFiltering();
             // Texture quality: the mipmap levels skipped (a change reloads the textures: only when it changes).
             if (QualitySettings.globalTextureMipmapLimit != Settings.TextureQuality) QualitySettings.globalTextureMipmapLimit = Settings.TextureQuality;
             if (!Mathf.Approximately(InputSystem.settings.defaultDeadzoneMin, Settings.StickDeadzone))
@@ -379,7 +384,16 @@ namespace GoF2Remake
             ApplyFog();
         }
 
-        static void ApplyFog() => RenderSettings.fog = sceneFog && Settings.QualityEffects;
+        /// <summary>Settings.TextureFiltering: bilinear, the textures' own anisotropic levels, every texture at least 9x
+        /// (Unity's forced minimum), or 16x.</summary>
+        static void ApplyTextureFiltering()
+        {
+            int f = Settings.TextureFiltering;
+            QualitySettings.anisotropicFiltering = f == 0 ? AnisotropicFiltering.Disable : f == 1 ? AnisotropicFiltering.Enable : AnisotropicFiltering.ForceEnable;
+            Texture.SetGlobalAnisotropicFilteringLimits(f == 3 ? 16 : -1, -1);   // -1: Unity's own limits
+        }
+
+        static void ApplyFog() => RenderSettings.fog = sceneFog && Settings.Fog;
 
         // ---- post-processing ---------------------------------------------------------------------------------
 

@@ -246,11 +246,11 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(Localization.Get(34), Label("music"), "Music 34");
             Assert.AreEqual(Localization.Get(35), Label("sfx"), "FX 35");
             Assert.AreEqual(Localization.Get(36), Label("voice"), "Voice 36");
-            Assert.AreEqual(Localization.Get(504), Label("quality"), "Quality 504");
             Assert.AreEqual(Localization.Get(503), Label("brightness"), "Brightness 503");
             Assert.AreEqual(Localization.Get(499), Label("sensitivity"), "Sensitivity 499");
-            CollectionAssert.AreEqual(new[] { Localization.Get(507), Localization.Get(508), Localization.Get(509) },
-                all.First(o => o.id == "quality").choices(), "Low / Medium / High 507-509");
+            CollectionAssert.AreEqual(new[] { Localization.Get(507), Localization.Get(508), Localization.Get(509), "Ultra" },
+                all.First(o => o.id == "detailDistance").choices(), "Low / Medium / High 507-509, then Ultra");
+            Assert.IsFalse(all.Any(o => o.id == "quality"), "the original's Quality is split into its parts");
             CollectionAssert.AreEqual(new[] { Localization.Get(513), Localization.Get(514), Localization.Get(515) },
                 all.First(o => o.id == "brightness").choices(), "Dark / Medium / Bright 513-515");
         }
@@ -284,7 +284,9 @@ namespace GoF2Remake.Tests
             Assert.AreEqual(Settings.PresetHigh, OptionsCatalog.CurrentPreset(), "a fresh desktop install shows High (its defaults)");
             Settings.ApplyPreset(Settings.PresetLow);
             Assert.AreEqual(Settings.PresetLow, OptionsCatalog.CurrentPreset());
-            Assert.AreEqual(0, Settings.Quality);
+            Assert.IsFalse(Settings.FireSmoke, "the original's Quality Low: smoke off");
+            Assert.IsFalse(Settings.Fog, "and fog off");
+            Assert.AreEqual(0, Settings.DetailDistance);
             Assert.AreEqual(Settings.BloomOff, Settings.BloomStyle);
             Assert.AreEqual(Settings.HangarShadowsOff, Settings.HangarShadows);
             Assert.IsFalse(Settings.NpcPlayerEngines);
@@ -298,6 +300,43 @@ namespace GoF2Remake.Tests
             Assert.IsFalse(Settings.LensFlare, "picking Custom changes nothing");
             Settings.ApplyPreset(Settings.PresetHigh);
             Assert.AreEqual(Settings.PresetHigh, OptionsCatalog.CurrentPreset());
+            Assert.IsTrue(Settings.FireSmoke && Settings.Fog);
+            Assert.AreEqual(2, Settings.DetailDistance);
+            Settings.ApplyPreset(Settings.PresetUltra);
+            Assert.AreEqual(Settings.PresetUltra, OptionsCatalog.CurrentPreset());
+            Assert.AreEqual(1.5f, Settings.RenderScale, 1e-4f);
+            Assert.AreEqual(8, Settings.Msaa);
+            Assert.AreEqual(Settings.HangarShadowsAll, Settings.HangarShadows);
+            Assert.IsTrue(Settings.HangarDepthOfField);
+            Assert.IsFalse(Settings.Lods, "every model at full detail");
+            Assert.AreEqual(3, Settings.DetailDistance);
+            Assert.AreEqual(3, Settings.TextureFiltering, "16x");
+            Assert.AreEqual(0, Settings.TextureQuality);
+        }
+
+        [Test]
+        public void ThePresetRowOffersUltraBeforeCustom()
+        {
+            var row = OptionsCatalog.All().First(o => o.id == "graphicsPreset");
+            var choices = row.choices();
+            Assert.AreEqual("Ultra", choices[Settings.PresetUltra]);
+            Assert.AreEqual(Settings.PresetCustom, choices.Length - 1, "Custom last");
+        }
+
+        [Test]
+        public void AnOldQualitySettingCarriesOverIntoItsParts()
+        {
+            Settings.ResetToDefaults();
+            UnityEngine.PlayerPrefs.SetFloat("gof2.quality", 1f);
+            DataUiTestKit.ClearSettingsCache();
+            Assert.IsFalse(Settings.FireSmoke, "Medium: smoke off");
+            Assert.IsFalse(Settings.Fog, "fog off");
+            Assert.AreEqual(1, Settings.DetailDistance, "detail Medium");
+            Settings.Fog = true;
+            Assert.IsTrue(Settings.Fog, "the new option wins once set");
+            Settings.ResetToDefaults();
+            Assert.IsTrue(Settings.FireSmoke && Settings.Fog, "Default settings clears the old one too");
+            Assert.AreEqual(2, Settings.DetailDistance);
         }
 
         [Test]

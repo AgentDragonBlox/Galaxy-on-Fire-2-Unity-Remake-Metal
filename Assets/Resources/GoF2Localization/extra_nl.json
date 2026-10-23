@@ -214,7 +214,7 @@
  "lodsHelp": "Verre schepen, stations en andere objecten worden met minder driehoeken getekend, voor een soepelere framerate. Uit: elk model in volledig detail.",
  "graphicsPreset": "Grafische voorinstelling",
  "presetCustom": "Aangepast",
- "graphicsPresetHelp": "Stelt renderschaal, effecten, schaduwen en detail in één keer in. Laag past bij telefoons en tragere apparaten; Hoog is de volle weergave.",
+ "graphicsPresetHelp": "Stelt renderschaal, effecten, schaduwen en detail in één keer in. Laag past bij telefoons en tragere apparaten, Hoog is de volle look, Ultra zet elke optie op het hoogst, voor snelle videokaarten.",
  "textureQuality": "Textuurkwaliteit",
  "textureFull": "Volledig",
  "textureHalf": "Half",
@@ -2840,5 +2840,18 @@
  "mbRecreateIcon": "Pictogram opnieuw maken",
  "mbIconWait": "Het pictogram kan getekend worden zodra het model van het schip op de draaischijf staat.",
  "mbIconOwn": "Je eigen pictogram: 'Pictogram opnieuw maken' tekent er in plaats daarvan een uit het model.",
- "mbIconMade": "Uit het model getekend, neus naar linksonder, telkens als het model, zijn draaiing of zijn textures veranderen."
+ "mbIconMade": "Uit het model getekend, neus naar linksonder, telkens als het model, zijn draaiing of zijn textures veranderen.",
+ "presetUltra": "Ultra",
+ "fireSmoke": "Vuur en rook",
+ "fireSmokeHelp": "Beschadigde schepen trekken een spoor van rook en vuur, en schepen en wrakken branden als ze vernietigd worden.",
+ "fog": "Mist",
+ "fogHelp": "De nevel van de sterrenstelsels die die hebben.",
+ "detailDistance": "Detailafstand",
+ "detailDistanceHelp": "Tot hoe ver schepen, stations en asteroïden hun volle detail houden voordat eenvoudigere modellen het overnemen.",
+ "textureFiltering": "Textuurfiltering",
+ "textureFilteringHelp": "Houdt schuin geziene vlakken scherp. Anisotroop: waar een textuur erom vraagt; Geforceerd: elke textuur; 16×: het scherpst.",
+ "filterBilinear": "Bilineair",
+ "filterAnisotropic": "Anisotroop",
+ "filterForced": "Geforceerd",
+ "filterForced16": "Geforceerd 16×"
 }

@@ -210,7 +210,7 @@
  "lodsHelp": "멀리 있는 함선, 정거장 및 기타 물체를 더 적은 삼각형으로 그려 프레임 속도를 부드럽게 합니다. 끄기: 모든 모델을 최대 세부 수준으로 표시합니다.",
  "graphicsPreset": "그래픽 프리셋",
  "presetCustom": "사용자 지정",
- "graphicsPresetHelp": "렌더 배율, 효과, 그림자, 디테일을 한 번에 설정합니다. 낮음은 휴대폰과 느린 기기에 알맞고, 높음은 전체 품질입니다.",
+ "graphicsPresetHelp": "렌더 배율, 효과, 그림자, 디테일을 한 번에 설정합니다. 낮음은 휴대폰과 느린 기기에, 높음은 완전한 화면, 울트라는 모든 옵션을 최대로 올립니다(빠른 그래픽 카드용).",
  "textureQuality": "텍스처 품질",
  "textureFull": "전체",
  "textureHalf": "절반",
@@ -2840,5 +2840,18 @@
  "mbRecreateIcon": "아이콘 다시 만들기",
  "mbIconWait": "함선 모델이 턴테이블에 올라오면 아이콘을 그릴 수 있습니다.",
  "mbIconOwn": "직접 넣은 아이콘: '아이콘 다시 만들기'를 누르면 대신 모델에서 그립니다.",
- "mbIconMade": "모델에서 그림(기수는 왼쪽 아래). 모델, 회전, 텍스처가 바뀔 때마다 다시 그립니다."
+ "mbIconMade": "모델에서 그림(기수는 왼쪽 아래). 모델, 회전, 텍스처가 바뀔 때마다 다시 그립니다.",
+ "presetUltra": "울트라",
+ "fireSmoke": "불과 연기",
+ "fireSmokeHelp": "손상된 함선은 연기와 불꽃을 남기고, 함선과 잔해는 파괴될 때 불탑니다.",
+ "fog": "안개",
+ "fogHelp": "안개가 있는 항성계의 연무.",
+ "detailDistance": "디테일 거리",
+ "detailDistanceHelp": "함선, 정거장, 소행성이 얼마나 먼 거리까지 완전한 디테일을 유지한 뒤 단순한 모델로 바뀌는지.",
+ "textureFiltering": "텍스처 필터링",
+ "textureFilteringHelp": "비스듬히 보이는 표면을 선명하게 유지합니다. 이방성: 텍스처가 요구할 때; 강제: 모든 텍스처; 16×: 가장 선명.",
+ "filterBilinear": "이중선형",
+ "filterAnisotropic": "이방성",
+ "filterForced": "강제",
+ "filterForced16": "강제 16×"
 }

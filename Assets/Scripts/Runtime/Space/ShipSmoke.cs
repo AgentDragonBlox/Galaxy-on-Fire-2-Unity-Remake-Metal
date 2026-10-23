@@ -110,7 +110,7 @@ namespace GoF2Remake.Flight
         /// <summary>enableSystemEmit: new particles on / off; the living ones burn out.</summary>
         public void SetEmitting(bool on)
         {
-            on &= Settings.QualityEffects;   // Quality Low / Medium: "Smoke off" (510 / 511)
+            on &= Settings.FireSmoke;   // the original's Quality Low / Medium: "Smoke off" (510 / 511)
             if (on == Emitting) return;
             Emitting = on;
             foreach (var ps in new[] { smoke, fire })

@@ -238,7 +238,7 @@ namespace GoF2Remake.World
         public static void SceneFog(bool on)
         {
             if (SetSceneFog != null) SetSceneFog(on);
-            else RenderSettings.fog = on && Settings.QualityEffects;
+            else RenderSettings.fog = on && Settings.Fog;
         }
     }
 }

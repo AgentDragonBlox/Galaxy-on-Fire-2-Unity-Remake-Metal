@@ -40,7 +40,7 @@ namespace GoF2Remake.Flight
         /// <summary>Record 9 on / off (the living particles burn out).</summary>
         public void SetBurning(bool on)
         {
-            on &= Settings.QualityEffects;
+            on &= Settings.FireSmoke;
             if (on == Emitting) return;
             Emitting = on;
             if (on) burn.Play(true); else burn.Stop(true, ParticleSystemStopBehavior.StopEmitting);
@@ -81,7 +81,7 @@ namespace GoF2Remake.Flight
         /// <summary>Record 11's emitManual burst at the explosion (it stays where it went off).</summary>
         public void Burst()
         {
-            if (!Settings.QualityEffects || burst == null) return;
+            if (!Settings.FireSmoke || burst == null) return;
             burst.transform.SetParent(null, true);
             burst.Emit(1);
             Object.Destroy(burst.gameObject, 2f);

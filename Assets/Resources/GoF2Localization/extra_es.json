@@ -214,7 +214,7 @@
  "lodsHelp": "Las naves, estaciones y otros objetos lejanos se dibujan con menos triángulos para una tasa de fotogramas más fluida. Desactivado: todos los modelos con todo detalle.",
  "graphicsPreset": "Preajuste gráfico",
  "presetCustom": "Personalizado",
- "graphicsPresetHelp": "Ajusta a la vez la escala de renderizado, los efectos, las sombras y el detalle. Bajo va bien en móviles y equipos más lentos; Alto es el aspecto completo.",
+ "graphicsPresetHelp": "Ajusta a la vez la escala de renderizado, los efectos, las sombras y el detalle. Bajo va bien en móviles y equipos lentos, Alto es el aspecto completo, Ultra lleva cada opción al máximo, para tarjetas gráficas rápidas.",
  "textureQuality": "Calidad de texturas",
  "textureFull": "Completa",
  "textureHalf": "Media",
@@ -2840,5 +2840,18 @@
  "mbRecreateIcon": "Recrear icono",
  "mbIconWait": "El icono se puede dibujar cuando el modelo de la nave esté en la plataforma giratoria.",
  "mbIconOwn": "Tu propio icono: «Recrear icono» dibuja uno a partir del modelo en su lugar.",
- "mbIconMade": "Dibujado a partir del modelo, con el morro hacia abajo a la izquierda, cada vez que cambian el modelo, su giro o sus texturas."
+ "mbIconMade": "Dibujado a partir del modelo, con el morro hacia abajo a la izquierda, cada vez que cambian el modelo, su giro o sus texturas.",
+ "presetUltra": "Ultra",
+ "fireSmoke": "Fuego y humo",
+ "fireSmokeHelp": "Las naves dañadas dejan una estela de humo y fuego, y naves y restos arden al ser destruidos.",
+ "fog": "Niebla",
+ "fogHelp": "La bruma de los sistemas estelares que la tienen.",
+ "detailDistance": "Distancia de detalle",
+ "detailDistanceHelp": "Hasta qué distancia naves, estaciones y asteroides conservan todo su detalle antes de que los sustituyan modelos más simples.",
+ "textureFiltering": "Filtrado de texturas",
+ "textureFilteringHelp": "Mantiene nítidas las superficies vistas en ángulo. Anisotrópico: donde una textura lo pide; Forzado: todas las texturas; 16×: el más nítido.",
+ "filterBilinear": "Bilineal",
+ "filterAnisotropic": "Anisotrópico",
+ "filterForced": "Forzado",
+ "filterForced16": "Forzado 16×"
 }

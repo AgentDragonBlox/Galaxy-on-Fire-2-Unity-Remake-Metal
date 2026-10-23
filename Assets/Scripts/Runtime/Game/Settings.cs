@@ -90,10 +90,39 @@ namespace GoF2Remake.Data
         /// <summary>MSAA samples (1 = off, 2, 4, 8); 0 = the platform's render pipeline asset.</summary>
         public static int Msaa { get => Mathf.RoundToInt(Get("msaa", Default("msaa", 0f))); set => Set("msaa", value); }
 
-        /// <summary>Original "Quality" option (504; texts 507-512): 0 Low (smoke off, fog off, detail low), 1 Medium (smoke
-        /// off, fog off, detail medium), 2 High (everything on). Default High (Globals::init options+0x28 = 1.0).</summary>
-        public static int Quality { get => Mathf.RoundToInt(Get("quality", Default("quality", 2f))); set => Set("quality", Mathf.Clamp(value, 0, 2)); }
-        public static bool QualityEffects => Quality >= 2;
+        // The original's "Quality" option (504; texts 507-512: Low = smoke off, fog off, detail low; Medium = smoke off, fog
+        // off, detail medium; High = everything on, the default, Globals::init options+0x28 = 1.0) split into its parts
+        // (remake, the user's request 2026-10-23: it doubled the Graphics preset). A player who had set it keeps what it meant
+        // (OldQuality) until they set the new options.
+
+        /// <summary>Remake: the fire and smoke effects (ShipSmoke, ShipBurn, WreckBurn): damaged ships' smoke, the death burn,
+        /// burning wrecks. The original's Quality Low / Medium turned them off.</summary>
+        public static bool FireSmoke { get => GetBool("fireSmoke", OldQuality("fireSmoke", 1f) > 0.5f); set => SetBool("fireSmoke", value); }
+
+        /// <summary>Remake: the fog of the systems that have it (Bootstrap.SetSceneFog). Off in the original's Quality Low / Medium.</summary>
+        public static bool Fog { get => GetBool("fog", OldQuality("fog", 1f) > 0.5f); set => SetBool("fog", value); }
+
+        /// <summary>Remake: how far the levels of detail switch (QualitySettings.lodBias x 0.35 / 0.6 / 1 / 2 for 0 Low,
+        /// 1 Medium, 2 High, 3 Ultra; the original's Quality Low / Medium / High were the first three).</summary>
+        public static int DetailDistance { get => Mathf.Clamp(Mathf.RoundToInt(Get("detailDistance", OldQuality("detailDistance", 2f))), 0, 3); set => Set("detailDistance", Mathf.Clamp(value, 0, 3)); }
+        public static float DetailDistanceFactor => DetailDistance switch { 0 => 0.35f, 1 => 0.6f, 3 => 2f, _ => 1f };
+
+        /// <summary>Remake: texture filtering (QualitySettings.anisotropicFiltering, Bootstrap): 0 bilinear (Disable),
+        /// 1 anisotropic where a texture asks for it (Enable, the phones' quality level), 2 forced on every texture
+        /// (ForceEnable, the desktop's quality level), 3 forced at 16x.</summary>
+        public static int TextureFiltering { get => Mathf.Clamp(Mathf.RoundToInt(Get("textureFiltering", Default("textureFiltering", 2f))), 0, 3); set => Set("textureFiltering", Mathf.Clamp(value, 0, 3)); }
+
+        /// <summary>A part of the original's Quality while the player had set it and not the new option: High 2 = every part
+        /// on and detail High, Medium 1 / Low 0 = effects off and that detail. Else the option's default.</summary>
+        static float OldQuality(string key, float other)
+        {
+            if (defaultReads < 0 && PlayerPrefs.HasKey(Prefix + "quality"))
+            {
+                int q = Mathf.Clamp(Mathf.RoundToInt(PlayerPrefs.GetFloat(Prefix + "quality", 2f)), 0, 2);
+                return key == "detailDistance" ? q : q >= 2 ? 1f : 0f;
+            }
+            return Default(key, other);
+        }
 
         /// <summary>Remake: Texture quality, the mipmap levels skipped when textures are loaded (QualitySettings.
         /// globalTextureMipmapLimit, Bootstrap): 0 full, 1 half (a quarter of the memory), 2 quarter. The space skies,
@@ -145,33 +174,38 @@ namespace GoF2Remake.Data
 
         // ---- graphics presets (remake, the user's request 2026-10-22) -----------------------------------------------
 
-        /// <summary>Options > Graphics "Graphics preset": Low, Medium, High set these options at once (ApplyPreset); the row
-        /// shows the preset the options match, else Custom (OptionsCatalog). High is the desktop's defaults, so a fresh
+        /// <summary>Options > Graphics "Graphics preset": Low, Medium, High and Ultra set these options at once (ApplyPreset);
+        /// the row shows the preset the options match, else Custom (OptionsCatalog). High is the desktop's defaults, so a fresh
         /// install there shows High; Low is Android's defaults (AndroidDefaults: every key here a player never set), for
-        /// lower-end phones' frame rate and heat. The frame rate isn't part of them (Android's default is 60 on its own).</summary>
-        public const int PresetLow = 0, PresetMedium = 1, PresetHigh = 2, PresetCustom = 3;
+        /// lower-end phones' frame rate and heat; Ultra (the user's request 2026-10-23) every option at its most. The frame
+        /// rate isn't part of them (Android's default is 60 on its own).</summary>
+        public const int PresetLow = 0, PresetMedium = 1, PresetHigh = 2, PresetUltra = 3, PresetCustom = 4;
 
         public static readonly string[] PresetKeys =
         {
-            "quality", "renderScale", "upscaler", "msaa", "bloomStyle", "hangarShadows", "hangarDof", "lensFlare", "npcPlayerEngines", "lods",
-            "textureQuality",
+            "renderScale", "upscaler", "msaa", "bloomStyle", "hangarShadows", "hangarDof", "lensFlare", "npcPlayerEngines", "lods",
+            "textureQuality", "fireSmoke", "fog", "detailDistance", "textureFiltering",
         };
 
-        // One row per preset, in PresetKeys' order. The original's Quality Low / Medium: smoke and fog off, LOD bias x0.35 /
-        // x0.6 (Bootstrap); render scale with FSR 1 sharpening it back up (only where the device runs FSR, Bootstrap.ActiveUpscaler);
-        // MSAA 1 = off (the flight camera's SMAA stays); bloom off on Low (both blooms are full-screen passes).
+        // One row per preset, in PresetKeys' order. Low / Medium as the original's Quality Low / Medium (fire, smoke and fog
+        // off, detail distance x0.35 / x0.6); render scale with FSR 1 sharpening it back up (only where the device runs FSR,
+        // Bootstrap.ActiveUpscaler); MSAA 1 = off (the flight camera's SMAA stays); bloom off on Low (both blooms are
+        // full-screen passes). Ultra: 150 % render scale (200 % is in the row, but four times the pixels of 100 % with MSAA 8x
+        // is past most GPUs), MSAA 8x, every hangar ship's shadow, depth of field, no made levels of detail, detail distance
+        // x2, 16x filtering.
         static readonly float[][] Presets =
         {
-            //        quality scale  upscaler     msaa bloom        hangar shadows       dof lens npcEngines lods textures
-            new[] { 0f, 0.67f, UpscalerFsr, 1f, BloomOff,    HangarShadowsOff,    0f, 0f, 0f, 1f, 1f },
-            new[] { 1f, 0.8f,  UpscalerFsr, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 0f, 1f, 0f },
-            new[] { 2f, 1f,    UpscalerOff, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 1f, 1f, 0f },
+            //      scale  upscaler     msaa bloom        hangar shadows       dof lens npcEng lods textures fire fog detail filter
+            new[] { 0.67f, UpscalerFsr, 1f, BloomOff,    HangarShadowsOff,    0f, 0f, 0f, 1f, 1f, 0f, 0f, 0f, 1f },
+            new[] { 0.8f,  UpscalerFsr, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 0f, 1f, 0f, 0f, 0f, 1f, 1f },
+            new[] { 1f,    UpscalerOff, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 1f, 1f, 0f, 1f, 1f, 2f, 2f },
+            new[] { 1.5f,  UpscalerOff, 8f, BloomRemake, HangarShadowsAll,    1f, 1f, 1f, 0f, 0f, 1f, 1f, 3f, 3f },
         };
 
-        /// <summary>'key''s value in 'preset' (PresetLow..PresetHigh).</summary>
+        /// <summary>'key''s value in 'preset' (PresetLow..PresetUltra).</summary>
         public static float PresetValue(int preset, string key) => Presets[Mathf.Clamp(preset, 0, Presets.Length - 1)][Array.IndexOf(PresetKeys, key)];
 
-        /// <summary>Sets every option of 'preset' (PresetLow..PresetHigh; anything else does nothing), one Changed.</summary>
+        /// <summary>Sets every option of 'preset' (PresetLow..PresetUltra; anything else does nothing), one Changed.</summary>
         public static void ApplyPreset(int preset)
         {
             if (preset < 0 || preset >= Presets.Length) return;
@@ -498,7 +532,7 @@ namespace GoF2Remake.Data
         public static readonly string[] SoundKeys = { "masterVolume", "musicVolume", "sfxVolume", "voiceVolume", "eachWeaponSound", "muteInBackground" };
         public static readonly string[] GraphicsKeys =
         {
-            "displayMode", "resolutionWidth", "resolutionHeight", "frameRate", "quality", "renderScale", "upscaler", "upscalerQuality",
+            "displayMode", "resolutionWidth", "resolutionHeight", "frameRate", "quality", "fireSmoke", "fog", "detailDistance", "textureFiltering", "renderScale", "upscaler", "upscalerQuality",
             "msaa", "textureQuality", "brightness", "bloom", "bloomStyle", "hangarShadows", "lods", "hangarDof", "lensFlare", "npcPlayerEngines", "fov",
             "cameraShake", "originalChaseCamera", "uiWidth", "uiMargin", "showFps", "fpsPosition",
         };

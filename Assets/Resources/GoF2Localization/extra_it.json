@@ -214,7 +214,7 @@
  "lodsHelp": "Navi, stazioni e altri oggetti lontani vengono disegnati con meno triangoli, per un frame rate più fluido. Disattivato: ogni modello al massimo dettaglio.",
  "graphicsPreset": "Preimpostazione grafica",
  "presetCustom": "Personalizzata",
- "graphicsPresetHelp": "Imposta in un colpo scala di rendering, effetti, ombre e dettaglio. Bassa è adatta a telefoni e dispositivi più lenti; Alta è l’aspetto completo.",
+ "graphicsPresetHelp": "Imposta insieme scala di rendering, effetti, ombre e dettagli. Basso è adatto a telefoni e dispositivi lenti, Alto è l'aspetto completo, Ultra porta ogni opzione al massimo, per schede grafiche veloci.",
  "textureQuality": "Qualità texture",
  "textureFull": "Piena",
  "textureHalf": "Metà",
@@ -2840,5 +2840,18 @@
  "mbRecreateIcon": "Ricrea icona",
  "mbIconWait": "L'icona può essere disegnata quando il modello della nave è sulla piattaforma girevole.",
  "mbIconOwn": "La tua icona: «Ricrea icona» ne disegna una dal modello al suo posto.",
- "mbIconMade": "Disegnata dal modello, muso in basso a sinistra, ogni volta che cambiano il modello, la sua rotazione o le sue texture."
+ "mbIconMade": "Disegnata dal modello, muso in basso a sinistra, ogni volta che cambiano il modello, la sua rotazione o le sue texture.",
+ "presetUltra": "Ultra",
+ "fireSmoke": "Fuoco e fumo",
+ "fireSmokeHelp": "Le navi danneggiate lasciano una scia di fumo e fuoco, e navi e relitti bruciano quando vengono distrutti.",
+ "fog": "Nebbia",
+ "fogHelp": "La foschia dei sistemi stellari che ce l'hanno.",
+ "detailDistance": "Distanza dei dettagli",
+ "detailDistanceHelp": "Fino a che distanza navi, stazioni e asteroidi mantengono tutti i dettagli prima che subentrino modelli più semplici.",
+ "textureFiltering": "Filtro delle texture",
+ "textureFilteringHelp": "Mantiene nitide le superfici viste di sbieco. Anisotropico: dove una texture lo richiede; Forzato: ogni texture; 16×: il più nitido.",
+ "filterBilinear": "Bilineare",
+ "filterAnisotropic": "Anisotropico",
+ "filterForced": "Forzato",
+ "filterForced16": "Forzato 16×"
 }

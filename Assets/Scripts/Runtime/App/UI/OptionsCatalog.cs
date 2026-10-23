@@ -158,12 +158,12 @@ namespace GoF2Remake.UI
                     () => Settings.MuteInBackground, v => Settings.MuteInBackground = v));
 
             // ---- graphics
-            // Remake: Low / Medium / High set the preset options at once (Settings.ApplyPreset); the row shows the preset the
-            // options match now, else Custom (picking Custom changes nothing).
+            // Remake: Low / Medium / High / Ultra set the preset options at once (Settings.ApplyPreset); the row shows the preset
+            // the options match now, else Custom (picking Custom changes nothing).
             list.Add(Choice("graphicsPreset", OptionPage.Graphics, () => X("graphicsPreset", "Graphics preset"), true,
-                () => new[] { Localization.Get(507), Localization.Get(508), Localization.Get(509), X("presetCustom", "Custom") },
+                () => new[] { Localization.Get(507), Localization.Get(508), Localization.Get(509), X("presetUltra", "Ultra"), X("presetCustom", "Custom") },
                 CurrentPreset, i => Settings.ApplyPreset(i),
-                () => X("graphicsPresetHelp", "Sets the render scale, effects, shadows and detail at once. Low suits phones and slower devices; High is the full look.")));
+                () => X("graphicsPresetHelp", "Sets the render scale, effects, shadows and detail at once. Low suits phones and slower devices; High is the full look; Ultra puts every option at its most, for fast graphics cards.")));
             if (Bootstrap.HasDisplayOptions)
             {
                 list.Add(Confirmed(Choice("displayMode", OptionPage.Graphics, () => X("displayMode", "Display mode"), true,
@@ -178,10 +178,17 @@ namespace GoF2Remake.UI
             list.Add(Choice("frameRate", OptionPage.Graphics, () => X("frameRate", "Frame rate"), true,
                 () => new[] { "30", "60", "120", X("fpsUncapped", "UNCAPPED"), X("fpsVSync", "V-SYNC") },
                 () => (int)Settings.FrameRate, i => Settings.FrameRate = (FrameRate)i));
-            list.Add(Choice("quality", OptionPage.Graphics, () => Localization.Get(504), true,
-                () => new[] { Localization.Get(507), Localization.Get(508), Localization.Get(509) },
-                () => Settings.Quality, i => Settings.Quality = i,
-                () => QualityDescription(Settings.Quality)));
+            // The original's Quality (504) in its parts: fire and smoke, fog, detail distance (Settings.FireSmoke etc.).
+            var fireSmoke = Toggle("fireSmoke", OptionPage.Graphics, () => X("fireSmoke", "Fire and smoke"), () => Settings.FireSmoke, v => Settings.FireSmoke = v);
+            fireSmoke.description = () => X("fireSmokeHelp", "Damaged ships trail smoke and fire, and ships and wrecks burn as they are destroyed.");
+            list.Add(fireSmoke);
+            var fog = Toggle("fog", OptionPage.Graphics, () => X("fog", "Fog"), () => Settings.Fog, v => Settings.Fog = v);
+            fog.description = () => X("fogHelp", "The haze of the star systems that have it.");
+            list.Add(fog);
+            list.Add(Choice("detailDistance", OptionPage.Graphics, () => X("detailDistance", "Detail distance"), true,
+                () => new[] { Localization.Get(507), Localization.Get(508), Localization.Get(509), X("presetUltra", "Ultra") },
+                () => Settings.DetailDistance, i => Settings.DetailDistance = i,
+                () => X("detailDistanceHelp", "How far away ships, stations and asteroids keep their full detail before simpler models take over.")));
             // DLSS / FSR 2+ pick their own render resolution (the Upscaler quality below): no render scale while one is on.
             // MetalFX keeps the render scale (its input resolution; URP clamps it into MetalFX Temporal's supported range).
             bool DlssOrFsrOn() => Bootstrap.ActiveUpscaler == Settings.UpscalerDlss || Bootstrap.ActiveUpscaler == Settings.UpscalerFsrTemporal;
@@ -265,6 +272,10 @@ namespace GoF2Remake.UI
                 () => new[] { X("textureFull", "Full"), X("textureHalf", "Half"), X("textureQuarter", "Quarter") },
                 () => Settings.TextureQuality, i => Settings.TextureQuality = i,
                 () => X("textureQualityHelp", "Half and Quarter load smaller textures: less memory and faster on phones, a little blurrier up close.")));
+            list.Add(Choice("textureFiltering", OptionPage.Graphics, () => X("textureFiltering", "Texture filtering"), true,
+                () => new[] { X("filterBilinear", "Bilinear"), X("filterAnisotropic", "Anisotropic"), X("filterForced", "Forced"), X("filterForced16", "Forced 16×") },
+                () => Settings.TextureFiltering, i => Settings.TextureFiltering = i,
+                () => X("textureFilteringHelp", "Keeps surfaces seen at a slant sharp. Anisotropic: where a texture asks for it; Forced: every texture; 16×: the sharpest.")));
             list.Add(Choice("brightness", OptionPage.Graphics, () => Localization.Get(503), true,
                 () => new[] { Localization.Get(513), Localization.Get(514), Localization.Get(515) },
                 () => Settings.Brightness, i => Settings.Brightness = i));
@@ -623,13 +634,6 @@ namespace GoF2Remake.UI
         }
 
         /// <summary>510-512 "Low quality:\n- Smoke off\n- Fog off\n- Detail low" as one line: "Smoke off · Fog off · Detail low".</summary>
-        static string QualityDescription(int quality)
-        {
-            var lines = Localization.Get(510 + quality).Replace("\r", "").Split('\n').Skip(1)
-                .Select(l => l.TrimStart('-', ' ').Trim()).Where(l => l.Length > 0);
-            return string.Join("  ·  ", lines);
-        }
-
         static int Nearest(float[] values, float v)
         {
             int best = 0;
@@ -688,7 +692,10 @@ namespace GoF2Remake.UI
         {
             float Now(string key) => key switch
             {
-                "quality" => Settings.Quality,
+                "fireSmoke" => Settings.FireSmoke ? 1f : 0f,
+                "fog" => Settings.Fog ? 1f : 0f,
+                "detailDistance" => Settings.DetailDistance,
+                "textureFiltering" => Settings.TextureFiltering,
                 "renderScale" => Settings.RenderScale > 0f ? Settings.RenderScale : Bootstrap.DefaultRenderScale,
                 "upscaler" => Settings.Upscaler,
                 "msaa" => Settings.Msaa > 0 ? Settings.Msaa : Bootstrap.DefaultMsaa,
@@ -701,7 +708,7 @@ namespace GoF2Remake.UI
                 "textureQuality" => Settings.TextureQuality,
                 _ => float.NaN,
             };
-            for (int p = Settings.PresetLow; p <= Settings.PresetHigh; p++)
+            for (int p = Settings.PresetLow; p <= Settings.PresetUltra; p++)
                 if (Settings.PresetKeys.All(k => Mathf.Abs(Now(k) - Settings.PresetValue(p, k)) < 0.01f)) return p;
             return Settings.PresetCustom;
         }
