@@ -338,6 +338,18 @@ namespace GoF2Remake.UI
         }
 
         static List<IconRule> iconRules;
+        static int iconRulesRevision = -1;
+
+        /// <summary>Whether the sprite asset has 'sprite': TextCore prints a &lt;sprite&gt; tag naming a sprite it lacks as
+        /// text (a mod's ship blueprint item, named as its ship, was given "item_" + its own number past the original items).
+        /// The atlas holds the original items' and ships' shop icons and the named icons (TextIconsBuilder).</summary>
+        static bool HasIcon(string sprite)
+        {
+            if (sprite == null) return false;
+            if (sprite.StartsWith("item_")) return int.TryParse(sprite.Substring(5), out int i) && i >= 0 && i < GameNames.OriginalItems;
+            if (sprite.StartsWith("ship_")) return int.TryParse(sprite.Substring(5), out int s) && s >= 0 && s < GameNames.OriginalShips;
+            return true;
+        }
 
         /// <summary>Amounts of money: a number (with , . or space thousands) followed by "$" or a credit word (Chinese:
         /// "20,000个信用分", without a space).</summary>
@@ -390,7 +402,8 @@ namespace GoF2Remake.UI
         /// <summary>The word -> icon rules, longest word first; rebuilt when the language changes.</summary>
         static List<IconRule> IconRules()
         {
-            if (iconRules != null) return iconRules;
+            if (iconRules != null && iconRulesRevision == Modding.ModManager.Revision) return iconRules;   // the mods' items and ships too
+            iconRulesRevision = Modding.ModManager.Revision;
             Hook();
             var list = new List<IconRule>();
             var seen = new HashSet<string>();
@@ -398,6 +411,7 @@ namespace GoF2Remake.UI
             {
                 word = word?.Trim();
                 if (string.IsNullOrEmpty(word) || word.Length < 3 || word.IndexOf('\uFFFD') >= 0 || word.StartsWith("#")) return;
+                if (sprite != null && !HasIcon(sprite)) return;   // not in the atlas: no rule (another may still give the word one)
                 if (!seen.Add((anyCase ? word.ToLowerInvariant() : word) + "|" + (sprite ?? "-"))) return;
                 list.Add(new IconRule { word = word, sprite = sprite, anyCase = anyCase, pluralOnly = pluralOnly });
             }
@@ -444,7 +458,13 @@ namespace GoF2Remake.UI
                     Add(Localization.Get(221 + kv.Key), sprite, true, pluralOnly: kv.Key == 11);   // 11 Mine: not "a friend of mine"
                 }
             }
-            list.Sort((a, b) => b.word.Length.CompareTo(a.word.Length));
+            // Longest word first, the same length in the order added (List.Sort isn't stable: a mod ship's rule without an icon
+            // came before or after a game ship's of the same name at random).
+            var sorted = new List<(IconRule rule, int at)>();
+            for (int i = 0; i < list.Count; i++) sorted.Add((list[i], i));
+            sorted.Sort((a, b) => a.rule.word.Length != b.rule.word.Length ? b.rule.word.Length.CompareTo(a.rule.word.Length) : a.at.CompareTo(b.at));
+            list.Clear();
+            foreach (var e in sorted) list.Add(e.rule);
             iconRules = list;
             return iconRules;
         }
