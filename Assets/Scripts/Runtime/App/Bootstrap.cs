@@ -36,6 +36,15 @@ namespace GoF2Remake
         public static float DefaultRenderScale => defaultRenderScale;
         public static int DefaultMsaa => defaultMsaa;
 
+        /// <summary>Apple fork: limits set by PerformanceGovernor while the device is hot or in Low Power Mode, on top of the
+        /// player's options (never above them): a frame cap (0 = none) and a factor on the render scale (1 = none).</summary>
+        public static int GovernorFrameCap;
+        public static float GovernorScale = 1f;
+
+        /// <summary>Apple fork: the frame cap while the desktop window is in the background (runInBackground keeps the game, and
+        /// a multiplayer session, running; nobody is looking at 120 fps).</summary>
+        const int BackgroundFps = 30;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Init()
         {
@@ -47,6 +56,8 @@ namespace GoF2Remake
             // A dedicated server (-server): no menu, rendering options, sound or desktop extras, only the server.
             if (Multiplayer.DedicatedServer.Enabled) { Multiplayer.DedicatedServer.Boot(); return; }
             int editorVSync = QualitySettings.vSyncCount;
+            GovernorFrameCap = 0;
+            GovernorScale = 1f;
             if (Application.isMobilePlatform) Screen.sleepTimeout = SleepTimeout.NeverSleep;   // no screen dimming while playing
             urp = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
             if (urp != null)
@@ -74,6 +85,9 @@ namespace GoF2Remake
             UI.DiscordPresence.Install();         // desktop: Discord Rich Presence
             Flight.Haptics.Install();             // controller rumble and phone vibration
             UI.FpsCounter.Install();              // the frame rate option (Settings.ShowFps)
+#if UNITY_IOS || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+            PerformanceGovernor.Install();        // Apple fork: thermal state / Low Power Mode -> frame cap and render scale
+#endif
             UI.StoryStepLabel.Install();          // the story step and station, bottom right (for bug screenshots)
             Vr.VrMode.Start();                    // -vr / -vrsim: OpenXR and the VR rig per scene
             if (Vr.VrMode.Headset) Vr.VrPad.Install();   // the VR controllers as a gamepad, the laser as a mouse
@@ -130,6 +144,7 @@ namespace GoF2Remake
         {
             focused = focus;
             ApplyVolume();
+            ApplyFrameRate();   // Apple fork: the background cap
         }
 
         /// <summary>The master volume, or silence while the window is in the background with "Mute in background" on.</summary>
@@ -141,7 +156,7 @@ namespace GoF2Remake
             if (!Application.isPlaying) return;
             ApplyFrameRate();
             ApplyVolume();
-            if (urp != null) urp.renderScale = AppliedRenderScale(PickedRenderScale, Android, IsTemporal(ActiveUpscaler));
+            if (urp != null) urp.renderScale = EffectiveRenderScale();
             ApplyUpscaling();
             QualitySettings.lodBias = defaultLodBias * Settings.DetailDistanceFactor;
             ApplyTextureFiltering();
@@ -177,6 +192,26 @@ namespace GoF2Remake
         /// off gets 2x.</summary>
         public static int AppliedMsaa(int picked, float pickedScale, bool android, bool temporal) =>
             android && !temporal && picked <= 1 && AtFullScale(pickedScale) ? 2 : picked;
+
+        /// <summary>Apple fork: the render scale URP gets: the one picked times PerformanceGovernor's factor (never below
+        /// 50 %), then AppliedRenderScale as upstream.</summary>
+        static float EffectiveRenderScale()
+        {
+            float scale = PickedRenderScale;
+            if (GovernorScale < 0.999f) scale = Mathf.Max(0.5f, scale * GovernorScale);
+            return AppliedRenderScale(scale, Android, IsTemporal(ActiveUpscaler));
+        }
+
+        /// <summary>Apple fork: PerformanceGovernor changed its limits: the frame rate and the render scale again (the scale
+        /// only when it changed, a change reallocates the camera's targets).</summary>
+        public static void ApplyPerformanceLimits()
+        {
+            if (!Application.isPlaying) return;
+            ApplyFrameRate();
+            if (urp == null) return;
+            float scale = EffectiveRenderScale();
+            if (!Mathf.Approximately(urp.renderScale, scale)) urp.renderScale = scale;
+        }
 
         // ---- upscaler ----------------------------------------------------------------------------------------
 
@@ -275,6 +310,7 @@ namespace GoF2Remake
             Settings.UpscalerDlss when DlssSupported => Settings.UpscalerDlss,
             Settings.UpscalerFsrTemporal when FsrTemporalSupported => Settings.UpscalerFsrTemporal,
             Settings.UpscalerMetalFxSpatial when MetalFxSpatialSupported => Settings.UpscalerMetalFxSpatial,
+            Settings.UpscalerMetalFxSpatial when FsrSupported => Settings.UpscalerFsr,   // Apple fork: the presets' MetalFX without it
             Settings.UpscalerMetalFxTemporal when MetalFxTemporalSupported => Settings.UpscalerMetalFxTemporal,
             _ => Settings.UpscalerOff,
         };
@@ -294,6 +330,9 @@ namespace GoF2Remake
         {
             if (!Application.isPlaying) return;
             bool mobile = Application.isMobilePlatform;
+            // Apple fork: the governor's cap and the background cap apply only below what the option already gives.
+            int cap = PerformanceCap();
+            if (cap > 0 && cap < OptionFrameRate()) { Limit(cap); return; }
             switch (Settings.FrameRate)
             {
                 case FrameRate.Fps30: Limit(30); break;
@@ -308,6 +347,25 @@ namespace GoF2Remake
                     Application.targetFrameRate = mobile ? Mathf.Max(30, DisplayRefreshRate) : -1;
                     break;
             }
+        }
+
+        /// <summary>The frame rate the option asks for (V-Sync: the display's rate, Uncapped: no limit).</summary>
+        static int OptionFrameRate() => Settings.FrameRate switch
+        {
+            FrameRate.Fps30 => 30,
+            FrameRate.Fps60 => 60,
+            FrameRate.Fps120 => 120,
+            FrameRate.Uncapped => int.MaxValue,
+            _ => DisplayRefreshRate,
+        };
+
+        /// <summary>Apple fork: the lowest active cap, 0 = none: the governor's, and BackgroundFps while a desktop player's
+        /// window is in the background (not in the Editor).</summary>
+        static int PerformanceCap()
+        {
+            int cap = GovernorFrameCap;
+            if (!focused && !Application.isMobilePlatform && !Application.isEditor) cap = cap > 0 ? Mathf.Min(cap, BackgroundFps) : BackgroundFps;
+            return cap;
         }
 
         static void Limit(int fps)

@@ -176,7 +176,13 @@ namespace GoF2Remake.UI
             // Where the ship stands: below its turning axis (the model's origin, which the yaw keeps) at its lowest point.
             footWorld = new Vector3(model.position.x, bounds.min.y, model.position.z);
             hasFoot = true;
-            rt = new RenderTexture(rtWidth, rtHeight, 24, RenderTextureFormat.ARGB32) { antiAliasing = UnityEngine.Device.Application.isMobilePlatform ? 2 : 4 };
+            // Apple fork: depth and the MSAA samples only live in tile memory (Metal memoryless: never written out to RAM, only the
+            // resolved colour is); ignored where unsupported (Intel Macs).
+            rt = new RenderTexture(rtWidth, rtHeight, 24, RenderTextureFormat.ARGB32)
+            {
+                antiAliasing = UnityEngine.Device.Application.isMobilePlatform ? 2 : 4,
+                memorylessMode = RenderTextureMemoryless.Depth | RenderTextureMemoryless.MSAA,
+            };
             cam.targetTexture = rt;
             var lightGo = new GameObject("Ship preview light");
             lightGo.transform.SetParent(stage.transform, false);
@@ -259,8 +265,10 @@ namespace GoF2Remake.UI
             // the extra resolution is the anti-aliasing (MSAA can't be mipmapped).
             // On phones (shown at its own size) no mipmaps: no minification to smooth, and no mip chain to rebuild every frame.
             rt = mobile
-                ? new RenderTexture(pwI, phI, 24, RenderTextureFormat.ARGB32) { antiAliasing = 2, filterMode = FilterMode.Bilinear }
-                : new RenderTexture(pwI, phI, 24, RenderTextureFormat.ARGB32) { useMipMap = true, autoGenerateMips = true, filterMode = FilterMode.Trilinear };
+                ? new RenderTexture(pwI, phI, 24, RenderTextureFormat.ARGB32) { antiAliasing = 2, filterMode = FilterMode.Bilinear,
+                    memorylessMode = RenderTextureMemoryless.Depth | RenderTextureMemoryless.MSAA }
+                : new RenderTexture(pwI, phI, 24, RenderTextureFormat.ARGB32) { useMipMap = true, autoGenerateMips = true, filterMode = FilterMode.Trilinear,
+                    memorylessMode = RenderTextureMemoryless.Depth };
             cam.targetTexture = rt;
             cam.ResetAspect();
             image.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(rt));
