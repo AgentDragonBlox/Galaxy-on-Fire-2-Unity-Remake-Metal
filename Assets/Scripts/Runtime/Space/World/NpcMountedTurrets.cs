@@ -63,6 +63,7 @@ namespace GoF2Remake.World
                 var rig = core.Rig;
                 gun.owner = ship.Target;
                 gun.Hit += (b, hit, point) => onHit(gun, rig, b, hit, point);
+                if (gun.echo != null) gun.AreaHit += ship.HitByBlast;   // an echo's blasts (Gun.EchoBlast)
                 ship.ExtraGuns.Add(gun);   // multiplayer: the other players see its shots
                 t.picking = new TurretTargeting(TurretTargeting.Rule.Timed, item.Attr(109) > 0 ? item.Attr(109) : RangeUnits)
                 {

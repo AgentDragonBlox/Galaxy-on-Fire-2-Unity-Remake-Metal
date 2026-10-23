@@ -312,6 +312,10 @@ energy cells.
 | `tractorTargets` | 122 | Tractor beams: how many containers it pulls at once, 1 to 8 (default 1; see [Multi-grab tractor beams](#multi-grab-tractor-beams)) |
 | `tractorRange` | 123 | Multi-grab tractor beams: how far the extra beams reach for containers (game units, 20 per metre; default 30000 = 1.5 km) |
 | `shieldDamage` | 124 | A weapon's damage to a shield in percent (default 100; the Disruptor Laser and items based on it 200). What the shield doesn't absorb hits the armor and hull at the plain damage. Only ships with a shield feel it: the players (each other in multiplayer), not the game's NPCs |
+| `echoDelayMs` | 127 | A second, weaker blast at each hit, this many ms after it (0 or none = no echo; see [Echo blasts](#echo-blasts)) |
+| `echoPercent` | 128 | The echo's damage, EMP and size in percent of the shot's (default 50) |
+| `echoRadius` | 129 | The echo's reach in game units (0 = the gun's own `blastRadius`) |
+| `echoExplosion` | 130 | The explosion the echo shows: 0 ship, 8 to 10 scatter (8 the default), 11 shock blast, 13 fireworks; -1 none |
 
 Which stats an item uses depends on its category, so copy the stats its base item has (see `items.json` and
 `item_attributes.json` in `Assets/Resources/GoF2Data`). items.json's own stat names (`loadingTimeMs`, `range`,
@@ -440,6 +444,27 @@ With the look of a missile, its own turret model and the missile's launch sound 
     }
 }
 ```
+
+### Echo blasts
+
+A shot can set off a second, weaker explosion where it hit, a little later: the echo. Any gun does it (a plain gun, a scatter
+gun, a homing missile, a turret, an NPC's gun), when its shot hits something; a bomb or a mine doesn't. The echo's blast
+hurts everything in its reach with `percent` of the shot's damage, EMP and size, and shows the explosion `echoExplosion`
+at that size. The shot's own hit and its burst are unchanged.
+
+```json
+{
+    "id": "icarus_heavy_red",
+    "base": 178,
+    "name": { "en": "Icarus Heavy Enhanced" },
+    "stats": { "damage": 50, "echoDelayMs": 500, "echoPercent": 60, "echoExplosion": 10 }
+}
+```
+
+Here every burst of the Icarus Heavy is followed half a second later by a second burst at 60 % of the damage and size. Its
+reach is the gun's own `blastRadius` (`echoRadius` left out). A gun without a blast radius has an echo that only shows its
+explosion unless `echoRadius` is given. The echo is the shooter's blast, so it hurts what the shooter's own blasts hurt: not
+the player's own ship, and no EMP for a turret or sentry.
 
 ### Weapon effects
 

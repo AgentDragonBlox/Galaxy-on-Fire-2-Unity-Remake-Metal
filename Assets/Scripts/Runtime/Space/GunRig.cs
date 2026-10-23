@@ -59,6 +59,7 @@ namespace GoF2Remake.Flight
             this.fx = fx;
             this.fxRoot = fxRoot;
             ship = muzzleParent;
+            if (gun.echo != null) gun.Echoed += ShowEcho;
             billboard = gun.kind == Gun.Kind.Blaster || gun.kind == Gun.Kind.Thermo;
             projectiles = new Transform[gun.bullets.Length];
             if (fx != null && fx.projectile != null)
@@ -248,6 +249,15 @@ namespace GoF2Remake.Flight
         }
 
         /// <summary>A bullet hit something at 'point'.</summary>
+        /// <summary>A shot's echo went off here (GunEcho): its explosion, at the echo's size, a second blast after the hit.</summary>
+        void ShowEcho(Vector3 point)
+        {
+            var echo = gun.echo;
+            if (echo == null || echo.explosion < 0) return;
+            var forward = fxRoot != null ? fxRoot.forward : Vector3.forward;
+            Explosion.Spawn(echo.explosion, point, forward, echo.Scale, fx != null ? fx.ExplosionSound : null, false);
+        }
+
         public void ShowImpact(Vector3 point)
         {
             // Gun::calcCharacterCollision: rockets, missiles and cluster missiles have no impact mesh; a hit emits record 11

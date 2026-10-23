@@ -261,6 +261,7 @@ namespace GoF2Remake.Flight
             gun.Ignores = t => t.playerProof;   // multiplayer: through squadmates
             core.Rig?.Tint(WeaponTint.For(item, WeaponTint.PlayerColor()));   // an energy turret in the build's weapon colour
             gun.Hit += OnHit;
+            if (gun.echo != null) gun.AreaHit += (t, dmg, emp, c) => { if (t != null && dmg > 0) t.Damage(dmg, false, (t.transform.position - c).normalized, gun.shieldFactor); };   // an echo's blast (GunEcho)
             if (fx.shot != null)
             {
                 loop = gameObject.AddComponent<AudioSource>();

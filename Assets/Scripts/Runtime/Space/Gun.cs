@@ -84,6 +84,8 @@ namespace GoF2Remake.Flight
         public float spreadError;             // Gun+0xe0: 2 auto-cannon/scatter, 20 thermo, 0 otherwise
         /// <summary>RocketGun::update: homing only once the bullet is this old (NPC rockets 1000 ms, the player's at once).</summary>
         public float homingDelayMs;
+        /// <summary>Remake (mods, ItemStats 127-130): a second, weaker blast at each hit, a little later. Null = none.</summary>
+        public readonly GunEcho echo;
 
         // Remake, for mods (ItemStats 105-108): a gun or turret whose shots are homing missiles, and salvos.
         /// <summary>Attr 105 = 1: the shots are homing missiles (they home on the lock / the turret's target, keep their size,
@@ -115,6 +117,8 @@ namespace GoF2Remake.Flight
         public event Action<int> Expired;
         /// <summary>A bomb, mine, scatter shell or the shock blast went off at this point (the explosion).</summary>
         public event Action<Vector3> Ignited;
+        /// <summary>A shot's echo went off at this point (its damage is done; the explosion is for the view).</summary>
+        public event Action<Vector3> Echoed;
         /// <summary>A shot left the gun (gun, bullet index; a cluster salvo: its first bullet). Multiplayer sends it to the
         /// other players (NetProxy, NetPlayer).</summary>
         public event Action<Gun, int> Fired;
@@ -183,6 +187,7 @@ namespace GoF2Remake.Flight
             isBeam = IsBeamLook(look);
             damage = item.Attr(9);
             shieldFactor = ShieldFactor(item);
+            echo = GunEcho.From(item);
             emp = item.Attr(10);
             reloadMs = Mathf.Max(1, item.Attr(11, 500));
             lifetimeMs = kind == Kind.ShockBlast ? 1f : item.Attr(12, 2000);
@@ -221,6 +226,7 @@ namespace GoF2Remake.Flight
             lookIndex = visualItem.Look;
             categoryId = visualItem.categoryId;
             kind = (Kind)visualItem.categoryId;
+            echo = GunEcho.From(visualItem);
             this.damage = damage;
             this.reloadMs = Mathf.Max(1f, reloadMs);
             this.lifetimeMs = lifetimeMs;
@@ -406,6 +412,7 @@ namespace GoF2Remake.Flight
             bool dropShaken = Homing && previousLock != null && previousLock != lockTarget && previousLock.ShakesMissiles;
             LastLock = lockTarget;
             lastTargets = targets;
+            if (echo != null && echo.Waiting > 0) echo.Tick(dtMs, echoDue ??= new Action<Vector3>(EchoBlast));
             float limit = FreeLimit;
             // Missiles: 1/6 of the error per 33 ms frame, made frame-rate independent.
             float steerRate = Homing ? 1f - Mathf.Pow(5f / 6f, dtMs / 33.3f) : 0f;
@@ -460,6 +467,7 @@ namespace GoF2Remake.Flight
                 {
                     b.timer = -1e9f;   // gone
                     Hit?.Invoke(i, homeOn, goal);
+                    Struck(goal);
                     continue;
                 }
                 if (targets != null)
@@ -502,6 +510,7 @@ namespace GoF2Remake.Flight
                 b.timer = -1e9f;   // gone
                 Hit?.Invoke(i, hullTarget, hullPoint);
                 if (scatter) { AreaDamage(hullPoint, targets, false); Ignited?.Invoke(hullPoint); }   // + the burst around
+                Struck(hullPoint);
                 return;
             }
             // Remake: a hull target with a hit sphere (Target.hitSphereRadius: the player's collision probe) is hit within it too.
@@ -530,6 +539,7 @@ namespace GoF2Remake.Flight
                     b.timer = -1e9f;   // gone
                     Hit?.Invoke(i, s, at);
                     if (scatter) { AreaDamage(at, targets, false); Ignited?.Invoke(at); }
+                    Struck(at);
                     return;
                 }
             }
@@ -561,6 +571,7 @@ namespace GoF2Remake.Flight
                 b.timer = -1e9f;   // gone
                 Hit?.Invoke(i, target, point);
                 if (kind == Kind.ScatterGun) { AreaDamage(point, targets, false); Ignited?.Invoke(point); }   // + the burst around
+                Struck(point);
                 return;
             }
         }
@@ -744,27 +755,44 @@ namespace GoF2Remake.Flight
             return false;
         }
 
-        /// <summary>The blast: every target within attr 14 takes damage * f and EMP * f.</summary>
-        void AreaDamage(Vector3 center, IReadOnlyList<Target> targets, bool bomb)
+        /// <summary>The blast: every target within attr 14 (or 'radius', units) takes damage * f * scale and EMP * f * scale.</summary>
+        void AreaDamage(Vector3 center, IReadOnlyList<Target> targets, bool bomb, float scale = 1f, float radius = 0f)
         {
-            if (targets == null || magnitude <= 0f) return;
+            float reach = radius > 0f ? radius : magnitude;
+            if (targets == null || reach <= 0f) return;
             for (int t = 0; t < targets.Count; t++)
             {
                 var target = targets[t];
                 if (target == null || target == owner || !target.Alive || target.isPlayer || target.phased) continue;
                 if (kind == Kind.EmpBomb && target.isAsteroid) continue;   // sort 6 skips asteroids
                 float d = (target.transform.position - center).magnitude / MetersPerUnit;
-                if (d >= magnitude) continue;
-                float f = kind == Kind.Mine ? (10000f - d) / 10000f : Mathf.Clamp01((magnitude - d) / magnitude);
+                if (d >= reach) continue;
+                float f = kind == Kind.Mine ? (10000f - d) / 10000f : Mathf.Clamp01((reach - d) / reach);
                 if (f <= 0f) continue;
-                int dmg = 0, e = (int)(f * emp);
+                int dmg = 0, e = (int)(f * emp * scale);
                 if (kind != Kind.EmpBomb)   // EMP bombs: EMP only, attr 9 is never applied
                 {
                     float fd = bomb && target.isAsteroid ? f * 0.6f : f;
-                    dmg = (int)(fd * damage);
+                    dmg = (int)(fd * damage * scale);
                 }
                 if (dmg > 0 || e > 0) AreaHit?.Invoke(target, dmg, e, center);
             }
+        }
+
+        Action<Vector3> echoDue;
+
+        /// <summary>A shot hit at 'point' (a bullet's hit or a homing missile at its goal): its echo, if the item has one.</summary>
+        void Struck(Vector3 point)
+        {
+            if (echo != null) echo.Schedule(point);
+        }
+
+        /// <summary>The echo goes off: the blast at percent of the shot's damage, EMP and size (echoRadius, else attr 14).
+        /// Its area takes the same rules as a bomb's, the owner and the player aside.</summary>
+        void EchoBlast(Vector3 at)
+        {
+            AreaDamage(at, lastTargets, false, echo.Scale, echo.radiusUnits);
+            Echoed?.Invoke(at);
         }
 
         /// <summary>Render scale: projectiles shrink linearly over their last 1000 ms (ObjectGun); rockets, missiles, bombs

@@ -108,6 +108,7 @@ namespace GoF2Remake.Flight
             fxRoot = new GameObject("Sentry fx").transform;
             core.SetGun(g, new GunRig(g, lookFx, fxRoot, muzzle));
             g.Hit += (b, t, p) => { t.Damage(g.damage, true, g.bullets[b].velocity); rig.ShowImpact(p); };
+            if (g.echo != null) g.AreaHit += (t, dmg, emp, c) => { if (t != null && dmg > 0) t.Damage(dmg, true, (t.transform.position - c).normalized); };   // an echo's blast (GunEcho)
 
             // A KIPlayer of the level: the hostile ships may shoot at it.
             if (traffic != null) foreach (var s in traffic.Ships) if (s.Target.hostileToPlayer && !s.enemies.Contains(self)) s.enemies.Add(self);

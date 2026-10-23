@@ -464,7 +464,7 @@ namespace GoF2Remake.World
                     gun = new Gun(item, gunBase, NpcTables.GunReloadMs, NpcTables.GunPool,
                                       NpcTables.GunLifetimeMs, gunSpeed) { owner = Target };
                     rig = new GunRig(gun, WeaponFx.Load(item.index), fxRoot, null, 2);
-                    gun.Hit += OnGunHit;
+                    WireGun(gun);
                 }
             }
             route = (spec.route ?? Route.DefaultPatrol(spec.race)).Clone();
@@ -586,7 +586,7 @@ namespace GoF2Remake.World
                 rig = turretCore.Rig;
                 gun.owner = Target;
                 gun.damage *= Spec.gunFactor;   // gunFactor: the remake's CapitalShips
-                gun.Hit += OnGunHit;
+                WireGun(gun);
                 turretShot = turretFx.shot != null ? turretFx.Shot : null;
                 return;
             }
@@ -614,7 +614,7 @@ namespace GoF2Remake.World
                 int look = sentry == 1 ? 2 : sentry == 2 ? 20 : 14;   // Gun::setIndex 2 / 0x14 / 0xe
                 gun = new Gun(db.Item(look) ?? sentryItem, (int)dmg, sentryItem.Attr(11, 430), NpcTables.GunPool, sentryItem.Attr(12, 1000), speedU) { owner = Target };
                 rig = new GunRig(gun, WeaponFx.Load(look), fxRootRef, turretCore.GunNode, 2);
-                gun.Hit += OnGunHit;
+                WireGun(gun);
                 turretCore.SetGun(gun, rig);
                 return;
             }
@@ -625,7 +625,7 @@ namespace GoF2Remake.World
                 gun = new Gun(item, gunBase, NpcTables.GunReloadMs, NpcTables.GunPool,
                                   Spec.capitalEnhanced ? World.CapitalShips.TurretLifetimeMs : NpcTables.GunLifetimeMs, gunSpeed) { owner = Target };
                 rig = new GunRig(gun, WeaponFx.Load(item.index), fxRootRef, turretCore.GunNode, 2);
-                gun.Hit += OnGunHit;
+                WireGun(gun);
                 turretCore.SetGun(gun, rig);
             }
         }
@@ -1045,10 +1045,10 @@ namespace GoF2Remake.World
             var item = db.Item(itemIndex);
             if (item == null || IsFreighter || IsFixed) return;
             rig?.HideAll();
-            if (gun != null) gun.Hit -= OnGunHit;
+            if (gun != null) { gun.Hit -= OnGunHit; gun.AreaHit -= HitByBlast; }
             gun = MakeGun(item, gunBase * damageFactor);
             rig = new GunRig(gun, WeaponFx.Load(item.index), fxRootRef, IsTurret ? turretCore?.GunNode : null, 2);
-            gun.Hit += OnGunHit;
+            WireGun(gun);
             turretCore?.SetGun(gun, rig);
         }
 
@@ -1773,6 +1773,23 @@ namespace GoF2Remake.World
         // ---- combat ----------------------------------------------------------------------------------------
 
         void OnGunHit(int bullet, Target hit, Vector3 point) => GunHit(gun, rig, bullet, hit, point);
+
+        /// <summary>A gun's hit and, for a gun with an echo (GunEcho), its blasts: the echo's area hurts what it reaches.
+        /// Guns without an echo keep their plain hits, as before.</summary>
+        void WireGun(Gun g)
+        {
+            g.Hit += OnGunHit;
+            if (g.echo != null) g.AreaHit += HitByBlast;
+        }
+
+        /// <summary>An NPC gun's area blast on one target (Gun.AreaDamage, the echo): the hull damage and EMP, no stray-fire
+        /// rules (the blast is what the gun is for). The player takes no area damage (Gun.AreaDamage skips it).</summary>
+        public void HitByBlast(Target t, int dmg, int emp, Vector3 center)
+        {
+            if (t == null) return;
+            if (dmg > 0) t.Damage(dmg, true, (t.transform.position - center).normalized);
+            if (emp > 0 && !t.isPlayer && t.hitpoints != null) t.hitpoints.DamageEmp(emp);
+        }
 
         static bool Contains(IReadOnlyList<Target> list, Target t)
         {
