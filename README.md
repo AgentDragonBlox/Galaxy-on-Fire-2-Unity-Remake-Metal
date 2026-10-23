@@ -23,12 +23,13 @@ through yet. Multiplayer and VR are experimental. A build's version is the date 
   fast-forward, the star map, jumpgates, the Khador Drive and the Void's wormhole.
 - **Combat:** every weapon, including missiles, beams, EMP, mines, turrets, sentry guns, the Liberator and the other
   special weapons. NPC traffic and AI, capital ships, pirate bases, Specters and the Most Wanted criminals. Combat
-  equipment: cloak, emergency system, time extender, repair beams and gamma shields.
+  equipment: cloak, emergency system, time extender, repair beams and gamma shields. The **Supernova Challenge** is an
+  arcade round of Specter hunting, with a combo score and a highscore, from the main menu.
 - **Economy and stations:** hangars, shops and ship dealers, and the space lounge with bar agents and every
   freelance mission type. Also blueprints, wingmen, medals, the Kaamo Club and save games.
 - **Mining:** asteroid mining with the drilling minigame, plus gas clouds, hacking and docking at objects.
-- **Multiplayer (experimental):** a shared universe in the finished game's world, online through a server browser or a
-  join code, or over a local network. Players can host from the game or run a dedicated server, which keeps every
+- **Multiplayer (experimental):** a shared universe in the finished game's world, online through a server browser (which
+  shows each game's region and ping) or a join code, or over a local network. Players can host from the game or run a dedicated server, which keeps every
   player's progress. Players see each other in space and in the hangars; the host picks PvE (players fight only in
   arena matches and faction sieges) or PvP. Squads share bar missions and their rewards; factions claim stations, lay
   sieges and keep a bank. Everyone shares the NPC traffic, the crates, the asteroids and the shop stock. Local and
@@ -64,6 +65,8 @@ through yet. Multiplayer and VR are experimental. A build's version is the date 
     target.
   - Flight HUD: Full / Minimal / Off (F1), far ship markers that don't hide the ship, the distance under every marker,
     cooldown icons for the booster, cloak and time extender.
+  - Graphics presets (Low, Medium, High) and levels of detail: distant ships, stations and asteroids switch to simpler
+    meshes, so big fleet battles run smoothly on phones and laptops. Levels of detail can be turned off in Options.
   - A full-map overview on the star map, and new medals as a short toast instead of a window.
   - Four difficulties (Easy, Normal, Hard, Extreme) that can be changed during a game, and a choice between the PC
     and Android economies for a new game.
@@ -94,7 +97,7 @@ through yet. Multiplayer and VR are experimental. A build's version is the date 
 
 ## Getting started
 
-1. Install **Unity 7000.0.0a10** with Unity Hub. Add Android Build Support if you want phone builds.
+1. Install **Unity 7000.0.0a12** with Unity Hub. Add Android Build Support if you want phone builds.
 2. Clone the repository with Git LFS installed. The assets are about 2.1 GB in LFS.
 3. Open the project in Unity and open `Assets/Scenes/MainMenu.unity`, then press Play.
 
@@ -160,7 +163,8 @@ same mods installed.
 The easiest way to make one is the **Mod Builder** (Mods > Mod Builder, experimental): it makes ships, items, skins,
 characters, quests (with a node graph), systems, stations, hangars and bars, weapon effects, audio, blueprints,
 campaigns and ship kits inside the game, each edited where it lives in the game, with undo, test flights and play tests,
-and exports the finished mod. Your own AI assistant can work in it too, through its local MCP server (the AI tools
+and exports the finished mod. It can also shrink a mod's models and textures, and import a community mod made from the
+original game's models (`.aem` / `.aei` files). Your own AI assistant can work in it too, through its local MCP server (the AI tools
 button), with permissions you choose.
 
 To make a mod by hand, see the modders' guide [Modding/README.md](Modding/README.md), with two example mods in
