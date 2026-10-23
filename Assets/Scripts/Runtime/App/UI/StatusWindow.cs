@@ -1,7 +1,7 @@
 // StatusWindow.cs
 // The Status window (StatusWindow 0x18345c / reInit 0x183784 / draw 0x183a64 / getMedalHintText 0x185da4; Reference/
 // research/lounge_ui.md 6), station button 169 "Status". HD layout, both columns side by side:
-//   left   1597 Keith T. Maxwell (credits, 321 Level N, playing time hh:mm), the ship (icon, name, 569 Fire power, 570
+//   left   1597 Keith T. Maxwell (in multiplayer the pilot's own name; credits, 321 Level N, playing time hh:mm), the ship (icon, name, 569 Fire power, 570
 //          Defense), 576 Reputation (Terran / Vossk and Nivelian / Midorian bars, the marker toward the liked race, the
 //          emblem tinted while that race is hostile), 577 Statistics (568 missions, 176 kills, 552 asteroids, 559 cargo
 //          salvaged, 557 stations, 3235 battleships | 564 jumpgates, 558 goods produced, 560 ore, 561 cores, 567 wingmen)
@@ -106,7 +106,9 @@ namespace GoF2Remake.UI
             var db = level.Database;
             left.Clear();
             // Pilot and ship.
-            Plate(left, T(1597));
+            // Remake: in a multiplayer session the pilot's own name (the one the others see), not Keith's.
+            var me = GoF2Remake.Multiplayer.NetGame.Active ? GoF2Remake.Multiplayer.NetPlayer.Local : null;
+            Plate(left, me != null && !string.IsNullOrEmpty(me.DisplayName) ? me.DisplayName : T(1597));
             var row = Row(left);
             var pilot = Box(row, false);
             pilot.AddToClassList("status-pilot");
