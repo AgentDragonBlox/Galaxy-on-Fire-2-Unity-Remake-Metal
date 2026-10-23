@@ -1761,7 +1761,11 @@ Single player is untouched: every multiplayer path runs only while `NetGame.Acti
   Done / the checkmark sends, Back or a tap outside ends the typing with the draft kept (UI Toolkit's own keyboard only
   closed and blurred the field on Done, so nothing was sent); while typing the chat sits at the top of the screen
   (`.chat--phone.chat--open`, the tab hidden, the "/" suggestions capped) where the keyboard can't cover the line (at 36 %
-  down the input row was under it); the send and channel keys are rebindable rows read straight from the devices
+  down the input row was under it; the station's chat, anchored at the bottom, stayed under it until 2026-10-23:
+  `bottom: auto` there, from the left edge); any other text field on a phone (the pilot name prompt, the Host card, the
+  Mod Builder) slides its screen up above the keyboard while focused (`KeyboardLift.Watch` beside `PadKeyboard.Attach`:
+  the root's translate, TouchScreenKeyboard.area or 55 % of the screen; GameActivity's keyboard shows no input box of its
+  own); the send and channel keys are rebindable rows read straight from the devices
   (`GameControls.PressedNow`: the flight map is off while typing), and their key events and characters stay out of the
   line. The field keeps the focus: the project-wide UI map's Navigate (arrows, W A S D), Tab and Submit (Space / Enter)
   are swallowed there (`StopPropagation` + `focusController.IgnoreEvent`: stopping alone still moved the focus to a menu

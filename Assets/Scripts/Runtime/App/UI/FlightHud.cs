@@ -186,6 +186,7 @@ namespace GoF2Remake.UI
             root = rootElement;
             ScrollBars.Watch(rootElement);   // Modified: the hangar's scrollbar on every scroll view that needs one
             PadKeyboard.Attach(rootElement);   // a controller's keyboard for the chat's text field (docs/UI-DESIGN.md "Text entry")
+            KeyboardLift.Watch(rootElement);   // phones: the focused text field kept above the on-screen keyboard
             root.style.flexGrow = 1;   // no default theme to stretch the document root
             root.pickingMode = PickingMode.Ignore;
             safeArea = root.Q("safeArea");

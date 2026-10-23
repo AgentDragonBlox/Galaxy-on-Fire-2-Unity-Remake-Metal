@@ -150,8 +150,17 @@
    closes), and the "/" suggestions stay short so they never push the line down under the keyboard. */
 .chat--phone.chat--open {
     top: 2%;
+    bottom: auto;               /* the station's chat is anchored at the bottom: kept there, it stayed under the keyboard */
+    justify-content: flex-start;
     width: 70%;
     max-width: none;
+}
+
+/* The station's chat from the left edge while typing (from its 30 % it ran off the right edge). */
+.chat--station.chat--phone.chat--open {
+    left: 2%;
+    right: auto;
+    width: 60%;
 }
 
 .chat-tab--phone-open {

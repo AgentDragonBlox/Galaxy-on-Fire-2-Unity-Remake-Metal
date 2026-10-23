@@ -490,6 +490,7 @@ namespace GoF2Remake.UI
             InputGlyph.PadPrompt(root.Q<Button>("dialogAlt"), PadButton.A, true);
             InputGlyph.PadPrompt(root.Q<Button>("dialogNo"), PadButton.B);
             PadKeyboard.Attach(root);   // a controller's keyboard for the text fields (docs/UI-DESIGN.md "Text entry")
+            KeyboardLift.Watch(root);   // phones: the focused text field kept above the on-screen keyboard
             UiFocus.SkipScrollBars(root);   // no stop on a scroll bar (docs/UI-DESIGN.md "Focus")
             RefreshTexts();
             lastScreen = Vector2Int.zero;

@@ -223,6 +223,7 @@ namespace GoF2Remake.UI
                 safeHost.Add(holder);
             }
             PadKeyboard.Attach(root);   // a controller's keyboard for the text fields (chat, the multiplayer window, Mod Builder)
+            KeyboardLift.Watch(root);   // phones: the focused text field kept above the on-screen keyboard
             systemMenu = root.Q("systemMenu");
             systemMain = root.Q("systemMenuMain");
             systemSave = root.Q("systemMenuSave");
