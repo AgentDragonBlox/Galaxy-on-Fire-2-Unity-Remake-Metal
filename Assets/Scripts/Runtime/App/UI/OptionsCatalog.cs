@@ -408,13 +408,17 @@ namespace GoF2Remake.UI
                 list.Add(Slider("gyroSensitivity", OptionPage.Controls, () => X("gyroSensitivity", "Gyro sensitivity"), 0.25f, 3f,
                     () => Settings.GyroSensitivity, v => Settings.GyroSensitivity = v, v => v.ToString("0.00")));
             }
-            if (!Application.isMobilePlatform)
             {
-                list.Add(Toggle("mouseSteering", OptionPage.Controls, () => X("mouseSteering", "Mouse steering"), () => Settings.MouseSteering, v => Settings.MouseSteering = v));
+                // Phones and tablets show them while a mouse is connected (Android: mouse steering by pointer capture).
+                Func<bool> hasMouse = () => !Application.isMobilePlatform || UnityEngine.InputSystem.Mouse.current != null;
+                var mouseSteering = Toggle("mouseSteering", OptionPage.Controls, () => X("mouseSteering", "Mouse steering"), () => Settings.MouseSteering, v => Settings.MouseSteering = v);
+                mouseSteering.visible = hasMouse;
+                list.Add(mouseSteering);
                 // Remake: a dead zone around the centre, so a mouse near the middle leaves the ship flying straight.
                 var mouseDeadzone = Slider("mouseDeadzone", OptionPage.Controls, () => X("mouseDeadzone", "Mouse steering dead zone"), 0f, 0.3f,
                     () => Settings.MouseDeadzone, v => Settings.MouseDeadzone = v, Percent);
                 mouseDeadzone.description = () => X("mouseDeadzoneHelp", "How far the mouse can move from the centre before the ship turns.");
+                mouseDeadzone.visible = hasMouse;
                 list.Add(mouseDeadzone);
             }
             // Remake (#61): the original's Configure screen (Options > Controls, 494 / 495) moved the touch controls' left

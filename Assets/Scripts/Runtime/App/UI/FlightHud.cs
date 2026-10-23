@@ -453,7 +453,9 @@ namespace GoF2Remake.UI
             var f = new TouchControls.Frame { mode = TouchControls.Mode.Off, nextCamera = -1 };
             touchNavShown = false;
             bool touchMode = InputMode.Current == InputKind.Touch;
-            cursorMode = !Application.isMobilePlatform && InputMode.Current == InputKind.KeyboardMouse && !Settings.MouseSteering;
+            // Phones and tablets too, with a mouse connected (a keyboard alone keeps the keycap hints).
+            cursorMode = InputMode.Current == InputKind.KeyboardMouse && !Settings.MouseSteering
+                         && (!Application.isMobilePlatform || Mouse.current != null);
             root.EnableInClassList("hud-cursor", cursorMode);
             bool flying = ship != null && level != null && !StarMap.IsOpen && !pauseMenu.IsOpen && !storyDialogue.IsOpen
                           && (health == null || !health.Dead);
@@ -778,7 +780,9 @@ namespace GoF2Remake.UI
         void UpdateMouseSteering()
         {
             if (ship == null || level == null) return;
-            bool cursor = Settings.MouseSteering && !Application.isMobilePlatform && InputMode.Current == InputKind.KeyboardMouse && !Vr.VrMode.Enabled
+            // Remake: Android too, with a mouse connected (the lock is Android's pointer capture); without one a keyboard
+            // steers alone at its own sensitivity.
+            bool cursor = Settings.MouseSteering && Mouse.current != null && InputMode.Current == InputKind.KeyboardMouse && !Vr.VrMode.Enabled
                       && !pauseMenu.IsOpen && !(nav != null && nav.MenuOpen) && !StarMap.IsOpen && !storyDialogue.IsOpen
                       && !level.Cutscene && level.LaunchCameraOver && Time.timeScale > 0f && (health == null || !health.Dead)
                       // the Liberator too: the mouse steers it (it was off); docked at an object only the turret view (it aims the
@@ -994,7 +998,7 @@ namespace GoF2Remake.UI
             else if (menuKeys && GameControls.Wingmen.WasPressedThisFrame()) OpenMenuEntry(Navigation.Kind.Wingmen);
             else if (menuKeys && GameControls.KhadorDrive.WasPressedThisFrame()) OpenMenuEntry(Navigation.Kind.KhadorDrive);
             bool freeLookNow = level != null && level.FreeLook != null && level.FreeLook.FreeLookActive;
-            if (!Application.isMobilePlatform && GameControls.MouseSteering.WasPressedThisFrame()
+            if (GameControls.MouseSteering.WasPressedThisFrame()
                 && !(freeLookNow && GameControls.MouseSteering.activeControl?.device is Mouse))
             {
                 Settings.MouseSteering = !Settings.MouseSteering;
