@@ -5,7 +5,8 @@
 // (confirm 523). The game and its sounds pause while it is open. Options is the main menu's Options panel (OptionsView:
 // the same tabs and rows, OptionsCatalog) but the text language. Also the ChoiceWindow (Ask: Loma's toll 448, the flight hints). The share buttons (60 / 61) are dead
 // code in the original (the remake's 60 saves the picture).
-// Plain class driven by FlightHud: Esc / controller Menu / the touch Menu button open it; Esc / B step back.
+// Plain class driven by FlightHud: Esc / controller Menu / the touch Menu button open it; Esc / B step back; a click / tap
+// beside the menu resumes (remake; not on a question, which wants its answer).
 
 using System;
 using System.Collections.Generic;
@@ -97,7 +98,26 @@ namespace GoF2Remake.UI
                 if (pointerDriven) Rehighlight();
             });
             UiHover.Hook(backdrop, () => HoverSound?.Invoke());   // the tabs only (Options, Debug)
+            // Remake: a click / tap on the backdrop beside the menu resumes, as Resume. On the release, so the mouse button
+            // isn't still down as fire when the flight takes over, and only for a press that began there too.
+            backdrop.RegisterCallback<PointerDownEvent>(e => outsidePress = outsideArmed && e.target == backdrop);
+            backdrop.RegisterCallback<PointerUpEvent>(e =>
+            {
+                bool resume = outsidePress && e.target == backdrop && IsOpen && page != Page.Choice && page != Page.Photo;
+                outsidePress = false;
+                if (resume) Close();
+            });
         }
+
+        /// <summary>The press began outside the menu with nothing over it to close first (outsideArmed).</summary>
+        bool outsidePress;
+        /// <summary>Taken at the very top of the panel before the press reaches anything: an open drop-down list, "?" window,
+        /// "Keep these settings?" or text entry closes on a press outside it, and that press shouldn't also resume.</summary>
+        bool outsideArmed;
+        IPanel armedPanel;
+
+        void ArmOutsidePress(PointerDownEvent e) =>
+            outsideArmed = !ChoicePopup.IsOpen && !OptionInfo.IsOpen && !Flight.GameControls.BlocksMenus;
 
         /// <summary>Modified: the page's entry at 't' (the Options page: the row, tab or footer button), null when none.</summary>
         VisualElement ItemAt(VisualElement t)
@@ -162,6 +182,13 @@ namespace GoF2Remake.UI
             if (!GoF2Remake.Multiplayer.NetGame.Active) AudioListener.pause = true;   // multiplayer: the world (and its sound) goes on
             backdrop.AddToClassList("pause-backdrop--shown");
             backdrop.BringToFront();   // over what was added to the HUD after it (the chat, the multiplayer buttons)
+            if (backdrop.panel != null && armedPanel != backdrop.panel)
+            {
+                armedPanel?.visualTree.UnregisterCallback<PointerDownEvent>(ArmOutsidePress, TrickleDown.TrickleDown);
+                armedPanel = backdrop.panel;
+                armedPanel.visualTree.RegisterCallback<PointerDownEvent>(ArmOutsidePress, TrickleDown.TrickleDown);
+            }
+            outsidePress = false;
             pointerDriven = false;   // Modified: opened with a key / button: its first entry is highlighted
             Show(Page.Main);
         }
