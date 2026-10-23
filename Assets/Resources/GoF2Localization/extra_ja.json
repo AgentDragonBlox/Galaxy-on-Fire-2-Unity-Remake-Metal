@@ -2835,5 +2835,10 @@
  "mbOrbitYaw": "周囲（度：0 は発進する船の後方、90 はその右、180 は前方）",
  "mbOrbitPitch": "上（度、-89〜89）",
  "mbOrbitPlanetOwn": "惑星を独自の方向と大きさに",
- "mbOrbitPlanetSize": "大きさ（ゲームの倍率）"
+ "mbOrbitPlanetSize": "大きさ（ゲームの倍率）",
+ "mbShopIcon": "ショップアイコン",
+ "mbRecreateIcon": "アイコンを作り直す",
+ "mbIconWait": "艦のモデルがターンテーブルに載るとアイコンを描けます。",
+ "mbIconOwn": "独自のアイコン：「アイコンを作り直す」で代わりにモデルから描きます。",
+ "mbIconMade": "モデルから描画（機首は左下）。モデル、その回転、テクスチャが変わるたびに描き直します。"
 }

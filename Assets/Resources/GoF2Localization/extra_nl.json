@@ -2835,5 +2835,10 @@
  "mbOrbitYaw": "Rondom (graden: 0 achter een vertrekkend schip, 90 rechts ervan, 180 vooruit)",
  "mbOrbitPitch": "Omhoog (graden, -89 tot 89)",
  "mbOrbitPlanetOwn": "Zijn planeet in een eigen richting en grootte",
- "mbOrbitPlanetSize": "Grootte (x die van het spel)"
+ "mbOrbitPlanetSize": "Grootte (x die van het spel)",
+ "mbShopIcon": "Winkelpictogram",
+ "mbRecreateIcon": "Pictogram opnieuw maken",
+ "mbIconWait": "Het pictogram kan getekend worden zodra het model van het schip op de draaischijf staat.",
+ "mbIconOwn": "Je eigen pictogram: 'Pictogram opnieuw maken' tekent er in plaats daarvan een uit het model.",
+ "mbIconMade": "Uit het model getekend, neus naar linksonder, telkens als het model, zijn draaiing of zijn textures veranderen."
 }

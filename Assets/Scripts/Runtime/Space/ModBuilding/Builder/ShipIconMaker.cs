@@ -4,6 +4,8 @@
 // above and a little ahead, the nose dipping toward the bottom left, lit warm from the front and cool from behind,
 // orthographic, 4x supersampled, its alpha from a render on black and one on white, fitted to the pixels drawn, over the
 // blue striped ship frame 1276 (Resources/GoF2Icons/frame_ship.png, written by that builder) on a 180 x 88 canvas.
+// Never turned: HullIconBuilder lays a hull wider than long along the icon, which suits its freighters and capital ships,
+// but a mod ship's nose is +Z, and a wide-winged fighter (the Betty, 39 x 28 m) came out with its nose away from the camera.
 // It renders on a stage far below the station on the item window's layer (30); while it renders, the scene's own lights,
 // ambient and fog are kept off that layer so every icon is lit alike whatever hangar the builder is in.
 
@@ -23,8 +25,8 @@ namespace GoF2Remake.Modding
         const float Roll = -15f;
 
         /// <summary>The icon of a ship template (a ModShips template or any assembled ship prefab) as a texture, null when
-        /// nothing could be drawn.</summary>
-        public static Texture2D Make(GameObject prefab)
+        /// nothing could be drawn. 'turn': degrees about the ship's up axis, for a model whose nose isn't its +Z.</summary>
+        public static Texture2D Make(GameObject prefab, float turn = 0f)
         {
             if (prefab == null) return null;
             var stage = new GameObject("Ship icon stage");
@@ -51,7 +53,7 @@ namespace GoF2Remake.Modding
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true))
                     if (r is TrailRenderer || r is ParticleSystemRenderer || r is LineRenderer) r.enabled = false;
                 foreach (var t in go.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = Layer;
-                Orient(go);
+                go.transform.rotation = Quaternion.Euler(0f, turn, 0f);   // a ship's nose is +Z: the view alone dips it to the bottom left
                 var bounds = Bounds(go);
                 if (bounds.size == Vector3.zero) return null;
 
@@ -126,16 +128,6 @@ namespace GoF2Remake.Modding
                 if (!any) { b = r.bounds; any = true; } else b.Encapsulate(r.bounds);
             }
             return any ? b : new Bounds();
-        }
-
-        /// <summary>HullIconBuilder.Orient: the longest side along the view's length, a tall hull laid on its side.</summary>
-        static void Orient(GameObject go)
-        {
-            var b = Bounds(go);
-            var rot = Quaternion.identity;
-            if (b.size.x > b.size.z * 1.3f) { rot = Quaternion.Euler(0f, 90f, 0f); b.size = new Vector3(b.size.z, b.size.y, b.size.x); }
-            if (b.size.y > Mathf.Max(b.size.x, b.size.z) * 1.2f) rot = Quaternion.Euler(90f, 0f, 0f) * rot;
-            go.transform.rotation = rot;
         }
 
         static void Frame(Camera cam, Bounds b)

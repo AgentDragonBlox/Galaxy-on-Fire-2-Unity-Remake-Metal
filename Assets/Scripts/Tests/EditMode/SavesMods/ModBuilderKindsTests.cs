@@ -69,6 +69,28 @@ namespace GoF2Remake.Tests
             Assert.IsFalse(File.Exists(Path.Combine(p.Folder, "events", "the_signal.gof2mission")));
         }
 
+        // The Ship tab's -90 / +90 beside Recreate icon (ModProject.IconTurn): kept in builder.json in quarter turns, gone at 0,
+        // moved with a renamed ship.
+        [Test]
+        public void AShipsIconTurnIsKept()
+        {
+            var p = ModProject.Create("Icon turn", "tests");
+            var s = p.AddNewShip("wide", "Wide", "models/wide.glb");
+            Assert.AreEqual(0, p.IconTurn(s));
+            p.SetIconTurn(s, -90);
+            Assert.AreEqual(270, p.IconTurn(s), "wrapped into 0..359");
+            p.SetIconTurn(s, p.IconTurn(s) + 90);
+            Assert.AreEqual(0, p.IconTurn(s));
+            p.SetIconTurn(s, 450);
+            p.Save();
+            var back = ModProject.Load(p.Folder);
+            var b = back.Ships.Single();
+            Assert.AreEqual(90, back.IconTurn(b));
+            string from = b.Ref;
+            back.RenameRef(from, "renamed");
+            Assert.AreEqual(0, back.IconTurn(b), "the turn left the old name");
+        }
+
         [Test]
         public void AnOldQuestFileIsReadAndWrittenBackAsAMission()
         {

@@ -3260,7 +3260,12 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   builder's look at runtime: left side from above, orthographic, alpha from a black and a white render, over
   `Resources/GoF2Icons/frame_ship.png`, which **GoF2 > Build > Ship Icon Frame** / Hull Icons write) into `icons/<id>.png`
   and ships.json `icon`; builder.json keeps the file and the look it was made from (model file, turn, hull textures), so it
-  is made again only when that changes, and an icon the modder set by hand is never replaced. Test fly: the project read again, the loadout mounted, the cheats granted (`Cheats.Grant`, honoured while
+  is made again only when that changes, and an icon the modder set by hand is never replaced. The model is never turned for
+  it (2026-10-23, the user's report: the Hull Icons builder's rule laying a hull wider than long along the icon turned
+  wide-winged fighters such as the Betty, 39 x 28 m, nose away from the camera; that rule stays for the Editor's capital
+  hulls; `IconKey`'s leading version 2 redraws the icons drawn before). The Ship tab's **Shop icon** row: the icon,
+  Recreate icon (`MaybeMakeIcon(force)`, also over the modder's own; undoable) and -90 / +90 deg (`ModProject.IconTurn`,
+  builder.json "iconTurns", in the key) for a model whose nose comes out elsewhere. Test fly: the project read again, the loadout mounted, the cheats granted (`Cheats.Grant`, honoured while
   `ModBuilder.Active`), the normal take-off (`StationLevel.Depart` now waits for the orbit camera's blend back first: the
   flight's view-edge shrink is computed from the camera as it starts) into the builder station's orbit: `SpaceLevel` passive (no traffic,
   wingmen), jumps / gate refused, no tutorial popups, `World.ModBuilderRange` keeps 3 hostile pirates coming (6 s after a

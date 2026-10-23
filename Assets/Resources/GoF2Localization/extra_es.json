@@ -2835,5 +2835,10 @@
  "mbOrbitYaw": "Alrededor (grados: 0 detrás de una nave que despega, 90 a su derecha, 180 delante)",
  "mbOrbitPitch": "Arriba (grados, -89 a 89)",
  "mbOrbitPlanetOwn": "Su planeta con dirección y tamaño propios",
- "mbOrbitPlanetSize": "Tamaño (x el del juego)"
+ "mbOrbitPlanetSize": "Tamaño (x el del juego)",
+ "mbShopIcon": "Icono de tienda",
+ "mbRecreateIcon": "Recrear icono",
+ "mbIconWait": "El icono se puede dibujar cuando el modelo de la nave esté en la plataforma giratoria.",
+ "mbIconOwn": "Tu propio icono: «Recrear icono» dibuja uno a partir del modelo en su lugar.",
+ "mbIconMade": "Dibujado a partir del modelo, con el morro hacia abajo a la izquierda, cada vez que cambian el modelo, su giro o sus texturas."
 }

@@ -2835,5 +2835,10 @@
  "mbOrbitYaw": "Attorno (gradi: 0 dietro una nave che decolla, 90 alla sua destra, 180 davanti)",
  "mbOrbitPitch": "Su (gradi, da -89 a 89)",
  "mbOrbitPlanetOwn": "Il suo pianeta con direzione e grandezza mie",
- "mbOrbitPlanetSize": "Grandezza (x quella del gioco)"
+ "mbOrbitPlanetSize": "Grandezza (x quella del gioco)",
+ "mbShopIcon": "Icona del negozio",
+ "mbRecreateIcon": "Ricrea icona",
+ "mbIconWait": "L'icona può essere disegnata quando il modello della nave è sulla piattaforma girevole.",
+ "mbIconOwn": "La tua icona: «Ricrea icona» ne disegna una dal modello al suo posto.",
+ "mbIconMade": "Disegnata dal modello, muso in basso a sinistra, ogni volta che cambiano il modello, la sua rotazione o le sue texture."
 }

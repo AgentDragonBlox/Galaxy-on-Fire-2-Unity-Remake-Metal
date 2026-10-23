@@ -2835,5 +2835,10 @@
  "mbOrbitYaw": "Wokół (stopnie: 0 za startującym statkiem, 90 po jego prawej, 180 przed nim)",
  "mbOrbitPitch": "W górę (stopnie, -89 do 89)",
  "mbOrbitPlanetOwn": "Jej planeta we własnym kierunku i rozmiarze",
- "mbOrbitPlanetSize": "Rozmiar (x ten z gry)"
+ "mbOrbitPlanetSize": "Rozmiar (x ten z gry)",
+ "mbShopIcon": "Ikona w sklepie",
+ "mbRecreateIcon": "Utwórz ikonę ponownie",
+ "mbIconWait": "Ikonę można narysować, gdy model statku znajdzie się na obrotnicy.",
+ "mbIconOwn": "Twoja własna ikona: „Utwórz ikonę ponownie” narysuje zamiast niej ikonę z modelu.",
+ "mbIconMade": "Rysowana z modelu, dziobem w lewo w dół, za każdym razem, gdy zmienia się model, jego obrót lub tekstury."
 }

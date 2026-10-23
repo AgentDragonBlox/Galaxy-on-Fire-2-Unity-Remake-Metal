@@ -2835,5 +2835,10 @@
  "mbOrbitYaw": "环绕（度：0 在起飞飞船后方，90 在它右侧，180 在前方）",
  "mbOrbitPitch": "向上（度，-89 到 89）",
  "mbOrbitPlanetOwn": "它的行星使用自定义方向和大小",
- "mbOrbitPlanetSize": "大小（游戏的倍数）"
+ "mbOrbitPlanetSize": "大小（游戏的倍数）",
+ "mbShopIcon": "商店图标",
+ "mbRecreateIcon": "重新生成图标",
+ "mbIconWait": "飞船模型出现在转台上后才能绘制图标。",
+ "mbIconOwn": "你自己的图标：“重新生成图标”会改为根据模型绘制一个。",
+ "mbIconMade": "根据模型绘制，船头朝左下，模型、其旋转或纹理改变时会重新绘制。"
 }

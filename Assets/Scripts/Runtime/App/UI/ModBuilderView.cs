@@ -463,6 +463,7 @@ namespace GoF2Remake.UI
                 Note(ship, string.Format(T("mbOriginalStats", "Original: {0} hull, {1} t, handling {2}, {3}."), original.armor, original.cargo,
                                          Mathf.RoundToInt(original.handling), ItemInfo.Credits(original.price)));
             BuildShipMore(s);
+            BuildShipIcon(s);
             if (s.IsKitShip) { BuildKitShipSection(s); return; }   // its look is the kit's parts, its height over the pad measured
 
             Heading(ship, T("mbModel", "Model"));
@@ -1385,38 +1386,77 @@ namespace GoF2Remake.UI
             MaybeMakeIcon(Current, Session.ShipIndex);
         }
 
+        /// <summary>Whether the builder draws this ship's shop icon from its model: a new ship with a model file or a kit
+        /// (a game model has the game's icon, a changed game ship keeps its own).</summary>
+        static bool MakesIcon(ProjectShip s) => s != null && !s.IsOverride && !s.HasGameModel && (!string.IsNullOrEmpty(s.Model) || s.IsKitShip);
+
+        /// <summary>The Ship tab's shop icon: what it is now, and Recreate icon to draw it again from the model (also over an
+        /// icon the modder set by hand, which ships.json keeps until then; Undo puts it back).</summary>
+        void BuildShipIcon(ProjectShip s)
+        {
+            if (!MakesIcon(s)) return;
+            int index = ModBuilder.IndexOf(s);
+            Heading(ship, T("mbShopIcon", "Shop icon"));
+            var row = Add(ship, new VisualElement(), "mbv-row");
+            var image = Add(row, new VisualElement(), "mbv-ship-icon");
+            var tex = index >= 0 ? ItemInfo.ShipIcon(index) : null;
+            if (tex != null) image.style.backgroundImage = new StyleBackground(tex);
+            void Redraw()
+            {
+                if (index < 0 || ModBuilder.IndexOf(s) != Session.ShipIndex || !MaybeMakeIcon(s, index, true))
+                    Status(T("mbIconWait", "The icon can be drawn once the ship's model is on the turntable."), true);
+                else BuildShipPage();
+            }
+            Act(row, T("mbRecreateIcon", "Recreate icon"), Redraw);
+            // A model whose nose comes out elsewhere: the icon's own turn in quarter turns, drawn again at once.
+            Act(row, "−90°", () => { Project.SetIconTurn(s, Project.IconTurn(s) - 90); Redraw(); });
+            Act(row, "+90°", () => { Project.SetIconTurn(s, Project.IconTurn(s) + 90); Redraw(); });
+            int turn = Project.IconTurn(s);
+            if (turn != 0) Add(row, new Label($"{turn}°"), "mbv-inline-label");
+            var made = Project.GeneratedIcon(s);
+            Note(ship, !string.IsNullOrEmpty(s.Icon) && (made == null || made.Value.file != s.Icon)
+                ? T("mbIconOwn", "Your own icon: Recreate icon draws one from the model instead.")
+                : T("mbIconMade", "Drawn from the model, nose to the bottom left, whenever the model, its turn or its textures change."));
+        }
+
         /// <summary>A new ship's shop icon, rendered from its model once (ShipIconMaker) into icons/&lt;id&gt;.png: when it has
         /// none, or the builder's own no longer matches its look (another model file, a turn, other hull textures). An icon
-        /// the modder set by hand is left alone.</summary>
-        void MaybeMakeIcon(ProjectShip s, int index)
+        /// the modder set by hand is left alone, unless 'force' (Recreate icon) draws it again whatever it is. True when an
+        /// icon was drawn.</summary>
+        bool MaybeMakeIcon(ProjectShip s, int index, bool force = false)
         {
-            if (s == null || s.IsOverride || string.IsNullOrEmpty(s.Model) && !s.IsKitShip || s.HasGameModel || ModBuilder.IndexOf(s) != index) return;   // a game model has the game's icon
-            if (s.IsKitShip && kind == ModBuilder.Kind.Kits) return;   // a preview build, not the default the icon shows
+            if (!MakesIcon(s) || ModBuilder.IndexOf(s) != index) return false;
+            if (s.IsKitShip && kind == ModBuilder.Kind.Kits) return false;   // a preview build, not the default the icon shows
             var made = Project.GeneratedIcon(s);
-            if (!string.IsNullOrEmpty(s.Icon) && (made == null || made.Value.file != s.Icon)) return;   // the modder's own
             string key = IconKey(s);
-            if (made != null && made.Value.key == key && System.IO.File.Exists(System.IO.Path.Combine(Project.Folder, made.Value.file))) return;
+            if (!force)
+            {
+                if (!string.IsNullOrEmpty(s.Icon) && (made == null || made.Value.file != s.Icon)) return false;   // the modder's own
+                if (made != null && made.Value.key == key && System.IO.File.Exists(System.IO.Path.Combine(Project.Folder, made.Value.file))) return false;
+            }
             var db = Database.Shared;
             var entry = db.ShipAssembly(index);
-            if (entry == null || !ModShips.Built.Any(b => b.ship == index)) return;   // not built: the Phantom would stand in
-            var icon = ShipIconMaker.Make(ModShips.Template(entry.name));
-            if (icon == null) return;
+            if (entry == null || !ModShips.Built.Any(b => b.ship == index)) return false;   // not built: the Phantom would stand in
+            var icon = ShipIconMaker.Make(ModShips.Template(entry.name), Project.IconTurn(s));
+            if (icon == null) return false;
             ModBuilder.History?.Commit();   // the edits so far are their own step: the icon joins it, not a step of its own
             Project.SetGeneratedIcon(s, icon.EncodeToPNG(), key);
             Project.Save();
             ModBuilder.History?.Absorb();
             ModShips.SetIcon(index, icon);
             RebuildShips();
+            return true;
         }
 
-        /// <summary>What the icon is drawn from: the model file, its turn and the hull textures.</summary>
+        /// <summary>What the icon is drawn from: the model file, its turn and the hull textures. The leading version goes up
+        /// when ShipIconMaker draws differently, so the icons it drew before are drawn again (2: wide hulls no longer turned).</summary>
         string IconKey(ProjectShip s)
         {
             if (s.IsKitShip)
             {
                 // A kit ship: its default build, the kit's parts and their files.
                 var kit = Project.FindKit(s.Kit);
-                var sb = new System.Text.StringBuilder("kit|" + s.Kit + "|" + s.KitType + "|" + s.BuildText());
+                var sb = new System.Text.StringBuilder("kit2|" + Project.IconTurn(s) + "|" + s.Kit + "|" + s.KitType + "|" + s.BuildText());
                 if (kit != null)
                 {
                     kit.Flush();
@@ -1433,7 +1473,7 @@ namespace GoF2Remake.UI
             var file = new System.IO.FileInfo(System.IO.Path.Combine(Project.Folder, s.Model));
             string stamp = file.Exists ? file.Length + "@" + file.LastWriteTimeUtc.Ticks : "missing";
             var materials = s.ToJson()["materials"];
-            return $"1|{s.Model}|{stamp}|{s.ModelYaw}|{s.ModelPitch}|{s.ModelRoll}|{materials?.ToString(Newtonsoft.Json.Formatting.None)}";
+            return $"2|{Project.IconTurn(s)}|{s.Model}|{stamp}|{s.ModelYaw}|{s.ModelPitch}|{s.ModelRoll}|{materials?.ToString(Newtonsoft.Json.Formatting.None)}";
         }
 
         void ReadKeys(float dt)

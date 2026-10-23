@@ -2835,5 +2835,10 @@
  "mbOrbitYaw": "Ringsum (Grad: 0 hinter einem startenden Schiff, 90 rechts davon, 180 voraus)",
  "mbOrbitPitch": "Hoch (Grad, -89 bis 89)",
  "mbOrbitPlanetOwn": "Sein Planet in eigener Richtung und Größe",
- "mbOrbitPlanetSize": "Größe (x die des Spiels)"
+ "mbOrbitPlanetSize": "Größe (x die des Spiels)",
+ "mbShopIcon": "Shop-Symbol",
+ "mbRecreateIcon": "Symbol neu erstellen",
+ "mbIconWait": "Das Symbol kann gezeichnet werden, sobald das Modell des Schiffs auf der Drehscheibe steht.",
+ "mbIconOwn": "Dein eigenes Symbol: „Symbol neu erstellen“ zeichnet stattdessen eines aus dem Modell.",
+ "mbIconMade": "Aus dem Modell gezeichnet, Bug nach unten links, sobald sich das Modell, seine Drehung oder seine Texturen ändern."
 }

@@ -1138,6 +1138,17 @@ namespace GoF2Remake.Modding
             Section("icons")[s.Ref] = new JObject { ["file"] = file, ["key"] = key };
         }
 
+        /// <summary>The turn the builder's icon of a ship is drawn with (0 / 90 / 180 / 270 degrees about its up axis, the Ship
+        /// tab's buttons beside Recreate icon), for a model whose nose doesn't come out at the bottom left.</summary>
+        public int IconTurn(ProjectShip s) => Section("iconTurns")[s.Ref] is JValue v && v.Type == JTokenType.Integer ? (int)v : 0;
+
+        public void SetIconTurn(ProjectShip s, int degrees)
+        {
+            degrees = ((degrees % 360) + 360) % 360;
+            if (degrees == 0) Section("iconTurns").Remove(s.Ref);
+            else Section("iconTurns")[s.Ref] = degrees;
+        }
+
         public bool Flag(string key, bool fallback) => builder[key] is JValue v && v.Type == JTokenType.Boolean ? (bool)v : fallback;
         public void SetFlag(string key, bool on) => builder[key] = on;
 
@@ -1158,6 +1169,8 @@ namespace GoF2Remake.Modding
             if (l[from] != null) { l[to] = l[from]; l.Remove(from); }
             var ic = Section("icons");
             if (ic[from] != null) { ic[to] = ic[from]; ic.Remove(from); }
+            var it = Section("iconTurns");
+            if (it[from] != null) { it[to] = it[from]; it.Remove(from); }
             if (LastShip == from) LastShip = to;
         }
     }
