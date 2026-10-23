@@ -1136,12 +1136,20 @@
 }
 
 /* Every option row's name at one size: the toggles' and sliders' names (a base field's label) grow with the drop-downs'
-   (a phone showed the drop-down rows' names larger than the toggles' between them). */
+   (a phone showed the drop-down rows' names larger than the toggles' between them), so do the key bindings' names and
+   the main menu's language buttons (left at the body size, they read smaller than the other tabs' rows). */
 .ui-large .choice-label,
 .ui-large .choice-value,
 .ui-large .option-item .unity-base-field__label,
-.ui-large .option-item .option-button {
+.ui-large .option-item .option-button,
+.ui-large .binding-label,
+.ui-large .language-button {
     font-size: var(--text-heading);
+}
+
+/* The key binding cells a size up with them: at the caption size they were the smallest text on the page. */
+.ui-large .binding-cell {
+    font-size: var(--text-body);
 }
 
 
