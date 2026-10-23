@@ -2006,20 +2006,24 @@
     padding: 12px 24px;
 }
 
-/* The column's top padding is a share of the width: on a 20:9 phone that put the first row a fifth of the height down
-   and the nine rows ran past the version line. Under the logo instead (its bottom 22 % of the panel's 900 units). */
-.layout-phone .main-column {
-    padding-top: 200px;
+/* The menu's rows centred between the logo's bottom (.logo: top 6 %, height 16 %) and the version line at the bottom
+   left (its tap zone, .footer-version, from about 89 %), however many rows show (8, or 9 with Resume and Debug) and at
+   any interface size: the column's own padding is a share of the width, which on a 20:9 phone put the first row a
+   fifth of the height down (the nine rows ran past the version line) and left the gap under the logo uneven. The
+   column stays in the flow (the panel host sits beside it); an absolute child ignores its padding, so 'left' takes it
+   over: 10 % of the column's 30 % is the logo's 3 %. The rows touch, each still 64 units high, so nine fit. */
+.layout-phone .main-buttons,
+.layout-phone .main-column--full .main-buttons {
+    position: absolute;
+    top: 22%;
+    bottom: 11%;
+    left: 10%;
+    right: 0;
+    margin-top: 0;
+    justify-content: center;
 }
 
-.layout-phone .main-column--full {
-    padding-top: 190px;
-    padding-bottom: 96px;
-}
-
-/* All nine rows (Resume and Debug shown) end above the version line's tap zone (.footer-version, 791 units down on a
-   900-unit panel) only without the 4-unit margins: the rows touch, each still 64 units high. */
-.layout-phone .main-column--full .main-buttons .menu-button {
+.layout-phone .main-buttons .menu-button {
     margin: 0;
 }
 

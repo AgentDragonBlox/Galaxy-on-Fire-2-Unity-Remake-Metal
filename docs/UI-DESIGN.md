@@ -179,7 +179,7 @@ up to the scale. The scale itself never changes per platform: the panel scale ab
 - **Touch targets:** on phones every interactive row and button is at least 64 units high (`.layout-phone` in
   `GoF2Common.uss`). That is about 5.5 mm on a 6.7″ phone, under Apple's 44 pt (7 mm), traded for a phone that doesn't read oversized.
   Neighbours sit at least 8 units apart, but for the main menu's rows, which touch on phones (`.layout-phone
-  .main-column--full`) so that all nine fit above the version line. A small visual can sit in a larger hit area (padding with a
+  .main-buttons`, centred between the logo and the version line) so that all nine fit between them. A small visual can sit in a larger hit area (padding with a
   negative margin, as `.footer-version` does).
 - **Icons** (the "?" help): 34–40 units, with their hit area padded to the touch minimum.
 
