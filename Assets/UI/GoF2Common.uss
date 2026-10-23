@@ -687,15 +687,28 @@
     background-color: var(--gof-cyan);
 }
 
-/* Phones: a finger-wide touch area around the same slim track and handle. */
+/* Phones: a finger-wide touch area beside the same slim track and handle, reaching out to the right only (the track's
+   centre stays where ScrollBars puts it: 6 units into a bar moved 6 units left). Centred on the track, its left half lay
+   over the list's right edge and took the taps meant for the options' "?" icons there. */
 .layout-phone .gof-scroll-bar {
-    width: 56px;
+    width: 44px;
+    translate: -6px 0;
 }
 
 .layout-phone .gof-scroll-bar-track,
 .layout-phone .gof-scroll-bar-thumb {
-    left: 22px;
-    right: 22px;
+    left: 0;
+    right: 32px;
+}
+
+/* Phones: the "?" icon takes a tap in a fingertip-sized area around it (OptionInfo's hit pad), inside the room the row
+   keeps for it. */
+.option-info-pad {
+    display: none;
+}
+
+.layout-phone .option-info-pad {
+    display: flex;
 }
 
 /* ---- save slots (main menu Load, station Save game; SaveSlotRow) ------------------------------------------------------------------- */

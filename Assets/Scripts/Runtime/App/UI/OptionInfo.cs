@@ -47,6 +47,15 @@ namespace GoF2Remake.UI
             icon.style.height = IconSize;
             var tex = texture != null ? texture : iconTexture;
             if (tex != null) icon.style.backgroundImage = new StyleBackground(tex);
+            // Phones (GoF2Common.uss shows it under layout-phone): a fingertip-sized hit area round the 22-unit icon, more to
+            // the left and up and down than to the right (the row's edge). A tap anywhere in it is the icon's.
+            var pad = new VisualElement { pickingMode = PickingMode.Position };
+            pad.AddToClassList("option-info-pad");
+            pad.style.position = Position.Absolute;
+            pad.style.left = -14f;
+            pad.style.right = -6f;
+            pad.style.top = pad.style.bottom = -12f;
+            icon.Add(pad);
 
             // One scheduled item, resumed: Execute(...) registers a new one on the icon every time and Pause only stops it,
             // so a mouse sweeping back and forth over a page's icons left a dead item on each for the panel to walk.

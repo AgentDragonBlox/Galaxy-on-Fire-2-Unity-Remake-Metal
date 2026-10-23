@@ -93,7 +93,7 @@ namespace GoF2Remake.UI
             float barW = bar.resolvedStyle.width;
             if (float.IsNaN(barW) || barW <= 0f) barW = 12f;
             // Its slim track's centre 8 units right of the view's edge, whatever the touch area's width (phones): the left
-            // edge there, and the USS translate (-50 %) centres it. Not "- barW / 2": the resolved width is snapped to whole
+            // edge there, and the USS translate (-50 %; on phones -6 units, its touch area reaching right) centres it. Not "- barW / 2": the resolved width is snapped to whole
             // pixels, so at a scale like 1.19 units a pixel each placement changed it (10 / 11 px) and the next one moved
             // the bar back, a bar flickering wider and narrower every other safety tick (a player's report in the Mod
             // Builder, 2026-10-22).
