@@ -186,6 +186,26 @@ namespace GoF2Remake.Tests
             }
         }
 
+        /// <summary>A mechanic whose upgrade the hull already has opens with 858 and greets plainly, like an accepted offer
+        /// (SpaceLounge::getSoundId's hasAcceptedOffer); a player's report (2026-10-24): "I have something special" over 858.</summary>
+        [Test]
+        public void AMechanicWithNothingLeftGreetsPlainly()
+        {
+            using (new SettingsScope<bool>(() => Settings.KaamoStacking, v => Settings.KaamoStacking = v))
+            {
+                Settings.KaamoStacking = false;
+                Session.AddShipMod(1);
+                var mechanic = new Agent { race = 0, male = true, offer = AgentOffer.SellMod, sellMod = 1, known = true };
+                for (int i = 0; i < 30; i++)
+                {
+                    var chat = new LoungeChat(Db, mechanic, KaamoClub.Station, null);
+                    chat.Start();
+                    Assert.AreEqual(Localization.Get(858), chat.Text);
+                    StringAssert.Contains("_GREETING_LOUNGE_GENERIC_", chat.VoiceName());
+                }
+            }
+        }
+
         [Test]
         public void StackedModsUpToTheDefaultLevel()
         {

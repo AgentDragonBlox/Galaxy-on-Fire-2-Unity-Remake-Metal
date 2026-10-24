@@ -61,6 +61,7 @@ namespace GoF2Remake.UI
         readonly List<Letter> letters = new List<Letter>();
         readonly List<VisualElement> glyphs = new List<VisualElement>();
         bool alien, running, whole;
+        Color lastBase = new Color32(0xD8, 0xEC, 0xF7, 0xFF);   // --gof-text
         string speakerName;
         float clock, letterMs, endMs;
         int shown;
@@ -267,8 +268,11 @@ namespace GoF2Remake.UI
                 }
                 return;
             }
+            // The label's colour can still be unresolved here (opaque black, the initial value: a one-page note opened and
+            // shown at once, a player's report 2026-10-24); no dialogue text is black, so the last colour seen stands in.
             var baseColour = label.resolvedStyle.color;
-            if (baseColour.a <= 0f) baseColour = Color.white;
+            if (baseColour.a <= 0f || baseColour.r + baseColour.g + baseColour.b <= 0f) baseColour = lastBase;
+            else lastBase = baseColour;
             var sb = new StringBuilder(letters.Count * 6);
             string open = null, close = null;
             for (int i = 0; i < letters.Count; i++)
@@ -289,7 +293,9 @@ namespace GoF2Remake.UI
                 var colour = l.tint ?? baseColour;
                 if (l.action) colour = new Color(colour.r * ActionDim, colour.g * ActionDim, colour.b * ActionDim, colour.a);
                 float shake = 0f;
-                if (!char.IsWhiteSpace(l.c))
+                // Settled plain letters take no colour tag: the label's own colour, whenever its style resolves.
+                bool plain = l.tint == null && !l.action && (char.IsWhiteSpace(l.c) || age >= FadeMs * 0.5f + SettleMs && (!l.shout || age >= ShakeMs));
+                if (!char.IsWhiteSpace(l.c) && !plain)
                 {
                     // Fade in, then settle from the bright tint (16 steps each, so the rich text stays a handful of runs).
                     float alpha = Quantize(Mathf.Clamp01(age / FadeMs));
@@ -299,8 +305,9 @@ namespace GoF2Remake.UI
                     if (l.shout && age > 0f && age < ShakeMs)
                         shake = Mathf.Round(ShakeEm * (1f - age / ShakeMs) * Mathf.Sin(age * 0.09f + i * 2.1f) * 100f) / 100f;
                 }
-                var tag = new StringBuilder("<color=#").Append(ColorUtility.ToHtmlStringRGBA(colour)).Append('>');
+                var tag = new StringBuilder();
                 var end = new StringBuilder();
+                if (!plain) tag.Append("<color=#").Append(ColorUtility.ToHtmlStringRGBA(colour)).Append('>');
                 if (l.shout) { tag.Append("<size=").Append(ShoutSize.ToString("0")).Append("%><b>"); end.Insert(0, "</b></size>"); }
                 if (l.action) { tag.Append("<i>"); end.Insert(0, "</i>"); }
                 if (shake != 0f)
@@ -308,7 +315,7 @@ namespace GoF2Remake.UI
                     tag.Append("<voffset=").Append(shake.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)).Append("em>");
                     end.Insert(0, "</voffset>");
                 }
-                end.Append("</color>");
+                if (!plain) end.Append("</color>");
                 string t = tag.ToString();
                 if (t != open)
                 {

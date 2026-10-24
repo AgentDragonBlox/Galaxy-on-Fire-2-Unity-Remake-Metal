@@ -64,7 +64,19 @@ namespace GoF2Remake.Tests
             return label.text;
         }
 
-        static readonly Color32 Gold = new Color32(0xFF, 0xD3, 0x7A, 0xFF), Aqua = new Color32(0x7F, 0xE3, 0xF0, 0xFF),
+        [Test]
+        public void ANoteShownBeforeItsStyleResolvesIsNotBlack()
+        {
+            // A player's report (2026-10-24): the courier's thanks and the pirate base's 434 opened as the station loaded,
+            // the label still at the initial colour (opaque black), and every plain letter was tagged black.
+            string page = "*Sigh* Mr. Maxwell? You finished your mission.\n\nMission accomplished!";
+            string text = Rendered(page);
+            StringAssert.DoesNotContain("<color=#000000", text);
+            StringAssert.Contains("You finished your mission.\n\nMission accomplished!", text, "plain letters take the label's own colour");
+            StringAssert.Contains("<color=#FFD37AFF>Maxwell</color>", text, "the tints stay");
+        }
+
+        static readonly Color32 Gold =new Color32(0xFF, 0xD3, 0x7A, 0xFF), Aqua = new Color32(0x7F, 0xE3, 0xF0, 0xFF),
             Pink = new Color32(0xF0, 0xA8, 0xDC, 0xFF), Terran = new Color32(0xFF, 0x8C, 0x1A, 0xFF), Vossk = new Color32(0x45, 0xE0, 0x6A, 0xFF),
             Midorian = new Color32(0x9A, 0xA0, 0xA6, 0xFF), Void = new Color32(0xA7, 0x7B, 0xFF, 0xFF);
 

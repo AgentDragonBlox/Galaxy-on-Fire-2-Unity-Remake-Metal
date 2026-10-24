@@ -79,6 +79,11 @@ namespace GoF2Remake.Data
 
         // ---- the opening --------------------------------------------------------------------------------------
 
+        /// <summary>Start found nothing left to offer (858 and the like): the voice greets plainly, as for an accepted offer
+        /// (getSoundId's hasAcceptedOffer). Remake: a Kaamo mechanic's upgrade is per hull, so the agent is never marked
+        /// accepted, and a player's report (2026-10-24) had the mechanic still voicing "I have something special" over 858.</summary>
+        bool offerSpent;
+
         public void Start()
         {
             var a = Agent;
@@ -90,6 +95,7 @@ namespace GoF2Remake.Data
                 a.known = true;
                 EventMissions.MarkTalked(a);   // the visitor is made anew at the next docking
                 closing = a.accepted || o == null;
+                offerSpent = closing;
                 Text = closing ? T(858) : T(750 + Random.Range(0, 6)) + " " + EventMissions.ChatText(o) + "\n" + T(841 + Random.Range(0, 3));
                 SetChoices();
                 return;
@@ -106,6 +112,7 @@ namespace GoF2Remake.Data
                 Text = T(a.offer == AgentOffer.Purchase ? 857
                          : a.offer == AgentOffer.Wingmen || a.HasMission && a.mission.type == MissionType.Challenge ? 859 : 858);
                 closing = true;
+                offerSpent = true;
                 SetChoices();
                 return;
             }
@@ -115,6 +122,7 @@ namespace GoF2Remake.Data
                 Text = T(750 + Random.Range(0, 6));
                 if (first) Session.AgentsTalkedTo--;
                 closing = true;
+                offerSpent = true;
                 SetChoices();
                 return;
             }
@@ -122,6 +130,7 @@ namespace GoF2Remake.Data
             {
                 Text = T(858);
                 closing = true;
+                offerSpent = true;
                 SetChoices();
                 return;
             }
@@ -131,6 +140,7 @@ namespace GoF2Remake.Data
                 // switched off since this bar was generated
                 Text = T(858);
                 closing = true;
+                offerSpent = true;
                 SetChoices();
                 return;
             }
@@ -142,6 +152,7 @@ namespace GoF2Remake.Data
                                     Session.MaxModLevel).Replace("#SHIP_NAME", ItemInfo.ShipName(Session.ShipIndex))
                     : T(858);
                 closing = true;
+                offerSpent = true;
                 SetChoices();
                 return;
             }
@@ -632,7 +643,7 @@ namespace GoF2Remake.Data
                 default: return null;
             }
             if (a.offer != AgentOffer.SmallTalk && Random.Range(0, 100) < 30) { kind = "GENERIC"; count = 2; }
-            if (a.accepted) { kind = "GENERIC"; count = 2; }
+            if (a.accepted || offerSpent) { kind = "GENERIC"; count = 2; }
             if (a.offer == AgentOffer.SmallTalk && a.textIds.Count > 3)
             {
                 int line = a.textIds[3];
