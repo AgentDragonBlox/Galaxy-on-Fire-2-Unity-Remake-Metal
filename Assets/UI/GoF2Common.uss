@@ -64,16 +64,19 @@
     --button-primary-line: var(--gof-amber);
     --button-primary-focus-fill: rgba(255, 166, 48, 0.38);
 
-    /* The original's interface font (gof2_interface.png's bitmap glyphs, font 1111) is Serpentine: Serpentine ICG Light,
-       with Inter as its fallback for the letters it lacks (Cyrillic, most of Latin Extended-A). */
-    -unity-font-definition: url("project://database/Assets/UI/Fonts/Serpentine-ICG-Light-SDF.asset");
+    /* Klavika, the typeface of the original HD versions' interface. Medium is the body weight (the font has no upright
+       Regular); its asset's weight table gives bold and italic the real faces. Inter is the fallback for the letters
+       Klavika lacks (Cyrillic and the like). The only rule that names a font: a font chosen in Options > Accessibility
+       (UiFont) replaces it inline on each panel's root. */
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/Klavika-Medium-SDF.asset");
     color: var(--gof-text);
     font-size: var(--text-body);
 }
 
+/* The bold weight of the font in use: Klavika's own Bold through its asset's weight table, and a font chosen in Options >
+   Accessibility (UiFont) its family's Bold face or faux bold. A font set here would override the player's choice. */
 .gof-semibold {
-    -unity-font-definition: url("project://database/Assets/UI/Fonts/Serpentine-ICG-Light-SDF.asset");
-    -unity-font-style: bold;   /* Serpentine has the one weight: the emphasis is the font asset's bold (faux) style */
+    -unity-font-style: bold;
 }
 
 /* ---- Slider -------------------------------------------------------------------------- */

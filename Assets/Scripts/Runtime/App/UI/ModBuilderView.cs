@@ -571,7 +571,7 @@ namespace GoF2Remake.UI
                         RequestReload(false);
                         BuildShipPage();
                     }));
-                if (current != null) Act(row, "✕", () => { s.SetHullTexture(r, null); RequestReload(false); BuildShipPage(); }, "mbv-step");
+                if (current != null) Act(row, "×", () => { s.SetHullTexture(r, null); RequestReload(false); BuildShipPage(); }, "mbv-step");
             }
         }
 
@@ -591,7 +591,7 @@ namespace GoF2Remake.UI
                 string text = $"{PartRoleName(role)}: {System.IO.Path.GetFileName(model ?? "")}";
                 if (!string.IsNullOrEmpty(texture)) text += $" ({System.IO.Path.GetFileName(texture)})";
                 Add(row, new Label(text), "mbv-inline-label");
-                Act(row, "✕", () => { s.RemovePart(index); RequestReload(false); BuildShipPage(); }, "mbv-step");
+                Act(row, "×", () => { s.RemovePart(index); RequestReload(false); BuildShipPage(); }, "mbv-step");
             }
             if (!ModImport.Available) return;
             var arow = Add(ship, new VisualElement(), "mbv-row");

@@ -124,7 +124,7 @@ namespace GoF2Remake.UI
                 RebuildCampaign();
                 BuildCampaignPage();
             }));
-            if (current != null) Act(row, "✕", () => { set(null); Project.DeleteFile(current, false); MarkDirty(); RebuildCampaign(); BuildCampaignPage(); }, "mbv-step");
+            if (current != null) Act(row, "×", () => { set(null); Project.DeleteFile(current, false); MarkDirty(); RebuildCampaign(); BuildCampaignPage(); }, "mbv-step");
         }
 
         void BuildCampaignPage()
@@ -193,7 +193,7 @@ namespace GoF2Remake.UI
                 var row = Row(campaignPage);
                 Add(row, new Label($"{char.ToUpperInvariant(race[0]) + race.Substring(1)}: {(ships.Count == 0 ? T("mbTheGames", "the game's") : string.Join(", ", ships.Select(x => RefLabel(RefKind.Ship, x, x))))}"), "mbv-inline-label");
                 Act(row, "+", () => PickRef(RefKind.Ship, T("mbTrafficShip", "A ship they fly"), e => { var l = c.TrafficShips(r); if (!l.Contains(e.value)) l.Add(e.value); c.SetTrafficShips(r, l); MarkDirty(); BuildCampaignPage(); }), "mbv-step");
-                if (ships.Count > 0) Act(row, "✕", () => { c.SetTrafficShips(r, null); MarkDirty(); BuildCampaignPage(); }, "mbv-step");
+                if (ships.Count > 0) Act(row, "×", () => { c.SetTrafficShips(r, null); MarkDirty(); BuildCampaignPage(); }, "mbv-step");
             }
             Note(campaignPage, T("mbCampaignTry", "Export the mod and turn it on: its card shows in Start new game."));
         }
@@ -215,7 +215,7 @@ namespace GoF2Remake.UI
                 if (tex != null) icon.style.backgroundImage = new StyleBackground(tex);
                 Add(row, new Label(RefLabel(RefKind.Item, stacks[i].item, "?")), "mbv-inline-label");
                 Int(row, "", stacks[i].amount, 1, 100000, v => { var l = new List<ProjectStack>(stacks); l[n] = new ProjectStack(l[n].item, v); set(l); });
-                Act(row, "✕", () => { var l = new List<ProjectStack>(stacks); l.RemoveAt(n); set(l); }, "mbv-step");
+                Act(row, "×", () => { var l = new List<ProjectStack>(stacks); l.RemoveAt(n); set(l); }, "mbv-step");
             }
             Act(parent, T("mbAddItem", "+ Add an item"), () => PickRef(RefKind.Item, caption, e =>
             {

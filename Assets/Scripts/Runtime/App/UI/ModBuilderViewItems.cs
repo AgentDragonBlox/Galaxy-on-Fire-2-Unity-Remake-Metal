@@ -154,7 +154,7 @@ namespace GoF2Remake.UI
                         BuildItemPage();
                     }));
             if (it.Icon != null)
-                Act(irow, "✕", () =>
+                Act(irow, "×", () =>
                 {
                     string old = it.Icon;
                     it.Icon = null;
@@ -349,7 +349,7 @@ namespace GoF2Remake.UI
                         Status(T("mbLoadingModel", "Loading the model…"), false);
                     }));
             if (model != null || fromItem != null)
-                Act(row, "✕", () =>
+                Act(row, "×", () =>
                 {
                     it.TurretModel = null;
                     it.TurretItem = null;
@@ -412,7 +412,7 @@ namespace GoF2Remake.UI
                     it.SetFxPartItem(part, index);
                     LookEdited();
                 })));
-                if (from != null) Act(row, "✕", () => { it.SetFxPartItem(part, null); LookEdited(); }, "mbv-step");
+                if (from != null) Act(row, "×", () => { it.SetFxPartItem(part, null); LookEdited(); }, "mbv-step");
                 Int(itemPage, string.Format(T("mbPartSize", "{0} size (%)"), label), Mathf.RoundToInt((it.FxPartScale(part) ?? 1f) * 100f), 1, 10000, v =>
                 {
                     it.SetFxPartScale(part, v / 100f);
@@ -435,7 +435,7 @@ namespace GoF2Remake.UI
                     it.SetSoundItem(k, index);
                     LookEdited();
                 })));
-                if (from != null) Act(row, "✕", () => { it.SetSoundItem(k, null); LookEdited(); }, "mbv-step");
+                if (from != null) Act(row, "×", () => { it.SetSoundItem(k, null); LookEdited(); }, "mbv-step");
             }
             Note(itemPage, T("mbLookNote", "Borrow any game weapon's projectile, muzzle flash, impact or sounds; no files needed."));
         }

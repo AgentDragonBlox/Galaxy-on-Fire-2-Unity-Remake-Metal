@@ -253,7 +253,7 @@ namespace GoF2Remake.UI
                 string gate = g;
                 var row = Row(systemPage);
                 Add(row, new Label("→ " + RefLabel(RefKind.System, gate, gate)), "mbv-inline-label");
-                Act(row, "✕", () => { s.Gates = s.Gates.Where(x => x != gate).ToList(); SystemEdited(); }, "mbv-step");
+                Act(row, "×", () => { s.Gates = s.Gates.Where(x => x != gate).ToList(); SystemEdited(); }, "mbv-step");
             }
             if (gates.Count == 0) Note(systemPage, isNew ? T("mbNoGates", "No routes: reached only with a Khador Drive.") : T("mbNoGatesAdded", "No routes added (it keeps its own)."));
             Act(systemPage, T("mbAddGate", "+ Route to a system"), () => PickRef(RefKind.System, T("mbGateTo", "Route to"), e =>
@@ -350,7 +350,7 @@ namespace GoF2Remake.UI
         /// <summary>The first original station of a race (a new station's stand-in look).</summary>
         static int DefaultLook(int race) => race switch { 1 => 41, 2 => 40, 3 => 78, _ => 70 };
 
-        /// <summary>An image field: its file (copied into 'folder' as PNG), Choose…, ✕.</summary>
+        /// <summary>An image field: its file (copied into 'folder' as PNG), Choose…, ×.</summary>
         void ImageRow(VisualElement parent, string label, string current, string folder, string baseName, Action<string> set)
         {
             var row = Row(parent);
@@ -361,7 +361,7 @@ namespace GoF2Remake.UI
                 set(Project.AddFile(path, folder, baseName, ".png"));
                 Project.DeleteFile(old, false);
             }), "mbv-step");
-            if (current != null) Act(row, "✕", () => { set(null); Project.DeleteFile(current, false); }, "mbv-step");
+            if (current != null) Act(row, "×", () => { set(null); Project.DeleteFile(current, false); }, "mbv-step");
         }
 
         /// <summary>The Stations kind in space, in that station's orbit.</summary>

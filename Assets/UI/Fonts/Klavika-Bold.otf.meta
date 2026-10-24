@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 766d9b226c566bb4e9132e18697f3181
+guid: 3f4c3f03989a5dc41908b3260545c021
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -9,7 +9,7 @@ TrueTypeFontImporter:
   characterPadding: 1
   includeFontData: 1
   fontNames:
-  - Serpentine ICG
+  - Klavika
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0

@@ -50,11 +50,18 @@ namespace GoF2Remake.UI
         /// <summary>The player changed the value through this row.</summary>
         public event Action Changed;
 
+        /// <summary>Every row on show reads its setting again: a change that finishes later than its row's press (the
+        /// interface font's import, after the file picker).</summary>
+        public static void RefreshShown() => refreshShown?.Invoke();
+        static event Action refreshShown;
+
         public OptionControl(OptionDef d)
         {
             def = d;
             Root = new VisualElement();
             Root.AddToClassList("option-item");
+            Root.RegisterCallback<AttachToPanelEvent>(_ => refreshShown += Refresh);
+            Root.RegisterCallback<DetachFromPanelEvent>(_ => refreshShown -= Refresh);
             switch (d.kind)
             {
                 case OptionKind.Slider:

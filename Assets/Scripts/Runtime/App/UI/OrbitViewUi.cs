@@ -60,6 +60,8 @@ namespace GoF2Remake.UI
             string T(string key, string english) => Localization.Extra(key, english);
             void Add(string label, Action click, params VisualElement[] glyphs)
             {
+                // The button hints option off: no key hints; on touch the tappable ones stay, they are its only buttons.
+                if (!Settings.InputHints && (click == null || kind != InputKind.Touch)) return;
                 var h = new VisualElement { pickingMode = click != null ? PickingMode.Position : PickingMode.Ignore };
                 h.AddToClassList("hint");
                 // Modified: the glyphs in a row of their own (hint-keys), the label under them (GoF2InputGlyphs.uss).

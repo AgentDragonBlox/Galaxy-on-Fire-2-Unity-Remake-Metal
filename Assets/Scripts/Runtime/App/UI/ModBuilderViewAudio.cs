@@ -250,7 +250,7 @@ namespace GoF2Remake.UI
                 var play = Act(row, playing == p ? "■" : "▶", () => TogglePreview(p), "mbv-step");
                 Add(row, new Label($"{n}  ·  {sub(n)}"), "mbv-inline-label");
                 Act(row, T("mbReplaceFile", "Replace…"), () => PickAudio(T("mbPickAudio", "Choose the file"), src => { Project.SetAudio(folder, n, src); AudioChanged(); }), "mbv-step");
-                Act(row, "✕", () => Confirm(T("mbRemoveFile", "Remove file"), string.Format(T("mbRemoveText", "Remove \"{0}\" from the project?"), n), () =>
+                Act(row, "×", () => Confirm(T("mbRemoveFile", "Remove file"), string.Format(T("mbRemoveText", "Remove \"{0}\" from the project?"), n), () =>
                 {
                     StopAudio();
                     Project.RemoveAudio(folder, n);

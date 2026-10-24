@@ -20,11 +20,18 @@ namespace GoF2Remake.UI
 
     public static class InputGlyph
     {
-        /// <summary>The button hints option (Settings.InputHints): hides a HUD's hint row container while it is off.</summary>
+        /// <summary>The button hints option (Settings.InputHints): hides a screen's hint row container while it is off (the HUD,
+        /// the station, the star map; the menus' prompt bars read it in MenuKeys.Bar, the orbit views in OrbitViewUi).</summary>
         public static void TrackHintsOption(VisualElement hints)
         {
             if (hints == null) return;
-            void Apply() => hints.EnableInClassList("hints--off", !Settings.InputHints);
+            void Apply()
+            {
+                hints.EnableInClassList("hints--off", !Settings.InputHints);
+                // Inline too: a screen's own rules for the row (".hangar-open .station-hints", with the input classes) beat the
+                // class, so the hangar window kept its hints with the option off.
+                hints.style.display = Settings.InputHints ? new StyleEnum<DisplayStyle>(StyleKeyword.Null) : DisplayStyle.None;
+            }
             Apply();
             Settings.Changed += Apply;
             hints.RegisterCallback<DetachFromPanelEvent>(_ => Settings.Changed -= Apply);

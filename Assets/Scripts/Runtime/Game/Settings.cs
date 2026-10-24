@@ -495,6 +495,23 @@ namespace GoF2Remake.Data
         /// stand apart from the red hostile ones for red-green colour blindness (CombatView).</summary>
         public static bool ColorblindMarkers { get => GetBool("colorblindMarkers", false); set => SetBool("colorblindMarkers", value); }
 
+        /// <summary>Remake: Options > Accessibility "Interface font" (UiFont): "" the theme's Klavika, "file:<name>" a font file
+        /// imported into the Fonts folder, "system:<family> - <style>" an installed one.</summary>
+        public static string UiFont
+        {
+            get => uiFont ??= PlayerPrefs.GetString(Prefix + "uiFont", "");
+            set
+            {
+                value ??= "";
+                if (value == UiFont) return;
+                uiFont = value;
+                PlayerPrefs.SetString(Prefix + "uiFont", value);
+                PlayerPrefs.Save();
+                Changed?.Invoke();
+            }
+        }
+        static string uiFont;
+
         /// <summary>Remake: Options > Graphics "Interface width": the HUD and menus in a centred 16:9 or 21:9 band on a wider
         /// screen, or the full width (UiLayout.OptionInsets).</summary>
         public const int UiWidth16x9 = 0, UiWidth21x9 = 1, UiWidthFull = 2;
@@ -549,7 +566,7 @@ namespace GoF2Remake.Data
             "farShipMarkers", "markerDistance",
         };
         public static readonly string[] LanguageKeys = { "voiceLanguage" };
-        public static readonly string[] AccessibilityKeys = { "uiScale", "uiTextScale", "highContrast", "reduceMotion", "colorblindMarkers" };
+        public static readonly string[] AccessibilityKeys = { "uiScale", "uiTextScale", "uiFont", "highContrast", "reduceMotion", "colorblindMarkers" };
 
         /// <summary>These options back to their defaults.</summary>
         public static void Reset(IEnumerable<string> keys)
@@ -558,6 +575,7 @@ namespace GoF2Remake.Data
             {
                 PlayerPrefs.DeleteKey(Prefix + key);
                 cache.Remove(key);
+                if (key == "uiFont") uiFont = null;
             }
             PlayerPrefs.Save();
             Changed?.Invoke();

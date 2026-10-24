@@ -53,7 +53,7 @@ namespace GoF2Remake.UI
         public static int Revision => Settings.UiScalePercent * 1000 + Settings.UiWidth * 100 + Mathf.RoundToInt(Settings.UiMarginPercent * 10f)
                                       + (TvDetected ? 7 : 0) + DebugDevice() * 13 + Settings.UiTextScalePercent * 100000
                                       + (Settings.HighContrast ? 1 : 0) * 30000000 + (Settings.ReduceMotion ? 1 : 0) * 60000000
-                                      + (Settings.ColorblindMarkers ? 1 : 0) * 120000000;
+                                      + (Settings.ColorblindMarkers ? 1 : 0) * 120000000 + UiFont.Revision;
 
         /// <summary>Options > Accessibility "Text size" as a factor (1..2): the root's ui-text-N class (GoF2Common.uss) for the
         /// style sheets, Type for code.</summary>
@@ -154,6 +154,7 @@ namespace GoF2Remake.UI
                 root.EnableInClassList("ui-high-contrast", Settings.HighContrast);
                 root.EnableInClassList("ui-reduce-motion", Settings.ReduceMotion);
                 root.EnableInClassList("ui-colorblind", Settings.ColorblindMarkers);
+                UiFont.Apply(root);   // Options > Accessibility "Interface font"
             }
             return r;
         }

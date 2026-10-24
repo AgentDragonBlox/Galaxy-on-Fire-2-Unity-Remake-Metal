@@ -152,7 +152,7 @@ namespace GoF2Remake.UI
             string summary = string.Format(T("mbOptDone", "Optimized: {0} → {1}."), Megabytes(job.Before), Megabytes(job.After));
             int trisBefore = job.Results.Sum(r => r.trianglesBefore), trisAfter = job.Results.Sum(r => r.trianglesAfter);
             if (trisAfter < trisBefore) summary += " " + string.Format(T("mbOptTrianglesDone", "Triangles: {0} → {1}."), trisBefore.ToString("N0"), trisAfter.ToString("N0"));
-            if (errors.Count > 0) summary += "\n✖ " + string.Join("\n✖ ", errors.Take(3).Select(r => $"{r.path}: {r.error}"));
+            if (errors.Count > 0) summary += "\n× " + string.Join("\n× ", errors.Take(3).Select(r => $"{r.path}: {r.error}"));
             optimizeSummary = any ? summary : T("mbOptNothing", "Nothing got smaller: the files are as they were.");
             Status(optimizeSummary, errors.Count > 0);
             if (any)

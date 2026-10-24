@@ -6,7 +6,7 @@
 // glow layers, marked when other ships share them, and a freighter's / the battleship's burnt wreck set, CombatAssets'
 // wreckDamaged), each with its picture (the replacement, else the game's), Replace (a PNG
 // stored under the texture's exact name), Save original (the game's texture as a PNG to paint over, into the project's
-// templates/ folder, which Export leaves out) and ✕ (back to the game's). The turntable and Test fly show the skinned ship
+// templates/ folder, which Export leaves out) and × (back to the game's). The turntable and Test fly show the skinned ship
 // (ModBuilder.SkinShip). A change makes the game read the project again (the turntable ship is rebuilt with it).
 // The project's new ships on a game model ("+ Skin a game ship" lists them too; the Ships page's "Its own textures…") take
 // textures of their own: each Replace goes to textures/ships/<id>/ (ModProject.ShipSkinScope), so the game's ship of that
@@ -75,7 +75,7 @@ namespace GoF2Remake.UI
                 var row = Row(scroll);
                 Add(row, new Label(n), "mbv-inline-label");
                 if (ModImport.Available) Act(row, T("mbReplace", "Replace…"), () => PickImage(n, png => { Project.SetSkinTexture(n, png); SkinChanged(); ShowOtherTextures(); }), "mbv-step");
-                Act(row, "✕", () => { Project.RemoveSkinTexture(n); SkinChanged(); ShowOtherTextures(); }, "mbv-step");
+                Act(row, "×", () => { Project.RemoveSkinTexture(n); SkinChanged(); ShowOtherTextures(); }, "mbv-step");
             }
             var add = Row(scroll);
             if (ModImport.Available)
@@ -285,7 +285,7 @@ namespace GoF2Remake.UI
                 }
                 Act(buttons, T("mbSaveOriginal", "Save original"), () => SaveTemplate(tex));   // its own status line
                 if (own != null && (!ownShip || onlyThis))   // a new ship's page leaves the project's every-ship file alone
-                    Act(buttons, "✕", () => { Project.RemoveSkinTexture(tex.name, onlyThis ? tex.scope : null); SkinChanged(); }, "mbv-step");
+                    Act(buttons, "×", () => { Project.RemoveSkinTexture(tex.name, onlyThis ? tex.scope : null); SkinChanged(); }, "mbv-step");
             }
             var foot = Add(skinPage, new VisualElement(), "mbv-row");
             Act(foot, T("mbSaveAllOriginals", "Save all originals"), () =>

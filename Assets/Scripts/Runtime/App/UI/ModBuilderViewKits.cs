@@ -266,7 +266,7 @@ namespace GoF2Remake.UI
                     foreach (var s in Project.Ships.Where(s => s.IsKitShip && s.BuildPart(slot) != null)) { s.SetBuildPart(v, s.BuildPart(slot)); s.SetBuildPart(slot, null); }
                     KitEdited(true);
                 }), "mbv-step");
-                Act(row, "✕", () => Confirm(T("mbKitRemoveSlot", "Remove slot"),
+                Act(row, "×", () => Confirm(T("mbKitRemoveSlot", "Remove slot"),
                     string.Format(T("mbKitRemoveSlotText", "Remove the slot \"{0}\" and its {1} parts?"), slot, k.PartsIn(slot).Count), () =>
                     {
                         var gone = k.PartsIn(slot);
@@ -377,7 +377,7 @@ namespace GoF2Remake.UI
                 int n = i;
                 var row = Row(box);
                 Add(row, new Label($"{T("mbKitTier", "Tier")} {n + 1}: {System.IO.Path.GetFileName(tiers[n])}"), "mbv-inline-label");
-                Act(row, "✕", () => { var l = p.Tiers; string f = l[n]; l.RemoveAt(n); p.Tiers = l; DeleteUnusedModel(f); KitEdited(true); }, "mbv-step");
+                Act(row, "×", () => { var l = p.Tiers; string f = l[n]; l.RemoveAt(n); p.Tiers = l; DeleteUnusedModel(f); KitEdited(true); }, "mbv-step");
             }
             var trow = Row(box);
             if (ModImport.Available)
@@ -477,7 +477,7 @@ namespace GoF2Remake.UI
                 string cid = id;
                 var row = Row(kitPage);
                 Add(row, new Label($"{name ?? id}: {(material ?? "?")}"), "mbv-inline-label");
-                Act(row, "✕", () => { k.RemoveColorSlot(cid); KitEdited(true); }, "mbv-step");
+                Act(row, "×", () => { k.RemoveColorSlot(cid); KitEdited(true); }, "mbv-step");
             }
             var crow = Row(kitPage);
             Act(crow, T("mbKitAddPaint", "+ Paint slot"), () => AskColorSlot(k, false));

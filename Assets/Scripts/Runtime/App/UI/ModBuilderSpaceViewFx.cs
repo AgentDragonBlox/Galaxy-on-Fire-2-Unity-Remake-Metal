@@ -149,7 +149,7 @@ namespace GoF2Remake.UI
                     Fx(it, true)[k] = new JArray((string)sv, file);
                     FxEdited();
                 }), "mbv-step");
-                if (v != null) Act(row, "✕", () => { Fx(it, true).Remove(k); DropEmptyFx(it); FxEdited(); }, "mbv-step");
+                if (v != null) Act(row, "×", () => { Fx(it, true).Remove(k); DropEmptyFx(it); FxEdited(); }, "mbv-step");
             }
             var fxNow = Fx(it, false);
             int loops = fxNow?["shotLoops"] is JValue lv && lv.Type == JTokenType.Boolean ? ((bool)lv ? 1 : 2) : 0;
@@ -268,7 +268,7 @@ namespace GoF2Remake.UI
             Float(crow, "R", c.r, 0f, 1f, v => Set("color", new JArray(R3(v), R3(c.g), R3(c.b))));
             Float(crow, "G", c.g, 0f, 1f, v => Set("color", new JArray(R3(c.r), R3(v), R3(c.b))));
             Float(crow, "B", c.b, 0f, 1f, v => Set("color", new JArray(R3(c.r), R3(c.g), R3(v))));
-            if (col != null) Act(crow, "✕", () => { o.Remove("color"); FxEdited(); }, "mbv-step");
+            if (col != null) Act(crow, "×", () => { o.Remove("color"); FxEdited(); }, "mbv-step");
             Float(fxPage, T("mbGlow", "Glow (above 1 blooms; the game's 2.5)"), Num("glow", 2.5f), 0f, 20f, v => Set("glow", v));
         }
 

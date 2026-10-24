@@ -231,8 +231,8 @@ namespace GoF2Remake.UI
                 description.text += "\n\n" + T("modsCredits", "Credits").ToUpperInvariant() + "\n" + mod.Manifest.Credits;
             var lines = new List<string>();
             bool isOn = ModManager.IsEnabled(mod.Id);
-            if (mod.Broken) lines.AddRange(mod.Errors.Select(e => "✖ " + e));
-            else if (isOn && ModManager.InactiveReason(mod) is string why) lines.Add("✖ " + why);
+            if (mod.Broken) lines.AddRange(mod.Errors.Select(e => "× " + e));
+            else if (isOn && ModManager.InactiveReason(mod) is string why) lines.Add("× " + why);
             if (mod.Manifest?.dependencies.Count > 0)
                 lines.Add(string.Format(T("modsNeeds", "Needs: {0}"), string.Join(", ", mod.Manifest.dependencies.Select(d =>
                 {

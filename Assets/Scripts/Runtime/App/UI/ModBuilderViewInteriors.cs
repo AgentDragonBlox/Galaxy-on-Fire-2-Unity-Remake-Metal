@@ -255,7 +255,7 @@ namespace GoF2Remake.UI
                 var place = Act(row, placingMarker == n ? T("mbClickRoom", "Click the room…") : T("mbPlace", "Place"), () => { placingMarker = placingMarker == n ? null : n; BuildInteriorPage(); }, "mbv-step");
                 place.EnableInClassList("mbv-toggle--on", placingMarker == n);
                 if (n.StartsWith("camera")) Act(row, T("mbFromView", "Use view"), () => SetMarkerFromView(r, n), "mbv-step");
-                if (placed) Act(row, "✕", () => { r.SetMarker(n, null); RoomEdited(); }, "mbv-step");
+                if (placed) Act(row, "×", () => { r.SetMarker(n, null); RoomEdited(); }, "mbv-step");
                 if (placed)
                 {
                     var xyz = Row(interiorPage, "mbv-xyz");
@@ -329,7 +329,7 @@ namespace GoF2Remake.UI
             }
         }
 
-        /// <summary>A colour as three 0..1 fields ('optional': a ✕ clears it to the default).</summary>
+        /// <summary>A colour as three 0..1 fields ('optional': a × clears it to the default).</summary>
         void ColourRow(VisualElement parent, string label, Color? value, Action<Color?> set, bool optional = true)
         {
             Caption(parent, label + (value == null ? "  (" + T("mbDefault", "default") + ")" : ""));
@@ -338,7 +338,7 @@ namespace GoF2Remake.UI
             Float(row, "R", c.r, 0f, 4f, v => set(new Color(v, c.g, c.b)));
             Float(row, "G", c.g, 0f, 4f, v => set(new Color(c.r, v, c.b)));
             Float(row, "B", c.b, 0f, 4f, v => set(new Color(c.r, c.g, v)));
-            if (optional && value != null) Act(row, "✕", () => set(null), "mbv-step");
+            if (optional && value != null) Act(row, "×", () => set(null), "mbv-step");
         }
 
         static Color MarkerColour(string name, int i) =>

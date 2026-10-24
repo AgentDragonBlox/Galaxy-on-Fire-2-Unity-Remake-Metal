@@ -134,7 +134,7 @@ namespace GoF2Remake.UI
                 if (tex != null) icon.style.backgroundImage = new StyleBackground(tex);
                 Add(row, new Label(RefLabel(RefKind.Item, ingredients[i].item, "?")), "mbv-inline-label");
                 Int(row, "", ingredients[i].amount, 1, 100000, v => { var l = b.Ingredients; l[n] = new ProjectStack(l[n].item, v); b.Ingredients = l; MarkDirty(); });
-                Act(row, "✕", () => { var l = b.Ingredients; l.RemoveAt(n); b.Ingredients = l; BlueprintEdited(); }, "mbv-step");
+                Act(row, "×", () => { var l = b.Ingredients; l.RemoveAt(n); b.Ingredients = l; BlueprintEdited(); }, "mbv-step");
             }
             if (ingredients.Count == 0) Note(blueprintPage, T("mbNoIngredients", "None yet: a blueprint needs at least one."));
             Act(blueprintPage, T("mbAddIngredient", "+ Add an ingredient"), () => PickRef(RefKind.Item, T("mbIngredient", "Ingredient"), e =>
@@ -240,7 +240,7 @@ namespace GoF2Remake.UI
                     BlueprintEdited();
                 });
                 Float(row, T("mbChancePerKill", "% per kill"), drops[i].chance, 0f, 100f, v => { var l = b.Drops; l[n] = (l[n].race, v); b.Drops = l; MarkDirty(); });
-                Act(row, "✕", () => { var l = b.Drops; l.RemoveAt(n); b.Drops = l; BlueprintEdited(); }, "mbv-step");
+                Act(row, "×", () => { var l = b.Drops; l.RemoveAt(n); b.Drops = l; BlueprintEdited(); }, "mbv-step");
             }
             Act(blueprintPage, T("mbAddDrop", "+ Add a drop"), () => { var l = b.Drops; l.Add(("pirate", 1f)); b.Drops = l; BlueprintEdited(); }, "mbv-add");
             Note(blueprintPage, T("mbDropsNote", "A destroyed ship may drop it in a data container; sources stop once it's known."));

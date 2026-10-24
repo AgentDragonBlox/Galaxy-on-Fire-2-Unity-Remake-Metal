@@ -413,7 +413,7 @@ namespace GoF2Remake.UI
                 Project.DeleteFile(old, false);
                 Edited(true);
             }), "mbv-step");
-            if (s.PlanetTexture != null) Act(irow, "✕", () => { Project.DeleteFile(s.PlanetTexture, false); s.PlanetTexture = null; Edited(true); }, "mbv-step");
+            if (s.PlanetTexture != null) Act(irow, "×", () => { Project.DeleteFile(s.PlanetTexture, false); s.PlanetTexture = null; Edited(true); }, "mbv-step");
 
             var maprow = Row(stationPage);
             Add(maprow, new Label($"{T("mbMapImage", "On the star map")}: {(s.MapTexture != null ? System.IO.Path.GetFileName(s.MapTexture) : s.PlanetTexture != null ? T("mbMapDisc", "the planet image, as a disc") : T("mbGamePlanet", "the game's planet"))}"), "mbv-inline-label");
@@ -424,7 +424,7 @@ namespace GoF2Remake.UI
                 Project.DeleteFile(old, false);
                 Edited(true);
             }), "mbv-step");
-            if (s.MapTexture != null) Act(maprow, "✕", () => { Project.DeleteFile(s.MapTexture, false); s.MapTexture = null; Edited(true); }, "mbv-step");
+            if (s.MapTexture != null) Act(maprow, "×", () => { Project.DeleteFile(s.MapTexture, false); s.MapTexture = null; Edited(true); }, "mbv-step");
             FlagButton(Row(stationPage), T("mbMapRing", "A ring round it on the star map"), s.MapRing, v => s.MapRing = v, () => Edited(true));
             BuildMapPlace(s);
             BuildOrbitLayout(s);
@@ -535,7 +535,7 @@ namespace GoF2Remake.UI
                         string item = e is JObject eo ? eo["item"]?.ToString() : e.ToString();
                         var row = Row(stationPage);
                         Add(row, new Label(RefLabel(RefKind.Item, item, item)), "mbv-inline-label");
-                        Act(row, "✕", () => { ores.Remove(e); if (ores.Count == 0) field.Remove("ores"); Save(true); }, "mbv-step");
+                        Act(row, "×", () => { ores.Remove(e); if (ores.Count == 0) field.Remove("ores"); Save(true); }, "mbv-step");
                     }
                 Act(stationPage, T("mbOrbitAddOre", "+ Ore"), () => PickRef(RefKind.Item, T("mbOrbitAddOre", "+ Ore"), e =>
                 {

@@ -62,7 +62,7 @@ namespace GoF2Remake.UI
                     string key = p.Name;
                     var arow = Row(itemPage);
                     Int(arow, string.Format(T("mbAttrN", "Attribute {0}"), key), JInt(p.Value) ?? 0, int.MinValue / 2, int.MaxValue / 2, v => { ((JObject)it.Get("attributes"))[key] = v; ItemEdited(); });
-                    Act(arow, "✕", () => { var o = (JObject)it.Get("attributes"); o.Remove(key); it.Set("attributes", o.HasValues ? o : null); ItemEdited(); BuildItemPage(); }, "mbv-step");
+                    Act(arow, "×", () => { var o = (JObject)it.Get("attributes"); o.Remove(key); it.Set("attributes", o.HasValues ? o : null); ItemEdited(); BuildItemPage(); }, "mbv-step");
                 }
             Act(itemPage, T("mbAddAttribute", "+ Attribute"), () => AskText(T("mbAddAttribute", "+ Attribute"), T("mbAttrNumber", "The attribute's number (reference.md lists them)"), "", text =>
             {
@@ -125,7 +125,7 @@ namespace GoF2Remake.UI
                 int n = i;
                 var trow = Row(ship);
                 Add(trow, new Label($"{n + 1}. {RefLabel(RefKind.Item, turrets[n], turrets[n])}"), "mbv-inline-label");
-                Act(trow, "✕", () => { turrets.RemoveAt(n); s.Set("npcTurrets", turrets.Count > 0 ? new JArray(turrets.Select(ProjectEntry.RefToken)) : null); MarkDirty(); BuildShipPage(); }, "mbv-step");
+                Act(trow, "×", () => { turrets.RemoveAt(n); s.Set("npcTurrets", turrets.Count > 0 ? new JArray(turrets.Select(ProjectEntry.RefToken)) : null); MarkDirty(); BuildShipPage(); }, "mbv-step");
             }
             Act(ship, T("mbAddNpcTurret", "+ Turret for NPC ships"), () => PickRef(RefKind.Item, T("mbNpcTurrets", "NPC turrets"), e =>
             {

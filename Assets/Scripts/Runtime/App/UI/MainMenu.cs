@@ -1478,7 +1478,7 @@ namespace GoF2Remake.UI
             var scroll = root.Q<ScrollView>("mpHostScroll");
             var more = root.Q<Label>("mpHostMore");
             if (scroll == null || more == null) return;
-            more.text = "▾ " + Localization.Extra("mpMoreOptions", "More options").ToUpperInvariant();
+            more.text = "▼ " + Localization.Extra("mpMoreOptions", "More options").ToUpperInvariant();
             void Update()
             {
                 float hidden = scroll.contentContainer.layout.height - scroll.contentViewport.layout.height;

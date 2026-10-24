@@ -196,7 +196,7 @@
 }
 
 /* The add buttons' "+" and the steppers' "+" / "−" (ModBuilderScreen.DrawSign: strokes drawn with Painter2D):
-   Serpentine's glyphs are small and sit low beside the capitals. The sign is a Label still holding its character (the
+   the UI font's glyphs are small and sit low beside the capitals. The sign is a Label still holding its character (the
    AI tools read the buttons' texts), the character itself invisible. */
 .mbv-with-sign {
     flex-direction: row;

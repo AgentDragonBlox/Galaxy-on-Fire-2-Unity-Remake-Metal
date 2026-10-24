@@ -141,7 +141,7 @@ namespace GoF2Remake.UI
                 RebuildCharacters();
                 BuildCharacterPage();
             }));
-            if (c.Replaces != null) Act(srow, "✕", () => { c.Replaces = null; CharacterEdited(); RebuildCharacters(); BuildCharacterPage(); }, "mbv-step");
+            if (c.Replaces != null) Act(srow, "×", () => { c.Replaces = null; CharacterEdited(); RebuildCharacters(); BuildCharacterPage(); }, "mbv-step");
             Note(characterPage, T("mbStandsInNote", "Nobody: your own character. A story character: replaces their portrait and name."));
         }
 

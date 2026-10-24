@@ -197,7 +197,7 @@ namespace GoF2Remake.UI
         static readonly Color SignCyan = new Color32(62, 200, 255, 255), SignText = new Color32(216, 236, 247, 255);
 
         /// <summary>The add buttons' "+" ("+ New ship from .glb") and the steppers' lone "+" / "−" drawn as anti-aliased
-        /// strokes (Painter2D, like PadGlyph's symbols): Serpentine's glyphs are small and sit low beside the capitals, and
+        /// strokes (Painter2D, like PadGlyph's symbols): the UI font's glyphs are small and sit low beside the capitals, and
         /// bars made of elements snapped to whole pixels unevenly at the interface's scale (a 1 px across, 2 px upright
         /// at 1.19 units a pixel). The sign is a Label still holding its character, kept invisible, so the button's text
         /// reads the same to the AI tools (McpInput.TextOf); the rest of the label moves into a child Label, since a Button
@@ -620,7 +620,7 @@ namespace GoF2Remake.UI
                 try { parsed = JObject.Parse(field.value); }
                 catch (Exception e)
                 {
-                    error.text = "✖ " + e.Message;
+                    error.text = "× " + e.Message;
                     error.style.display = DisplayStyle.Flex;
                     return;
                 }
@@ -694,7 +694,7 @@ namespace GoF2Remake.UI
         /// <summary>A stored reference as a label ("Falcon (Ship Pack)"), or the 'none' text.</summary>
         protected string RefLabel(RefKind k, string value, string none) => string.IsNullOrEmpty(value) ? none : ModRefs.Label(k, value, Project);
 
-        /// <summary>A field that names other content: its current pick and a Choose… button (and ✕ to clear it when 'clear').</summary>
+        /// <summary>A field that names other content: its current pick and a Choose… button (and × to clear it when 'clear').</summary>
         protected void RefField(VisualElement parent, string caption, RefKind k, string value, Action<string> set, string none = null, bool clear = true,
                                 Func<RefEntry, bool> filter = null)
         {
@@ -702,7 +702,7 @@ namespace GoF2Remake.UI
             var row = Row(parent);
             Add(row, new Label(RefLabel(k, value, none ?? T("mbNone", "none"))), "mbv-inline-label");
             Act(row, T("mbChoose", "Choose…"), () => PickRef(k, caption, e => set(e?.value), filter));
-            if (clear && !string.IsNullOrEmpty(value)) Act(row, "✕", () => set(null), "mbv-step");
+            if (clear && !string.IsNullOrEmpty(value)) Act(row, "×", () => set(null), "mbv-step");
         }
 
         // ---- files --------------------------------------------------------------------------------------------
@@ -921,7 +921,7 @@ namespace GoF2Remake.UI
         {
             var mod = ModManager.BuilderProject;
             if (mod == null) return;
-            if (mod.Errors.Count > 0) Status("✖ " + string.Join("\n✖ ", mod.Errors.Take(3)), true);
+            if (mod.Errors.Count > 0) Status("× " + string.Join("\n× ", mod.Errors.Take(3)), true);
             else if (mod.Warnings.Count > 0) Status("! " + string.Join("\n! ", mod.Warnings.Take(3)), false);
         }
 

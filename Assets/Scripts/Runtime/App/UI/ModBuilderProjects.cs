@@ -359,7 +359,7 @@ namespace GoF2Remake.UI
             if (selected == null) return;
             filling = true;
             title.text = selected.Name;
-            meta.text = selected.LoadError != null ? "✖ " + selected.LoadError : "";
+            meta.text = selected.LoadError != null ? "× " + selected.LoadError : "";
             meta.style.display = selected.LoadError != null ? DisplayStyle.Flex : DisplayStyle.None;
             nameField.value = selected.Name;
             UpdateIdHint();

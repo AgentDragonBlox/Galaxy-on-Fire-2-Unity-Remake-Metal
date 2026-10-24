@@ -318,6 +318,32 @@ namespace GoF2Remake.UI
                 () => System.Array.ConvertAll(UiTextSteps, p => p + " %"),
                 () => Mathf.Max(0, System.Array.IndexOf(UiTextSteps, Settings.UiTextScalePercent)), i => Settings.UiTextScalePercent = UiTextSteps[Mathf.Clamp(i, 0, UiTextSteps.Length - 1)],
                 () => X("uiTextScaleHelp", "Makes only the text bigger; long texts wrap or scroll."))));
+            // Remake (the user's request, 2026-10-24): the interface font (UiFont), Klavika or one the player imported or has
+            // installed; the import's and removal's rows under it.
+            var uiFont = Choice("uiFont", OptionPage.Accessibility, () => X("uiFont", "Interface font"), false,
+                () => UiFont.Choices().ConvertAll(c => c.name ?? X("uiFontDefault", "Klavika (default)")).ToArray(),
+                () => Mathf.Max(0, UiFont.Choices().FindIndex(c => c.key == Settings.UiFont)),
+                i => { var all = UiFont.Choices(); Settings.UiFont = all[Mathf.Clamp(i, 0, all.Count - 1)].key; },
+                () => UiFont.Current == null && UiFont.Problem != null ? UiFont.Problem
+                    : X("uiFontHelp", "The font of every menu and the HUD: Klavika, a font file you import, or one installed on this device."));
+            uiFont.defaultValue = () => 0f;
+            list.Add(uiFont);
+            list.Add(new OptionDef
+            {
+                id = "uiFontImport", page = OptionPage.Accessibility, kind = OptionKind.Button,
+                label = () => X("uiFontImport", "Import font file…"),
+                description = () => UiFont.Problem ?? X("uiFontImportHelp", "Pick a .ttf, .otf or .ttc file; it is copied into the game's Fonts folder and used at once."),
+                visible = () => Modding.ModImport.Available,
+                action = () => UiFont.Import(X("uiFontImport", "Import font file…"), _ => OptionControl.RefreshShown()),
+            });
+            list.Add(new OptionDef
+            {
+                id = "uiFontRemove", page = OptionPage.Accessibility, kind = OptionKind.Button,
+                label = () => X("uiFontRemove", "Remove this font file"),
+                description = () => X("uiFontRemoveHelp", "Deletes the imported font in use; Klavika comes back."),
+                visible = () => (Settings.UiFont ?? "").StartsWith(UiFont.FilePrefix, System.StringComparison.Ordinal),
+                action = UiFont.RemoveCurrent,
+            });
             var highContrast = Toggle("highContrast", OptionPage.Accessibility, () => X("highContrast", "High contrast"),
                 () => Settings.HighContrast, v => Settings.HighContrast = v);
             highContrast.description = () => X("highContrastHelp", "Solid panels and brighter secondary text and lines.");
@@ -564,8 +590,12 @@ namespace GoF2Remake.UI
                 () => Settings.AutoAdvanceDialogue, v => Settings.AutoAdvanceDialogue = v));
             list.Add(Toggle("animatedDialogue", OptionPage.Gameplay, () => X("animatedDialogue", "Animated dialogue"),
                 () => Settings.AnimatedDialogue, v => Settings.AnimatedDialogue = v));
-            list.Add(Toggle("inputHints", OptionPage.Gameplay, () => X("inputHintsFlight", "Button hints in flight"),
-                () => Settings.InputHints, v => Settings.InputHints = v));
+            // The key and controller button hints everywhere: the flight HUD, the menus' prompt bars, the station, the star map,
+            // Inspect ship and Action Freeze (it was "Button hints in flight", though the menus' bars read it too).
+            var inputHints = Toggle("inputHints", OptionPage.Gameplay, () => X("inputHints", "Button hints"),
+                () => Settings.InputHints, v => Settings.InputHints = v);
+            inputHints.description = () => X("inputHintsHelp", "Shows which keys and controller buttons do what, in flight, in the menus and in the station.");
+            list.Add(inputHints);
             // Remake (immersion): the flight HUD's markings Full / Minimal / Off (FlightHud); also the "Toggle HUD" key (F1).
             list.Add(Choice("hudMode", OptionPage.Gameplay, () => X("hudMode", "Flight HUD"), true,
                 () => new[] { X("hudFull", "Full"), X("hudMinimal", "Minimal"), X("hudOff", "Off") },
