@@ -347,15 +347,17 @@ namespace GoF2Remake.World
             // CutScene::process updates every geometry of the scene each frame, so the room's animated layers all run,
             // not only the *_anim meshes (the Terran hangar_terran_add lights run along the side gutters; at frame 0 they
             // sat on the player's pad). The loops skip their one-off first key (every part at the origin for 33 / 50 ms,
-            // a jump on every wrap: PartAnimation's default start), the rotations swing back and forth (the Vossk ring lights' 57 deg sweep, clear of the
-            // portal, instead of snapping back), and the Vossk portal's light fades out as it moves (its `extra` channel).
+            // a jump on every wrap: PartAnimation's default start), the rotations swing back and forth (the original Vossk ring lights' 57 deg sweep, clear of the
+            // portal, instead of snapping back; the remodelled room's turn full circles), and the Vossk portal's light fades out as it moves (its `extra` channel).
             if (roomGo != null)
                 foreach (var a in roomGo.GetComponentsInChildren<PartAnimation>(true))
                 {
                     a.play = true;
                     // Modified: not the Terran hangar's bots (hangar_terran_bot_*): they drive a keyed loop, a heading swung
                     // back on every other loop turned them against their path.
-                    a.pingPongRotation = !a.gameObject.name.Contains("_bot_");
+                    // Modified: nor the remodelled Vossk hangar's ring lights (hangar_vossk_anim_add, 2026-10-24): they turn
+                    // full circles now, swung back they ran backwards on every other loop.
+                    a.pingPongRotation = !a.gameObject.name.Contains("_bot_") && !a.gameObject.name.StartsWith("hangar_vossk");
                     // Remake: and the Nivelian hangar's flashing light (hangar_nivelian_add, PartAnimation.HasSignedExtra).
                     // Modified: and the Terran hangar's blinking light (hangar_terran_add_part0, its `extra` 0..100).
                     if (a.gameObject.name.Contains("_anim") || a.HasSignedExtra || a.gameObject.name.StartsWith("hangar_terran_add"))

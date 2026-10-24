@@ -48,6 +48,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -5887571824068279703, guid: 1dad34c65b129a548a524e0bffa5557c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: bd5ba184f4523674fbd9749535983b2b, type: 2}
     - target: {fileID: 150862377822731289, guid: 1dad34c65b129a548a524e0bffa5557c, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -56,6 +60,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: hangar_vossk
       objectReference: {fileID: 0}
+    - target: {fileID: 5989367356975182373, guid: 1dad34c65b129a548a524e0bffa5557c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: bd5ba184f4523674fbd9749535983b2b, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

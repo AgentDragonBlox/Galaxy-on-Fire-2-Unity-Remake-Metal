@@ -13,7 +13,9 @@
 //              Landings and take-offs are always vertical.
 // The whole flight is one sampled path (lane + corner + vertical); the speed runs along it, stopping for the turn.
 // Pillars (the lane's 'pillars', the Nivelian hangar's): the run from the forcefield to the pad goes round them, keeping
-// each pillar's radius + the ship's half width + PillarMargin clear (PillarRoute: a grid search, straightened).
+// each pillar's radius + the ship's half width + PillarMargin clear (PillarRoute: a grid search, straightened). The
+// remodelled Vossk hangar's central column (the lane's 'column') stands where its arc through the centre went: the run
+// goes round it on a circle instead (AroundColumn), or straight past it where that clears it.
 // Floor clearance: the bank and pitch are scaled down wherever they would dip the hull (its renderers' corners) below the
 // height its bottom has parked plus FloorMargin (the Vossk bays are flown into 5 m up: the H'Soc's banked wing went ~3 m
 // into the floor, the flare and the hover turn's bank a little).
@@ -112,11 +114,13 @@ namespace GoF2Remake.World
                 float bay = pad.y + lane.hover;
                 float gateY = Mathf.Clamp(bay, lane.gateSpan.x, lane.gateSpan.y);
                 over = new Vector3(pad.x, bay, pad.z);
+                var front = over + inward * (lane.approach * 2.5f);
                 controls.Add(At(outside, gateY));
                 controls.Add(At(lane.gate, gateY));
                 controls.Add(At(lane.gate - outward * InsideDistance, gateY));
-                controls.Add(new Vector3(lane.hub.x, bay, lane.hub.z));   // one wide arc through the centre, no hairpins
-                controls.Add(over + inward * (lane.approach * 2.5f));
+                if (lane.column > 0f) AroundColumn(controls, front, lane.hub, lane.column + HalfWidth(hull, ship.localScale) + PillarMargin, bay);
+                else controls.Add(new Vector3(lane.hub.x, bay, lane.hub.z));   // one wide arc through the centre, no hairpins
+                controls.Add(front);
                 controls.Add(over + inward * lane.approach);
             }
             else
@@ -225,6 +229,32 @@ namespace GoF2Remake.World
             }
             foreach (var v in via) controls.Add(new Vector3(v.x, a.y, v.y));
         }
+
+        /// <summary>Remake (the remodelled Vossk hangar's central column): from the last control point to 'end' past a round
+        /// column at 'hub' whose surface the ship's side keeps 'clearance' from. A run that clears it goes straight; else the
+        /// way the run turns: along the tangent from the last point onto a circle round it (ColumnSwing x 'clearance'), round
+        /// it in steps of at most ColumnStep (the steps' chords and fillets cut inside the circle by up to ~6 %) and off it
+        /// along the tangent to 'end' (a bay facing the hub: the run bends ~30 deg into it), at height 'y'.</summary>
+        static void AroundColumn(List<Vector3> controls, Vector3 end, Vector3 hub, float clearance, float y)
+        {
+            var a = controls[controls.Count - 1];
+            var pa = new Vector2(a.x - hub.x, a.z - hub.z);
+            var pe = new Vector2(end.x - hub.x, end.z - hub.z);
+            float r = clearance * ColumnSwing, ra = pa.magnitude, re = pe.magnitude;
+            if (ra <= r || re <= r) return;
+            float angA = Mathf.Atan2(pa.y, pa.x), turn = Mathf.DeltaAngle(angA * Mathf.Rad2Deg, Mathf.Atan2(pe.y, pe.x) * Mathf.Rad2Deg) * Mathf.Deg2Rad;
+            float s = turn >= 0f ? 1f : -1f;
+            float off = Mathf.Acos(r / ra), sweep = Mathf.Abs(turn) - off - Mathf.Acos(r / re);
+            if (sweep <= 0f) return;   // the straight run passes the column
+            int n = Mathf.CeilToInt(sweep / (ColumnStep * Mathf.Deg2Rad));
+            for (int i = 0; i <= n; i++)
+            {
+                float ang = angA + s * (off + sweep * i / n);
+                controls.Add(new Vector3(hub.x + r * Mathf.Cos(ang), y, hub.z + r * Mathf.Sin(ang)));
+            }
+        }
+
+        const float ColumnSwing = 1.1f, ColumnStep = 30f;
 
         const float RouteWidthStep = 5f;
         static readonly Dictionary<(Vector3[], int, int, int, int, int), List<Vector2>> routes = new Dictionary<(Vector3[], int, int, int, int, int), List<Vector2>>();

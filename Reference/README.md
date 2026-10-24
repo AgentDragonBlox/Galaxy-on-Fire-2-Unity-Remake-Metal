@@ -18,7 +18,7 @@ Source material for the remake. Nothing in here is used by Unity; it's for readi
 | `binaries/default_economy/` | `items.bin` / `ships.bin` from KiritoJPK's `GOF2_2.0.16_Default_Economy.apk` (release GOF2FHD09282026): the macOS / Windows / iPhone item and ship tables, the only files that APK adds over the Android one. `tools/shop/build_default_economy.py` turns them into `Assets/Resources/GoF2Data/economy_default.json`. |
 | `tools/show.py` | `python Reference/tools/show.py "^PlayerFighter::update$"` prints matching decompiled functions. |
 | `tools/rf.py` | `python Reference/tools/rf.py 000a8178` reads a `DAT_` constant as float/hex (needs `pip install pyelftools`). |
-| `tools/asset_conversion/` | The scripts that produced `Assets`: `aem.py` (meshes), `aei.py` (textures), `parse_bins.py` (data), `emu_resources.py` (resource table), `aem2fbx.py` (Blender FBX export), `run_audio.sh` (FMOD banks). |
+| `tools/asset_conversion/` | The scripts that produced `Assets`: `aem.py` (meshes), `aei.py` (textures), `parse_bins.py` (data), `emu_resources.py` (resource table), `aem2fbx.py` (Blender FBX export), `convert_remodel.py` (a remodelled room's new .aem files -> FBX + the current sidecar format), `run_audio.sh` (FMOD banks). |
 | `tools/*.java` | Ghidra headless scripts used for the decompile. |
 
 ## Reading the pseudocode

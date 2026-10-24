@@ -72,6 +72,41 @@ namespace GoF2Remake.Tests
                 }
         }
 
+        /// <summary>The Vossk hangar's pads: the turntable and every parked slot (OrbitLayout.ToUnity, 10 m up).</summary>
+        static Vector3[] VosskPads() =>
+            new[] { new Vector3(0f, 10f, 0f) }.Concat(StationTables.ParkedSlots[1].Select(s => OrbitLayout.ToUnity(s) + Vector3.up * 10f)).ToArray();
+
+        [TestCase(20f, 30f)]
+        [TestCase(45f, 75f)]
+        [TestCase(90f, 125f)]
+        public void VosskFlightsGoRoundTheColumn(float width, float length)
+        {
+            // the remodelled Vossk hangar (2026-10-24): a column of radius 100 m at the hub, where the lane used to cross
+            var lane = StationTables.HangarLanes[1];
+            Assert.Greater(lane.column, 0f);
+            var column = new[] { new Vector3(lane.hub.x, lane.hub.z, lane.column) };
+            ship = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            size = new Vector3(width, 8f, length);
+            foreach (var pad in VosskPads())
+                foreach (bool arriving in new[] { true, false })
+                {
+                    float clear = LeastClearance(Fly(lane, pad, arriving), column, width, length);
+                    Assert.GreaterOrEqual(clear, 1f, $"pad {pad}, {(arriving ? "arriving" : "departing")}: {clear:F1} m");
+                }
+        }
+
+        [Test]
+        public void WithoutTheColumnTheFarPadsLaneCrossesIt()
+        {
+            var lane = StationTables.HangarLanes[1];
+            var bare = new StationTables.HangarLane { gate = lane.gate, outward = lane.outward, gateSpan = lane.gateSpan, bays = true,
+                                                      hub = lane.hub, approach = lane.approach, hover = lane.hover };
+            ship = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            size = new Vector3(20f, 8f, 30f);
+            var far = OrbitLayout.ToUnity(new Vector3(10691f, 0f, 12745f)) + Vector3.up * 10f;   // across the room from the portal
+            Assert.Less(LeastClearance(Fly(bare, far, true), new[] { new Vector3(lane.hub.x, lane.hub.z, 100f) }, 20f, 30f), 0f);
+        }
+
         [Test]
         public void WithoutTheAvoidanceTheRightPadsLaneHitsAPillar()
         {

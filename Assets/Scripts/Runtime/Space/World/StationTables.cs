@@ -146,8 +146,9 @@ namespace GoF2Remake.World
         public const float TurntablePixelsPerRadian = 120f;
 
         /// <summary>UNK_00253ee8: parked ships = nextInt(max + 1). Remake: Midorian 5 (the original's 3), its remodelled
-        /// room's third row of pads; Terran 5 (the original's 2), its remodelled room's three new pads (ParkedSlots).</summary>
-        public static readonly int[] ParkedMax = { 5, 9, 2, 5, 0, 0, 0, 3, 0 };
+        /// room's third row of pads; Terran 5 (the original's 2), its remodelled room's three new pads; Vossk 18 (the
+        /// original's 9) of its remodelled room's 49 bays (ParkedSlots).</summary>
+        public static readonly int[] ParkedMax = { 5, 18, 2, 5, 0, 0, 0, 3, 0 };
 
         /// <summary>Parked-ship slots (UNK_00253f10 ...); the ship's own height is added to y.</summary>
         public static readonly Vector3[][] ParkedSlots =
@@ -164,6 +165,22 @@ namespace GoF2Remake.World
                 new Vector3(-3715, 0, 661), new Vector3(-6983, 36, 2548), new Vector3(-9408, 36, 5438),
                 new Vector3(-9408, 36, 16301), new Vector3(-6983, 36, 19191), new Vector3(-3715, 36, 21078),
                 new Vector3(-9408, 5359, 16301), new Vector3(-6983, 5359, 19191), new Vector3(-3715, 5359, 21078),
+                // Remake: the remodelled Vossk room (2026-10-24), a whole ring of bays on three tiers round the hub (game
+                // (0, 0, 10860)), every 20 deg on the original slots' ring (10856), measured on its mesh with rays (floors
+                // at 268 m, 0 and -270 m; no bay over the portal on the two lower tiers). The other side of the middle tier:
+                new Vector3(0, 0, 21716), new Vector3(3713, 0, 21061), new Vector3(6978, 0, 19176), new Vector3(9402, 0, 16288),
+                new Vector3(10691, 0, 12745), new Vector3(10691, 0, 8975), new Vector3(9402, 0, 5432), new Vector3(6978, 0, 2544),
+                new Vector3(3713, 0, 659),
+                // the rest of the top tier (over the turntable and the portal too),
+                new Vector3(0, 5359, 0), new Vector3(-3713, 5359, 659), new Vector3(-6978, 5359, 2544), new Vector3(-9402, 5359, 5432),
+                new Vector3(-10691, 5359, 8975), new Vector3(-10691, 5359, 12745), new Vector3(0, 5359, 21716), new Vector3(3713, 5359, 21061),
+                new Vector3(6978, 5359, 19176), new Vector3(9402, 5359, 16288), new Vector3(10691, 5359, 12745), new Vector3(10691, 5359, 8975),
+                new Vector3(9402, 5359, 5432), new Vector3(6978, 5359, 2544), new Vector3(3713, 5359, 659),
+                // and the new bottom tier.
+                new Vector3(0, -5403, 0), new Vector3(-3713, -5403, 659), new Vector3(-6978, -5403, 2544), new Vector3(-9402, -5403, 5432),
+                new Vector3(-9402, -5403, 16288), new Vector3(-6978, -5403, 19176), new Vector3(-3713, -5403, 21061), new Vector3(0, -5403, 21716),
+                new Vector3(3713, -5403, 21061), new Vector3(6978, -5403, 19176), new Vector3(9402, -5403, 16288), new Vector3(10691, -5403, 12745),
+                new Vector3(10691, -5403, 8975), new Vector3(9402, -5403, 5432), new Vector3(6978, -5403, 2544), new Vector3(3713, -5403, 659),
             },
             new[] { new Vector3(4096, 0, 0), new Vector3(4096, 0, 4096) },
             new[]
@@ -197,6 +214,9 @@ namespace GoF2Remake.World
             /// <summary>Pillars from floor to ceiling the lane steers round (x, z and radius, metres; HangarFlight
             /// AvoidPillars), null = none.</summary>
             public Vector3[] pillars;
+            /// <summary>Bays: the radius (metres) of a column standing at 'hub' the run goes round (HangarFlight.AroundColumn)
+            /// instead of through the centre, 0 = none.</summary>
+            public float column;
         }
 
         /// <summary>The Nivelian hangar's six roof pillars (x, z, radius), measured on hangar_nivelian's mesh (rays at 50 m
@@ -211,7 +231,7 @@ namespace GoF2Remake.World
         {
             new HangarLane { gate = new Vector3(0f, 55f, -549f), outward = Vector3.back, gateSpan = new Vector2(30f, 115f), cruise = 45f },     // Terran
             new HangarLane { gate = new Vector3(-625f, 5f, -543f), outward = Vector3.left, gateSpan = new Vector2(-250f, 120f), bays = true,   // Vossk
-                             hub = new Vector3(0f, 0f, -543f), approach = 70f, hover = 5f },
+                             hub = new Vector3(0f, 0f, -543f), approach = 70f, hover = 5f, column = 100f },   // the remodelled room's column (its base ring, the struts)
             new HangarLane { gate = new Vector3(357f, 70f, -565f), outward = Vector3.back, gateSpan = new Vector2(25f, 130f), cruise = 50f,    // Nivelian
                              pillars = NivelianPillars },
             new HangarLane { gate = new Vector3(-203f, 50f, -407f), outward = Vector3.back, gateSpan = new Vector2(20f, 80f), cruise = 45f },   // Midorian
