@@ -3284,7 +3284,12 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
   (`Resources/GoF2ModBuilder/ModBuilder.uss`) instead of the station menu (StationMenu hides its children and hands Update
   over): ships list (+ new ship from .glb via `ModImport.Pick(title, filter, exts)`, + change a game ship, remove), tabs
   Ship (name, description, race, stats, equipment slots, model; its length / scale +-10 %, turns about all three axes
-  (ships.json `modelYaw` + the new `modelPitch` / `modelRoll`, `ModShipBuilder`: Euler(pitch, yaw, roll)), position (the new
+  (ships.json `modelYaw` + the new `modelPitch` / `modelRoll`, `ModShipBuilder`: Euler(pitch, yaw, roll); a turn keeps the
+  model's size and centre, `ModBuilderView.TurnModel`: modelLength and modelOffset follow it, the hardpoints stay; the
+  builder sizes by the extent along the nose and turns about the file's origin, so a model standing up shrank as it was
+  turned nose forward and one made far from its origin swung out of the hangar, a player's video 2026-10-25; modelLength in
+  hundredths so turning back gives the size back; a new import whose box misses the pivot is centred on it, `AutoLayout`),
+  position (the new
   `modelOffset`, game units in the ship's frame, nudges of 2 % and Centre on pivot; moves and resizes carry the hardpoints
   along, every change re-measures the hangar height), hangar height + Auto, hull textures: one
   `materials` entry for all meshes, for GLBs without their own), Hardpoints (add by clicking the hull, list, X / Y / Z, mirror,

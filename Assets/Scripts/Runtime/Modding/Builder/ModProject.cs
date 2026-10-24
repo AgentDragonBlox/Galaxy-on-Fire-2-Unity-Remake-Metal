@@ -1241,7 +1241,7 @@ namespace GoF2Remake.Modding
         public int Handling { get => I("handling", 100); set => json["handling"] = value; }
         public int Price { get => I("price", 0); set => json["price"] = value; }
         public int HangarHeight { get => I("hangarHeight", 250); set => json["hangarHeight"] = value; }
-        public float ModelLength { get => F("modelLength", 1000f); set => json["modelLength"] = Mathf.Round(value); }
+        public float ModelLength { get => F("modelLength", 1000f); set => json["modelLength"] = Mathf.Round(value * 100f) / 100f; }   // hundredths: a turn keeps the size (ModBuilderView.TurnModel)
         public float ModelYaw { get => F("modelYaw", 0f); set => json["modelYaw"] = Mathf.Round(value); }
         public float ModelPitch { get => F("modelPitch", 0f); set => SetOrRemove("modelPitch", Mathf.Round(value)); }
         public float ModelRoll { get => F("modelRoll", 0f); set => SetOrRemove("modelRoll", Mathf.Round(value)); }

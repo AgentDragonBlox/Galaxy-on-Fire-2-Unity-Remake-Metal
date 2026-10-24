@@ -512,8 +512,8 @@ namespace GoF2Remake.UI
                 {
                     var row = Add(ship, new VisualElement(), "mbv-row");
                     Add(row, new Label($"{T(key, english)}: {Mathf.RoundToInt(get())}°"), "mbv-inline-label");
-                    Act(row, "−90°", () => { set(Mathf.Repeat(get() - 90f, 360f)); OnModelTurned(); });
-                    Act(row, "+90°", () => { set(Mathf.Repeat(get() + 90f, 360f)); OnModelTurned(); });
+                    Act(row, "−90°", () => TurnModel(s, () => set(Mathf.Repeat(get() - 90f, 360f))));
+                    Act(row, "+90°", () => TurnModel(s, () => set(Mathf.Repeat(get() + 90f, 360f))));
                 }
                 TurnRow("mbYawAxis", "Turn (yaw)", () => s.ModelYaw, v => s.ModelYaw = v);
                 TurnRow("mbPitchAxis", "Tip (pitch)", () => s.ModelPitch, v => s.ModelPitch = v);
@@ -611,6 +611,48 @@ namespace GoF2Remake.UI
 
         /// <summary>The model was turned: rebuilt, and its height over the pad measured again once it is (its bottom moved).</summary>
         void OnModelTurned() => OnModelMoved();
+
+        /// <summary>The model turned by 'apply' (its pitch / yaw / roll) about its own centre, at the size it has: the ship
+        /// builder sizes the model by its extent along the nose (modelLength) and turns it about its file's origin, so a
+        /// model standing up shrank as it was turned nose forward, and one modelled far from its origin swung out of the
+        /// hangar (a player's video, 2026-10-25). The length nose to tail and the offset follow the turn instead (the
+        /// hardpoints stay, as before); measured on the hull as built, else a plain turn.</summary>
+        void TurnModel(ProjectShip s, Action apply)
+        {
+            var before = Quaternion.Euler(s.ModelPitch, s.ModelYaw, s.ModelRoll);
+            apply();
+            var hull = boundTransform != null ? boundTransform.Find("hull") : null;
+            var renderers = hull != null ? hull.GetComponentsInChildren<Renderer>(true) : null;
+            var pts = new List<Vector3>();
+            if (renderers != null)
+                foreach (var r in renderers)
+                {
+                    var mesh = r is SkinnedMeshRenderer sk ? sk.sharedMesh : r.GetComponent<MeshFilter>()?.sharedMesh;
+                    if (mesh == null || r.name.Contains("_add") || r.name.Contains("glow")) continue;
+                    var mb = mesh.bounds;
+                    var m = hull.worldToLocalMatrix * r.transform.localToWorldMatrix;   // the hull's own frame: its turn and scale out
+                    for (int i = 0; i < 8; i++)
+                        pts.Add(Vector3.Scale(hull.localScale, m.MultiplyPoint3x4(mb.center + Vector3.Scale(mb.extents,
+                            new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1)))));
+                }
+            if (pts.Count == 0) { OnModelTurned(); return; }
+            Bounds Box(Quaternion q)
+            {
+                var b = new Bounds(q * pts[0], Vector3.zero);
+                foreach (var p in pts) b.Encapsulate(q * p);
+                return b;
+            }
+            var after = Quaternion.Euler(s.ModelPitch, s.ModelYaw, s.ModelRoll);
+            Bounds was = Box(before), now = Box(after);
+            if (was.size.z > 1e-4f && now.size.z > 1e-4f)
+            {
+                float k = s.ModelLength * M / was.size.z;   // the project's size (the hull may still be an older build)
+                s.ModelLength = Mathf.Clamp(s.ModelLength * now.size.z / was.size.z, 50f, 200000f);   // not rounded: turned back, the same size
+                var du = (was.center - now.center) * k;   // Unity metres: the centre back where it was
+                s.ModelOffset += new Vector3Int(Mathf.RoundToInt(-du.x / M), Mathf.RoundToInt(du.y / M), Mathf.RoundToInt(du.z / M));
+            }
+            OnModelTurned();
+        }
 
         bool autoHeightAfterReload;
 
@@ -995,6 +1037,13 @@ namespace GoF2Remake.UI
             s.NeedsLayout = false;
             var b = gizmo.LocalBounds;
             int G(float unity) => Mathf.RoundToInt(unity / M);
+            // A model made far from its file's origin (a player's Aegir: ~89 000 units off) is centred on the pivot (as
+            // Centre on pivot does), else it stood kilometres from the pad and the camera with it.
+            if (!b.Contains(Vector3.zero))
+            {
+                s.ModelOffset += new Vector3Int(G(b.center.x), -G(b.center.y), -G(b.center.z));
+                b = new Bounds(Vector3.zero, b.size);
+            }
             int w = G(b.extents.x * 0.45f), cy = G(b.center.y), front = G(b.max.z - b.size.z * 0.2f), back = G(b.min.z), under = G(b.min.y + b.size.y * 0.3f);
             s.Mounts.Clear();
             s.Mounts.Add(new WeaponMount { slotType = 0, position_engine = new[] { -w, cy, front } });
