@@ -2791,7 +2791,11 @@ guide is `Modding/README.md` (keep it in step, and the AI version `Modding/ai/go
 - **Sound effects** (`ModSounds`, a mod's `sounds/<clip name>.ogg | .wav | .mp3`): replaces the game's clip of that name
   everywhere; `ModSounds.Get(clip)` wraps every `PlayOneShot` and `.clip =` site (57, not the music sources: ModMusic's),
   memoised per clip (AudioClip.name allocates), a no-op without mod sounds; later mods win; loaded decoded
-  (`ModAudio.Load(..., compressed: false)`). Verified: `Target_Lock_v08` replaced.
+  (`ModAudio.Load(..., compressed: false)`). Verified: `Target_Lock_v08` replaced. `ModAudio.Load` takes the type from
+  the file's first bytes (`ModAudio.Sniff`: RIFF/WAVE, OggS, ID3 / an MPEG frame sync), the extension only when they
+  show none: every platform's file picker copies to "picked.tmp", so the Mod Builder's `ModProject.SetAudio` saved every
+  picked WAV / MP3 as .ogg and it "couldn't be played" (a player's report, 2026-10-24); `PickAudio` now hands it a copy
+  named by its type. Tests `ModAudioTypeTests`.
 - **Ship and weapon sounds** (`ModShipSounds`): ships.json `"sounds"` (a new ship or an override; `ShipDef.sounds`,
   `ModContent.ShipSounds`) = engine / boostStart / boostLoop / boostStop / charger, each a file, a list (random) or { file(s),
   volume, pitch } with a value or [from, to]; a kit hardpoint rule's `"sound"` { shot, loop, release } (`Rule.sound`,

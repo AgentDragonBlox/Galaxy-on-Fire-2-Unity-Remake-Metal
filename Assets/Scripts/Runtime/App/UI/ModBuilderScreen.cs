@@ -779,9 +779,22 @@ namespace GoF2Remake.UI
                 finally { try { System.IO.File.Delete(png); } catch { } }
             });
 
-        /// <summary>A sound or music file (.ogg, .wav, .mp3).</summary>
+        /// <summary>A sound or music file (.ogg, .wav, .mp3): 'use' gets a temporary copy whose extension is its type (the
+        /// pickers' copy is "picked.tmp", which ModProject.SetAudio turned into .ogg whatever the file was).</summary>
         protected void PickAudio(string title, Action<string> use) =>
-            PickRaw(title, T("mbAudioFilter", "Sound files"), new[] { "ogg", "wav", "mp3" }, picked => use(picked.path));
+            PickRaw(title, T("mbAudioFilter", "Sound files"), new[] { "ogg", "wav", "mp3" }, picked =>
+            {
+                string ext = ModAudio.ExtensionOf(ModAudio.SniffFile(picked.path));
+                if (ext == null)
+                {
+                    ext = System.IO.Path.GetExtension(picked.name ?? "").ToLowerInvariant();
+                    if (ModAudio.TypeOf(ext) == AudioType.UNKNOWN) { Status(T("mbNotAudio", "That isn't an .ogg, .wav or .mp3 file."), true); return; }
+                }
+                string copy = System.IO.Path.Combine(Application.temporaryCachePath, "audio_" + Guid.NewGuid().ToString("N") + ext);
+                System.IO.File.Copy(picked.path, copy, true);
+                try { use(copy); }
+                finally { try { System.IO.File.Delete(copy); } catch { } }
+            });
 
         // ---- the Menu (like the station's: Options, leaving) ----------------------------------------------------
 

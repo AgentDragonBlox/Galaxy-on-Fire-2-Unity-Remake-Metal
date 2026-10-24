@@ -1900,6 +1900,7 @@
  "mbOff": "关",
  "mbOk": "确定",
  "mbOn": "开",
+ "mbNotAudio": "这不是 .ogg、.wav 或 .mp3 文件。",
  "mbPickFailed": "无法读取文件：{0}",
  "mbPlaceHangar": "在机库中编辑",
  "mbPlaceLounge": "在太空酒吧中编辑",

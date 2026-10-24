@@ -1900,6 +1900,7 @@
  "mbOff": "desactivado",
  "mbOk": "OK",
  "mbOn": "activado",
+ "mbNotAudio": "Eso no es un archivo .ogg, .wav ni .mp3.",
  "mbPickFailed": "No se pudo leer el archivo: {0}",
  "mbPlaceHangar": "Se edita en el hangar",
  "mbPlaceLounge": "Se edita en el Space Lounge",

@@ -1900,6 +1900,7 @@
  "mbOff": "끔",
  "mbOk": "확인",
  "mbOn": "켬",
+ "mbNotAudio": ".ogg, .wav 또는 .mp3 파일이 아닙니다.",
  "mbPickFailed": "파일을 읽을 수 없습니다: {0}",
  "mbPlaceHangar": "격납고에서 편집",
  "mbPlaceLounge": "스페이스 라운지에서 편집",

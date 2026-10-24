@@ -23,6 +23,36 @@ namespace GoF2Remake.Modding
             return ext == ".ogg" ? AudioType.OGGVORBIS : ext == ".wav" ? AudioType.WAV : ext == ".mp3" ? AudioType.MPEG : AudioType.UNKNOWN;
         }
 
+        /// <summary>The AudioType a file's first bytes show (RIFF..WAVE, OggS, an ID3 tag or an MPEG frame sync; Unknown: none of
+        /// them). The Mod Builder saved every picked file as .ogg until 2026-10-24 (the pickers' copy is "picked.tmp"), so a
+        /// WAV or MP3 under an .ogg name failed to decode.</summary>
+        public static AudioType Sniff(byte[] head, int count)
+        {
+            if (head == null || count < 3) return AudioType.UNKNOWN;
+            if (count >= 12 && head[0] == 'R' && head[1] == 'I' && head[2] == 'F' && head[3] == 'F'
+                && head[8] == 'W' && head[9] == 'A' && head[10] == 'V' && head[11] == 'E') return AudioType.WAV;
+            if (count >= 4 && head[0] == 'O' && head[1] == 'g' && head[2] == 'g' && head[3] == 'S') return AudioType.OGGVORBIS;
+            if (head[0] == 'I' && head[1] == 'D' && head[2] == '3') return AudioType.MPEG;
+            if (head[0] == 0xFF && (head[1] & 0xE0) == 0xE0) return AudioType.MPEG;
+            return AudioType.UNKNOWN;
+        }
+
+        /// <summary>Sniff on a file on disk (Unknown when it can't be read).</summary>
+        public static AudioType SniffFile(string path)
+        {
+            try
+            {
+                var head = new byte[12];
+                using var f = File.OpenRead(path);
+                return Sniff(head, f.Read(head, 0, head.Length));
+            }
+            catch { return AudioType.UNKNOWN; }
+        }
+
+        /// <summary>The extension (with the dot) for an AudioType of Sniff, else null.</summary>
+        public static string ExtensionOf(AudioType type) =>
+            type == AudioType.WAV ? ".wav" : type == AudioType.OGGVORBIS ? ".ogg" : type == AudioType.MPEG ? ".mp3" : null;
+
         /// <summary>The file's own spelling in the mod (any case; null: no such file).</summary>
         public static string Find(ModSource source, string path)
         {
@@ -40,8 +70,16 @@ namespace GoF2Remake.Modding
                 var type = TypeOf(file);
                 if (type == AudioType.UNKNOWN) throw new Exception("not an .ogg, .wav or .mp3 file");
                 // A zip mod's file is copied out on a worker thread (ModInfo.LocalFile).
-                string path = await System.Threading.Tasks.Task.Run(() => mod.LocalFile(file));
+                // The content decides over the name (a WAV saved as .ogg, see Sniff).
+                AudioType sniffed = AudioType.UNKNOWN;
+                string path = await System.Threading.Tasks.Task.Run(() =>
+                {
+                    string p = mod.LocalFile(file);
+                    if (p != null) sniffed = SniffFile(p);
+                    return p;
+                });
                 if (path == null) throw new Exception("can't be read");
+                if (sniffed != AudioType.UNKNOWN) type = sniffed;
                 using var req = UnityWebRequestMultimedia.GetAudioClip(new Uri(path).AbsoluteUri, type);
                 if (req.downloadHandler is DownloadHandlerAudioClip handler) handler.compressed = compressed;
                 var op = req.SendWebRequest();

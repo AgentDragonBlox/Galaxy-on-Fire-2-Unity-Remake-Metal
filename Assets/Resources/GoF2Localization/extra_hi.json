@@ -1900,6 +1900,7 @@
  "mbOff": "बंद",
  "mbOk": "ठीक है",
  "mbOn": "चालू",
+ "mbNotAudio": "यह .ogg, .wav या .mp3 फ़ाइल नहीं है।",
  "mbPickFailed": "फ़ाइल पढ़ी नहीं जा सकी: {0}",
  "mbPlaceHangar": "हैंगर में संपादित",
  "mbPlaceLounge": "स्पेस लाउंज में संपादित",

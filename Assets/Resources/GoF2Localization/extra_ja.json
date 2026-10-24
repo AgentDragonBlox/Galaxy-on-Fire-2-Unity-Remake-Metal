@@ -1900,6 +1900,7 @@
  "mbOff": "オフ",
  "mbOk": "OK",
  "mbOn": "オン",
+ "mbNotAudio": ".ogg、.wav、.mp3 のファイルではありません。",
  "mbPickFailed": "ファイルを読み込めませんでした：{0}",
  "mbPlaceHangar": "格納庫で編集",
  "mbPlaceLounge": "スペースラウンジで編集",
