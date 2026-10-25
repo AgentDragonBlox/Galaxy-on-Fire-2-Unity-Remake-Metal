@@ -196,11 +196,20 @@ namespace GoF2Remake.Data
         static readonly float[][] Presets =
         {
             //      scale  upscaler     msaa bloom        hangar shadows       dof lens npcEng lods textures fire fog detail filter
-            new[] { 0.67f, UpscalerFsr, 1f, BloomOff,    HangarShadowsOff,    0f, 0f, 0f, 1f, 1f, 0f, 0f, 0f, 1f },
-            new[] { 0.8f,  UpscalerFsr, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 0f, 1f, 0f, 0f, 0f, 1f, 1f },
+            new[] { 0.67f, PresetSpatialUpscaler, 1f, BloomOff,    HangarShadowsOff,    0f, 0f, 0f, 1f, 1f, 0f, 0f, 0f, 1f },
+            new[] { 0.8f,  PresetSpatialUpscaler, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 0f, 1f, 0f, 0f, 0f, 1f, 1f },
             new[] { 1f,    UpscalerOff, 1f, BloomRemake, HangarShadowsPlayer, 0f, 1f, 1f, 1f, 0f, 1f, 1f, 2f, 2f },
             new[] { 1.5f,  UpscalerOff, 8f, BloomRemake, HangarShadowsAll,    1f, 1f, 1f, 0f, 0f, 1f, 1f, 3f, 3f },
         };
+
+        // Apple fork: the Low / Medium presets' upscaler. MetalFX Spatial on Macs and iOS devices (Apple's own, sharper than
+        // FSR 1 at the same render scale); Bootstrap.ActiveUpscaler falls back to FSR 1 where MetalFX isn't available (Intel
+        // Macs, older iPhones and iPads). FSR 1 elsewhere, as before.
+#if UNITY_IOS || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+        const float PresetSpatialUpscaler = UpscalerMetalFxSpatial;
+#else
+        const float PresetSpatialUpscaler = UpscalerFsr;
+#endif
 
         /// <summary>'key''s value in 'preset' (PresetLow..PresetUltra).</summary>
         public static float PresetValue(int preset, string key) => Presets[Mathf.Clamp(preset, 0, Presets.Length - 1)][Array.IndexOf(PresetKeys, key)];
