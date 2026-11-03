@@ -23,7 +23,9 @@ namespace GoF2Remake.EditorTools
                 return;
             }
             var target = EditorUserBuildSettings.activeBuildTarget;
-            bool vr = target != BuildTarget.StandaloneLinux64 && target != BuildTarget.Android && target != BuildTarget.iOS;
+            // Apple fork: macOS builds drop the stereo variants too, like iOS: this fork ships no VR on the Mac.
+            bool vr = target != BuildTarget.StandaloneLinux64 && target != BuildTarget.Android && target != BuildTarget.iOS
+                && target != BuildTarget.StandaloneOSX;
             for (int i = data.Count - 1; i >= 0; i--)
                 foreach (var keyword in data[i].shaderKeywordSet.GetShaderKeywords())
                     if (ShaderVariantRules.UnusedKeyword(keyword.name, vr))

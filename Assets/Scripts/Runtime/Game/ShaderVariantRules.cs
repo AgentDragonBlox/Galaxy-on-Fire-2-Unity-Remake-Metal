@@ -10,6 +10,7 @@
 //   Hidden/TerrainEngine: the project has no terrain, yet a build compiles these.
 //   STEREO_INSTANCING_ON (Linux, Android, iOS): VR can't start there. OpenXR ships no Linux library, Android has no XR loader in
 //   the project and iOS no XR settings at all. Windows keeps it, and so does macOS: OpenXR ships a loader for its players.
+//   (Apple fork: macOS drops it as well, ShaderVariantStripper: this fork ships no VR on the Mac.)
 
 namespace GoF2Remake.Data
 {

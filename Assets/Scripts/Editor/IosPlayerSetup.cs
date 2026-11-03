@@ -95,6 +95,7 @@ namespace GoF2Remake.EditorTools
             root.SetString("NSPhotoLibraryAddUsageDescription", "Saves your Action Freeze screenshots to your photo library.");
             root.SetString("LSApplicationCategoryType", "public.app-category.action-games");
             root.SetBoolean("GCSupportsGameMode", true);
+            root.SetBoolean("LSSupportsGameMode", true);   // Apple fork: iOS / iPadOS 26's key (GCSupportsGameMode: 18 to 25)
             root.SetBoolean("GCSupportsControllerUserInteraction", true);
             var controllers = root.CreateArray("GCSupportedGameControllers");
             controllers.AddDict().SetString("ProfileName", "ExtendedGamepad");
