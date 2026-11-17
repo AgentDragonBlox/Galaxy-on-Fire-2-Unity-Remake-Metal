@@ -20,7 +20,9 @@ namespace GoF2Remake.UI
         /// <summary>The Android manifest's one file.</summary>
         public const string ApkName = "GoF2Remake.apk";
         /// <summary>The GitHub repository the releases (and their packs) are in.</summary>
-        public const string Repository = "JoppieToppie/Galaxy-on-Fire-2-Unity-Remake";
+        /// Apple fork: this fork's releases, so the game is told about (and patched from) the fork's builds, never replaced
+        /// by the original's macOS / iOS files, which lack the fork's changes.
+        public const string Repository = "AgentDragonBlox/Galaxy-on-Fire-2-Unity-Remake-Metal";
         /// <summary>A release file is at ReleaseDownloads + "<tag>/<name>".</summary>
         public const string ReleaseDownloads = "https://github.com/" + Repository + "/releases/download/";
 

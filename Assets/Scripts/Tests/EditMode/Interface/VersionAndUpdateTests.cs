@@ -74,7 +74,7 @@ namespace GoF2Remake.Tests
         [Test]
         public void TheReleasePageIsTheRepositorys()
         {
-            Assert.AreEqual("JoppieToppie/Galaxy-on-Fire-2-Unity-Remake", UpdateCheck.Repository);
+            Assert.AreEqual("AgentDragonBlox/Galaxy-on-Fire-2-Unity-Remake-Metal", UpdateCheck.Repository);   // Apple fork
             Assert.AreEqual("https://github.com/JoppieToppie/Galaxy-on-Fire-2-Unity-Remake/releases/latest", UpdateCheck.ReleasesPage);
         }
     }

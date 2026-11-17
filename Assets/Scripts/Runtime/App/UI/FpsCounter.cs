@@ -116,6 +116,8 @@ namespace GoF2Remake.UI
             s.justifyContent = !top && !bottom ? Justify.Center : Justify.FlexStart;   // the sides: the middle of the height
         }
 
+        readonly FrameTiming[] timings = new FrameTiming[1];
+
         void Update()
         {
             if (label == null) return;
@@ -123,11 +125,23 @@ namespace GoF2Remake.UI
             if (label.style.display != want) label.style.display = want;
             if (want == DisplayStyle.None) return;
             Place();
+            bool timed = FrameTimingManager.IsFeatureEnabled();
+            if (timed) FrameTimingManager.CaptureFrameTimings();   // every frame, read at the window's end
             frames++;
             elapsed += Time.unscaledDeltaTime;
             if (elapsed < WindowSeconds) return;
             float fps = frames / elapsed;
-            label.text = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:0} FPS  {1:0.0} ms", fps, 1000f / Mathf.Max(fps, 0.001f));
+            var ci = System.Globalization.CultureInfo.InvariantCulture;
+            string text = string.Format(ci, "{0:0} FPS  {1:0.0} ms", fps, 1000f / Mathf.Max(fps, 0.001f));
+            // Apple fork: where the frame's time goes (Frame Timing Stats on): the main thread's CPU time and the GPU's, so a
+            // tester's screenshot tells a CPU-bound scene from a GPU-bound one; "throttled" while PerformanceGovernor limits it.
+            if (timed && FrameTimingManager.GetLatestTimings(1, timings) > 0)
+            {
+                text += string.Format(ci, "  CPU {0:0.0}", timings[0].cpuMainThreadFrameTime);
+                if (timings[0].gpuFrameTime > 0) text += string.Format(ci, "  GPU {0:0.0}", timings[0].gpuFrameTime);
+            }
+            if (Bootstrap.GovernorFrameCap > 0 || Bootstrap.GovernorScale < 0.999f) text += "  throttled";
+            label.text = text;
             frames = 0;
             elapsed = 0f;
         }
